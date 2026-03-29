@@ -2,6 +2,10 @@
 
 import { useState, useCallback, useEffect } from "react";
 import { supabase } from "../lib/supabase";
+import AlAhlyAuth from "./alahly_db_auth";
+
+
+
 
 // ── Helper ──────────────────────────────────────────────────────────────────
 const EMPTY_MATCH = {
@@ -629,346 +633,347 @@ export default function AlAhlyEditor() {
     const penCols = Object.keys(EMPTY_PEN);
 
     return (
-        <div style={{ fontFamily: "'Outfit', sans-serif", maxWidth: 1610, margin: '0 auto', padding: '0 0 100px' }}>
-            <Toast toasts={toasts} />
+        <AlAhlyAuth title="MATCH EDITOR ACCESS" subtitle="AUTHORIZATION REQUIRED">
+            <div style={{ fontFamily: "'Outfit', sans-serif", maxWidth: 1610, margin: '0 auto', padding: '0 0 100px' }}>
+                <Toast toasts={toasts} />
 
-            {/* ── Header ── */}
-            <div style={{
-                background: '#0a0a0a', borderRadius: 24, padding: '36px 48px', marginBottom: 30,
-                display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-                boxShadow: '0 20px 60px rgba(0,0,0,0.15)'
-            }}>
-                <div>
-                    <div style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: 36, letterSpacing: 5, color: '#fff' }}>
-                        MATCH <span style={{ color: '#c9a84c' }}>EDITOR</span>
-                    </div>
-
-                </div>
-                <div style={{ display: 'flex', gap: 10 }}>
-                    <button
-                        onClick={() => { setMode('search'); setMatchData(null); }}
-                        title="Search & Edit"
-                        style={{
-                            background: mode === 'search' || mode === 'edit' ? '#c9a84c' : 'rgba(255,255,255,0.08)',
-                            color: mode === 'search' || mode === 'edit' ? '#0a0a0a' : '#fff',
-                            border: 'none', borderRadius: 12, width: 44, height: 44, cursor: 'pointer',
-                            fontSize: 20, display: 'flex', alignItems: 'center', justifyContent: 'center',
-                            transition: 'all 0.2s'
-                        }}>
-                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                            <circle cx="11" cy="11" r="7" />
-                            <line x1="17" y1="17" x2="22" y2="22" />
-                        </svg>
-                    </button>
-                    <button
-                        onClick={() => { setMode('new'); setMatchData(null); setNewMatchData({ ...EMPTY_MATCH }); }}
-                        title="Add New Match"
-                        style={{
-                            background: mode === 'new' ? '#c9a84c' : 'rgba(255,255,255,0.08)',
-                            color: mode === 'new' ? '#0a0a0a' : '#fff',
-                            border: 'none', borderRadius: 12, width: 44, height: 44, cursor: 'pointer',
-                            fontSize: 20, display: 'flex', alignItems: 'center', justifyContent: 'center',
-                            transition: 'all 0.2s'
-                        }}>➕</button>
-                </div>
-            </div>
-
-            {/* ── Mode: Search = portal ── */}
-            {(mode === 'search') && (
+                {/* ── Header ── */}
                 <div style={{
-                    background: '#fff', borderRadius: 20, border: '1px solid #f0f0f0',
-                    padding: '100px 48px', textAlign: 'center',
-                    boxShadow: '0 10px 40px rgba(0,0,0,0.05)',
-                    display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
-                    minHeight: 420
+                    background: '#0a0a0a', borderRadius: 24, padding: '36px 48px', marginBottom: 30,
+                    display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                    boxShadow: '0 20px 60px rgba(0,0,0,0.15)'
                 }}>
-                    <div style={{ fontSize: 56, marginBottom: 20, lineHeight: 1 }}>🔎</div>
-                    <div style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: 32, letterSpacing: 4, marginBottom: 10, color: '#0a0a0a' }}>
-                        ENTER MATCH ID
+                    <div>
+                        <div style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: 36, letterSpacing: 5, color: '#fff' }}>
+                            MATCH <span style={{ color: '#c9a84c' }}>EDITOR</span>
+                        </div>
+
                     </div>
-                    <div style={{ color: '#aaa', fontSize: 13, marginBottom: 40, fontFamily: "'Outfit', sans-serif", letterSpacing: 0.5 }}>
-                        Type the Match ID to load all linked records for editing
-                    </div>
-                    <div style={{ display: 'flex', gap: 12, justifyContent: 'center', width: '100%', maxWidth: 520 }}>
-                        <input
-                            value={searchId}
-                            onChange={e => setSearchId(e.target.value)}
-                            onKeyDown={e => e.key === 'Enter' && handleSearch()}
-                            placeholder="Match ID..."
-                            style={{
-                                flex: 1, border: '2px solid #e8e8e8', borderRadius: 14, padding: '16px 22px',
-                                fontSize: 15, fontFamily: "'Space Mono', monospace", fontWeight: 700, outline: 'none',
-                                transition: 'border-color 0.2s', color: '#0a0a0a', textAlign: 'center',
-                                letterSpacing: 1
-                            }}
-                            onFocus={e => e.target.style.borderColor = '#c9a84c'}
-                            onBlur={e => e.target.style.borderColor = '#e8e8e8'}
-                        />
+                    <div style={{ display: 'flex', gap: 10 }}>
                         <button
-                            onClick={handleSearch}
-                            disabled={loading}
+                            onClick={() => { setMode('search'); setMatchData(null); }}
+                            title="Search & Edit"
                             style={{
-                                background: '#0a0a0a', color: '#c9a84c', border: 'none', borderRadius: 14,
-                                padding: '16px 32px', cursor: loading ? 'not-allowed' : 'pointer',
-                                fontWeight: 800, fontSize: 14, fontFamily: "'Outfit', sans-serif",
-                                transition: 'all 0.2s', opacity: loading ? 0.6 : 1, whiteSpace: 'nowrap',
-                                letterSpacing: 1
+                                background: mode === 'search' || mode === 'edit' ? '#c9a84c' : 'rgba(255,255,255,0.08)',
+                                color: mode === 'search' || mode === 'edit' ? '#0a0a0a' : '#fff',
+                                border: 'none', borderRadius: 12, width: 44, height: 44, cursor: 'pointer',
+                                fontSize: 20, display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                transition: 'all 0.2s'
                             }}>
-                            {loading ? 'Loading...' : 'LOAD →'}
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                                <circle cx="11" cy="11" r="7" />
+                                <line x1="17" y1="17" x2="22" y2="22" />
+                            </svg>
                         </button>
+                        <button
+                            onClick={() => { setMode('new'); setMatchData(null); setNewMatchData({ ...EMPTY_MATCH }); }}
+                            title="Add New Match"
+                            style={{
+                                background: mode === 'new' ? '#c9a84c' : 'rgba(255,255,255,0.08)',
+                                color: mode === 'new' ? '#0a0a0a' : '#fff',
+                                border: 'none', borderRadius: 12, width: 44, height: 44, cursor: 'pointer',
+                                fontSize: 20, display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                transition: 'all 0.2s'
+                            }}>➕</button>
                     </div>
                 </div>
-            )}
 
-            {/* ── Mode: New Match ── */}
-            {mode === 'new' && (
-                <>
-                    {/* Match Details form */}
-                    <div style={{ background: '#fff', borderRadius: 20, border: '1px solid #f0f0f0', padding: '40px 48px', marginBottom: 24, boxShadow: '0 10px 40px rgba(0,0,0,0.05)' }}>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 30 }}>
-                            <div style={{ width: 4, height: 28, background: '#22c55e', borderRadius: 4 }} />
-                            <h2 style={{ margin: 0, fontFamily: "'Bebas Neue', sans-serif", fontSize: 24, letterSpacing: 3 }}>NEW MATCH DETAILS</h2>
+                {/* ── Mode: Search = portal ── */}
+                {(mode === 'search') && (
+                    <div style={{
+                        background: '#fff', borderRadius: 20, border: '1px solid #f0f0f0',
+                        padding: '100px 48px', textAlign: 'center',
+                        boxShadow: '0 10px 40px rgba(0,0,0,0.05)',
+                        display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
+                        minHeight: 420
+                    }}>
+                        <div style={{ fontSize: 56, marginBottom: 20, lineHeight: 1 }}>🔎</div>
+                        <div style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: 32, letterSpacing: 4, marginBottom: 10, color: '#0a0a0a' }}>
+                            ENTER MATCH ID
                         </div>
-                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))', gap: 14, marginBottom: 30 }}>
-                            {matchInfoFields.map(field => (
-                                <div key={field}>
-                                    <div style={{ fontSize: 10, fontWeight: 800, letterSpacing: 1.5, color: field === 'MATCH_ID' ? '#22c55e' : '#999', marginBottom: 5, textTransform: 'uppercase' }}>
-                                        {field} {field === 'MATCH_ID' && <span style={{ color: '#aaa', fontWeight: 400, letterSpacing: 0 }}>(auto)</span>}
+                        <div style={{ color: '#aaa', fontSize: 13, marginBottom: 40, fontFamily: "'Outfit', sans-serif", letterSpacing: 0.5 }}>
+                            Type the Match ID to load all linked records for editing
+                        </div>
+                        <div style={{ display: 'flex', gap: 12, justifyContent: 'center', width: '100%', maxWidth: 520 }}>
+                            <input
+                                value={searchId}
+                                onChange={e => setSearchId(e.target.value)}
+                                onKeyDown={e => e.key === 'Enter' && handleSearch()}
+                                placeholder="Match ID..."
+                                style={{
+                                    flex: 1, border: '2px solid #e8e8e8', borderRadius: 14, padding: '16px 22px',
+                                    fontSize: 15, fontFamily: "'Space Mono', monospace", fontWeight: 700, outline: 'none',
+                                    transition: 'border-color 0.2s', color: '#0a0a0a', textAlign: 'center',
+                                    letterSpacing: 1
+                                }}
+                                onFocus={e => e.target.style.borderColor = '#c9a84c'}
+                                onBlur={e => e.target.style.borderColor = '#e8e8e8'}
+                            />
+                            <button
+                                onClick={handleSearch}
+                                disabled={loading}
+                                style={{
+                                    background: '#0a0a0a', color: '#c9a84c', border: 'none', borderRadius: 14,
+                                    padding: '16px 32px', cursor: loading ? 'not-allowed' : 'pointer',
+                                    fontWeight: 800, fontSize: 14, fontFamily: "'Outfit', sans-serif",
+                                    transition: 'all 0.2s', opacity: loading ? 0.6 : 1, whiteSpace: 'nowrap',
+                                    letterSpacing: 1
+                                }}>
+                                {loading ? 'Loading...' : 'LOAD →'}
+                            </button>
+                        </div>
+                    </div>
+                )}
+
+                {/* ── Mode: New Match ── */}
+                {mode === 'new' && (
+                    <>
+                        {/* Match Details form */}
+                        <div style={{ background: '#fff', borderRadius: 20, border: '1px solid #f0f0f0', padding: '40px 48px', marginBottom: 24, boxShadow: '0 10px 40px rgba(0,0,0,0.05)' }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 30 }}>
+                                <div style={{ width: 4, height: 28, background: '#22c55e', borderRadius: 4 }} />
+                                <h2 style={{ margin: 0, fontFamily: "'Bebas Neue', sans-serif", fontSize: 24, letterSpacing: 3 }}>NEW MATCH DETAILS</h2>
+                            </div>
+                            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))', gap: 14, marginBottom: 30 }}>
+                                {matchInfoFields.map(field => (
+                                    <div key={field}>
+                                        <div style={{ fontSize: 10, fontWeight: 800, letterSpacing: 1.5, color: field === 'MATCH_ID' ? '#22c55e' : '#999', marginBottom: 5, textTransform: 'uppercase' }}>
+                                            {field} {field === 'MATCH_ID' && <span style={{ color: '#aaa', fontWeight: 400, letterSpacing: 0 }}>(auto)</span>}
+                                        </div>
+                                        {AUTOCOMPLETE_FIELDS.includes(field) ? (
+                                            <AutocompleteInput
+                                                value={newMatchData[field] ?? ''}
+                                                options={matchFieldOptions[field] || []}
+                                                onChange={val => setNewMatchData(prev => ({ ...prev, [field]: val }))}
+                                                style={{
+                                                    border: '1.5px solid #e8e8e8', borderRadius: 10,
+                                                    padding: '10px 14px', fontSize: 13, fontFamily: "'Outfit', sans-serif",
+                                                    fontWeight: 600, outline: 'none', color: '#0a0a0a'
+                                                }}
+                                            />
+                                        ) : (
+                                            <input
+                                                type={field === 'DATE' ? 'date' : 'text'}
+                                                value={newMatchData[field] ?? ''}
+                                                disabled={field === 'MATCH_ID'}
+                                                onChange={e => {
+                                                    if (field === 'MATCH_ID') return;
+                                                    setNewMatchData(prev => ({ ...prev, [field]: e.target.value }));
+                                                }}
+                                                style={{
+                                                    width: '100%', boxSizing: 'border-box',
+                                                    border: field === 'MATCH_ID' ? '2px solid #22c55e' : '1.5px solid #e8e8e8',
+                                                    borderRadius: 10, padding: '10px 14px', fontSize: 13, fontFamily: "'Outfit', sans-serif",
+                                                    fontWeight: 600, outline: 'none', color: '#0a0a0a', transition: 'border-color 0.2s',
+                                                    background: field === 'MATCH_ID' ? 'rgba(34,197,94,0.05)' : '#fff',
+                                                    cursor: field === 'MATCH_ID' ? 'not-allowed' : 'text'
+                                                }}
+                                                onFocus={e => { if (field !== 'MATCH_ID') e.target.style.borderColor = '#c9a84c'; }}
+                                                onBlur={e => { if (field !== 'MATCH_ID') e.target.style.borderColor = '#e8e8e8'; }}
+                                            />
+                                        )}
                                     </div>
-                                    {AUTOCOMPLETE_FIELDS.includes(field) ? (
-                                        <AutocompleteInput
-                                            value={newMatchData[field] ?? ''}
-                                            options={matchFieldOptions[field] || []}
-                                            onChange={val => setNewMatchData(prev => ({ ...prev, [field]: val }))}
-                                            style={{
-                                                border: '1.5px solid #e8e8e8', borderRadius: 10,
-                                                padding: '10px 14px', fontSize: 13, fontFamily: "'Outfit', sans-serif",
-                                                fontWeight: 600, outline: 'none', color: '#0a0a0a'
-                                            }}
-                                        />
-                                    ) : (
+                                ))}
+                            </div>
+                            <div style={{ display: 'flex', justifyContent: 'center' }}>
+                                <button
+                                    onClick={handleCreateMatch}
+                                    disabled={isSaving}
+                                    style={{
+                                        background: '#22c55e', color: '#fff', border: 'none', borderRadius: 14,
+                                        padding: '14px 36px', cursor: isSaving ? 'not-allowed' : 'pointer',
+                                        fontWeight: 800, fontSize: 15, fontFamily: "'Outfit', sans-serif",
+                                        boxShadow: '0 8px 24px rgba(34,197,94,0.25)', transition: 'all 0.2s'
+                                    }}>
+                                    {isSaving ? 'Creating...' : '✓ CREATE MATCH'}
+                                </button>
+                            </div>
+                        </div>
+
+                        {/* Linked tables - staged before create */}
+                        <div style={{ background: '#fff', borderRadius: 20, border: '1px solid #f0f0f0', padding: '40px 48px', boxShadow: '0 10px 40px rgba(0,0,0,0.05)' }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 30 }}>
+                                <div style={{ width: 4, height: 28, background: '#3b82f6', borderRadius: 4 }} />
+                                <h2 style={{ margin: 0, fontFamily: "'Bebas Neue', sans-serif", fontSize: 24, letterSpacing: 3 }}>LINKED TABLE DATA</h2>
+                            </div>
+
+                            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 10, marginBottom: 30 }}>
+                                <button onClick={() => setActiveLinkedTab('lineup')} style={{ background: activeLinkedTab === 'lineup' ? '#3b82f6' : '#f8f8f8', color: activeLinkedTab === 'lineup' ? '#fff' : '#888', border: 'none', padding: '14px', borderRadius: '12px', fontWeight: 800, cursor: 'pointer', fontFamily: "'Outfit', sans-serif", fontSize: 13, transition: 'all 0.2s' }}>LINEUP DETAILS</button>
+                                <button onClick={() => setActiveLinkedTab('events')} style={{ background: activeLinkedTab === 'events' ? '#8b5cf6' : '#f8f8f8', color: activeLinkedTab === 'events' ? '#fff' : '#888', border: 'none', padding: '14px', borderRadius: '12px', fontWeight: 800, cursor: 'pointer', fontFamily: "'Outfit', sans-serif", fontSize: 13, transition: 'all 0.2s' }}>PLAYER EVENTS</button>
+                                <button onClick={() => setActiveLinkedTab('gks')} style={{ background: activeLinkedTab === 'gks' ? '#f59e0b' : '#f8f8f8', color: activeLinkedTab === 'gks' ? '#fff' : '#888', border: 'none', padding: '14px', borderRadius: '12px', fontWeight: 800, cursor: 'pointer', fontFamily: "'Outfit', sans-serif", fontSize: 13, transition: 'all 0.2s' }}>GK DETAILS</button>
+                                <button onClick={() => setActiveLinkedTab('pens')} style={{ background: activeLinkedTab === 'pens' ? '#ef4444' : '#f8f8f8', color: activeLinkedTab === 'pens' ? '#fff' : '#888', border: 'none', padding: '14px', borderRadius: '12px', fontWeight: 800, cursor: 'pointer', fontFamily: "'Outfit', sans-serif", fontSize: 13, transition: 'all 0.2s' }}>PENALTY MISSES</button>
+                            </div>
+
+                            {activeLinkedTab === 'lineup' && (
+                                <EditableTable
+                                    title="LINEUP DETAILS" color="#3b82f6"
+                                    rows={newLineupRows} setRows={handleNewLineupRows}
+                                    columns={lineupCols} matchId={newMatchData.MATCH_ID || '---'}
+                                    emptyRow={EMPTY_LINEUP} tableName="alahly_LINEUPDETAILS"
+                                    onSave={() => { }} onDelete={(row, ri, _, setter) => setter(prev => prev.filter((_, i) => i !== ri))} isSaving={false}
+                                    columnOptions={{
+                                        "PLAYER NAME": allPlayersList,
+                                        "PLAYER NAME OUT": newLineupRows.filter(r => String(r.STATU || '').trim() === 'اساسي' && String(r["PLAYER NAME"] || '').trim()).map(r => r["PLAYER NAME"]).sort((a, b) => a.localeCompare(b, 'ar'))
+                                    }}
+                                />
+                            )}
+                            {activeLinkedTab === 'events' && (
+                                <EditableTable
+                                    title="PLAYER EVENTS" color="#8b5cf6"
+                                    rows={newPlayerRows} setRows={setNewPlayerRows}
+                                    columns={playerCols} matchId={newMatchData.MATCH_ID || '---'}
+                                    emptyRow={EMPTY_PLAYER} tableName="alahly_PLAYERDETAILS"
+                                    onSave={() => { }} onDelete={(row, ri, _, setter) => setter(prev => prev.filter((_, i) => i !== ri))} isSaving={false}
+                                    autoFields={{ 'EVENT_ID': (mid, rows) => `${mid}-${rows.length + 1}` }}
+                                    columnOptions={{ "PLAYER NAME": allPlayersList }}
+                                />
+                            )}
+                            {activeLinkedTab === 'gks' && (
+                                <EditableTable
+                                    title="GK DETAILS" color="#f59e0b"
+                                    rows={newGkRows} setRows={setNewGkRows}
+                                    columns={gkCols} matchId={newMatchData.MATCH_ID || '---'}
+                                    emptyRow={EMPTY_GK} tableName="alahly_GKSDETAILS"
+                                    onSave={() => { }} onDelete={(row, ri, _, setter) => setter(prev => prev.filter((_, i) => i !== ri))} isSaving={false}
+                                    columnOptions={{ "PLAYER NAME": allPlayersList }}
+                                />
+                            )}
+                            {activeLinkedTab === 'pens' && (
+                                <EditableTable
+                                    title="PENALTY MISSES" color="#ef4444"
+                                    rows={newPenRows} setRows={setNewPenRows}
+                                    columns={penCols} matchId={newMatchData.MATCH_ID || '---'}
+                                    emptyRow={EMPTY_PEN} tableName="alahly_HOWPENMISSED"
+                                    onSave={() => { }} onDelete={(row, ri, _, setter) => setter(prev => prev.filter((_, i) => i !== ri))} isSaving={false}
+                                />
+                            )}
+                        </div>
+                    </>
+                )}
+
+                {/* ── Mode: Edit ── */}
+                {mode === 'edit' && matchData && (
+                    <>
+                        {/* Match Details Card */}
+                        <div style={{ background: '#fff', borderRadius: 20, border: '1px solid #f0f0f0', padding: '40px 48px', marginBottom: 24, boxShadow: '0 10px 40px rgba(0,0,0,0.05)' }}>
+                            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 30 }}>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                                    <div style={{ width: 4, height: 28, background: '#c9a84c', borderRadius: 4 }} />
+                                    <div>
+                                        <h2 style={{ margin: 0, fontFamily: "'Bebas Neue', sans-serif", fontSize: 24, letterSpacing: 3 }}>MATCH DETAILS</h2>
+                                        <div style={{ fontFamily: "'Space Mono', monospace", fontSize: 10, color: '#888', marginTop: 2 }}>ID: {matchData.MATCH_ID}</div>
+                                    </div>
+                                </div>
+                                <div style={{ display: 'flex', gap: 10 }}>
+                                    <button
+                                        onClick={() => { setMode('search'); setMatchData(null); }}
+                                        title="Back to search"
+                                        style={{ background: '#f5f5f5', color: '#333', border: 'none', borderRadius: 12, width: 42, height: 42, cursor: 'pointer', fontSize: 18, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                                        ←
+                                    </button>
+                                    <button
+                                        onClick={handleSaveMatch}
+                                        disabled={isSaving}
+                                        title="Save match"
+                                        style={{
+                                            background: '#c9a84c', color: '#0a0a0a', border: 'none', borderRadius: 12,
+                                            width: 42, height: 42, cursor: isSaving ? 'not-allowed' : 'pointer',
+                                            fontSize: 18, display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                            boxShadow: '0 4px 16px rgba(201,168,76,0.25)', transition: 'all 0.2s',
+                                            opacity: isSaving ? 0.6 : 1
+                                        }}>
+                                        {isSaving ? '⏳' : '💾'}
+                                    </button>
+                                </div>
+                            </div>
+
+                            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))', gap: 14 }}>
+                                {matchInfoFields.map(field => (
+                                    <div key={field}>
+                                        <div style={{ fontSize: 10, fontWeight: 800, letterSpacing: 1.5, color: '#999', marginBottom: 5, textTransform: 'uppercase' }}>{field}</div>
                                         <input
                                             type={field === 'DATE' ? 'date' : 'text'}
-                                            value={newMatchData[field] ?? ''}
+                                            value={matchData[field] ?? ''}
                                             disabled={field === 'MATCH_ID'}
-                                            onChange={e => {
-                                                if (field === 'MATCH_ID') return;
-                                                setNewMatchData(prev => ({ ...prev, [field]: e.target.value }));
-                                            }}
+                                            onChange={e => setMatchData(prev => ({ ...prev, [field]: e.target.value }))}
                                             style={{
                                                 width: '100%', boxSizing: 'border-box',
-                                                border: field === 'MATCH_ID' ? '2px solid #22c55e' : '1.5px solid #e8e8e8',
-                                                borderRadius: 10, padding: '10px 14px', fontSize: 13, fontFamily: "'Outfit', sans-serif",
-                                                fontWeight: 600, outline: 'none', color: '#0a0a0a', transition: 'border-color 0.2s',
-                                                background: field === 'MATCH_ID' ? 'rgba(34,197,94,0.05)' : '#fff',
-                                                cursor: field === 'MATCH_ID' ? 'not-allowed' : 'text'
+                                                border: field === 'MATCH_ID' ? '1.5px solid #f0f0f0' : '1.5px solid #e8e8e8',
+                                                borderRadius: 10, padding: '10px 14px', fontSize: 13,
+                                                fontFamily: "'Outfit', sans-serif", fontWeight: 600, outline: 'none',
+                                                color: '#0a0a0a', background: field === 'MATCH_ID' ? '#f9f9f9' : '#fff',
+                                                transition: 'border-color 0.2s'
                                             }}
                                             onFocus={e => { if (field !== 'MATCH_ID') e.target.style.borderColor = '#c9a84c'; }}
                                             onBlur={e => { if (field !== 'MATCH_ID') e.target.style.borderColor = '#e8e8e8'; }}
                                         />
-                                    )}
-                                </div>
-                            ))}
-                        </div>
-                        <div style={{ display: 'flex', justifyContent: 'center' }}>
-                            <button
-                                onClick={handleCreateMatch}
-                                disabled={isSaving}
-                                style={{
-                                    background: '#22c55e', color: '#fff', border: 'none', borderRadius: 14,
-                                    padding: '14px 36px', cursor: isSaving ? 'not-allowed' : 'pointer',
-                                    fontWeight: 800, fontSize: 15, fontFamily: "'Outfit', sans-serif",
-                                    boxShadow: '0 8px 24px rgba(34,197,94,0.25)', transition: 'all 0.2s'
-                                }}>
-                                {isSaving ? 'Creating...' : '✓ CREATE MATCH'}
-                            </button>
-                        </div>
-                    </div>
-
-                    {/* Linked tables - staged before create */}
-                    <div style={{ background: '#fff', borderRadius: 20, border: '1px solid #f0f0f0', padding: '40px 48px', boxShadow: '0 10px 40px rgba(0,0,0,0.05)' }}>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 30 }}>
-                            <div style={{ width: 4, height: 28, background: '#3b82f6', borderRadius: 4 }} />
-                            <h2 style={{ margin: 0, fontFamily: "'Bebas Neue', sans-serif", fontSize: 24, letterSpacing: 3 }}>LINKED TABLE DATA</h2>
-                        </div>
-
-                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 10, marginBottom: 30 }}>
-                            <button onClick={() => setActiveLinkedTab('lineup')} style={{ background: activeLinkedTab === 'lineup' ? '#3b82f6' : '#f8f8f8', color: activeLinkedTab === 'lineup' ? '#fff' : '#888', border: 'none', padding: '14px', borderRadius: '12px', fontWeight: 800, cursor: 'pointer', fontFamily: "'Outfit', sans-serif", fontSize: 13, transition: 'all 0.2s' }}>LINEUP DETAILS</button>
-                            <button onClick={() => setActiveLinkedTab('events')} style={{ background: activeLinkedTab === 'events' ? '#8b5cf6' : '#f8f8f8', color: activeLinkedTab === 'events' ? '#fff' : '#888', border: 'none', padding: '14px', borderRadius: '12px', fontWeight: 800, cursor: 'pointer', fontFamily: "'Outfit', sans-serif", fontSize: 13, transition: 'all 0.2s' }}>PLAYER EVENTS</button>
-                            <button onClick={() => setActiveLinkedTab('gks')} style={{ background: activeLinkedTab === 'gks' ? '#f59e0b' : '#f8f8f8', color: activeLinkedTab === 'gks' ? '#fff' : '#888', border: 'none', padding: '14px', borderRadius: '12px', fontWeight: 800, cursor: 'pointer', fontFamily: "'Outfit', sans-serif", fontSize: 13, transition: 'all 0.2s' }}>GK DETAILS</button>
-                            <button onClick={() => setActiveLinkedTab('pens')} style={{ background: activeLinkedTab === 'pens' ? '#ef4444' : '#f8f8f8', color: activeLinkedTab === 'pens' ? '#fff' : '#888', border: 'none', padding: '14px', borderRadius: '12px', fontWeight: 800, cursor: 'pointer', fontFamily: "'Outfit', sans-serif", fontSize: 13, transition: 'all 0.2s' }}>PENALTY MISSES</button>
-                        </div>
-
-                        {activeLinkedTab === 'lineup' && (
-                            <EditableTable
-                                title="LINEUP DETAILS" color="#3b82f6"
-                                rows={newLineupRows} setRows={handleNewLineupRows}
-                                columns={lineupCols} matchId={newMatchData.MATCH_ID || '---'}
-                                emptyRow={EMPTY_LINEUP} tableName="alahly_LINEUPDETAILS"
-                                onSave={() => { }} onDelete={(row, ri, _, setter) => setter(prev => prev.filter((_, i) => i !== ri))} isSaving={false}
-                                columnOptions={{
-                                    "PLAYER NAME": allPlayersList,
-                                    "PLAYER NAME OUT": newLineupRows.filter(r => String(r.STATU || '').trim() === 'اساسي' && String(r["PLAYER NAME"] || '').trim()).map(r => r["PLAYER NAME"]).sort((a, b) => a.localeCompare(b, 'ar'))
-                                }}
-                            />
-                        )}
-                        {activeLinkedTab === 'events' && (
-                            <EditableTable
-                                title="PLAYER EVENTS" color="#8b5cf6"
-                                rows={newPlayerRows} setRows={setNewPlayerRows}
-                                columns={playerCols} matchId={newMatchData.MATCH_ID || '---'}
-                                emptyRow={EMPTY_PLAYER} tableName="alahly_PLAYERDETAILS"
-                                onSave={() => { }} onDelete={(row, ri, _, setter) => setter(prev => prev.filter((_, i) => i !== ri))} isSaving={false}
-                                autoFields={{ 'EVENT_ID': (mid, rows) => `${mid}-${rows.length + 1}` }}
-                                columnOptions={{ "PLAYER NAME": allPlayersList }}
-                            />
-                        )}
-                        {activeLinkedTab === 'gks' && (
-                            <EditableTable
-                                title="GK DETAILS" color="#f59e0b"
-                                rows={newGkRows} setRows={setNewGkRows}
-                                columns={gkCols} matchId={newMatchData.MATCH_ID || '---'}
-                                emptyRow={EMPTY_GK} tableName="alahly_GKSDETAILS"
-                                onSave={() => { }} onDelete={(row, ri, _, setter) => setter(prev => prev.filter((_, i) => i !== ri))} isSaving={false}
-                                columnOptions={{ "PLAYER NAME": allPlayersList }}
-                            />
-                        )}
-                        {activeLinkedTab === 'pens' && (
-                            <EditableTable
-                                title="PENALTY MISSES" color="#ef4444"
-                                rows={newPenRows} setRows={setNewPenRows}
-                                columns={penCols} matchId={newMatchData.MATCH_ID || '---'}
-                                emptyRow={EMPTY_PEN} tableName="alahly_HOWPENMISSED"
-                                onSave={() => { }} onDelete={(row, ri, _, setter) => setter(prev => prev.filter((_, i) => i !== ri))} isSaving={false}
-                            />
-                        )}
-                    </div>
-                </>
-            )}
-
-            {/* ── Mode: Edit ── */}
-            {mode === 'edit' && matchData && (
-                <>
-                    {/* Match Details Card */}
-                    <div style={{ background: '#fff', borderRadius: 20, border: '1px solid #f0f0f0', padding: '40px 48px', marginBottom: 24, boxShadow: '0 10px 40px rgba(0,0,0,0.05)' }}>
-                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 30 }}>
-                            <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-                                <div style={{ width: 4, height: 28, background: '#c9a84c', borderRadius: 4 }} />
-                                <div>
-                                    <h2 style={{ margin: 0, fontFamily: "'Bebas Neue', sans-serif", fontSize: 24, letterSpacing: 3 }}>MATCH DETAILS</h2>
-                                    <div style={{ fontFamily: "'Space Mono', monospace", fontSize: 10, color: '#888', marginTop: 2 }}>ID: {matchData.MATCH_ID}</div>
-                                </div>
-                            </div>
-                            <div style={{ display: 'flex', gap: 10 }}>
-                                <button
-                                    onClick={() => { setMode('search'); setMatchData(null); }}
-                                    title="Back to search"
-                                    style={{ background: '#f5f5f5', color: '#333', border: 'none', borderRadius: 12, width: 42, height: 42, cursor: 'pointer', fontSize: 18, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                                    ←
-                                </button>
-                                <button
-                                    onClick={handleSaveMatch}
-                                    disabled={isSaving}
-                                    title="Save match"
-                                    style={{
-                                        background: '#c9a84c', color: '#0a0a0a', border: 'none', borderRadius: 12,
-                                        width: 42, height: 42, cursor: isSaving ? 'not-allowed' : 'pointer',
-                                        fontSize: 18, display: 'flex', alignItems: 'center', justifyContent: 'center',
-                                        boxShadow: '0 4px 16px rgba(201,168,76,0.25)', transition: 'all 0.2s',
-                                        opacity: isSaving ? 0.6 : 1
-                                    }}>
-                                    {isSaving ? '⏳' : '💾'}
-                                </button>
+                                    </div>
+                                ))}
                             </div>
                         </div>
 
-                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))', gap: 14 }}>
-                            {matchInfoFields.map(field => (
-                                <div key={field}>
-                                    <div style={{ fontSize: 10, fontWeight: 800, letterSpacing: 1.5, color: '#999', marginBottom: 5, textTransform: 'uppercase' }}>{field}</div>
-                                    <input
-                                        type={field === 'DATE' ? 'date' : 'text'}
-                                        value={matchData[field] ?? ''}
-                                        disabled={field === 'MATCH_ID'}
-                                        onChange={e => setMatchData(prev => ({ ...prev, [field]: e.target.value }))}
-                                        style={{
-                                            width: '100%', boxSizing: 'border-box',
-                                            border: field === 'MATCH_ID' ? '1.5px solid #f0f0f0' : '1.5px solid #e8e8e8',
-                                            borderRadius: 10, padding: '10px 14px', fontSize: 13,
-                                            fontFamily: "'Outfit', sans-serif", fontWeight: 600, outline: 'none',
-                                            color: '#0a0a0a', background: field === 'MATCH_ID' ? '#f9f9f9' : '#fff',
-                                            transition: 'border-color 0.2s'
-                                        }}
-                                        onFocus={e => { if (field !== 'MATCH_ID') e.target.style.borderColor = '#c9a84c'; }}
-                                        onBlur={e => { if (field !== 'MATCH_ID') e.target.style.borderColor = '#e8e8e8'; }}
-                                    />
-                                </div>
-                            ))}
+                        {/* Linked Tables */}
+                        <div style={{ background: '#fff', borderRadius: 20, border: '1px solid #f0f0f0', padding: '40px 48px', boxShadow: '0 10px 40px rgba(0,0,0,0.05)' }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 30 }}>
+                                <div style={{ width: 4, height: 28, background: '#3b82f6', borderRadius: 4 }} />
+                                <h2 style={{ margin: 0, fontFamily: "'Bebas Neue', sans-serif", fontSize: 24, letterSpacing: 3 }}>LINKED TABLE DATA</h2>
+                            </div>
+
+                            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 10, marginBottom: 30 }}>
+                                <button onClick={() => setActiveLinkedTab('lineup')} style={{ background: activeLinkedTab === 'lineup' ? '#3b82f6' : '#f8f8f8', color: activeLinkedTab === 'lineup' ? '#fff' : '#888', border: 'none', padding: '14px', borderRadius: '12px', fontWeight: 800, cursor: 'pointer', fontFamily: "'Outfit', sans-serif", fontSize: 13, transition: 'all 0.2s' }}>LINEUP DETAILS</button>
+                                <button onClick={() => setActiveLinkedTab('events')} style={{ background: activeLinkedTab === 'events' ? '#8b5cf6' : '#f8f8f8', color: activeLinkedTab === 'events' ? '#fff' : '#888', border: 'none', padding: '14px', borderRadius: '12px', fontWeight: 800, cursor: 'pointer', fontFamily: "'Outfit', sans-serif", fontSize: 13, transition: 'all 0.2s' }}>PLAYER EVENTS</button>
+                                <button onClick={() => setActiveLinkedTab('gks')} style={{ background: activeLinkedTab === 'gks' ? '#f59e0b' : '#f8f8f8', color: activeLinkedTab === 'gks' ? '#fff' : '#888', border: 'none', padding: '14px', borderRadius: '12px', fontWeight: 800, cursor: 'pointer', fontFamily: "'Outfit', sans-serif", fontSize: 13, transition: 'all 0.2s' }}>GK DETAILS</button>
+                                <button onClick={() => setActiveLinkedTab('pens')} style={{ background: activeLinkedTab === 'pens' ? '#ef4444' : '#f8f8f8', color: activeLinkedTab === 'pens' ? '#fff' : '#888', border: 'none', padding: '14px', borderRadius: '12px', fontWeight: 800, cursor: 'pointer', fontFamily: "'Outfit', sans-serif", fontSize: 13, transition: 'all 0.2s' }}>PENALTY MISSES</button>
+                            </div>
+
+                            {activeLinkedTab === 'lineup' && (
+                                <EditableTable
+                                    title="LINEUP DETAILS" color="#3b82f6"
+                                    rows={lineupRows} setRows={handleEditLineupRows}
+                                    columns={lineupCols} matchId={matchData.MATCH_ID}
+                                    emptyRow={EMPTY_LINEUP} tableName="alahly_LINEUPDETAILS"
+                                    onSave={handleSaveRow} onDelete={handleDeleteRow} isSaving={isSaving}
+                                    columnOptions={{
+                                        "PLAYER NAME": allPlayersList,
+                                        "PLAYER NAME OUT": lineupRows.filter(r => String(r.STATU || '').trim() === 'اساسي' && String(r["PLAYER NAME"] || '').trim()).map(r => r["PLAYER NAME"]).sort((a, b) => a.localeCompare(b, 'ar'))
+                                    }}
+                                />
+                            )}
+                            {activeLinkedTab === 'events' && (
+                                <EditableTable
+                                    title="PLAYER EVENTS" color="#8b5cf6"
+                                    rows={playerRows} setRows={setPlayerRows}
+                                    columns={playerCols} matchId={matchData.MATCH_ID}
+                                    emptyRow={EMPTY_PLAYER} tableName="alahly_PLAYERDETAILS"
+                                    onSave={handleSaveRow} onDelete={handleDeleteRow} isSaving={isSaving}
+                                    autoFields={{ 'EVENT_ID': (mid, rows) => `${mid}-${rows.length + 1}` }}
+                                    columnOptions={{ "PLAYER NAME": allPlayersList }}
+                                />
+                            )}
+                            {activeLinkedTab === 'gks' && (
+                                <EditableTable
+                                    title="GK DETAILS" color="#f59e0b"
+                                    rows={gkRows} setRows={setGkRows}
+                                    columns={gkCols} matchId={matchData.MATCH_ID}
+                                    emptyRow={EMPTY_GK} tableName="alahly_GKSDETAILS"
+                                    onSave={handleSaveRow} onDelete={handleDeleteRow} isSaving={isSaving}
+                                    columnOptions={{ "PLAYER NAME": allPlayersList }}
+                                />
+                            )}
+                            {activeLinkedTab === 'pens' && (
+                                <EditableTable
+                                    title="PENALTY MISSES" color="#ef4444"
+                                    rows={penRows} setRows={setPenRows}
+                                    columns={penCols} matchId={matchData.MATCH_ID}
+                                    emptyRow={EMPTY_PEN} tableName="alahly_HOWPENMISSED"
+                                    onSave={handleSaveRow} onDelete={handleDeleteRow} isSaving={isSaving}
+                                />
+                            )}
                         </div>
-                    </div>
+                    </>
+                )}
 
-                    {/* Linked Tables */}
-                    <div style={{ background: '#fff', borderRadius: 20, border: '1px solid #f0f0f0', padding: '40px 48px', boxShadow: '0 10px 40px rgba(0,0,0,0.05)' }}>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 30 }}>
-                            <div style={{ width: 4, height: 28, background: '#3b82f6', borderRadius: 4 }} />
-                            <h2 style={{ margin: 0, fontFamily: "'Bebas Neue', sans-serif", fontSize: 24, letterSpacing: 3 }}>LINKED TABLE DATA</h2>
-                        </div>
-
-                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 10, marginBottom: 30 }}>
-                            <button onClick={() => setActiveLinkedTab('lineup')} style={{ background: activeLinkedTab === 'lineup' ? '#3b82f6' : '#f8f8f8', color: activeLinkedTab === 'lineup' ? '#fff' : '#888', border: 'none', padding: '14px', borderRadius: '12px', fontWeight: 800, cursor: 'pointer', fontFamily: "'Outfit', sans-serif", fontSize: 13, transition: 'all 0.2s' }}>LINEUP DETAILS</button>
-                            <button onClick={() => setActiveLinkedTab('events')} style={{ background: activeLinkedTab === 'events' ? '#8b5cf6' : '#f8f8f8', color: activeLinkedTab === 'events' ? '#fff' : '#888', border: 'none', padding: '14px', borderRadius: '12px', fontWeight: 800, cursor: 'pointer', fontFamily: "'Outfit', sans-serif", fontSize: 13, transition: 'all 0.2s' }}>PLAYER EVENTS</button>
-                            <button onClick={() => setActiveLinkedTab('gks')} style={{ background: activeLinkedTab === 'gks' ? '#f59e0b' : '#f8f8f8', color: activeLinkedTab === 'gks' ? '#fff' : '#888', border: 'none', padding: '14px', borderRadius: '12px', fontWeight: 800, cursor: 'pointer', fontFamily: "'Outfit', sans-serif", fontSize: 13, transition: 'all 0.2s' }}>GK DETAILS</button>
-                            <button onClick={() => setActiveLinkedTab('pens')} style={{ background: activeLinkedTab === 'pens' ? '#ef4444' : '#f8f8f8', color: activeLinkedTab === 'pens' ? '#fff' : '#888', border: 'none', padding: '14px', borderRadius: '12px', fontWeight: 800, cursor: 'pointer', fontFamily: "'Outfit', sans-serif", fontSize: 13, transition: 'all 0.2s' }}>PENALTY MISSES</button>
-                        </div>
-
-                        {activeLinkedTab === 'lineup' && (
-                            <EditableTable
-                                title="LINEUP DETAILS" color="#3b82f6"
-                                rows={lineupRows} setRows={handleEditLineupRows}
-                                columns={lineupCols} matchId={matchData.MATCH_ID}
-                                emptyRow={EMPTY_LINEUP} tableName="alahly_LINEUPDETAILS"
-                                onSave={handleSaveRow} onDelete={handleDeleteRow} isSaving={isSaving}
-                                columnOptions={{
-                                    "PLAYER NAME": allPlayersList,
-                                    "PLAYER NAME OUT": lineupRows.filter(r => String(r.STATU || '').trim() === 'اساسي' && String(r["PLAYER NAME"] || '').trim()).map(r => r["PLAYER NAME"]).sort((a, b) => a.localeCompare(b, 'ar'))
-                                }}
-                            />
-                        )}
-                        {activeLinkedTab === 'events' && (
-                            <EditableTable
-                                title="PLAYER EVENTS" color="#8b5cf6"
-                                rows={playerRows} setRows={setPlayerRows}
-                                columns={playerCols} matchId={matchData.MATCH_ID}
-                                emptyRow={EMPTY_PLAYER} tableName="alahly_PLAYERDETAILS"
-                                onSave={handleSaveRow} onDelete={handleDeleteRow} isSaving={isSaving}
-                                autoFields={{ 'EVENT_ID': (mid, rows) => `${mid}-${rows.length + 1}` }}
-                                columnOptions={{ "PLAYER NAME": allPlayersList }}
-                            />
-                        )}
-                        {activeLinkedTab === 'gks' && (
-                            <EditableTable
-                                title="GK DETAILS" color="#f59e0b"
-                                rows={gkRows} setRows={setGkRows}
-                                columns={gkCols} matchId={matchData.MATCH_ID}
-                                emptyRow={EMPTY_GK} tableName="alahly_GKSDETAILS"
-                                onSave={handleSaveRow} onDelete={handleDeleteRow} isSaving={isSaving}
-                                columnOptions={{ "PLAYER NAME": allPlayersList }}
-                            />
-                        )}
-                        {activeLinkedTab === 'pens' && (
-                            <EditableTable
-                                title="PENALTY MISSES" color="#ef4444"
-                                rows={penRows} setRows={setPenRows}
-                                columns={penCols} matchId={matchData.MATCH_ID}
-                                emptyRow={EMPTY_PEN} tableName="alahly_HOWPENMISSED"
-                                onSave={handleSaveRow} onDelete={handleDeleteRow} isSaving={isSaving}
-                            />
-                        )}
-                    </div>
-                </>
-            )}
-
-            <style jsx>{`
+                <style jsx>{`
                 @keyframes slideIn {
                     from { opacity: 0; transform: translateY(10px); }
                     to { opacity: 1; transform: translateY(0); }
@@ -991,6 +996,7 @@ export default function AlAhlyEditor() {
                     background: rgba(0,0,0,0.2);
                 }
             `}</style>
-        </div>
+            </div>
+        </AlAhlyAuth>
     );
 }

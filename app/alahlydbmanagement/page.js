@@ -5,6 +5,10 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { supabase } from "../lib/supabase";
 import { AlAhlyService } from "../alahly/alahly_db_service";
+import * as XLSX from "xlsx";
+import { Download } from "lucide-react";
+import AlAhlyAuth from "../alahly/alahly_db_auth";
+
 
 // Dynamic Table Loading logic added inside component
 
@@ -29,8 +33,40 @@ export default function DatabaseManagement() {
     // Pagination State
     const [currentPage, setCurrentPage] = useState(1);
     const pageSize = 100;
-
     const [syncing, setSyncing] = useState(false);
+
+
+    const handleDownloadExcel = () => {
+        if (!filteredData || filteredData.length === 0) {
+            alert("No data available to download.");
+            return;
+        }
+
+        try {
+            // Prepare data for export: remove any unnecessary fields if needed, 
+            // but usually we want all current columns
+            const exportData = filteredData.map(row => {
+                const newRow = {};
+                columns.forEach(col => {
+                    newRow[col] = row[col];
+                });
+                return newRow;
+            });
+
+            const worksheet = XLSX.utils.json_to_sheet(exportData);
+            const workbook = XLSX.utils.book_new();
+            XLSX.utils.book_append_sheet(workbook, worksheet, "Data Export");
+
+            const timestamp = new Date().toISOString().replace(/[:.]/g, '-').slice(0, 19);
+            const tableName = selectedTable.replace('alahly_', '').toUpperCase();
+            const fileName = `AL_AHLY_${tableName}_${timestamp}.xlsx`;
+
+            XLSX.writeFile(workbook, fileName);
+        } catch (error) {
+            console.error("Export Error:", error);
+            alert("An error occurred while generating the Excel file.");
+        }
+    };
 
     useEffect(() => {
         const loadTables = async () => {
@@ -299,240 +335,250 @@ export default function DatabaseManagement() {
     const paginatedData = filteredData.slice((currentPage - 1) * pageSize, currentPage * pageSize);
 
     return (
-        <div id="db-management-page">
-            <nav className="db-nav">
-                <div className="nav-title" onClick={() => router.push("/")} style={{ cursor: "pointer" }}>AL AHLY <span>DB MANAGEMENT</span></div>
-                <div className="table-selector">
-                    {availableTables.map(t => (
-                        <button
-                            key={t.name}
-                            className={`table-btn ${selectedTable === t.name ? 'active' : ''}`}
-                            onClick={() => setSelectedTable(t.name)}
-                        >
-                            {t.label}
-                        </button>
-                    ))}
-                </div>
-            </nav>
+        <AlAhlyAuth title="DB MANAGEMENT ACCESS" subtitle="PRIVATE DATABASE CONTROL">
+            <div id="db-management-page">
+                <nav className="db-nav">
+                    <div className="nav-title-group">
 
-            <main className="db-content">
-                <div className="data-toolbar">
-                    <div className="search-wrap">
-                        <input
-                            type="text"
-                            placeholder="SEARCH IN TABLE..."
-                            value={searchTerm}
-                            onChange={(e) => setSearchTerm(e.target.value)}
-                        />
+                        <button
+                            className="download-excel-btn"
+                            onClick={handleDownloadExcel}
+                            title="DOWNLOAD CURRENT VIEW AS EXCEL"
+                        >
+                            <Download size={16} strokeWidth={3} />
+                        </button>
                     </div>
-                    <div className="record-count">{filteredData.length} RECORDS FOUND (PAGE {currentPage} OF {totalPages})</div>
+                    <div className="table-selector">
+                        {availableTables.map(t => (
+                            <button
+                                key={t.name}
+                                className={`table-btn ${selectedTable === t.name ? 'active' : ''}`}
+                                onClick={() => setSelectedTable(t.name)}
+                            >
+                                {t.label}
+                            </button>
+                        ))}
+                    </div>
+                </nav>
 
-                    {selectedTable === "alahly_PLAYERDATABASE" && selectedRows.length > 1 && (
-                        <button
-                            onClick={handleMergeTrigger}
-                            disabled={isMerging}
-                            style={{
-                                background: '#ff3b30',
-                                color: '#fff',
-                                padding: '10px 20px',
-                                borderRadius: '4px',
-                                border: 'none',
-                                fontWeight: 'bold',
-                                cursor: 'pointer',
-                                fontSize: '11px',
-                                marginLeft: '20px'
-                            }}
-                        >
-                            {isMerging ? "MERGING..." : `MERGE ${selectedRows.length} LEGENDS`}
-                        </button>
-                    )}
-                </div>
+                <main className="db-content">
+                    <div className="data-toolbar">
+                        <div className="search-wrap">
+                            <input
+                                type="text"
+                                placeholder="SEARCH IN TABLE..."
+                                value={searchTerm}
+                                onChange={(e) => setSearchTerm(e.target.value)}
+                            />
+                        </div>
+                        <div className="record-count">{filteredData.length} RECORDS FOUND (PAGE {currentPage} OF {totalPages})</div>
 
-                {loading ? (
-                    <div className="db-loader">SYNCING REAL-TIME DATA...</div>
-                ) : (
-                    <>
-                        <div className="table-overflow">
-                            <table className="db-table">
-                                <thead>
-                                    <tr style={{ height: '54px' }}>
-                                        {selectedTable === "alahly_PLAYERDATABASE" && (
-                                            <th style={{ width: '80px', minWidth: '80px' }}>SELECT</th>
-                                        )}
-                                        <th style={{ width: '150px', minWidth: '150px' }}>ACTIONS</th>
-                                        {columns.map(col => {
-                                            const isNarrow = ['GF', 'GA', 'ET', 'W-D-L', 'SEASON - NUMBER', 'ROUND', 'H-A-N', 'PEN'].includes(col);
-                                            return (
-                                                <th
-                                                    key={col}
+                        {selectedTable === "alahly_PLAYERDATABASE" && selectedRows.length > 1 && (
+                            <button
+                                onClick={handleMergeTrigger}
+                                disabled={isMerging}
+                                style={{
+                                    background: '#ff3b30',
+                                    color: '#fff',
+                                    padding: '10px 20px',
+                                    borderRadius: '4px',
+                                    border: 'none',
+                                    fontWeight: 'bold',
+                                    cursor: 'pointer',
+                                    fontSize: '11px',
+                                    marginLeft: '20px'
+                                }}
+                            >
+                                {isMerging ? "MERGING..." : `MERGE ${selectedRows.length} LEGENDS`}
+                            </button>
+                        )}
+                    </div>
+
+                    {loading ? (
+                        <div className="db-loader">SYNCING REAL-TIME DATA...</div>
+                    ) : (
+                        <>
+                            <div className="table-overflow">
+                                <table className="db-table">
+                                    <thead>
+                                        <tr style={{ height: '54px' }}>
+                                            {selectedTable === "alahly_PLAYERDATABASE" && (
+                                                <th style={{ width: '80px', minWidth: '80px' }}>SELECT</th>
+                                            )}
+                                            <th style={{ width: '150px', minWidth: '150px' }}>ACTIONS</th>
+                                            {columns.map(col => {
+                                                const isNarrow = ['GF', 'GA', 'ET', 'W-D-L', 'SEASON - NUMBER', 'ROUND', 'H-A-N', 'PEN'].includes(col);
+                                                return (
+                                                    <th
+                                                        key={col}
+                                                        style={{
+                                                            width: isNarrow ? '100px' : '180px',
+                                                            minWidth: isNarrow ? '100px' : '180px'
+                                                        }}
+                                                    >
+                                                        {col}
+                                                    </th>
+                                                );
+                                            })}
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {paginatedData.length === 0 ? (
+                                            <tr>
+                                                <td
+                                                    colSpan={columns.length + (selectedTable === "alahly_PLAYERDATABASE" ? 2 : 1)}
                                                     style={{
-                                                        width: isNarrow ? '100px' : '180px',
-                                                        minWidth: isNarrow ? '100px' : '180px'
+                                                        padding: '120px 20px',
+                                                        color: '#c9a84c',
+                                                        fontSize: '28px',
+                                                        fontWeight: '700',
+                                                        background: '#fff',
+                                                        letterSpacing: '3px',
+                                                        fontFamily: "'Bebas Neue', sans-serif",
+                                                        opacity: 0.6
                                                     }}
                                                 >
-                                                    {col}
-                                                </th>
-                                            );
-                                        })}
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    {paginatedData.length === 0 ? (
-                                        <tr>
-                                            <td
-                                                colSpan={columns.length + (selectedTable === "alahly_PLAYERDATABASE" ? 2 : 1)}
-                                                style={{
-                                                    padding: '120px 20px',
-                                                    color: '#c9a84c',
-                                                    fontSize: '28px',
-                                                    fontWeight: '700',
-                                                    background: '#fff',
-                                                    letterSpacing: '3px',
-                                                    fontFamily: "'Bebas Neue', sans-serif",
-                                                    opacity: 0.6
-                                                }}
-                                            >
-                                                NO MATCHING RECORDS FOUND IN {selectedTable.replace('alahly_', '').toUpperCase()}
-                                            </td>
-                                        </tr>
-                                    ) : (
-                                        paginatedData.map((row, idx) => {
-                                            const rKey = row["PLAYER NAME"] + "|" + (row["TEAM"] || "");
-                                            const isSelected = selectedRows.some(sr => (sr["PLAYER NAME"] + "|" + (sr["TEAM"] || "")) === rKey);
+                                                    NO MATCHING RECORDS FOUND IN {selectedTable.replace('alahly_', '').toUpperCase()}
+                                                </td>
+                                            </tr>
+                                        ) : (
+                                            paginatedData.map((row, idx) => {
+                                                const rKey = row["PLAYER NAME"] + "|" + (row["TEAM"] || "");
+                                                const isSelected = selectedRows.some(sr => (sr["PLAYER NAME"] + "|" + (sr["TEAM"] || "")) === rKey);
 
-                                            return (
-                                                <tr key={idx} className={isSelected ? 'selected-row' : ''}>
-                                                    {selectedTable === "alahly_PLAYERDATABASE" && (
-                                                        <td style={{ textAlign: 'center' }}>
-                                                            <input
-                                                                type="checkbox"
-                                                                checked={isSelected}
-                                                                onChange={() => handleToggleSelect(row)}
-                                                                style={{ cursor: 'pointer', width: '18px', height: '18px' }}
-                                                            />
+                                                return (
+                                                    <tr key={idx} className={isSelected ? 'selected-row' : ''}>
+                                                        {selectedTable === "alahly_PLAYERDATABASE" && (
+                                                            <td style={{ textAlign: 'center' }}>
+                                                                <input
+                                                                    type="checkbox"
+                                                                    checked={isSelected}
+                                                                    onChange={() => handleToggleSelect(row)}
+                                                                    style={{ cursor: 'pointer', width: '18px', height: '18px' }}
+                                                                />
+                                                            </td>
+                                                        )}
+                                                        <td className="actions-cell">
+                                                            <div className="actions-flex">
+                                                                <button className="edit-row-btn" onClick={() => handleEditClick(row)}>Edit</button>
+                                                                <button className="delete-row-btn" onClick={() => handleDelete(row)}>Delete</button>
+                                                            </div>
                                                         </td>
-                                                    )}
-                                                    <td className="actions-cell">
-                                                        <div className="actions-flex">
-                                                            <button className="edit-row-btn" onClick={() => handleEditClick(row)}>Edit</button>
-                                                            <button className="delete-row-btn" onClick={() => handleDelete(row)}>Delete</button>
-                                                        </div>
-                                                    </td>
-                                                    {columns.map(col => (
-                                                        <td key={col} style={col === 'W-D-L' ? { minWidth: '120px', fontWeight: 'bold' } : {}}>
-                                                            {String(row[col])}
-                                                        </td>
-                                                    ))}
-                                                </tr>
-                                            );
-                                        })
-                                    )}
-                                </tbody>
-                            </table>
-                        </div>
-
-                        {totalPages > 1 && (
-                            <div className="pagination-controls">
-                                <button disabled={currentPage === 1} onClick={() => setCurrentPage(prev => prev - 1)}>PREVIOUS</button>
-                                <div className="page-indicator">PAGE {currentPage} OF {totalPages}</div>
-                                <button disabled={currentPage === totalPages} onClick={() => setCurrentPage(prev => prev + 1)}>NEXT</button>
+                                                        {columns.map(col => (
+                                                            <td key={col} style={col === 'W-D-L' ? { minWidth: '120px', fontWeight: 'bold' } : {}}>
+                                                                {String(row[col])}
+                                                            </td>
+                                                        ))}
+                                                    </tr>
+                                                );
+                                            })
+                                        )}
+                                    </tbody>
+                                </table>
                             </div>
-                        )}
-                    </>
-                )}
-            </main>
 
-            {editingRow && (
-                <div className="edit-modal-wrap">
-                    <div className="edit-modal">
-                        <h3>Edit Record - {selectedTable}</h3>
-                        <div className="modal-form">
-                            {columns.map(col => (
-                                <div key={col} className="form-group">
-                                    <label>{col}</label>
-                                    <input
-                                        type="text"
-                                        value={editForm[col] || ''}
-                                        onChange={(e) => setEditForm({ ...editForm, [col]: e.target.value })}
-                                    />
-                                </div>
-                            ))}
-                        </div>
-                        <div className="modal-actions">
-                            <button className="cancel-btn" onClick={() => setEditingRow(null)}>CANCEL</button>
-                            <button className="save-btn" onClick={handleSaveEdit}>SAVE CHANGES</button>
-                        </div>
-                    </div>
-                </div>
-            )}
-
-            {showMergeModal && (
-                <div className="edit-modal-wrap">
-                    <div className="edit-modal merge-modal">
-                        <h3>MERGE LEGENDS DATA</h3>
-                        <div className="modal-form">
-                            {!isConfirmingMerge ? (
-                                <>
-                                    <p style={{ fontSize: '12px', color: '#666', marginBottom: '20px' }}>
-                                        You are merging references for {selectedRows.length} records. All historical events, lineups, and stats will be linked to the chosen name.
-                                    </p>
-
-                                    <div className="form-group">
-                                        <label>ENTER FINAL NAME TO KEEP (TARGET)</label>
-                                        <input
-                                            type="text"
-                                            value={mergeTargetName}
-                                            onChange={(e) => setMergeTargetName(e.target.value)}
-                                            placeholder="Type the permanent name..."
-                                            style={{
-                                                width: '100%',
-                                                padding: '15px',
-                                                background: '#fff',
-                                                border: '2px solid #eee',
-                                                borderRadius: '8px',
-                                                fontSize: '16px',
-                                                color: '#000',
-                                                fontWeight: 'bold',
-                                                fontFamily: 'inherit',
-                                                boxSizing: 'border-box',
-                                                outline: 'none',
-                                                boxShadow: 'inset 0 2px 4px rgba(0,0,0,0.02)'
-                                            }}
-                                        />
-                                    </div>
-
-                                    <div className="selected-preview-list">
-                                        <label style={{ fontSize: '10px', color: '#888', letterSpacing: '1px', textTransform: 'uppercase' }}>Names to be replaced/merged:</label>
-                                        <div style={{ marginTop: '10px', display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
-                                            {[...new Set(selectedRows.map(r => r["PLAYER NAME"]))].filter(n => n !== mergeTargetName).map(n => (
-                                                <span key={n} style={{ background: '#fff1f0', color: '#cf1322', padding: '4px 10px', borderRadius: '4px', fontSize: '11px', border: '1px solid #ffa39e' }}>{n}</span>
-                                            ))}
-                                        </div>
-                                    </div>
-                                </>
-                            ) : (
-                                <div className="merge-warning-box" style={{ padding: '30px', background: '#fff1f0', borderRadius: '12px', border: '2px dashed #cf1322', textAlign: 'center' }}>
-                                    <div style={{ fontSize: '32px', marginBottom: '15px' }}>⚠️</div>
-                                    <h4 style={{ color: '#cf1322', margin: '0 0 10px 0', fontSize: '18px', fontWeight: '900' }}>PERMANENT DATA CHANGE</h4>
-                                    <p style={{ fontSize: '14px', lineHeight: '1.6', color: '#444' }}>
-                                        Are you absolutely sure which name is correct? <br />
-                                        Every instance of <strong style={{ color: '#000' }}>[{[...new Set(selectedRows.map(r => r["PLAYER NAME"]))].join(', ')}]</strong> will be renamed to <strong style={{ color: '#000', fontSize: '18px' }}>"{mergeTargetName}"</strong> across ALL tables in the database.
-                                    </p>
-                                    <p style={{ fontSize: '11px', color: '#888', marginTop: '15px' }}>This action cannot be undone.</p>
+                            {totalPages > 1 && (
+                                <div className="pagination-controls">
+                                    <button disabled={currentPage === 1} onClick={() => setCurrentPage(prev => prev - 1)}>PREVIOUS</button>
+                                    <div className="page-indicator">PAGE {currentPage} OF {totalPages}</div>
+                                    <button disabled={currentPage === totalPages} onClick={() => setCurrentPage(prev => prev + 1)}>NEXT</button>
                                 </div>
                             )}
-                        </div>
-                        <div className="modal-actions">
-                            <button className="cancel-btn" onClick={() => { if (isConfirmingMerge) setIsConfirmingMerge(false); else setShowMergeModal(false); }}>{isConfirmingMerge ? "GO BACK" : "ABORT"}</button>
-                            <button className="save-btn merge-confirm-btn" onClick={handleConfirmMerge}>
-                                {isConfirmingMerge ? "YES, EXECUTE PERMANENT MERGE" : "PROCEED TO CONFIRM"}
-                            </button>
+                        </>
+                    )}
+                </main>
+
+                {editingRow && (
+                    <div className="edit-modal-wrap">
+                        <div className="edit-modal">
+                            <h3>Edit Record - {selectedTable}</h3>
+                            <div className="modal-form">
+                                {columns.map(col => (
+                                    <div key={col} className="form-group">
+                                        <label>{col}</label>
+                                        <input
+                                            type="text"
+                                            value={editForm[col] || ''}
+                                            onChange={(e) => setEditForm({ ...editForm, [col]: e.target.value })}
+                                        />
+                                    </div>
+                                ))}
+                            </div>
+                            <div className="modal-actions">
+                                <button className="cancel-btn" onClick={() => setEditingRow(null)}>CANCEL</button>
+                                <button className="save-btn" onClick={handleSaveEdit}>SAVE CHANGES</button>
+                            </div>
                         </div>
                     </div>
-                </div>
-            )}
+                )}
 
-            <style jsx>{`
+                {showMergeModal && (
+                    <div className="edit-modal-wrap">
+                        <div className="edit-modal merge-modal">
+                            <h3>MERGE LEGENDS DATA</h3>
+                            <div className="modal-form">
+                                {!isConfirmingMerge ? (
+                                    <>
+                                        <p style={{ fontSize: '12px', color: '#666', marginBottom: '20px' }}>
+                                            You are merging references for {selectedRows.length} records. All historical events, lineups, and stats will be linked to the chosen name.
+                                        </p>
+
+                                        <div className="form-group">
+                                            <label>ENTER FINAL NAME TO KEEP (TARGET)</label>
+                                            <input
+                                                type="text"
+                                                value={mergeTargetName}
+                                                onChange={(e) => setMergeTargetName(e.target.value)}
+                                                placeholder="Type the permanent name..."
+                                                style={{
+                                                    width: '100%',
+                                                    padding: '15px',
+                                                    background: '#fff',
+                                                    border: '2px solid #eee',
+                                                    borderRadius: '8px',
+                                                    fontSize: '16px',
+                                                    color: '#000',
+                                                    fontWeight: 'bold',
+                                                    fontFamily: 'inherit',
+                                                    boxSizing: 'border-box',
+                                                    outline: 'none',
+                                                    boxShadow: 'inset 0 2px 4px rgba(0,0,0,0.02)'
+                                                }}
+                                            />
+                                        </div>
+
+                                        <div className="selected-preview-list">
+                                            <label style={{ fontSize: '10px', color: '#888', letterSpacing: '1px', textTransform: 'uppercase' }}>Names to be replaced/merged:</label>
+                                            <div style={{ marginTop: '10px', display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
+                                                {[...new Set(selectedRows.map(r => r["PLAYER NAME"]))].filter(n => n !== mergeTargetName).map(n => (
+                                                    <span key={n} style={{ background: '#fff1f0', color: '#cf1322', padding: '4px 10px', borderRadius: '4px', fontSize: '11px', border: '1px solid #ffa39e' }}>{n}</span>
+                                                ))}
+                                            </div>
+                                        </div>
+                                    </>
+                                ) : (
+                                    <div className="merge-warning-box" style={{ padding: '30px', background: '#fff1f0', borderRadius: '12px', border: '2px dashed #cf1322', textAlign: 'center' }}>
+                                        <div style={{ fontSize: '32px', marginBottom: '15px' }}>⚠️</div>
+                                        <h4 style={{ color: '#cf1322', margin: '0 0 10px 0', fontSize: '18px', fontWeight: '900' }}>PERMANENT DATA CHANGE</h4>
+                                        <p style={{ fontSize: '14px', lineHeight: '1.6', color: '#444' }}>
+                                            Are you absolutely sure which name is correct? <br />
+                                            Every instance of <strong style={{ color: '#000' }}>[{[...new Set(selectedRows.map(r => r["PLAYER NAME"]))].join(', ')}]</strong> will be renamed to <strong style={{ color: '#000', fontSize: '18px' }}>"{mergeTargetName}"</strong> across ALL tables in the database.
+                                        </p>
+                                        <p style={{ fontSize: '11px', color: '#888', marginTop: '15px' }}>This action cannot be undone.</p>
+                                    </div>
+                                )}
+                            </div>
+                            <div className="modal-actions">
+                                <button className="cancel-btn" onClick={() => { if (isConfirmingMerge) setIsConfirmingMerge(false); else setShowMergeModal(false); }}>{isConfirmingMerge ? "GO BACK" : "ABORT"}</button>
+                                <button className="save-btn merge-confirm-btn" onClick={handleConfirmMerge}>
+                                    {isConfirmingMerge ? "YES, EXECUTE PERMANENT MERGE" : "PROCEED TO CONFIRM"}
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                )}
+
+                <style jsx>{`
                 #db-management-page {
                     min-height: 100vh;
                     background: #f8f9fa;
@@ -555,9 +601,15 @@ export default function DatabaseManagement() {
                     border-bottom: 2px solid #c9a84c;
                 }
 
-                .nav-title {
+                .nav-title-group {
                     position: absolute;
                     left: 40px;
+                    display: flex;
+                    align-items: center;
+                    gap: 15px;
+                }
+
+                .nav-title {
                     font-family: 'Bebas Neue', sans-serif;
                     font-size: 22px;
                     letter-spacing: 2px;
@@ -567,6 +619,33 @@ export default function DatabaseManagement() {
                 }
 
                 .nav-title span { color: #c9a84c; }
+
+                .download-excel-btn {
+                    background: rgba(201, 168, 76, 0.1);
+                    color: #c9a84c;
+                    border: 1px solid rgba(201, 168, 76, 0.25);
+                    width: 36px;
+                    height: 36px;
+                    border-radius: 10px;
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    cursor: pointer;
+                    transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+                    backdrop-filter: blur(5px);
+                }
+
+                .download-excel-btn:hover {
+                    background: #c9a84c;
+                    color: #000;
+                    transform: scale(1.1) rotate(5deg);
+                    box-shadow: 0 0 25px rgba(201, 168, 76, 0.35);
+                    border-color: #c9a84c;
+                }
+
+                .download-excel-btn:active {
+                    transform: scale(0.95);
+                }
 
                 .table-selector {
                     display: flex;
@@ -940,6 +1019,7 @@ export default function DatabaseManagement() {
                     gap: 8px;
                 }
             `}</style>
-        </div>
+            </div>
+        </AlAhlyAuth>
     );
 }

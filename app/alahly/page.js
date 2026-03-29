@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useMemo } from "react";
-import Link from "next/link";
+
 import { AlAhlyService } from "./alahly_db_service";
 import AlAhlyDashboard from "./alahly_db_dashboard";
 import AlAhlyMatches from "./alahly_db_matches";
@@ -184,9 +184,7 @@ export default function AlAhlyDatabase() {
                 boxSizing: 'border-box',
                 borderBottom: '1px solid rgba(255,255,255,0.08)'
             }}>
-                <Link href="/" className="nav-brand" style={{ position: 'absolute', left: '40px', display: 'flex', alignItems: 'center', textDecoration: 'none' }}>
-                    <div className="nav-brand-name">AL AHLY <span>DATABASE</span></div>
-                </Link>
+
 
 
                 <div
