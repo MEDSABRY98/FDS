@@ -631,10 +631,12 @@ export default function AlAhlyEditor() {
             // 2. Helper to save pending changes in linked tables
             const saveLinkedTable = async (tableName, rows, setter) => {
                 const pending = rows.filter(r => r._isNew || r._isDirty);
-                if (pending.length === 0) return;
+                // Filter out rows that have no player name (prevent ghost rows)
+                const filled = pending.filter(r => r["PLAYER NAME"] && String(r["PLAYER NAME"]).trim() !== "");
+                if (filled.length === 0) return;
 
                 // Prepare clean data
-                const clean = pending.map(({ _isNew, _isDirty, _key, ...r }) => {
+                const clean = filled.map(({ _isNew, _isDirty, _key, ...r }) => {
                     const row = { ...r, MATCH_ID: matchData.MATCH_ID };
                     // If it's a new row, ensure we don't send an empty/null ROW_ID
                     if (_isNew && (!row.ROW_ID || row.ROW_ID === "")) {
@@ -645,7 +647,10 @@ export default function AlAhlyEditor() {
 
                 // Batch upsert to Supabase
                 const { data, error } = await supabase.from(tableName).upsert(clean).select();
-                if (error) throw error;
+                if (error) {
+                    console.error(`Error upserting ${tableName}:`, error);
+                    throw new Error(`${tableName}: ${error.message}`);
+                }
 
                 // Reflect saved state back to the UI
                 if (data && data.length > 0) {
@@ -653,7 +658,10 @@ export default function AlAhlyEditor() {
                         // Match saved row back to local row (by ROW_ID if update, or by values if new)
                         const saved = data.find(s =>
                             (existingRow.ROW_ID && s.ROW_ID === existingRow.ROW_ID) ||
-                            (existingRow._isNew && !existingRow.ROW_ID && s["PLAYER NAME"] === existingRow["PLAYER NAME"] && s.TEAM === existingRow.TEAM)
+                            (existingRow._isNew && !existingRow.ROW_ID &&
+                                s["PLAYER NAME"] === existingRow["PLAYER NAME"] &&
+                                s.TEAM === existingRow.TEAM &&
+                                s.STATU === existingRow.STATU)
                         );
                         return saved ? { ...existingRow, ...saved, _isNew: false, _isDirty: false } : existingRow;
                     }));
@@ -685,26 +693,56 @@ export default function AlAhlyEditor() {
         setIsSaving(true);
         const mid = newMatchData.MATCH_ID;
         try {
-            const { error } = await supabase.from('alahly_MATCHDETAILS').insert(newMatchData);
-            if (error) throw error;
+            // 1. Insert main match record
+            const { error: matchErr } = await supabase.from('alahly_MATCHDETAILS').insert(newMatchData);
+            if (matchErr) {
+                console.error("Match Insert Error:", matchErr);
+                throw new Error(`Match Details: ${matchErr.message}`);
+            }
 
-            // Insert staged linked rows
-            const clean = (rows) => rows.map(({ _isNew, _isDirty, _key, ...r }) => ({ ...r, MATCH_ID: mid }));
-            const inserts = [
-                newLineupRows.length > 0 && supabase.from('alahly_LINEUPDETAILS').insert(clean(newLineupRows)),
-                newPlayerRows.length > 0 && supabase.from('alahly_PLAYERDETAILS').insert(clean(newPlayerRows)),
-                newGkRows.length > 0 && supabase.from('alahly_GKSDETAILS').insert(clean(newGkRows)),
-                newPenRows.length > 0 && supabase.from('alahly_HOWPENMISSED').insert(clean(newPenRows)),
-            ].filter(Boolean);
-            await Promise.all(inserts);
+            // 2. Helper to insert staged linked rows with error checking
+            const saveStagedTable = async (tableName, rows) => {
+                // Filter out rows that have no player name (prevent ghost rows)
+                const filled = rows.filter(r => r["PLAYER NAME"] && String(r["PLAYER NAME"]).trim() !== "");
+                if (filled.length === 0) return;
 
-            addToast('Match + linked data created ✓');
+                const clean = filled.map(({ _isNew, _isDirty, _key, ...r }) => {
+                    const row = { ...r, MATCH_ID: mid };
+                    // Safety check for empty ROW_ID
+                    if (row.ROW_ID === "" || row.ROW_ID === null) delete row.ROW_ID;
+                    return row;
+                });
+
+                const { error: insErr } = await supabase.from(tableName).insert(clean);
+                if (insErr) {
+                    console.error(`Error saving ${tableName}:`, insErr);
+                    throw new Error(`${tableName}: ${insErr.message}`);
+                }
+            };
+
+            // 3. Batch insert all linked data
+            await Promise.all([
+                saveStagedTable('alahly_LINEUPDETAILS', newLineupRows),
+                saveStagedTable('alahly_PLAYERDETAILS', newPlayerRows),
+                saveStagedTable('alahly_GKSDETAILS', newGkRows),
+                saveStagedTable('alahly_HOWPENMISSED', newPenRows),
+            ]);
+
+            addToast('Match + all linked data created ✓');
             setSearchId(mid);
+            // Reset states
             setNewLineupRows([]); setNewPlayerRows([]); setNewGkRows([]); setNewPenRows([]);
             setMode('search');
-            setTimeout(() => handleSearch(), 300);
-        } catch (e) { addToast('Error: ' + e.message, 'error'); }
-        setIsSaving(false);
+            // Auto-load the newly created match
+            setTimeout(() => handleSearch(), 400);
+
+        } catch (e) {
+            console.error("Create Match Error:", e);
+            alert(`Failed to create match:\n${e.message}`);
+            addToast('Error: ' + e.message, 'error');
+        } finally {
+            setIsSaving(false);
+        }
     };
 
     const matchInfoFields = Object.keys(EMPTY_MATCH);
