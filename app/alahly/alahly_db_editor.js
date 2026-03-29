@@ -16,8 +16,9 @@ const EMPTY_MATCH = {
 };
 const EMPTY_LINEUP = { "MATCH_ID": "", "MATCH MINUTE": "", "TEAM": "", "PLAYER NAME": "", "STATU": "", "PLAYER NAME OUT": "", "OUT MINUTE": "", "TOTAL MINUTE": "" };
 const EMPTY_PLAYER = { "MATCH_ID": "", "EVENT_ID": "", "PARENT_EVENT_ID": "", "PLAYER NAME": "", "TEAM": "", "TYPE": "", "TYPE_SUB": "", "MINUTE": "" };
-const EMPTY_GK = { "MATCH_ID": "", "TEAM": "", "PLAYER NAME": "", "STATU": "", "OUT MINUTE": "", "GOALS CONCEDED": "", "GOAL MINUTE": "" };
+const EMPTY_GK = { "MATCH_ID": "", "TEAM": "", "PLAYER NAME": "", "STATU": "", "OUT MINUTE": "", "GOALS CONCEDED": "", "EVENT_ID": "" };
 const EMPTY_PEN = { "MATCH_ID": "", "PARENT_EVENT_ID": "", "HOW MISSED?": "", "TEAM": "", "MINUTE": "" };
+
 
 // ── Autocomplete Input ───────────────────────────────────────────────────────
 function AutocompleteInput({ value, onChange, options = [], placeholder, style, disabled }) {
@@ -521,31 +522,59 @@ export default function AlAhlyEditor() {
         setIsSaving(true);
         const { _isNew, _isDirty, _key, ...cleanRow } = row;
 
-        // Make sure MATCH_ID is set
         if (!cleanRow.MATCH_ID && matchData) cleanRow.MATCH_ID = matchData.MATCH_ID;
 
+        // Ensure we don't send an empty string for ROW_ID
+        if (cleanRow.ROW_ID === "" || cleanRow.ROW_ID === null || cleanRow.ROW_ID === undefined) {
+            delete cleanRow.ROW_ID;
+        }
+
         try {
+            let result;
             if (_isNew) {
-                const { error } = await supabase.from(tableName).insert(cleanRow);
-                if (error) throw error;
-                addToast('Row inserted ✓');
+                // New record insertion
+                result = await supabase.from(tableName).insert(cleanRow).select();
             } else {
-                // Use upsert since no PK on detail tables
-                const { error } = await supabase.from(tableName).upsert(cleanRow);
-                if (error) throw error;
-                addToast('Row updated ✓');
+                // Update record by ROW_ID
+                if (cleanRow.ROW_ID) {
+                    result = await supabase.from(tableName).update(cleanRow).eq('ROW_ID', cleanRow.ROW_ID).select();
+                } else {
+                    // Safety fallback if ROW_ID missing
+                    result = await supabase.from(tableName).upsert(cleanRow).select();
+                }
             }
-            // Mark row as clean
+
+            if (result.error) {
+                // Show detailed error in alert for debugging
+                alert(`Supabase Error (${tableName}):\n${result.error.message}\n${result.error.hint || ''}`);
+                throw result.error;
+            }
+
+            const savedRow = result.data?.[0];
+            if (!savedRow) throw new Error("No data returned from DB after save success.");
+
+            addToast(row._isNew ? 'Row inserted ✓' : 'Row updated ✓');
+
             const setterMap = {
                 'alahly_LINEUPDETAILS': setLineupRows,
                 'alahly_PLAYERDETAILS': setPlayerRows,
                 'alahly_GKSDETAILS': setGkRows,
                 'alahly_HOWPENMISSED': setPenRows,
             };
-            setterMap[tableName]?.(prev => prev.map((r, i) => i === ri ? { ...r, _isNew: false, _isDirty: false } : r));
-        } catch (e) { addToast('Save failed: ' + e.message, 'error'); }
-        setIsSaving(false);
-    }, [matchData]);
+
+            setterMap[tableName]?.(prev => prev.map((r, i) =>
+                i === ri ? { ...r, ...savedRow, _isNew: false, _isDirty: false } : r
+            ));
+
+        } catch (e) {
+            console.error("Save Error:", e);
+            addToast('Save FAILED: ' + (e.message || "Unknown error"), 'error');
+        } finally {
+            setIsSaving(false);
+        }
+    }, [matchData, setLineupRows, setPlayerRows, setGkRows, setPenRows]);
+
+
 
     // ── Delete a row ─────────────────────────────────────────────────────────
     const handleDeleteRow = useCallback(async (row, ri, tableName, setterFn) => {
@@ -587,16 +616,64 @@ export default function AlAhlyEditor() {
         }
     }, [matchData]);
 
-    // ── Save Match Details ───────────────────────────────────────────────────
+    // ── Save Match Details (Global Save) ────────────────────────────────────
     const handleSaveMatch = async () => {
         setIsSaving(true);
         try {
-            const { error } = await supabase.from('alahly_MATCHDETAILS').upsert(matchData);
-            if (error) throw error;
-            addToast('Match details saved ✓');
-        } catch (e) { addToast('Error: ' + e.message, 'error'); }
-        setIsSaving(false);
+            // 1. Save main match details
+            const { error: matchErr } = await supabase.from('alahly_MATCHDETAILS').upsert(matchData);
+            if (matchErr) throw matchErr;
+
+            // 2. Helper to save pending changes in linked tables
+            const saveLinkedTable = async (tableName, rows, setter) => {
+                const pending = rows.filter(r => r._isNew || r._isDirty);
+                if (pending.length === 0) return;
+
+                // Prepare clean data
+                const clean = pending.map(({ _isNew, _isDirty, _key, ...r }) => {
+                    const row = { ...r, MATCH_ID: matchData.MATCH_ID };
+                    // If it's a new row, ensure we don't send an empty/null ROW_ID
+                    if (_isNew && (!row.ROW_ID || row.ROW_ID === "")) {
+                        delete row.ROW_ID;
+                    }
+                    return row;
+                });
+
+                // Batch upsert to Supabase
+                const { data, error } = await supabase.from(tableName).upsert(clean).select();
+                if (error) throw error;
+
+                // Reflect saved state back to the UI
+                if (data && data.length > 0) {
+                    setter(prev => prev.map(existingRow => {
+                        // Match saved row back to local row (by ROW_ID if update, or by values if new)
+                        const saved = data.find(s =>
+                            (existingRow.ROW_ID && s.ROW_ID === existingRow.ROW_ID) ||
+                            (existingRow._isNew && !existingRow.ROW_ID && s["PLAYER NAME"] === existingRow["PLAYER NAME"] && s.TEAM === existingRow.TEAM)
+                        );
+                        return saved ? { ...existingRow, ...saved, _isNew: false, _isDirty: false } : existingRow;
+                    }));
+                }
+            };
+
+            // Run saves for all tabs in parallel
+            await Promise.all([
+                saveLinkedTable('alahly_LINEUPDETAILS', lineupRows, setLineupRows),
+                saveLinkedTable('alahly_PLAYERDETAILS', playerRows, setPlayerRows),
+                saveLinkedTable('alahly_GKSDETAILS', gkRows, setGkRows),
+                saveLinkedTable('alahly_HOWPENMISSED', penRows, setPenRows),
+            ]);
+
+            addToast('Match and all pending records saved ✓');
+        } catch (e) {
+            console.error("Global Save Error:", e);
+            alert(`Global Save Failed:\n${e.message}`);
+            addToast('Save Failed: ' + e.message, 'error');
+        } finally {
+            setIsSaving(false);
+        }
     };
+
 
     // ── Create New Match ─────────────────────────────────────────────────────
     const handleCreateMatch = async () => {
@@ -957,7 +1034,10 @@ export default function AlAhlyEditor() {
                                     columns={gkCols} matchId={matchData.MATCH_ID}
                                     emptyRow={EMPTY_GK} tableName="alahly_GKSDETAILS"
                                     onSave={handleSaveRow} onDelete={handleDeleteRow} isSaving={isSaving}
-                                    columnOptions={{ "PLAYER NAME": allPlayersList }}
+                                    columnOptions={{
+                                        "PLAYER NAME": allPlayersList,
+                                        "STATU": ["اساسي", "احتياطي"]
+                                    }}
                                 />
                             )}
                             {activeLinkedTab === 'pens' && (
