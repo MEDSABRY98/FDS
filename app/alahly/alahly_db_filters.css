@@ -1,0 +1,44 @@
+/* FILTERS STYLES */
+.filters-wrap {
+    padding: 0 40px 40px;
+    max-width: 1400px;
+    margin: 0 auto;
+}
+
+.filter-controls-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 24px;
+}
+
+.filter-group {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.filter-label {
+    font-family: 'Space Mono', monospace;
+    font-size: 11px;
+    color: var(--text-muted);
+}
+
+.filter-select {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    padding: 12px;
+    border-radius: 2px;
+    outline: none;
+}
+
+.filter-range {
+    width: 100%;
+    margin-top: 12px;
+    cursor: pointer;
+    accent-color: var(--gold);
+}
+
+.tab-content {
+    display: block !important;
+    padding: 24px;
+}

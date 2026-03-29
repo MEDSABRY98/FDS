@@ -1,0 +1,131 @@
+/* MATCHES TAB STYLES */
+.matches-wrap {
+    padding: 0 40px 40px;
+    max-width: 1400px;
+    margin: 0 auto;
+}
+
+.match-group-title {
+    font-family: 'Space Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 3px;
+    color: var(--text-muted);
+    margin: 28px 0 12px;
+    text-transform: uppercase;
+}
+
+.match-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 2px;
+    margin-bottom: 8px;
+    overflow: hidden;
+    cursor: pointer;
+    transition: all 0.2s;
+    position: relative;
+}
+
+.match-card::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 0;
+    bottom: 0;
+    width: 3px;
+    background: var(--gold);
+    transform: scaleY(0);
+    transition: transform 0.2s;
+}
+
+.match-card:hover {
+    border-color: rgba(201, 168, 76, 0.4);
+    transform: translateX(4px);
+}
+
+.match-card:hover::before {
+    transform: scaleY(1);
+}
+
+.match-inner {
+    display: grid;
+    grid-template-columns: 1fr auto 1fr;
+    align-items: center;
+    padding: 20px 28px;
+    gap: 20px;
+}
+
+.match-team {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.match-team.away {
+    flex-direction: row-reverse;
+    text-align: right;
+}
+
+.match-team-badge {
+    font-size: 28px;
+}
+
+.match-team-name {
+    font-size: 15px;
+    font-weight: 600;
+}
+
+.match-team-sub {
+    font-size: 11px;
+    color: var(--text-muted);
+}
+
+.match-score-block {
+    text-align: center;
+}
+
+.match-score {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 36px;
+    letter-spacing: 4px;
+    line-height: 1;
+}
+
+.match-score-sep {
+    color: var(--gold);
+}
+
+.match-date {
+    font-family: 'Space Mono', monospace;
+    font-size: 10px;
+    color: var(--text-muted);
+    margin-top: 4px;
+}
+
+.match-competition {
+    font-size: 10px;
+    color: var(--gold);
+    font-family: 'Space Mono', monospace;
+    letter-spacing: 1px;
+}
+
+.match-tag {
+    display: inline-block;
+    font-family: 'Space Mono', monospace;
+    font-size: 9px;
+    letter-spacing: 1px;
+    padding: 3px 8px;
+    border-radius: 1px;
+    margin-left: 28px;
+    margin-bottom: 8px;
+}
+
+.tag-win {
+    background: rgba(201, 168, 76, 0.15);
+    color: var(--gold);
+    border: 1px solid rgba(201, 168, 76, 0.3);
+}
+
+.tab-content {
+    display: block !important;
+    padding: 24px;
+}

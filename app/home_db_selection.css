@@ -1,0 +1,180 @@
+/* ─── HOME SCREEN SELECTION STYLES ─────────────────────────── */
+#home-screen {
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    background: #ffffff;
+    position: relative;
+    overflow: hidden;
+    gap: 0;
+}
+
+#home-screen::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background-image: radial-gradient(circle, rgba(0, 0, 0, 0.05) 1px, transparent 1px);
+    background-size: 30px 30px;
+    pointer-events: none;
+}
+
+.home-topbar {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 3px;
+    background: linear-gradient(90deg, var(--gold), var(--gold-light) 50%, transparent);
+    z-index: 10;
+}
+
+@keyframes fadeUp {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.home-sys-name {
+    position: relative;
+    z-index: 10;
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: clamp(48px, 8vw, 100px);
+    letter-spacing: 8px;
+    color: var(--black);
+    text-align: center;
+    line-height: 1;
+    margin-bottom: 12px;
+    opacity: 0;
+    animation: fadeUp 0.6s ease forwards 0.1s;
+}
+
+.home-sys-name span {
+    color: var(--gold);
+}
+
+.home-sys-sub {
+    position: relative;
+    z-index: 10;
+    font-family: 'Space Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 4px;
+    color: var(--text-muted);
+    text-align: center;
+    margin-bottom: 64px;
+    opacity: 0;
+    animation: fadeUp 0.6s ease forwards 0.25s;
+}
+
+.section-cards {
+    position: relative;
+    z-index: 10;
+    display: flex;
+    gap: 16px;
+    opacity: 0;
+    animation: fadeUp 0.6s ease forwards 0.4s;
+}
+
+.section-card {
+    width: 180px;
+    background: #fff;
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 28px 20px 24px;
+    cursor: pointer;
+    transition: all 0.25s ease;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 14px;
+    box-shadow: 0 2px 12px rgba(0, 0, 0, 0.04);
+    position: relative;
+    overflow: hidden;
+    text-decoration: none;
+    color: inherit;
+}
+
+.section-card::after {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: 3px;
+    background: var(--gold);
+    transform: scaleX(0);
+    transition: transform 0.25s ease;
+}
+
+.section-card:hover {
+    border-color: rgba(201, 168, 76, 0.4);
+    box-shadow: 0 10px 40px rgba(201, 168, 76, 0.14);
+    transform: translateY(-6px);
+}
+
+.section-card:hover::after {
+    transform: scaleX(1);
+}
+
+.card-icon-wrap {
+    width: 64px;
+    height: 64px;
+    border-radius: 16px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+    transition: all 0.25s;
+}
+
+.card-icon-wrap .card-emoji {
+    font-size: 28px;
+}
+
+.section-card:hover .card-icon-wrap {
+    background: var(--gold-dim);
+    border-color: var(--gold);
+}
+
+.card-name {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 15px;
+    letter-spacing: 1.5px;
+    color: var(--black);
+    text-align: center;
+    line-height: 1.1;
+}
+
+/* ─── MOBILE RESPONSIVE TWEAKS ─────────────────────────── */
+@media (max-width: 768px) {
+    .home-sys-name {
+        font-size: clamp(32px, 10vw, 54px);
+        letter-spacing: 4px;
+        padding: 0 20px;
+    }
+
+    .section-cards {
+        flex-direction: column;
+        align-items: center;
+        gap: 10px;
+        width: 100%;
+        padding: 0 24px;
+    }
+
+    .section-card {
+        width: 100%;
+        max-width: 340px;
+        flex-direction: row;
+        padding: 16px 20px;
+        gap: 16px;
+    }
+}

@@ -1,0 +1,173 @@
+.referee-premium-wrap {
+    width: 95%;
+    max-width: 1400px;
+    margin: 0 auto;
+    padding: 0 40px 100px;
+}
+
+.header-tabs-container {
+    display: flex;
+    align-items: center;
+    justify-content: flex-start;
+    gap: 30px;
+    margin-bottom: 5px;
+}
+
+.referee-controls {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    margin-bottom: 35px;
+    gap: 30px;
+}
+
+.referee-search-wrap {
+    flex: 1;
+    max-width: 400px;
+}
+
+.referee-search-input {
+    background: #fff;
+    border: 2px solid #eee;
+    padding: 15px 30px;
+    width: 100%;
+    border-radius: 50px;
+    text-align: center;
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.03);
+    transition: all 0.3s;
+}
+
+.referee-table-container {
+    background: #fff;
+    border-radius: 20px;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.04);
+    overflow: hidden;
+    border: 1px solid #eee;
+}
+
+.modern-referee-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-family: 'Outfit', sans-serif;
+    table-layout: fixed;
+}
+
+.modern-referee-table th,
+.modern-referee-table td {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.modern-referee-table th {
+    background: #0a0a0a;
+    color: #888;
+    text-transform: uppercase;
+    font-size: 11px;
+    letter-spacing: 2px;
+    padding: 25px 20px;
+    font-weight: 800;
+    border-bottom: 2px solid #c9a84c;
+}
+
+.modern-referee-table td {
+    padding: 22px 20px;
+    border-bottom: 1px solid #f8f8f8;
+    text-align: center;
+    font-size: 15px;
+    font-weight: 700;
+    color: #333;
+    transition: 0.2s;
+}
+
+.modern-referee-table tr:hover td {
+    background: #fafafa;
+}
+
+.modern-referee-table td.p-name {
+    color: #000;
+    font-weight: 800;
+    text-align: center;
+}
+
+.modern-referee-table td.w-cell {
+    color: #27ae60;
+    background: rgba(39, 174, 96, 0.05);
+}
+
+.modern-referee-table td.l-cell {
+    color: #e74c3c;
+    background: rgba(231, 76, 60, 0.05);
+}
+
+.grand-total-row td {
+    font-weight: 800;
+    font-size: 17px;
+    padding: 25px 20px;
+}
+
+.total-label {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 20px;
+    letter-spacing: 2px;
+}
+
+/* Pagination Styles */
+.pagination-referee {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 30px;
+    margin-top: 50px;
+    margin-bottom: 50px;
+}
+
+.page-btn {
+    background: #fff;
+    border: 2px solid #eee;
+    padding: 12px 25px;
+    border-radius: 50px;
+    font-family: 'Space Mono', monospace;
+    font-weight: 700;
+    font-size: 13px;
+    cursor: pointer;
+    transition: 0.3s;
+    letter-spacing: 1px;
+}
+
+.page-btn:hover:not(:disabled) {
+    background: #000;
+    color: var(--gold);
+    border-color: #000;
+    transform: translateY(-2px);
+    box-shadow: 0 10px 20px rgba(0, 0, 0, 0.1);
+}
+
+.page-btn:disabled {
+    opacity: 0.3;
+    cursor: not-allowed;
+}
+
+.page-info {
+    font-family: 'Space Mono', monospace;
+    font-weight: 700;
+    font-size: 14px;
+    color: #888;
+}
+
+.p-num {
+    color: #000;
+    margin: 0 5px;
+    font-size: 16px;
+}
+
+@media (max-width: 1200px) {
+    .modern-referee-table {
+        font-size: 13px;
+    }
+
+    .modern-referee-table td,
+    .modern-referee-table th {
+        padding: 15px 10px;
+    }
+}
