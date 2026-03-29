@@ -519,8 +519,10 @@ export default function AlAhlyEditor() {
 
     // ── Save a single row ────────────────────────────────────────────────────
     const handleSaveRow = useCallback(async (row, ri, tableName) => {
+        if (isSaving) return; // Prevent overlapping saves
         setIsSaving(true);
         const { _isNew, _isDirty, _key, ...cleanRow } = row;
+
 
         if (!cleanRow.MATCH_ID && matchData) cleanRow.MATCH_ID = matchData.MATCH_ID;
 
@@ -618,8 +620,10 @@ export default function AlAhlyEditor() {
 
     // ── Save Match Details (Global Save) ────────────────────────────────────
     const handleSaveMatch = async () => {
+        if (isSaving) return; // Prevent overlapping saves
         setIsSaving(true);
         try {
+
             // 1. Save main match details
             const { error: matchErr } = await supabase.from('alahly_MATCHDETAILS').upsert(matchData);
             if (matchErr) throw matchErr;
