@@ -91,7 +91,9 @@ function AutocompleteInput({ value, onChange, options = [], placeholder, style, 
                         animation: openUpwards ? 'slideUp 0.2s cubic-bezier(0.16, 1, 0.3, 1)' : 'slideIn 0.2s cubic-bezier(0.16, 1, 0.3, 1)',
                         transformOrigin: openUpwards ? 'bottom center' : 'top center'
                     }}>
-                        <div style={{ fontSize: 10, color: '#aaa', padding: '0 8px 8px', letterSpacing: 1, fontFamily: "'Space Mono', monospace" }}>SELECT PLAYER</div>
+                        <div style={{ fontSize: 10, color: '#aaa', padding: '0 8px 8px', letterSpacing: 1, fontFamily: "'Space Mono', monospace" }}>
+                            SELECT {placeholder ? placeholder.toUpperCase() : 'OPTION'}
+                        </div>
                         {filtered.map((opt, i) => (
                             <div key={i}
                                 onMouseDown={() => handleSelect(opt)}
@@ -285,6 +287,7 @@ function EditableTable({ title, color, rows, setRows, columns, matchId, emptyRow
                                             <AutocompleteInput
                                                 value={row[col] ?? ''}
                                                 options={columnOptions[col]}
+                                                placeholder={col}
                                                 onChange={val => setRows(prev => prev.map((r, i) => i === ri ? { ...r, [col]: val, _isDirty: true } : r))}
                                                 style={{
                                                     border: row._isDirty || row._isNew ? '1.5px solid ' + color : '1px solid #f0f0f0',
@@ -432,6 +435,9 @@ export default function AlAhlyEditor() {
     const [nextMatchNum, setNextMatchNum] = useState(null);
     const [matchFieldOptions, setMatchFieldOptions] = useState({}); // unique values per column
     const [allPlayersList, setAllPlayersList] = useState([]);
+    const [eventTypes, setEventTypes] = useState([]);
+    const [eventSubTypes, setEventSubTypes] = useState([]);
+    const [howMissedOptions, setHowMissedOptions] = useState([]);
 
     // Fields that use autocomplete (not date/number/auto)
     const AUTOCOMPLETE_FIELDS = [
@@ -462,6 +468,27 @@ export default function AlAhlyEditor() {
             const uniquePlayers = [...new Set(allNames)];
             uniquePlayers.sort((a, b) => a.localeCompare(b, 'ar'));
             setAllPlayersList(uniquePlayers);
+
+            // Fetch unique TYPE and TYPE_SUB from PLAYERDETAILS
+            const fetchUniqueCol = async (tableName, col) => {
+                let results = [];
+                let from = 0;
+                while (true) {
+                    const { data } = await supabase.from(tableName).select(`"${col}"`).range(from, from + 999);
+                    if (!data || data.length === 0) break;
+                    results.push(...data.map(d => d[col]).filter(Boolean));
+                    if (data.length < 1000) break;
+                    from += 1000;
+                }
+                return [...new Set(results)].sort((a, b) => a.localeCompare(b, 'ar'));
+            };
+
+            const t = await fetchUniqueCol('alahly_PLAYERDETAILS', 'TYPE');
+            setEventTypes(t);
+            const ts = await fetchUniqueCol('alahly_PLAYERDETAILS', 'TYPE_SUB');
+            setEventSubTypes(ts);
+            const hm = await fetchUniqueCol('alahly_HOWPENMISSED', 'HOW MISSED?');
+            setHowMissedOptions(hm);
         })();
     }, []);
 
@@ -1029,6 +1056,7 @@ export default function AlAhlyEditor() {
                                     onSave={() => { }} onDelete={(row, ri, _, setter) => setter(prev => prev.filter((_, i) => i !== ri))} isSaving={false}
                                     columnOptions={{
                                         "PLAYER NAME": allPlayersList,
+                                        "TEAM": [newMatchData["AHLY TEAM"], newMatchData["OPPONENT TEAM"]].filter(Boolean),
                                         "PLAYER NAME OUT": newLineupRows.filter(r => String(r.STATU || '').trim() === 'اساسي' && String(r["PLAYER NAME"] || '').trim()).map(r => r["PLAYER NAME"]).sort((a, b) => a.localeCompare(b, 'ar'))
                                     }}
                                 />
@@ -1041,7 +1069,12 @@ export default function AlAhlyEditor() {
                                     emptyRow={EMPTY_PLAYER} tableName="alahly_PLAYERDETAILS"
                                     onSave={() => { }} onDelete={(row, ri, _, setter) => setter(prev => prev.filter((_, i) => i !== ri))} isSaving={false}
                                     autoFields={{ 'EVENT_ID': (mid, rows) => `${mid}-${rows.length + 1}` }}
-                                    columnOptions={{ "PLAYER NAME": allPlayersList }}
+                                    columnOptions={{
+                                        "PLAYER NAME": allPlayersList,
+                                        "TEAM": [newMatchData["AHLY TEAM"], newMatchData["OPPONENT TEAM"]].filter(Boolean),
+                                        "TYPE": eventTypes,
+                                        "TYPE_SUB": eventSubTypes
+                                    }}
                                 />
                             )}
                             {activeLinkedTab === 'gks' && (
@@ -1051,7 +1084,11 @@ export default function AlAhlyEditor() {
                                     columns={gkCols} matchId={newMatchData.MATCH_ID || '---'}
                                     emptyRow={EMPTY_GK} tableName="alahly_GKSDETAILS"
                                     onSave={() => { }} onDelete={(row, ri, _, setter) => setter(prev => prev.filter((_, i) => i !== ri))} isSaving={false}
-                                    columnOptions={{ "PLAYER NAME": allPlayersList }}
+                                    columnOptions={{
+                                        "PLAYER NAME": allPlayersList,
+                                        "TEAM": [newMatchData["AHLY TEAM"], newMatchData["OPPONENT TEAM"]].filter(Boolean),
+                                        "STATU": ["اساسي", "احتياطي"]
+                                    }}
                                 />
                             )}
                             {activeLinkedTab === 'pens' && (
@@ -1061,6 +1098,10 @@ export default function AlAhlyEditor() {
                                     columns={penCols} matchId={newMatchData.MATCH_ID || '---'}
                                     emptyRow={EMPTY_PEN} tableName="alahly_HOWPENMISSED"
                                     onSave={() => { }} onDelete={(row, ri, _, setter) => setter(prev => prev.filter((_, i) => i !== ri))} isSaving={false}
+                                    columnOptions={{
+                                        "TEAM": [newMatchData["AHLY TEAM"], newMatchData["OPPONENT TEAM"]].filter(Boolean),
+                                        "HOW MISSED?": howMissedOptions
+                                    }}
                                 />
                             )}
                         </div>
@@ -1151,6 +1192,7 @@ export default function AlAhlyEditor() {
                                     onSave={handleSaveRow} onDelete={handleDeleteRow} isSaving={isSaving}
                                     columnOptions={{
                                         "PLAYER NAME": allPlayersList,
+                                        "TEAM": [matchData["AHLY TEAM"], matchData["OPPONENT TEAM"]].filter(Boolean),
                                         "PLAYER NAME OUT": lineupRows.filter(r => String(r.STATU || '').trim() === 'اساسي' && String(r["PLAYER NAME"] || '').trim()).map(r => r["PLAYER NAME"]).sort((a, b) => a.localeCompare(b, 'ar'))
                                     }}
                                 />
@@ -1163,7 +1205,12 @@ export default function AlAhlyEditor() {
                                     emptyRow={EMPTY_PLAYER} tableName="alahly_PLAYERDETAILS"
                                     onSave={handleSaveRow} onDelete={handleDeleteRow} isSaving={isSaving}
                                     autoFields={{ 'EVENT_ID': (mid, rows) => `${mid}-${rows.length + 1}` }}
-                                    columnOptions={{ "PLAYER NAME": allPlayersList }}
+                                    columnOptions={{
+                                        "PLAYER NAME": allPlayersList,
+                                        "TEAM": [matchData["AHLY TEAM"], matchData["OPPONENT TEAM"]].filter(Boolean),
+                                        "TYPE": eventTypes,
+                                        "TYPE_SUB": eventSubTypes
+                                    }}
                                 />
                             )}
                             {activeLinkedTab === 'gks' && (
@@ -1175,6 +1222,7 @@ export default function AlAhlyEditor() {
                                     onSave={handleSaveRow} onDelete={handleDeleteRow} isSaving={isSaving}
                                     columnOptions={{
                                         "PLAYER NAME": allPlayersList,
+                                        "TEAM": [matchData["AHLY TEAM"], matchData["OPPONENT TEAM"]].filter(Boolean),
                                         "STATU": ["اساسي", "احتياطي"]
                                     }}
                                 />
@@ -1186,6 +1234,10 @@ export default function AlAhlyEditor() {
                                     columns={penCols} matchId={matchData.MATCH_ID}
                                     emptyRow={EMPTY_PEN} tableName="alahly_HOWPENMISSED"
                                     onSave={handleSaveRow} onDelete={handleDeleteRow} isSaving={isSaving}
+                                    columnOptions={{
+                                        "TEAM": [matchData["AHLY TEAM"], matchData["OPPONENT TEAM"]].filter(Boolean),
+                                        "HOW MISSED?": howMissedOptions
+                                    }}
                                 />
                             )}
                         </div>
