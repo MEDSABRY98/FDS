@@ -577,7 +577,21 @@ export default function AlAhlyEditor() {
             ]);
             if (!md) { addToast(`Match ID "${id}" not found`, 'error'); setLoading(false); return; }
             setMatchData({ ...md });
-            setLineupRows((ld || []).map((r, i) => ({ ...r, _key: i })));
+            if (!ld || ld.length === 0) {
+                const initialLineup = Array.from({ length: 16 }, (_, i) => ({
+                    ...EMPTY_LINEUP,
+                    "MATCH MINUTE": "90",
+                    "TEAM": "الأهلي",
+                    "STATU": i < 11 ? "اساسي" : "احتياطي",
+                    "TOTAL MINUTE": i < 11 ? "90" : "",
+                    MATCH_ID: id,
+                    _isNew: true,
+                    _key: Date.now() + i
+                }));
+                setLineupRows(applyLineupLogic(initialLineup, initialLineup));
+            } else {
+                setLineupRows(ld.map((r, i) => ({ ...r, _key: i })));
+            }
             setPlayerRows((pd || []).map((r, i) => ({ ...r, _key: 1000 + i })));
             setGkRows((gd || []).map((r, i) => ({ ...r, _key: 2000 + i })));
             setPenRows((pen || []).map((r, i) => ({ ...r, _key: 3000 + i })));
