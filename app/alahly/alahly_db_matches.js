@@ -17,6 +17,7 @@ export default function AlAhlyMatches({ matches, onMatchClick }) {
                 String(m["OPPONENT MANAGER"] || "").toLowerCase().includes(lowSearch) ||
                 String(m["AHLY MANAGER"] || "").toLowerCase().includes(lowSearch) ||
                 String(m["SEASON - NAME"] || "").toLowerCase().includes(lowSearch) ||
+                String(m.MATCH_ID || "").toLowerCase().includes(lowSearch) ||
                 String(m.STAD || "").toLowerCase().includes(lowSearch) ||
                 String(m.REFREE || "").toLowerCase().includes(lowSearch)
             );
@@ -84,7 +85,7 @@ export default function AlAhlyMatches({ matches, onMatchClick }) {
                         <div style={{ width: '100%', maxWidth: '500px' }}>
                             <input
                                 type="text"
-                                placeholder="Search matches (Team, Manager, Stad, Referee...)"
+                                placeholder="Search matches (ID, Team, Manager, Stad, Referee...)"
                                 value={searchTerm}
                                 onChange={(e) => setSearchTerm(e.target.value)}
                                 style={{

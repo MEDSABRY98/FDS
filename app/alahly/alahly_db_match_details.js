@@ -126,7 +126,7 @@ export default function AlAhlyMatchDetails({
                     <span className="icon">←</span>
                     <span className="text">All Matche's</span>
                 </button>
-                <div className="match-id-badge">ID: {matchId}</div>
+                <div className="match-id-badge">{matchId}</div>
             </div>
 
             {/* Cinematic Scoreboard Section */}
@@ -138,7 +138,7 @@ export default function AlAhlyMatchDetails({
                             <div className="logo-placeholder ahly-logo">🦅</div>
                         </div>
                         <div className="team-meta">
-                            <h1 className="team-name">AL AHLY SC</h1>
+                            <h1 className="team-name">الأهلي</h1>
                             <span className="manager-tag">COACH: {matchInfo["AHLY MANAGER"]}</span>
                         </div>
                     </div>
@@ -222,7 +222,7 @@ export default function AlAhlyMatchDetails({
                             {/* Al Ahly Column */}
                             <div className="team-column ahly-theme">
                                 <div className="column-header">
-                                    <span className="team-label">AL AHLY</span>
+                                    <span className="team-label">الأهلي</span>
                                     <span className="starter-count">{squads.ahly.starters.length} STARTERS</span>
                                 </div>
                                 <div className="players-list">
