@@ -128,16 +128,85 @@ function AutocompleteInput({ value, onChange, options = [], placeholder, style, 
 
 function Toast({ toasts }) {
     return (
-        <div style={{ position: 'fixed', bottom: 30, right: 30, display: 'flex', flexDirection: 'column', gap: 10, zIndex: 99999 }}>
-            {toasts.map(t => (
-                <div key={t.id} style={{
-                    background: t.type === 'error' ? '#ef4444' : t.type === 'warn' ? '#f59e0b' : '#22c55e',
-                    color: '#fff', padding: '12px 20px', borderRadius: 12,
-                    fontFamily: "'Outfit', sans-serif", fontWeight: 700, fontSize: 13,
-                    boxShadow: '0 8px 32px rgba(0,0,0,0.2)', minWidth: 260,
-                    animation: 'slideIn 0.3s ease'
-                }}>{t.msg}</div>
-            ))}
+        <div style={{
+            position: 'fixed', bottom: 40, right: 40,
+            display: 'flex', flexDirection: 'column-reverse', gap: 14,
+            zIndex: 9999999, pointerEvents: 'none'
+        }}>
+            {toasts.map(t => {
+                const isError = t.type === 'error';
+                const isWarn = t.type === 'warn';
+                const mainColor = isError ? '#ef4444' : (isWarn ? '#f59e0b' : '#c9a84c');
+                const glowColor = isError ? 'rgba(239, 68, 68, 0.2)' : (isWarn ? 'rgba(245, 158, 11, 0.2)' : 'rgba(201, 168, 76, 0.2)');
+
+                return (
+                    <div key={t.id} style={{
+                        pointerEvents: 'auto',
+                        background: 'rgba(10, 10, 10, 0.85)',
+                        backdropFilter: 'blur(16px)', WebkitBackdropFilter: 'blur(16px)',
+                        border: '1px solid rgba(255, 255, 255, 0.08)',
+                        borderLeft: `4px solid ${mainColor}`,
+                        borderRadius: '16px',
+                        padding: '16px 20px',
+                        minWidth: 320, maxWidth: 450,
+                        display: 'flex', alignItems: 'center', gap: 15,
+                        boxShadow: `0 20px 40px rgba(0,0,0,0.3), 0 0 20px ${glowColor}`,
+                        animation: 'toastSlideIn 0.5s cubic-bezier(0.16, 1, 0.3, 1)',
+                        position: 'relative', overflow: 'hidden'
+                    }}>
+                        <div style={{
+                            width: 38, height: 38, borderRadius: 12,
+                            background: `${mainColor}20`,
+                            display: 'flex', alignItems: 'center', justifyContent: 'center',
+                            flexShrink: 0
+                        }}>
+                            {isError && <span style={{ fontSize: 20 }}>❗</span>}
+                            {isWarn && <span style={{ fontSize: 20 }}>⚠️</span>}
+                            {!isError && !isWarn && <span style={{ fontSize: 20, color: '#c9a84c' }}>✓</span>}
+                        </div>
+
+                        <div style={{ flex: 1 }}>
+                            <div style={{
+                                fontFamily: "'Bebas Neue', sans-serif", fontSize: 13,
+                                letterSpacing: 1.5, color: mainColor, marginBottom: 2,
+                                textTransform: 'uppercase'
+                            }}>
+                                {isError ? 'SYSTEM ERROR' : (isWarn ? 'NOTIFICATION' : 'SUCCESS')}
+                            </div>
+                            <div style={{
+                                fontFamily: "'Outfit', sans-serif", fontWeight: 600,
+                                fontSize: 14, color: '#fff', lineHeight: 1.4,
+                                letterSpacing: 0.3
+                            }}>
+                                {t.msg}
+                            </div>
+                        </div>
+
+                        <button
+                            onClick={(e) => { e.currentTarget.parentElement.style.opacity = '0'; }}
+                            style={{
+                                background: 'transparent', border: 'none', color: 'rgba(255,255,255,0.2)',
+                                cursor: 'pointer', fontSize: 18, alignSelf: 'flex-start', padding: 0
+                            }}>✕</button>
+
+                        <div style={{
+                            position: 'absolute', bottom: 0, left: 0, height: 3,
+                            background: mainColor, animation: 'toastProgress 3.5s linear forwards',
+                            width: '100%'
+                        }} />
+                    </div>
+                );
+            })}
+            <style jsx>{`
+                @keyframes toastSlideIn {
+                    from { opacity: 0; transform: translateX(50px) scale(0.9); }
+                    to { opacity: 1; transform: translateX(0) scale(1); }
+                }
+                @keyframes toastProgress {
+                    from { width: 100%; }
+                    to { width: 0%; }
+                }
+            `}</style>
         </div>
     );
 }
