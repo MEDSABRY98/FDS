@@ -105,9 +105,9 @@ export default function DatabaseManagement() {
     }, [searchTerm]);
 
     const handleToggleSelect = (row) => {
-        const key = row["PLAYER NAME"] + "|" + row["TEAM"];
-        if (selectedRows.some(r => (r["PLAYER NAME"] + "|" + r["TEAM"]) === key)) {
-            setSelectedRows(selectedRows.filter(r => (r["PLAYER NAME"] + "|" + r["TEAM"]) !== key));
+        const key = row["PLAYER NAME"];
+        if (selectedRows.some(r => r["PLAYER NAME"] === key)) {
+            setSelectedRows(selectedRows.filter(r => r["PLAYER NAME"] !== key));
         } else {
             setSelectedRows([...selectedRows, row]);
         }
@@ -443,8 +443,8 @@ export default function DatabaseManagement() {
                                             </tr>
                                         ) : (
                                             paginatedData.map((row, idx) => {
-                                                const rKey = row["PLAYER NAME"] + "|" + (row["TEAM"] || "");
-                                                const isSelected = selectedRows.some(sr => (sr["PLAYER NAME"] + "|" + (sr["TEAM"] || "")) === rKey);
+                                                const rKey = row["PLAYER NAME"];
+                                                const isSelected = selectedRows.some(sr => sr["PLAYER NAME"] === rKey);
 
                                                 return (
                                                     <tr key={idx} className={isSelected ? 'selected-row' : ''}>

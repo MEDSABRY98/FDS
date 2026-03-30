@@ -192,21 +192,20 @@ export const AlAhlyService = {
             console.log("Syncing Player Database...");
             const lineups = await this.getAllLineupDetails();
             const details = await this.getAllPlayerDetails();
+            const gks = await this.getAllGKDetails();
 
             const playersMap = new Map();
 
-            const processPlayer = (name, team, position = "") => {
+            const processPlayer = (name, position = "") => {
                 if (!name || name.toLowerCase() === "unknown") return;
                 const pName = String(name).trim();
-                const pTeam = String(team).trim();
                 const pPos = String(position).trim();
 
-                const key = `${pName}|${pTeam}`;
+                const key = pName;
 
                 if (!playersMap.has(key)) {
                     playersMap.set(key, {
                         "PLAYER NAME": pName,
-                        TEAM: pTeam,
                         POSITION: pPos,
                         NATIONALLY: "" // Initialize registry-specific field
                     });
@@ -216,18 +215,21 @@ export const AlAhlyService = {
             };
 
             // 1. Scan Lineups (Contains Position)
-            lineups.forEach(l => processPlayer(l["PLAYER NAME"], l.TEAM, l.POSITION));
+            lineups.forEach(l => processPlayer(l["PLAYER NAME"], l.POSITION));
 
             // 2. Scan Player Details (Events)
-            details.forEach(p => processPlayer(p["PLAYER NAME"], p.TEAM));
+            details.forEach(p => processPlayer(p["PLAYER NAME"]));
+
+            // 3. Scan GK Details (Set position to GK if empty)
+            gks.forEach(g => processPlayer(g["PLAYER NAME"], "GK"));
 
             const uniquePlayers = Array.from(playersMap.values());
             if (uniquePlayers.length === 0) return 0;
 
-            // 3. Upsert into Supabase (Requires unique constraint on PLAYER NAME & TEAM in DB)
+            // 4. Upsert into Supabase (Requires unique constraint on PLAYER NAME in DB)
             const { error } = await supabase
                 .from('alahly_PLAYERDATABASE')
-                .upsert(uniquePlayers, { onConflict: '"PLAYER NAME", TEAM' });
+                .upsert(uniquePlayers, { onConflict: '"PLAYER NAME"' });
 
             if (error) throw error;
             console.log(`Successfully synced ${uniquePlayers.length} players.`);
