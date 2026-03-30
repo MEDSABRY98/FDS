@@ -700,37 +700,51 @@ export default function AlAhlyEditor() {
             // 2. Helper to save pending changes in linked tables
             const saveLinkedTable = async (tableName, rows, setter) => {
                 const pending = rows.filter(r => r._isNew || r._isDirty);
-                // Filter out rows that have no player name (prevent ghost rows)
+                // Filter out ghost rows
                 const filled = pending.filter(r => r["PLAYER NAME"] && String(r["PLAYER NAME"]).trim() !== "");
                 if (filled.length === 0) return;
 
-                // Prepare clean data
-                const clean = filled.map(({ _isNew, _isDirty, _key, ...r }) => {
-                    const row = { ...r, MATCH_ID: matchData.MATCH_ID };
-                    // If it's a new row, ensure we don't send an empty/null ROW_ID
-                    if (_isNew && (!row.ROW_ID || row.ROW_ID === "")) {
-                        delete row.ROW_ID;
-                    }
-                    return row;
-                });
+                // Split into new (INSERT) and existing (UPSERT)
+                const toInsert = filled.filter(r => r._isNew);
+                const toUpdate = filled.filter(r => !r._isNew);
 
-                // Batch upsert to Supabase
-                const { data, error } = await supabase.from(tableName).upsert(clean).select();
-                if (error) {
-                    console.error(`Error upserting ${tableName}:`, error);
-                    throw new Error(`${tableName}: ${error.message}`);
+                const cleanObj = (r, isNew) => {
+                    const { _isNew, _isDirty, _key, ...clean } = { ...r, MATCH_ID: matchData.MATCH_ID };
+                    // For new rows, never send ROW_ID to allow DB to generate it
+                    if (isNew || !clean.ROW_ID || clean.ROW_ID === "" || clean.ROW_ID === null) {
+                        delete clean.ROW_ID;
+                    }
+                    return clean;
+                };
+
+                let savedResults = [];
+
+                try {
+                    // Separate calls to prevent PostgREST mixed-batch NULL issues
+                    if (toInsert.length > 0) {
+                        const { data, error: insErr } = await supabase.from(tableName).insert(toInsert.map(r => cleanObj(r, true))).select();
+                        if (insErr) throw insErr;
+                        if (data) savedResults.push(...data);
+                    }
+
+                    if (toUpdate.length > 0) {
+                        const { data, error: upErr } = await supabase.from(tableName).upsert(toUpdate.map(r => cleanObj(r, false))).select();
+                        if (upErr) throw upErr;
+                        if (data) savedResults.push(...data);
+                    }
+                } catch (e) {
+                    console.error(`Error saving ${tableName}:`, e);
+                    throw new Error(`${tableName}: ${e.message}`);
                 }
 
-                // Reflect saved state back to the UI
-                if (data && data.length > 0) {
+                // Reflect saved state back to UI
+                if (savedResults.length > 0) {
                     setter(prev => prev.map(existingRow => {
-                        // Match saved row back to local row (by ROW_ID if update, or by values if new)
-                        const saved = data.find(s =>
+                        const saved = savedResults.find(s =>
                             (existingRow.ROW_ID && s.ROW_ID === existingRow.ROW_ID) ||
                             (existingRow._isNew && !existingRow.ROW_ID &&
                                 s["PLAYER NAME"] === existingRow["PLAYER NAME"] &&
-                                s.TEAM === existingRow.TEAM &&
-                                s.STATU === existingRow.STATU)
+                                s.TEAM === existingRow.TEAM)
                         );
                         return saved ? { ...existingRow, ...saved, _isNew: false, _isDirty: false } : existingRow;
                     }));
