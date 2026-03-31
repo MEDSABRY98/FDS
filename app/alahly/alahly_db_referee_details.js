@@ -9,6 +9,7 @@ import Referee_SeasonName_Module from "./alahly_db_referee_details_season_name";
 import Referee_SeasonNumber_Module from "./alahly_db_referee_details_season_number";
 import Referee_VsTeams_Module from "./alahly_db_referee_details_vs_teams";
 import Referee_Championships_Module from "./alahly_db_referee_details_championships";
+import { AlAhlyService } from "./alahly_db_service";
 
 export default function Referee_Details_Hub({ refereeName, masterMatches, playerDetails, onBack }) {
     const [activeTab, setActiveTab] = useState('overview');
@@ -145,6 +146,55 @@ export default function Referee_Details_Hub({ refereeName, masterMatches, player
             refOpps: Array.from(oppSet).sort()
         };
     }, [refereeName, masterMatches, playerDetails]);
+
+    useEffect(() => {
+        const handleGlobalExport = () => handleExport();
+        window.addEventListener('alahly-export-excel', handleGlobalExport);
+        return () => window.removeEventListener('alahly-export-excel', handleGlobalExport);
+    }, [stats, activeTab]);
+
+    const handleExport = () => {
+        let exportData = [];
+        let filename = `AlAhly_Referee_${refereeName}_${activeTab}`;
+        switch (activeTab) {
+            case 'overview':
+                exportData = [{ "METRIC": "Matches", "VALUE": stats.matches }, { "METRIC": "Wins", "VALUE": stats.wins }, { "METRIC": "Draws", "VALUE": stats.draws }, { "METRIC": "Losses", "VALUE": stats.losses }, { "METRIC": "GF", "VALUE": stats.gs }, { "METRIC": "GA", "VALUE": stats.ga }];
+                break;
+            case 'matches':
+                exportData = stats.matchHistory.map((m, i) => ({
+                    "#": i + 1, "DATE": m.date, "CHAMPION": m.champion, "SEASON": m.season, "SY": m.sy, "OPPONENT": m.opponent, "WDL": m.wdl, "GF": m.gf, "GA": m.ga, "PEN-F": m.penFor, "PEN-A": m.penAgainst
+                }));
+                break;
+            case 'championships':
+                exportData = Object.keys(stats.compStats).map((c, i) => {
+                    const s = stats.compStats[c];
+                    return { "#": i + 1, "CHAMPION": c, "MP": s.matches, "W": s.wins, "D": s.draws, "L": s.losses, "GF": s.gs, "GA": s.ga, "CS-F": s.csFor, "PEN-F": s.penFor };
+                });
+                break;
+            case 'season_name':
+                exportData = [];
+                Object.keys(stats.statsByChampSeason).forEach(comp => {
+                    Object.keys(stats.statsByChampSeason[comp]).forEach(season => {
+                        const s = stats.statsByChampSeason[comp][season];
+                        exportData.push({ "CHAMPION": comp, "SEASON": season, "MP": s.matches, "W": s.wins, "D": s.draws, "L": s.losses, "GF": s.gs, "GA": s.ga });
+                    });
+                });
+                break;
+            case 'season_number':
+                exportData = Object.keys(stats.statsBySY).sort((a, b) => b.localeCompare(a)).map((sy, i) => {
+                    const s = stats.statsBySY[sy];
+                    return { "#": i + 1, "SY": sy, "MP": s.matches, "W": s.wins, "D": s.draws, "L": s.losses, "GF": s.gs, "GA": s.ga };
+                });
+                break;
+            case 'vs_teams':
+                exportData = Object.keys(stats.statsByOpponent).sort((a, b) => stats.statsByOpponent[b].matches - stats.statsByOpponent[a].matches).map((opp, i) => {
+                    const s = stats.statsByOpponent[opp];
+                    return { "#": i + 1, "OPPONENT": opp, "MP": s.matches, "W": s.wins, "D": s.draws, "L": s.losses, "GF": s.gs, "GA": s.ga };
+                });
+                break;
+        }
+        if (exportData.length > 0) AlAhlyService.exportToExcel(exportData, filename);
+    };
 
     return (
         <div className="player-details-container fade-in">

@@ -12,6 +12,9 @@ import PlayerVsTeamsTable from "./alahly_db_player_details_vs_teams";
 import PlayerVsGksTable from "./alahly_db_player_details_vs_gks";
 import PlayerChampionshipsTable from "./alahly_db_player_details_championships";
 import PlayerWithPlayerTable from "./alahly_db_player_details_player_with_player";
+import PlayerGoalImpactTable from "./alahly_db_player_details_goal_impact";
+import PlayerAssistImpactTable from "./alahly_db_player_details_assist_impact";
+import { AlAhlyService } from "./alahly_db_service";
 
 export default function PlayerDetails({ playerName, playerData, playerDetails, lineupDetails, masterMatches, gkDetails, howPenMissed, onBack }) {
     const [activeTab, setActiveTab] = useState('overview'); // 'overview' | 'dashboard' | 'matches'
@@ -503,6 +506,97 @@ export default function PlayerDetails({ playerName, playerData, playerDetails, l
         return { stats: summary, playerTeams: uniqueTeams, playerComps: uniqueComps, playerSYs: uniqueSYs, playerOpps: uniqueOpps };
     }, [playerName, playerDetails, lineupDetails, masterMatches, selectedTeams, selectedComps, selectedSYs, selectedOpps, gkDetails, howPenMissed]);
 
+    useEffect(() => {
+        const handleGlobalExport = () => {
+            handleExport();
+        };
+        window.addEventListener('alahly-export-excel', handleGlobalExport);
+        return () => window.removeEventListener('alahly-export-excel', handleGlobalExport);
+    }, [stats, activeTab]);
+
+    const handleExport = () => {
+        let exportData = [];
+        let filename = `AlAhly_${playerName}_${activeTab}`;
+
+        switch (activeTab) {
+            case 'overview':
+                exportData = [
+                    { "METRIC": "Matches", "VALUE": stats.caps },
+                    { "METRIC": "Minutes", "VALUE": stats.mins },
+                    { "METRIC": "Goals", "VALUE": stats.goals },
+                    { "METRIC": "Assists", "VALUE": stats.assists },
+                    { "METRIC": "G+A Contribution", "VALUE": stats.gaContribution },
+                    { "METRIC": "Goal Frequency (Mins/G)", "VALUE": stats.goalFreq }
+                ];
+                break;
+            case 'matches':
+                exportData = stats.matchHistory.map((m, i) => ({
+                    "#": i + 1, "DATE": m.date, "SEASON": m.season, "SY": m.sy, "CHAMPION": m.champion, "OPPONENT": m.opponent, "ROLE": m.role, "MINS": m.mins, "G": m.goals, "A": m.assists
+                }));
+                break;
+            case 'match_events':
+                exportData = stats.matchEventsHistory.map((m, i) => ({
+                    "#": i + 1, "DATE": m.date, "SEASON": m.season, "SY": m.sy, "CHAMPION": m.champion, "OPPONENT": m.opponent, "G": m.goals, "A": m.assists, "PG": m.penGoals, "PM": m.penMissed, "PS": m.penSaved, "W-P(G)": m.wonGoal, "W-P(M)": m.wonMiss, "C-P(G)": m.makeGoal, "C-P(M)": m.makeMiss
+                }));
+                break;
+            case 'championships':
+                exportData = Object.keys(stats.compStats).map((c, i) => {
+                    const s = stats.compStats[c];
+                    return { "#": i + 1, "CHAMPION": c, "APPS": s.apps, "W": s.wins, "D": s.draws, "L": s.losses, "MINS": s.mins, "G": s.goals, "A": s.assists, "PG": s.penGoals };
+                });
+                break;
+            case 'season_name':
+                exportData = [];
+                Object.keys(stats.statsByChampSeason).forEach(comp => {
+                    Object.keys(stats.statsByChampSeason[comp]).forEach(season => {
+                        const s = stats.statsByChampSeason[comp][season];
+                        exportData.push({ "CHAMPION": comp, "SEASON": season, "APPS": s.apps, "MINS": s.mins, "G": s.goals, "A": s.assists });
+                    });
+                });
+                break;
+            case 'season_number':
+                exportData = Object.keys(stats.statsBySY).sort((a, b) => b.localeCompare(a)).map((sy, i) => {
+                    const s = stats.statsBySY[sy];
+                    return { "#": i + 1, "SY": sy, "APPS": s.apps, "MINS": s.mins, "G": s.goals, "A": s.assists, "P-G": s.penGoals, "P-M": s.penMissed, "P-S": s.penSaved };
+                });
+                break;
+            case 'vs_teams':
+                exportData = Object.keys(stats.statsByOpponent).sort((a, b) => stats.statsByOpponent[b].apps - stats.statsByOpponent[a].apps).map((opp, i) => {
+                    const s = stats.statsByOpponent[opp];
+                    return { "#": i + 1, "OPPONENT": opp, "APPS": s.apps, "G": s.goals, "A": s.assists, "PG": s.penGoals, "PM": s.penMissed, "PS": s.penSaved };
+                });
+                break;
+            case 'vs_gks':
+                exportData = Object.keys(stats.statsByGK).sort((a, b) => stats.statsByGK[b].totalGoals - stats.statsByGK[a].totalGoals).map((gkName, i) => {
+                    const gk = stats.statsByGK[gkName];
+                    const teamsStr = Object.keys(gk.teams).join(', ');
+                    return { "#": i + 1, "GK NAME": gkName, "TEAMS": teamsStr, "G": gk.totalGoals, "PG": gk.totalPenGoals, "PM": gk.totalPenMissed, "PS": gk.totalPenSaved };
+                });
+                break;
+            case 'player_with_player':
+                const allPartners = Array.from(new Set([...Object.keys(stats.playerWithPlayerStats.assistsFrom), ...Object.keys(stats.playerWithPlayerStats.assistsTo)]));
+                exportData = allPartners.map((p, i) => ({
+                    "#": i + 1, "PARTNER NAME": p, "ASSISTS FROM": stats.playerWithPlayerStats.assistsFrom[p] || 0, "ASSISTS TO": stats.playerWithPlayerStats.assistsTo[p] || 0, "TOTAL": (stats.playerWithPlayerStats.assistsFrom[p] || 0) + (stats.playerWithPlayerStats.assistsTo[p] || 0)
+                })).sort((a, b) => b.TOTAL - a.TOTAL);
+                break;
+            case 'goal_impact':
+                // Logic for goal impact export (mapped to matches)
+                exportData = stats.matchHistory.filter(m => m.goals > 0).map((m, i) => ({
+                    "#": i + 1, "DATE": m.date, "SEASON": m.season, "SY": m.sy, "CHAMPION": m.champion, "OPPONENT": m.opponent, "GOALS": m.goals
+                }));
+                break;
+            case 'assist_impact':
+                exportData = stats.matchHistory.filter(m => m.assists > 0).map((m, i) => ({
+                    "#": i + 1, "DATE": m.date, "SEASON": m.season, "SY": m.sy, "CHAMPION": m.champion, "OPPONENT": m.opponent, "ASSISTS": m.assists
+                }));
+                break;
+        }
+
+        if (exportData.length > 0) {
+            AlAhlyService.exportToExcel(exportData, filename);
+        }
+    };
+
     if (!playerName) return null;
 
 
@@ -661,14 +755,20 @@ export default function PlayerDetails({ playerName, playerData, playerDetails, l
                 <div className={`player-tab-item ${activeTab === 'dashboard' ? 'active' : ''}`} onClick={() => setActiveTab('dashboard')}>
                     <span className="tab-title">DASHBOARD</span>
                 </div>
-                <div className={`player-tab-item ${activeTab === 'matches' ? 'active' : ''}`} onClick={() => setActiveTab('matches')}>
-                    <span className="tab-title">MATCH PLAYED</span>
+                <div className={`player-tab-item ${activeTab === 'goal_impact' ? 'active' : ''}`} onClick={() => setActiveTab('goal_impact')}>
+                    <span className="tab-title">GOAL IMPACT</span>
                 </div>
-                <div className={`player-tab-item ${activeTab === 'championships' ? 'active' : ''}`} onClick={() => setActiveTab('championships')}>
-                    <span className="tab-title">CHAMPIONSHIPS</span>
+                <div className={`player-tab-item ${activeTab === 'assist_impact' ? 'active' : ''}`} onClick={() => setActiveTab('assist_impact')}>
+                    <span className="tab-title">ASSIST IMPACT</span>
+                </div>
+                <div className={`player-tab-item ${activeTab === 'matches' ? 'active' : ''}`} onClick={() => setActiveTab('matches')}>
+                    <span className="tab-title">MATCHES</span>
                 </div>
                 <div className={`player-tab-item ${activeTab === 'match_events' ? 'active' : ''}`} onClick={() => setActiveTab('match_events')}>
                     <span className="tab-title">MATCH EVENTS</span>
+                </div>
+                <div className={`player-tab-item ${activeTab === 'championships' ? 'active' : ''}`} onClick={() => setActiveTab('championships')}>
+                    <span className="tab-title">CHAMPIONSHIPS</span>
                 </div>
                 <div className={`player-tab-item ${activeTab === 'season_name' ? 'active' : ''}`} onClick={() => setActiveTab('season_name')}>
                     <span className="tab-title">SEASON NAME</span>
@@ -752,6 +852,18 @@ export default function PlayerDetails({ playerName, playerData, playerDetails, l
             {activeTab === 'player_with_player' && (
                 <PlayerWithPlayerTable
                     stats={stats}
+                />
+            )}
+            {activeTab === 'goal_impact' && (
+                <PlayerGoalImpactTable
+                    playerName={playerName}
+                    filteredMatches={stats.matchHistory}
+                />
+            )}
+            {activeTab === 'assist_impact' && (
+                <PlayerAssistImpactTable
+                    playerName={playerName}
+                    filteredMatches={stats.matchHistory}
                 />
             )}
             <style jsx>{`

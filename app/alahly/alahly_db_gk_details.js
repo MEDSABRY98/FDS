@@ -10,6 +10,7 @@ import GK_Season_Number_Module from "./alahly_db_gk_details_season_number";
 import GK_Vs_Teams_Module from "./alahly_db_gk_details_vs_teams";
 import GK_Vs_Players_Module from "./alahly_db_gk_details_vs_players";
 import GK_Championships_Module from "./alahly_db_gk_details_championships";
+import { AlAhlyService } from "./alahly_db_service";
 
 export default function GK_Details_Hub({ gkName, gkDetails, howPenMissed, masterMatches, playerDetails, onBack }) {
     const [activeTab, setActiveTab] = useState('overview');
@@ -162,6 +163,10 @@ export default function GK_Details_Hub({ gkName, gkDetails, howPenMissed, master
             const msy = summary.statsBySY[sy];
             msy.matches += 1; msy.gc += gc; if (isClean) msy.cs += 1; msy.ps += matchSaves.length; msy.pr += matchPens.length;
 
+            const mResult = isAhly(tv) ? (ctx.gf > ctx.ga ? 'W' : ctx.gf < ctx.ga ? 'L' : 'D') : (ctx.ga > ctx.gf ? 'W' : ctx.ga < ctx.gf ? 'L' : 'D');
+            const mGF = isAhly(tv) ? ctx.gf : ctx.ga;
+            const mGA = isAhly(tv) ? ctx.ga : ctx.gf;
+
             summary.matchHistory.push({
                 idx: mId, date: ctx.date, champion, season, sy, opponent: oppName,
                 role: g.STATU || 'اساسي',
@@ -170,7 +175,9 @@ export default function GK_Details_Hub({ gkName, gkDetails, howPenMissed, master
                 ps: matchSaves.length,
                 pm: matchMisses.length,
                 psm: matchSaves.length + matchMisses.length,
-                pg: matchPens.length
+                pg: matchPens.length,
+                result: mResult,
+                score: `${mGF}-${mGA}`
             });
 
             // Scorer Calculation
@@ -209,6 +216,58 @@ export default function GK_Details_Hub({ gkName, gkDetails, howPenMissed, master
             return db - da;
         });
 
+        // Calculate ALL Streaks >= 3 matches
+        let allStreaksCS = [];
+        let allStreaksGC = [];
+
+        let currentCSMatches = [];
+        let currentGCMatches = [];
+
+        const chronologicalHistory = [...summary.matchHistory].sort((a, b) => {
+            const da = a.date ? new Date(a.date.split('/').reverse().join('-')) : new Date(0);
+            const db = b.date ? new Date(b.date.split('/').reverse().join('-')) : new Date(0);
+            return da - db;
+        });
+
+        chronologicalHistory.forEach(m => {
+            if (m.clean) {
+                currentCSMatches.push(m);
+                // End any ongoing GC streak
+                if (currentGCMatches.length >= 3) {
+                    allStreaksGC.push({ length: currentGCMatches.length, matches: [...currentGCMatches], startDate: currentGCMatches[0].date });
+                }
+                currentGCMatches = [];
+            } else {
+                currentGCMatches.push(m);
+                // End any ongoing CS streak
+                if (currentCSMatches.length >= 3) {
+                    allStreaksCS.push({ length: currentCSMatches.length, matches: [...currentCSMatches], startDate: currentCSMatches[0].date });
+                }
+                currentCSMatches = [];
+            }
+        });
+
+        // Final check for end of history
+        if (currentCSMatches.length >= 3) allStreaksCS.push({ length: currentCSMatches.length, matches: [...currentCSMatches], startDate: currentCSMatches[0].date });
+        if (currentGCMatches.length >= 3) allStreaksGC.push({ length: currentGCMatches.length, matches: [...currentGCMatches], startDate: currentGCMatches[0].date });
+
+        // Sorting: Length DESC, then Date DESC
+        const sortStreaks = (arr) => arr.sort((a, b) => {
+            if (b.length !== a.length) return b.length - a.length;
+            const da = a.startDate ? new Date(a.startDate.split('/').reverse().join('-')) : new Date(0);
+            const db = b.startDate ? new Date(b.startDate.split('/').reverse().join('-')) : new Date(0);
+            return db - da;
+        });
+
+        summary.allStreaksCS = sortStreaks(allStreaksCS);
+        summary.allStreaksGC = sortStreaks(allStreaksGC);
+
+        // Keep compat for old props (using best one)
+        summary.maxCSStreak = summary.allStreaksCS[0]?.length || 0;
+        summary.maxCSMatches = summary.allStreaksCS[0]?.matches || [];
+        summary.maxGCStreak = summary.allStreaksGC[0]?.length || 0;
+        summary.maxGCMatches = summary.allStreaksGC[0]?.matches || [];
+
         return {
             stats: summary,
             gkTeams: uniqueTeams,
@@ -217,6 +276,61 @@ export default function GK_Details_Hub({ gkName, gkDetails, howPenMissed, master
             gkOpps: Array.from(oppSet).sort()
         };
     }, [gkName, gkDetails, masterMatches, howPenMissed, playerDetails, selectedTeams, selectedComps, selectedSYs, selectedOpps]);
+
+    useEffect(() => {
+        const handleGlobalExport = () => handleExport();
+        window.addEventListener('alahly-export-excel', handleGlobalExport);
+        return () => window.removeEventListener('alahly-export-excel', handleGlobalExport);
+    }, [stats, activeTab]);
+
+    const handleExport = () => {
+        let exportData = [];
+        let filename = `AlAhly_GK_${gkName}_${activeTab}`;
+        switch (activeTab) {
+            case 'overview':
+                exportData = [{ "METRIC": "Matches", "VALUE": stats.caps }, { "METRIC": "GC", "VALUE": stats.goalsConceded }, { "METRIC": "CS", "VALUE": stats.cleanSheets }, { "METRIC": "PS", "VALUE": stats.penaltiesSaved }, { "METRIC": "PR", "VALUE": stats.penaltiesReceived }];
+                break;
+            case 'matches':
+                exportData = stats.matchHistory.map((m, i) => ({
+                    "#": i + 1, "DATE": m.date, "CHAMPION": m.champion, "SEASON": m.season, "SY": m.sy, "OPPONENT": m.opponent, "MINS": m.mins, "GC": m.gc, "CLEAN": m.clean ? "YES" : "NO", "PSM": m.psm, "PG": m.pg
+                }));
+                break;
+            case 'championships':
+                exportData = Object.keys(stats.compStats).map((c, i) => {
+                    const s = stats.compStats[c];
+                    return { "#": i + 1, "CHAMPION": c, "MP": s.matches, "W": s.wins, "D": s.draws, "L": s.losses, "GS": s.gs, "GA": s.ga, "GK-GC": s.gc, "GK-CS": s.cs, "GK-PS": s.ps };
+                });
+                break;
+            case 'season_name':
+                exportData = [];
+                Object.keys(stats.statsByChampSeason).forEach(comp => {
+                    Object.keys(stats.statsByChampSeason[comp]).forEach(season => {
+                        const s = stats.statsByChampSeason[comp][season];
+                        exportData.push({ "CHAMPION": comp, "SEASON": season, "MP": s.matches, "W": s.wins, "D": s.draws, "L": s.losses, "GC": s.gc, "CS": s.cs, "PS": s.ps });
+                    });
+                });
+                break;
+            case 'season_number':
+                exportData = Object.keys(stats.statsBySY).sort((a, b) => b.localeCompare(a)).map((sy, i) => {
+                    const s = stats.statsBySY[sy];
+                    return { "#": i + 1, "SY": sy, "MP": s.matches, "W": s.wins, "D": s.draws, "L": s.losses, "GC": s.gc, "CS": s.cs, "PS": s.ps };
+                });
+                break;
+            case 'vs_teams':
+                exportData = Object.keys(stats.statsByOpponent).sort((a, b) => stats.statsByOpponent[b].matches - stats.statsByOpponent[a].matches).map((opp, i) => {
+                    const s = stats.statsByOpponent[opp];
+                    return { "#": i + 1, "OPPONENT": opp, "MP": s.matches, "W": s.wins, "D": s.draws, "L": s.losses, "GC": s.gc, "CS": s.cs, "PS": s.ps };
+                });
+                break;
+            case 'vs_players':
+                exportData = Object.keys(stats.statsByScorer).sort((a, b) => stats.statsByScorer[b].goals - stats.statsByScorer[a].goals).map((p, i) => {
+                    const s = stats.statsByScorer[p];
+                    return { "#": i + 1, "SCORER": p, "TEAMS": Array.from(s.teams).join(', '), "G": s.goals, "PG": s.pens_scored, "PS": s.pens_saved };
+                });
+                break;
+        }
+        if (exportData.length > 0) AlAhlyService.exportToExcel(exportData, filename);
+    };
 
     if (!gkName) return null;
 

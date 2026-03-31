@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo, useState, useRef, useEffect } from "react";
+import { AlAhlyService } from "./alahly_db_service";
 import "./alahly_db_referees.css";
 import Referee_Details_Hub from "./alahly_db_referee_details";
 
@@ -71,13 +72,47 @@ export default function AlAhlyReferees({ matches, playerDetails, howPenMissed })
     }, [stats, currentPage]);
 
     const grandTotals = useMemo(() => {
-        const t = { matches: 0, wins: 0, pDraws: 0, nDraws: 0, losses: 0, gs: 0, ga: 0, csFor: 0, csAgainst: 0, penFor: 0, penAgainst: 0 };
-        stats.forEach(s => {
-            t.matches += s.matches; t.wins += s.wins; t.pDraws += s.pDraws; t.nDraws += s.nDraws; t.losses += s.losses;
-            t.gs += s.gs; t.ga += s.ga; t.csFor += s.csFor; t.csAgainst += s.csAgainst; t.penFor += s.penFor; t.penAgainst += s.penAgainst;
-        });
-        return t;
+        return stats.reduce((acc, s) => ({
+            matches: acc.matches + s.matches,
+            wins: acc.wins + s.wins,
+            pDraws: acc.pDraws + s.pDraws,
+            nDraws: acc.nDraws + s.nDraws,
+            losses: acc.losses + s.losses,
+            gs: acc.gs + s.gs,
+            ga: acc.ga + s.ga,
+            csFor: acc.csFor + s.csFor,
+            csAgainst: acc.csAgainst + s.csAgainst,
+            penFor: acc.penFor + s.penFor,
+            penAgainst: acc.penAgainst + s.penAgainst
+        }), { matches: 0, wins: 0, pDraws: 0, nDraws: 0, losses: 0, gs: 0, ga: 0, csFor: 0, csAgainst: 0, penFor: 0, penAgainst: 0 });
     }, [stats]);
+
+    useEffect(() => {
+        const handleGlobalExport = () => {
+            if (!selectedReferee) handleExport();
+        };
+        window.addEventListener('alahly-export-excel', handleGlobalExport);
+        return () => window.removeEventListener('alahly-export-excel', handleGlobalExport);
+    }, [stats, selectedReferee]);
+
+    const handleExport = () => {
+        const exportData = stats.map((s, idx) => ({
+            "#": idx + 1,
+            "Referee Name": s.name,
+            "MP": s.matches,
+            "W": s.wins,
+            "D(+)": s.pDraws,
+            "D(-)": s.nDraws,
+            "L": s.losses,
+            "GF": s.gs,
+            "GA": s.ga,
+            "CS(F)": s.csFor,
+            "CS(A)": s.csAgainst,
+            "PEN(F)": s.penFor,
+            "PEN(A)": s.penAgainst
+        }));
+        AlAhlyService.exportToExcel(exportData, "AlAhly_Referees_Stats");
+    };
 
     if (selectedReferee) {
         return (

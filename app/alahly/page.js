@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useMemo } from "react";
+import { Download } from "lucide-react";
 
 import { AlAhlyService } from "./alahly_db_service";
 import AlAhlyDashboard from "./alahly_db_dashboard";
@@ -162,6 +163,15 @@ export default function AlAhlyDatabase() {
                         50% { opacity: 1; }
                         100% { opacity: 0.4; }
                     }
+                    .sub-tabs-selection { display: flex; gap: 8px; }
+                    .global-export-btn:hover {
+                        background: #c9a84c !important;
+                        color: #000 !important;
+                        transform: scale(1.1) rotate(5deg) !important;
+                        box-shadow: 0 0 25px rgba(201,168,76,0.35) !important;
+                        border-color: #c9a84c !important;
+                    }
+                    .global-export-btn:active { transform: scale(0.95); }
                 `}</style>
             </div>
         );
@@ -184,6 +194,30 @@ export default function AlAhlyDatabase() {
                 boxSizing: 'border-box',
                 borderBottom: '1px solid rgba(255,255,255,0.08)'
             }}>
+                <button
+                    className="global-export-btn"
+                    onClick={() => window.dispatchEvent(new CustomEvent('alahly-export-excel'))}
+                    title="DOWNLOAD CURRENT VIEW AS EXCEL"
+                    style={{
+                        position: 'absolute',
+                        left: '25px',
+                        background: 'rgba(201, 168, 76, 0.1)',
+                        color: '#c9a84c',
+                        border: '1px solid rgba(201, 168, 76, 0.25)',
+                        width: '36px',
+                        height: '36px',
+                        borderRadius: '10px',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        cursor: 'pointer',
+                        transition: 'all 0.4s cubic-bezier(0.4, 0, 0.2, 1)',
+                        backdropFilter: 'blur(5px)',
+                        zIndex: 10000
+                    }}
+                >
+                    <Download size={16} strokeWidth={3} />
+                </button>
 
 
 

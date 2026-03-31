@@ -3,6 +3,7 @@
 import { useMemo, useState, useEffect, useRef } from "react";
 import "./alahly_db_seasons.css";
 import GK_Details_Hub from "./alahly_db_gk_details";
+import { AlAhlyService } from "./alahly_db_service";
 
 export default function AlAhlyGKs({ gkDetails, howPenMissed, filteredMatches, playerDetails }) {
     const [searchTerm, setSearchTerm] = useState("");
@@ -141,6 +142,27 @@ export default function AlAhlyGKs({ gkDetails, howPenMissed, filteredMatches, pl
     }, [gkDetails, howPenMissed, matchResultsMap, currentMatchIds, teamFilter, opponentFilter, searchTerm, playerDetails]);
 
     const [selectedGK, setSelectedGK] = useState(null);
+
+    useEffect(() => {
+        const handleGlobalExport = () => {
+            if (!selectedGK) handleExport();
+        };
+        window.addEventListener('alahly-export-excel', handleGlobalExport);
+        return () => window.removeEventListener('alahly-export-excel', handleGlobalExport);
+    }, [gkStats, selectedGK]);
+
+    const handleExport = () => {
+        const exportData = gkStats.map((g, i) => ({
+            "#": i + 1,
+            "GOALKEEPER NAME": g.name,
+            "MATCHES": g.matches,
+            "GOALS CONCEDED": g.goalsConceded,
+            "CLEAN SHEETS": g.cleanSheets,
+            "PENALTIES RECEIVED": g.penaltiesReceived,
+            "PENALTIES SAVED": g.penaltiesSaved
+        }));
+        AlAhlyService.exportToExcel(exportData, "AlAhly_Goalkeepers_Main");
+    };
 
     return (
         <div className="tab-content" id="tab-gks">

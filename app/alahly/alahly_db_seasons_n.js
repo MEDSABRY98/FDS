@@ -1,7 +1,8 @@
 "use client";
 
-import { useMemo } from "react";
+import { useMemo, useEffect } from "react";
 import "./alahly_db_seasons.css";
+import { AlAhlyService } from "./alahly_db_service";
 
 export default function AlAhlySeasonsN({ matches }) {
 
@@ -80,6 +81,31 @@ export default function AlAhlySeasonsN({ matches }) {
         });
         return t;
     }, [statsBySY]);
+
+    useEffect(() => {
+        const handleGlobalExport = () => handleExport();
+        window.addEventListener('alahly-export-excel', handleGlobalExport);
+        return () => window.removeEventListener('alahly-export-excel', handleGlobalExport);
+    }, [statsBySY, sortedSYs]);
+
+    const handleExport = () => {
+        const exportData = sortedSYs.map(sy => {
+            const s = statsBySY[sy];
+            return {
+                "S. NUMBER (SY)": sy,
+                "MP": s.MP,
+                "W": s.W,
+                "D(+)": s.DP,
+                "D(-)": s.DN,
+                "L": s.L,
+                "GF": s.GF,
+                "GA": s.GA,
+                "CS(F)": s.CSF,
+                "CS(A)": s.CSA
+            };
+        });
+        AlAhlyService.exportToExcel(exportData, "AlAhly_Seasons_Number");
+    };
 
     return (
         <div className="tab-content" id="tab-seasons-n">

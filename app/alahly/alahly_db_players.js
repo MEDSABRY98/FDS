@@ -3,6 +3,7 @@
 import { useMemo, useState, useEffect, useRef } from "react";
 import "./alahly_db_seasons.css";
 import PlayerDetails from "./alahly_db_player_details";
+import { AlAhlyService } from "./alahly_db_service";
 
 export default function AlAhlyPlayers({ playerDetails, lineupDetails, filteredMatches, gkDetails, howPenMissed }) {
     const [searchTerm, setSearchTerm] = useState("");
@@ -57,7 +58,8 @@ export default function AlAhlyPlayers({ playerDetails, lineupDetails, filteredMa
                 stats[name] = {
                     name, caps: 0, mins: 0, goals: 0, assists: 0, ga: 0, penalties: 0,
                     total: 0, goal: 0, miss: 0, wonGoal: 0, wonMiss: 0, makeGoal: 0, makeMiss: 0,
-                    braceG: 0, hatG: 0, superG: 0, braceA: 0, hatA: 0, superA: 0
+                    braceG: 0, hatG: 0, superG: 0, braceA: 0, hatA: 0, superA: 0,
+                    goalWinImpact: 0, goalDrawImpact: 0, assistWinImpact: 0, assistDrawImpact: 0
                 };
             }
             stats[name].caps += 1;
@@ -83,7 +85,8 @@ export default function AlAhlyPlayers({ playerDetails, lineupDetails, filteredMa
                 stats[name] = {
                     name, caps: 0, mins: 0, goals: 0, assists: 0, ga: 0, penalties: 0,
                     total: 0, goal: 0, miss: 0, wonGoal: 0, wonMiss: 0, makeGoal: 0, makeMiss: 0,
-                    braceG: 0, hatG: 0, superG: 0, braceA: 0, hatA: 0, superA: 0
+                    braceG: 0, hatG: 0, superG: 0, braceA: 0, hatA: 0, superA: 0,
+                    goalWinImpact: 0, goalDrawImpact: 0, assistWinImpact: 0, assistDrawImpact: 0
                 };
             }
 
@@ -119,6 +122,105 @@ export default function AlAhlyPlayers({ playerDetails, lineupDetails, filteredMa
             if (type === "PENASSISTMISSED") { rowToUpdate.wonMiss += 1; }
             if (type === "PENMAKEGOAL") { rowToUpdate.makeGoal += 1; }
             if (type === "PENMAKEMISSED") { rowToUpdate.makeMiss += 1; }
+        });
+
+        // --- SYNCED IMPACT CALCULATION ---
+        const matchesData = filteredMatches || [];
+        matchesData.forEach(match => {
+            const mId = String(match.MATCH_ID).trim();
+            const gf = parseInt(match.GF) || 0;
+            const ga = parseInt(match.GA) || 0;
+            const res = match["W-D-L"];
+
+            const matchEvents = (playerDetails || []).filter(e => String(e.MATCH_ID).trim() === mId);
+
+            // Group goals by side, sorted by time/ID
+            const ahlySideGoals = matchEvents.filter(e => isAhlyTeam(e.TEAM) && (["GOAL", "هدف"].includes(String(e.TYPE || "").toUpperCase()) || String(e.TYPE_SUB || "").toUpperCase() === "PENGOAL")).sort((a, b) => (parseInt(a.MINUTE) || 0) - (parseInt(b.MINUTE) || 0) || parseInt(a.EVENT_ID || 0) - parseInt(b.EVENT_ID || 0));
+            const oppSideGoals = matchEvents.filter(e => !isAhlyTeam(e.TEAM) && (["GOAL", "هدف"].includes(String(e.TYPE || "").toUpperCase()) || String(e.TYPE_SUB || "").toUpperCase() === "PENGOAL")).sort((a, b) => (parseInt(a.MINUTE) || 0) - (parseInt(b.MINUTE) || 0) || parseInt(a.EVENT_ID || 0) - parseInt(b.EVENT_ID || 0));
+
+            const updateStats = (name, type, teamVal) => {
+                if (!stats[name]) return;
+                const isAhly = isAhlyTeam(teamVal);
+                if (teamFilter === "ahly" && !isAhly) return;
+                if (teamFilter === "opponents" && isAhly) return;
+                if (opponentFilter !== "all" && String(teamVal).trim() !== opponentFilter) return;
+
+                if (type === 'G_WIN') stats[name].goalWinImpact++;
+                if (type === 'G_DRAW') stats[name].goalDrawImpact++;
+                if (type === 'A_WIN') stats[name].assistWinImpact++;
+                if (type === 'A_DRAW') stats[name].assistDrawImpact++;
+            };
+
+            const findAssist = (goal) => {
+                if (!goal) return null;
+                const gId = String(goal.EVENT_ID);
+                const aRow = matchEvents.find(e =>
+                    ["ASSIST", "اسيست", "صنع"].includes(String(e.TYPE || "").toUpperCase()) &&
+                    (String(e.PARENT_EVENT_ID) === gId || (parseInt(e.MINUTE) === parseInt(goal.MINUTE) && parseInt(e.MINUTE) > 0)) &&
+                    String(e["PLAYER NAME"]).trim() !== String(goal["PLAYER NAME"]).trim()
+                );
+                return aRow ? String(aRow["PLAYER NAME"]).trim() : null;
+            };
+
+            // Ahly Impact Logic
+            if (res === 'W') {
+                if (gf - ga === 1) { // 1-Goal Margin
+                    const lg = ahlySideGoals[ahlySideGoals.length - 1];
+                    if (lg) {
+                        updateStats(String(lg["PLAYER NAME"]).trim(), 'G_WIN', lg.TEAM);
+                        const assister = findAssist(lg);
+                        if (assister) {
+                            const aRow = matchEvents.find(e => String(e["PLAYER NAME"]).trim() === assister && String(e.MATCH_ID).trim() === mId);
+                            updateStats(assister, 'A_WIN', (aRow ? aRow.TEAM : "الأهلي"));
+                        }
+                    }
+                } else if (gf > 1 && ga < gf) { // Big Win
+                    const scorers = [...new Set(ahlySideGoals.map(g => String(g["PLAYER NAME"]).trim()))];
+                    if (scorers.length === 1) {
+                        updateStats(scorers[0], 'G_WIN', "الأهلي");
+                    }
+                }
+            } else if (res === 'D' && gf > 0) {
+                const lg = ahlySideGoals[ahlySideGoals.length - 1];
+                if (lg) {
+                    updateStats(String(lg["PLAYER NAME"]).trim(), 'G_DRAW', lg.TEAM);
+                    const assister = findAssist(lg);
+                    if (assister) {
+                        const aRow = matchEvents.find(e => String(e["PLAYER NAME"]).trim() === assister && String(e.MATCH_ID).trim() === mId);
+                        updateStats(assister, 'A_DRAW', (aRow ? aRow.TEAM : "الأهلي"));
+                    }
+                }
+            }
+
+            // Opponent Impact Logic
+            if (res === 'L') {
+                if (ga - gf === 1) {
+                    const lg = oppSideGoals[oppSideGoals.length - 1];
+                    if (lg) {
+                        updateStats(String(lg["PLAYER NAME"]).trim(), 'G_WIN', lg.TEAM);
+                        const assister = findAssist(lg);
+                        if (assister) {
+                            const aRow = matchEvents.find(e => String(e["PLAYER NAME"]).trim() === assister && String(e.MATCH_ID).trim() === mId);
+                            updateStats(assister, 'A_WIN', (aRow ? aRow.TEAM : lg.TEAM));
+                        }
+                    }
+                } else if (ga > 1 && gf < ga) {
+                    const scorers = [...new Set(oppSideGoals.map(g => String(g["PLAYER NAME"]).trim()))];
+                    if (scorers.length === 1) {
+                        updateStats(scorers[0], 'G_WIN', oppSideGoals[0].TEAM);
+                    }
+                }
+            } else if (res === 'D' && ga > 0) {
+                const lg = oppSideGoals[oppSideGoals.length - 1];
+                if (lg) {
+                    updateStats(String(lg["PLAYER NAME"]).trim(), 'G_DRAW', lg.TEAM);
+                    const assister = findAssist(lg);
+                    if (assister) {
+                        const aRow = matchEvents.find(e => String(e["PLAYER NAME"]).trim() === assister && String(e.MATCH_ID).trim() === mId);
+                        updateStats(assister, 'A_DRAW', (aRow ? aRow.TEAM : lg.TEAM));
+                    }
+                }
+            }
         });
 
         const list = Object.values(stats);
@@ -190,11 +292,34 @@ export default function AlAhlyPlayers({ playerDetails, lineupDetails, filteredMa
         if (activeSubTab === 1) return list.sort((a, b) => b.ga - a.ga || b.goals - a.goals || b.caps - a.caps);
         if (activeSubTab === 2) return list.filter(r => (r.total + r.wonGoal + r.wonMiss + r.makeGoal + r.makeMiss) > 0).sort((a, b) => b.total - a.total || b.goal - a.goal);
         if (activeSubTab === 3) return list.filter(r => (r.braceG + r.hatG + r.superG + r.braceA + r.hatA + r.superA) > 0).sort((a, b) => b.braceG - a.braceG);
+        if (activeSubTab === 4) return list.filter(r => (r.goalWinImpact + r.goalDrawImpact + r.assistWinImpact + r.assistDrawImpact) > 0).sort((a, b) => (b.goalWinImpact + b.goalDrawImpact + b.assistWinImpact + b.assistDrawImpact) - (a.goalWinImpact + a.goalDrawImpact + a.assistWinImpact + a.assistDrawImpact));
         return list;
     }, [allStats, searchTerm, activeSubTab]);
 
     const totalPages = Math.ceil(filteredRows.length / pageSize);
     const paginatedRows = filteredRows.slice((currentPage - 1) * pageSize, currentPage * pageSize);
+
+    useEffect(() => {
+        const handleGlobalExport = () => {
+            if (!selectedPlayer) {
+                handleExport();
+            }
+        };
+        window.addEventListener('alahly-export-excel', handleGlobalExport);
+        return () => window.removeEventListener('alahly-export-excel', handleGlobalExport);
+    }, [filteredRows, activeSubTab, selectedPlayer]);
+
+    const handleExport = () => {
+        const exportData = filteredRows.map((r, i) => {
+            if (activeSubTab === 1) return { "#": i + 1, "PLAYER NAME": r.name, "MATCHES": r.caps, "MINUTES": r.mins, "G+A": r.ga, "GOALS": r.goals, "ASSISTS": r.assists, "PENALTIES": r.penalties };
+            if (activeSubTab === 2) return { "#": i + 1, "PLAYER NAME": r.name, "TOTAL SHOT": r.total, "SCORE": r.goal, "MISS": r.miss, "WON(G)": r.wonGoal, "WON(M)": r.wonMiss, "MAKE(G)": r.makeGoal, "MAKE(M)": r.makeMiss };
+            if (activeSubTab === 3) return { "#": i + 1, "PLAYER NAME": r.name, "G-BRACE": r.braceG, "G-HATRICK": r.hatG, "G-SUPER": r.superG, "A-BRACE": r.braceA, "A-HATRICK": r.hatA, "A-SUPER": r.superA };
+            if (activeSubTab === 4) return { "#": i + 1, "PLAYER NAME": r.name, "G-WIN": r.goalWinImpact, "G-DRAW": r.goalDrawImpact, "A-WIN": r.assistWinImpact, "A-DRAW": r.assistDrawImpact, "TOTAL": (r.goalWinImpact + r.goalDrawImpact + r.assistWinImpact + r.assistDrawImpact) };
+            return r;
+        });
+        const tabNames = ["Stats", "Penalties", "Multiples", "Impact"];
+        AlAhlyService.exportToExcel(exportData, `AlAhly_Players_${tabNames[activeSubTab - 1]}`);
+    };
 
     return (
         <div className="tab-content" id="tab-players">
@@ -211,11 +336,14 @@ export default function AlAhlyPlayers({ playerDetails, lineupDetails, filteredMa
             ) : (
                 <div className="players-premium-wrap" style={{ maxWidth: '1450px' }}>
                     <div className="header-tabs-container">
-                        <div className="section-title">AL AHLY <span className="accent">PLAYERS</span></div>
-                        <div className="sub-tabs-selection">
-                            <div className={`sub-tab-box ${activeSubTab === 1 ? 'active' : ''}`} onClick={() => setActiveSubTab(1)}>1</div>
-                            <div className={`sub-tab-box ${activeSubTab === 2 ? 'active' : ''}`} onClick={() => setActiveSubTab(2)}>2</div>
-                            <div className={`sub-tab-box ${activeSubTab === 3 ? 'active' : ''}`} onClick={() => setActiveSubTab(3)}>3</div>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '30px' }}>
+                            <div className="section-title">AL AHLY <span className="accent">PLAYERS</span></div>
+                            <div className="sub-tabs-selection">
+                                <div className={`sub-tab-box ${activeSubTab === 1 ? 'active' : ''}`} onClick={() => setActiveSubTab(1)}>1</div>
+                                <div className={`sub-tab-box ${activeSubTab === 2 ? 'active' : ''}`} onClick={() => setActiveSubTab(2)}>2</div>
+                                <div className={`sub-tab-box ${activeSubTab === 3 ? 'active' : ''}`} onClick={() => setActiveSubTab(3)}>3</div>
+                                <div className={`sub-tab-box ${activeSubTab === 4 ? 'active' : ''}`} onClick={() => setActiveSubTab(4)}>4</div>
+                            </div>
                         </div>
                     </div>
                     <div className="gold-line"></div>
@@ -307,6 +435,42 @@ export default function AlAhlyPlayers({ playerDetails, lineupDetails, filteredMa
                                 </tbody>
                             </table>
                         )}
+                        {activeSubTab === 4 && (
+                            <table className="modern-player-table fade-in">
+                                <thead>
+                                    <tr>
+                                        <th rowSpan="2">#</th>
+                                        <th className="name-th" rowSpan="2">PLAYER NAME</th>
+                                        <th colSpan="2" style={{ background: '#27ae60', color: '#fff' }}>GOAL IMPACT</th>
+                                        <th colSpan="2" style={{ background: '#2980b9', color: '#fff' }}>ASSIST IMPACT</th>
+                                        <th rowSpan="2" style={{ background: '#000', color: 'var(--gold)' }}>TOTAL</th>
+                                    </tr>
+                                    <tr style={{ fontSize: '10px' }}>
+                                        <th style={{ padding: '10px' }}>WIN</th>
+                                        <th style={{ padding: '10px' }}>DRAW</th>
+                                        <th style={{ padding: '10px' }}>WIN</th>
+                                        <th style={{ padding: '10px' }}>DRAW</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {paginatedRows.length > 0 ? (
+                                        paginatedRows.map((r, i) => (
+                                            <tr key={r.name}>
+                                                <td><span className="rank-badge">{(currentPage - 1) * pageSize + i + 1}</span></td>
+                                                <td className="p-name" onClick={() => setSelectedPlayer(r.name)} style={{ cursor: 'pointer' }}>{r.name}</td>
+                                                <td className="g-val">{r.goalWinImpact}</td>
+                                                <td style={{ color: '#e67e22' }}>{r.goalDrawImpact}</td>
+                                                <td className="a-val">{r.assistWinImpact}</td>
+                                                <td style={{ color: '#e67e22' }}>{r.assistDrawImpact}</td>
+                                                <td style={{ fontWeight: 800 }}>{r.goalWinImpact + r.goalDrawImpact + r.assistWinImpact + r.assistDrawImpact}</td>
+                                            </tr>
+                                        ))
+                                    ) : (
+                                        <tr><td colSpan="7" style={{ padding: '100px', opacity: 0.4 }}>No matching legends found.</td></tr>
+                                    )}
+                                </tbody>
+                            </table>
+                        )}
                     </div>
                     {totalPages > 1 && (
                         <div className="pagination-premium">
@@ -342,17 +506,18 @@ export default function AlAhlyPlayers({ playerDetails, lineupDetails, filteredMa
                 .player-table-container { background: #fff; border-radius: 12px; box-shadow: 0 20px 60px rgba(0,0,0,0.1); overflow: hidden; border: 1px solid var(--border); }
                 .modern-player-table { width: 100%; border-collapse: collapse; }
                 .modern-player-table th { background: #0a0a0a; color: rgba(255,255,255,0.85); font-size: 13px; padding: 28px 25px; text-align: center; font-family: 'Space Mono', monospace; text-transform: uppercase; letter-spacing: 2px; }
-                .modern-player-table td { padding: 18px; border-bottom: 1px solid #f2f2f2; text-align: center; font-size: 16px; font-weight: 600; }
-                .p-name { color: #000; font-weight: 800 !important; transition: 0.3s; }
+                .modern-player-table td { padding: 16px 12px; border-bottom: 1px solid #f2f2f2; text-align: center; font-size: 18px; font-weight: 600; vertical-align: middle; }
+                .p-name { color: #000; font-weight: 800 !important; transition: 0.3s; font-size: 17px !important; text-align: center !important; }
                 .p-name:hover { color: var(--gold); text-decoration: underline; }
-                .rank-badge { width: 28px; height: 28px; border-radius: 50%; background: #f0f0f0; display: inline-flex; align-items: center; justify-content: center; font-size: 12px; }
+                .rank-badge { width: 32px; height: 32px; border-radius: 50%; background: #f0f0f0; display: inline-flex; align-items: center; justify-content: center; font-size: 13px; font-family: 'Space Mono'; font-weight: 800; }
                 .rank-rank-1 { background: var(--gold); color: #000; }
                 .rank-rank-2 { background: #c0c0c0; color: #000; }
                 .rank-rank-3 { background: #cd7f32; color: #000; }
-                .ga-pill { background: #000; color: var(--gold); padding: 5px 12px; border-radius: 20px; font-size: 14px; display: inline-block; font-weight: 800; border: 1px solid var(--gold); }
-                .g-val { color: #2ecc71; font-weight: 800; }
-                .a-val { color: #3498db; font-weight: 800; }
-                .p-val { color: #e74c3c; font-weight: 800; }
+                .ga-pill { background: #000; color: var(--gold); padding: 8px 16px; border-radius: 8px; font-size: 18px; display: inline-block; font-weight: 800; border: 1px solid var(--gold); font-family: 'Space Mono'; min-width: 45px; }
+                .g-val { color: #2ecc71; font-weight: 800; font-size: 22px; font-family: 'Space Mono'; }
+                .a-val { color: #3498db; font-weight: 800; font-size: 22px; font-family: 'Space Mono'; }
+                .p-val { color: #e74c3c; font-weight: 800; font-size: 22px; font-family: 'Space Mono'; }
+                .modern-player-table td:not(.p-name):not(.name-th) { font-family: 'Space Mono', monospace; font-size: 20px; }
                 .pagination-premium { margin-top: 40px; display: flex; align-items: center; justify-content: center; gap: 30px; }
                 .page-btn { background: #000; color: #fff; border: 1px solid #333; padding: 12px 30px; border-radius: 8px; font-family: 'Space Mono', monospace; font-weight: 700; cursor: pointer; transition: 0.3s; }
                 .page-btn:hover:not(:disabled) { background: var(--gold); color: #000; border-color: var(--gold); }
@@ -361,6 +526,30 @@ export default function AlAhlyPlayers({ playerDetails, lineupDetails, filteredMa
                 .p-num { color: #000; font-weight: 800; margin: 0 5px; }
                 .fade-in { animation: fadeIn 0.4s ease-out; }
                 @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
+
+                .export-excel-btn {
+                    background: #000;
+                    color: var(--gold);
+                    border: 1px solid var(--gold);
+                    padding: 10px 20px;
+                    border-radius: 4px;
+                    font-family: 'Space Mono', monospace;
+                    font-size: 11px;
+                    font-weight: 700;
+                    letter-spacing: 1px;
+                    cursor: pointer;
+                    display: flex;
+                    align-items: center;
+                    gap: 8px;
+                    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+                }
+                .export-excel-btn:hover {
+                    background: var(--gold);
+                    color: #000;
+                    box-shadow: 0 5px 20px rgba(201,168,76,0.25);
+                    transform: translateY(-2px);
+                }
+                .export-icon { font-size: 16px; font-weight: 400; }
             `}</style>
         </div>
     );

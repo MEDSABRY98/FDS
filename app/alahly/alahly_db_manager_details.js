@@ -10,6 +10,7 @@ import Manager_SeasonNumber_Module from "./alahly_db_manager_details_season_numb
 import Manager_VsTeams_Module from "./alahly_db_manager_details_vs_teams";
 import Manager_Championships_Module from "./alahly_db_manager_details_championships";
 import Manager_PlayersUsed_Module from "./alahly_db_manager_details_players_used";
+import { AlAhlyService } from "./alahly_db_service";
 
 export default function Manager_Details_Hub({ managerName, managerStatus, masterMatches, onBack, playerDetails, lineupDetails }) {
     const [activeTab, setActiveTab] = useState('overview');
@@ -217,6 +218,61 @@ export default function Manager_Details_Hub({ managerName, managerStatus, master
             mgrOpps: Array.from(oppSet).sort()
         };
     }, [managerName, managerStatus, masterMatches, playerDetails, lineupDetails]);
+
+    useEffect(() => {
+        const handleGlobalExport = () => handleExport();
+        window.addEventListener('alahly-export-excel', handleGlobalExport);
+        return () => window.removeEventListener('alahly-export-excel', handleGlobalExport);
+    }, [stats, activeTab]);
+
+    const handleExport = () => {
+        let exportData = [];
+        let filename = `AlAhly_Manager_${managerName}_${activeTab}`;
+        switch (activeTab) {
+            case 'overview':
+                exportData = [{ "METRIC": "Matches", "VALUE": stats.matches }, { "METRIC": "Wins", "VALUE": stats.wins }, { "METRIC": "Draws", "VALUE": stats.draws }, { "METRIC": "Losses", "VALUE": stats.losses }, { "METRIC": "GF", "VALUE": stats.gs }, { "METRIC": "GA", "VALUE": stats.ga }];
+                break;
+            case 'matches':
+                exportData = stats.matchHistory.map((m, i) => ({
+                    "#": i + 1, "DATE": m.date, "CHAMPION": m.champion, "SEASON": m.season, "SY": m.sy, "OPPONENT": m.opponent, "MANAGED TEAM": m.managedTeam, "WDL": m.wdl, "GF": m.gf, "GA": m.ga
+                }));
+                break;
+            case 'championships':
+                exportData = Object.keys(stats.compStats).map((c, i) => {
+                    const s = stats.compStats[c];
+                    return { "#": i + 1, "CHAMPION": c, "MP": s.matches, "W": s.wins, "D": s.draws, "L": s.losses, "GF": s.gs, "GA": s.ga, "CS-F": s.csFor };
+                });
+                break;
+            case 'players_used':
+                exportData = Object.values(stats.playerUsedStats).sort((a, b) => b.apps - a.apps).map((p, i) => ({
+                    "#": i + 1, "PLAYER": p.name, "APPS": p.apps, "MINS": p.mins, "GOALS": p.goals, "ASSISTS": p.assists
+                }));
+                break;
+            case 'season_name':
+                exportData = [];
+                Object.keys(stats.statsByChampSeason).forEach(comp => {
+                    Object.keys(stats.statsByChampSeason[comp]).forEach(season => {
+                        const s = stats.statsByChampSeason[comp][season];
+                        exportData.push({ "CHAMPION": comp, "SEASON": season, "MP": s.matches, "W": s.wins, "D": s.draws, "L": s.losses, "GF": s.gs, "GA": s.ga });
+                    });
+                });
+                break;
+            case 'season_number':
+                exportData = Object.keys(stats.statsBySY).sort((a, b) => b.localeCompare(a)).map((sy, i) => {
+                    const s = stats.statsBySY[sy];
+                    return { "#": i + 1, "SY": sy, "MP": s.matches, "W": s.wins, "D": s.draws, "L": s.losses, "GF": s.gs, "GA": s.ga };
+                });
+                break;
+            case 'vs_teams':
+                const combined = { ...stats.statsByOpponent, ...stats.statsAsOpponentMgr };
+                exportData = Object.keys(combined).sort((a, b) => combined[b].matches - combined[a].matches).map((team, i) => {
+                    const s = combined[team];
+                    return { "#": i + 1, "TEAM": team, "MP": s.matches, "W": s.wins, "D": s.draws, "L": s.losses, "GF": s.gs, "GA": s.ga };
+                });
+                break;
+        }
+        if (exportData.length > 0) AlAhlyService.exportToExcel(exportData, filename);
+    };
 
     return (
         <div className="player-details-container fade-in">

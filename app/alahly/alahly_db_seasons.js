@@ -1,6 +1,8 @@
 "use client";
 
+import { useEffect, useMemo } from "react";
 import "./alahly_db_seasons.css";
+import { AlAhlyService } from "./alahly_db_service";
 
 export default function AlAhlySeasons({ matches }) {
 
@@ -56,6 +58,41 @@ export default function AlAhlySeasons({ matches }) {
 
     // --- STEP 2: SORT CHAMPIONS ALPHABETICALLY ---
     const sortedChamps = Object.keys(statsByChampion).sort();
+
+    useEffect(() => {
+        const handleGlobalExport = () => handleExport();
+        window.addEventListener('alahly-export-excel', handleGlobalExport);
+        return () => window.removeEventListener('alahly-export-excel', handleGlobalExport);
+    }, [statsByChampion, sortedChamps]);
+
+    const handleExport = () => {
+        const exportData = [];
+        sortedChamps.forEach(champ => {
+            const seasons = Object.keys(statsByChampion[champ]).sort((a, b) => {
+                const yearA = extractYear(a);
+                const yearB = extractYear(b);
+                if (yearB !== yearA) return yearB - yearA;
+                return b.localeCompare(a);
+            });
+            seasons.forEach(season => {
+                const s = statsByChampion[champ][season];
+                exportData.push({
+                    "CHAMPION": champ,
+                    "SEASON": season,
+                    "MP": s.MP,
+                    "W": s.W,
+                    "D(+)": s.DP,
+                    "D(-)": s.DN,
+                    "L": s.L,
+                    "GF": s.GF,
+                    "GA": s.GA,
+                    "CS(F)": s.CSF,
+                    "CS(A)": s.CSA
+                });
+            });
+        });
+        AlAhlyService.exportToExcel(exportData, "AlAhly_Seasons_Name");
+    };
 
     return (
         <div className="tab-content" id="tab-seasons">

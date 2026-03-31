@@ -1,7 +1,8 @@
 "use client";
 
-import { useMemo } from "react";
+import { useMemo, useEffect } from "react";
 import "./alahly_db_years.css";
+import { AlAhlyService } from "./alahly_db_service";
 
 export default function AlAhlyYears({ matches }) {
 
@@ -87,6 +88,31 @@ export default function AlAhlyYears({ matches }) {
         });
         return t;
     }, [statsByYear]);
+
+    useEffect(() => {
+        const handleGlobalExport = () => handleExport();
+        window.addEventListener('alahly-export-excel', handleGlobalExport);
+        return () => window.removeEventListener('alahly-export-excel', handleGlobalExport);
+    }, [statsByYear, sortedYears]);
+
+    const handleExport = () => {
+        const exportData = sortedYears.map(year => {
+            const s = statsByYear[year];
+            return {
+                "YEAR": year,
+                "MP": s.MP,
+                "W": s.W,
+                "D(+)": s.DP,
+                "D(-)": s.DN,
+                "L": s.L,
+                "GF": s.GF,
+                "GA": s.GA,
+                "CS(F)": s.CSF,
+                "CS(A)": s.CSA
+            };
+        });
+        AlAhlyService.exportToExcel(exportData, "AlAhly_Stats_By_Year");
+    };
 
     return (
         <div className="tab-content" id="tab-years">

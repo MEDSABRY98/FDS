@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo, useState, useEffect } from "react";
+import { AlAhlyService } from "./alahly_db_service";
 import "./alahly_db_matches.css";
 
 export default function AlAhlyMatches({ matches, onMatchClick }) {
@@ -43,6 +44,33 @@ export default function AlAhlyMatches({ matches, onMatchClick }) {
 
     const groupedMatches = useMemo(() => groupMatchesByMonth(paginatedMatches), [paginatedMatches]);
     const totalPages = Math.ceil(filteredBySearch.length / pageSize);
+
+    useEffect(() => {
+        const handleGlobalExport = () => {
+            handleExport();
+        };
+        window.addEventListener('alahly-export-excel', handleGlobalExport);
+        return () => window.removeEventListener('alahly-export-excel', handleGlobalExport);
+    }, [filteredBySearch]);
+
+    const handleExport = () => {
+        const exportData = filteredBySearch.map((m, i) => ({
+            "#": i + 1,
+            "DATE": m.DATE,
+            "CHAMPION": m.CHAMPION,
+            "SEASON": m["SEASON - NAME"],
+            "VENUE": m["H-A-N"],
+            "STADIUM": m.STAD,
+            "REFEREE": m.REFREE,
+            "AHLY MANAGER": m["AHLY MANAGER"],
+            "OPPONENT MANAGER": m["OPPONENT MANAGER"],
+            "TEAM A": m["AHLY TEAM"],
+            "GF": m.GF,
+            "GA": m.GA,
+            "TEAM B": m["OPPONENT TEAM"]
+        }));
+        AlAhlyService.exportToExcel(exportData, "AlAhly_Matches_History");
+    };
 
     useEffect(() => {
         setCurrentPage(1);
@@ -199,6 +227,30 @@ export default function AlAhlyMatches({ matches, onMatchClick }) {
                 .empty-state-lux { text-align: center; padding: 100px; opacity: 0.4; }
                 .fade-in { animation: fadeIn 0.4s ease-out; }
                 @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
+
+                .export-excel-btn {
+                    background: #000;
+                    color: var(--gold);
+                    border: 1px solid var(--gold);
+                    padding: 10px 20px;
+                    border-radius: 4px;
+                    font-family: 'Space Mono', monospace;
+                    font-size: 11px;
+                    font-weight: 700;
+                    letter-spacing: 1px;
+                    cursor: pointer;
+                    display: flex;
+                    align-items: center;
+                    gap: 8px;
+                    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+                }
+                .export-excel-btn:hover {
+                    background: var(--gold);
+                    color: #000;
+                    box-shadow: 0 5px 20px rgba(201,168,76,0.25);
+                    transform: translateY(-2px);
+                }
+                .export-icon { font-size: 16px; font-weight: 400; }
 
                 @media (max-width: 1000px) {
                     .modern-match-row-h { flex-direction: column; gap: 15px; padding: 20px; text-align: center; }

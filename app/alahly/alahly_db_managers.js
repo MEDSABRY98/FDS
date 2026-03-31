@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useMemo, useEffect, useRef } from "react";
+import { AlAhlyService } from "./alahly_db_service";
 import "./alahly_db_managers.css";
 import Manager_Details_Hub from "./alahly_db_manager_details.js";
 
@@ -82,6 +83,31 @@ export default function AlAhlyManagers({ matches, playerDetails, lineupDetails }
             .filter(s => s.name.toLowerCase().includes(searchTerm.toLowerCase()))
             .sort((a, b) => b.matches - a.matches || a.name.localeCompare(b.name));
     }, [matches, managerColumn, teamColumn, teamFilter, searchTerm]);
+
+    useEffect(() => {
+        const handleGlobalExport = () => {
+            if (!selectedManager) handleExport();
+        };
+        window.addEventListener('alahly-export-excel', handleGlobalExport);
+        return () => window.removeEventListener('alahly-export-excel', handleGlobalExport);
+    }, [managerStats, selectedManager]);
+
+    const handleExport = () => {
+        const exportData = managerStats.map((s, idx) => ({
+            "#": idx + 1,
+            "MANAGER NAME": s.name,
+            "MP": s.matches,
+            "W": s.wins,
+            "D(+)": s.pDraws,
+            "D(-)": s.nDraws,
+            "L": s.losses,
+            "GS": s.gs,
+            "GA": s.ga,
+            "CS(+)": s.csFor,
+            "CS(-)": s.csAgainst
+        }));
+        AlAhlyService.exportToExcel(exportData, `AlAhly_Managers_${managerStatus}`);
+    };
 
     const grandTotals = useMemo(() => {
         const t = { matches: 0, wins: 0, pDraws: 0, nDraws: 0, losses: 0, gs: 0, ga: 0, csFor: 0, csAgainst: 0 };
