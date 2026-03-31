@@ -71,11 +71,15 @@ export default function AlAhlyManagers({ matches, playerDetails, lineupDetails }
             const wdl = String(m["W-D-L"] || "").toUpperCase();
             s.gs += gf;
             s.ga += ga;
-            if (wdl === "W") s.wins += 1;
-            else if (wdl === "L") s.losses += 1;
-            else if (wdl === "D" || wdl.includes("DRAW")) {
+
+            if (wdl.includes('W')) {
+                s.wins += 1;
+            } else if (wdl.includes('L')) {
+                s.losses += 1;
+            } else if (wdl.includes('D')) {
                 if (gf > 0 || ga > 0) s.pDraws += 1; else s.nDraws += 1;
             }
+
             if (ga === 0) s.csFor += 1;
             if (gf === 0) s.csAgainst += 1;
         });
@@ -134,7 +138,7 @@ export default function AlAhlyManagers({ matches, playerDetails, lineupDetails }
 
     return (
         <div className="tab-content" id="tab-managers">
-            <div className="mgr-premium-wrap" style={{ maxWidth: '1450px', margin: '0 auto' }}>
+            <div className="mgr-premium-wrap" style={{ maxWidth: '1400px', margin: '0 auto' }}>
                 <div className="mgr-header-tabs">
                     <div className="section-title">AL AHLY <span className="accent">MANAGERS</span></div>
                 </div>
@@ -238,7 +242,7 @@ export default function AlAhlyManagers({ matches, playerDetails, lineupDetails }
                             {managerStats.length > 0 ? (
                                 managerStats.map((s, idx) => (
                                     <tr key={s.name} onClick={() => setSelectedManager(s.name)} style={{ cursor: 'pointer' }}>
-                                        <td style={{ textAlign: 'center', opacity: 0.3, fontWeight: 800 }}>{idx + 1}</td>
+                                        <td><span className={`rank-badge-premium ${idx < 3 ? 'rank-gold' : ''}`}>{idx + 1}</span></td>
                                         <td className="p-name" style={{ textAlign: 'center' }}>{s.name}</td>
                                         <td>{s.matches}</td>
                                         <td className="w-cell">{s.wins}</td>
@@ -258,18 +262,17 @@ export default function AlAhlyManagers({ matches, playerDetails, lineupDetails }
                             )}
                         </tbody>
                         <tfoot>
-                            <tr className="grand-total-row" style={{ background: '#000', color: '#fff' }}>
-                                <td style={{ background: '#000' }}></td>
-                                <td className="total-label" style={{ textAlign: 'center', background: '#000', color: 'var(--gold)' }}>G. TOTAL</td>
-                                <td style={{ background: '#000', color: '#fff' }}>{grandTotals.matches}</td>
-                                <td className="w-cell" style={{ color: '#5ef193', background: '#000' }}>{grandTotals.wins}</td>
-                                <td style={{ background: '#000', color: '#fff' }}>{grandTotals.pDraws}</td>
-                                <td style={{ background: '#000', color: '#fff' }}>{grandTotals.nDraws}</td>
-                                <td className="l-cell" style={{ color: '#ff6b6b', background: '#000' }}>{grandTotals.losses}</td>
-                                <td style={{ background: '#000', color: '#fff' }}>{grandTotals.gs}</td>
-                                <td style={{ background: '#000', color: '#fff' }}>{grandTotals.ga}</td>
-                                <td className="cs-cell" style={{ color: 'var(--gold)', background: '#000', fontWeight: 800 }}>{grandTotals.csFor}</td>
-                                <td style={{ background: '#000', color: '#fff' }}>{grandTotals.csAgainst}</td>
+                            <tr className="total-row-premium">
+                                <td colSpan="2" style={{ textAlign: 'center' }}>TOTAL</td>
+                                <td>{grandTotals.matches}</td>
+                                <td className="w-cell">{grandTotals.wins}</td>
+                                <td>{grandTotals.pDraws}</td>
+                                <td>{grandTotals.nDraws}</td>
+                                <td className="l-cell">{grandTotals.losses}</td>
+                                <td>{grandTotals.gs}</td>
+                                <td>{grandTotals.ga}</td>
+                                <td className="cs-cell" style={{ color: 'var(--gold)', fontWeight: 800 }}>{grandTotals.csFor}</td>
+                                <td style={{ color: '#fff' }}>{grandTotals.csAgainst}</td>
                             </tr>
                         </tfoot>
                     </table>

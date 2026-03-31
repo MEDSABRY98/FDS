@@ -17,6 +17,7 @@ import AlAhlyMobileNav from "./alahly_db_m";
 import AlAhlyMatchDetails from "./alahly_db_match_details";
 import AlAhlyEditor from "./alahly_db_editor";
 import AlAhlyReferees from "./alahly_db_referees";
+import AlAhlyH2H from "./alahly_db_h2h";
 
 export default function AlAhlyDatabase() {
     const [activeTab, setActiveTab] = useState("dashboard");
@@ -260,6 +261,7 @@ export default function AlAhlyDatabase() {
                         { id: 'gks', label: 'GKs', icon: 'GK' },
                         { id: 'managers', label: 'Managers', icon: 'M' },
                         { id: 'referees', label: 'Referees', icon: 'R' },
+                        { id: 'h2h', label: 'H2H', icon: 'H' },
                         { id: 'filters', label: 'Filters', icon: 'F' }
                     ].map(tab => (
                         <button
@@ -312,6 +314,7 @@ export default function AlAhlyDatabase() {
                 {activeTab === 'players' && <AlAhlyPlayers playerDetails={playerDetails} lineupDetails={lineupDetails} filteredMatches={filteredMatches} gkDetails={gkDetails} howPenMissed={howPenMissed} />}
                 {activeTab === 'gks' && <AlAhlyGKs gkDetails={gkDetails} howPenMissed={howPenMissed} filteredMatches={filteredMatches} playerDetails={playerDetails} />}
                 {activeTab === 'managers' && <AlAhlyManagers matches={filteredMatches} playerDetails={playerDetails} lineupDetails={lineupDetails} />}
+                {activeTab === 'h2h' && <AlAhlyH2H matches={filteredMatches} />}
                 {activeTab === 'referees' && <AlAhlyReferees matches={filteredMatches} playerDetails={playerDetails} howPenMissed={howPenMissed} />}
                 {activeTab === 'filters' && (
                     <AlAhlyFilters

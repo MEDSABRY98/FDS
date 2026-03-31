@@ -14,6 +14,7 @@ export default function AlAhlyMobileNav({ activeTab, setActiveTab }) {
         { id: 'gks', label: 'GKS', icon: 'GK' },
         { id: 'managers', label: 'MANAGERS', icon: 'M' },
         { id: 'referees', label: 'REFEREES', icon: 'R' },
+        { id: 'h2h', label: 'H2H', icon: 'H' },
         { id: 'filters', label: 'FILTERS', icon: 'F' }
     ];
 

@@ -34,9 +34,12 @@ export default function AlAhlyReferees({ matches, playerDetails, howPenMissed })
             const ga = parseInt(m["GA"]) || 0;
             const wdl = String(m["W-D-L"] || "").toUpperCase();
             s.gs += gf; s.ga += ga;
-            if (wdl === "W") s.wins += 1;
-            else if (wdl === "L") s.losses += 1;
-            else if (wdl === "D" || wdl.includes("DRAW")) {
+
+            if (wdl.includes('W')) {
+                s.wins += 1;
+            } else if (wdl.includes('L')) {
+                s.losses += 1;
+            } else if (wdl.includes('D')) {
                 if (gf > 0 || ga > 0) s.pDraws += 1;
                 else s.nDraws += 1;
             }
@@ -183,8 +186,10 @@ export default function AlAhlyReferees({ matches, playerDetails, howPenMissed })
                             {paginatedStats.length > 0 ? (
                                 paginatedStats.map((s, idx) => (
                                     <tr key={s.name}>
-                                        <td style={{ textAlign: 'center', opacity: 0.3, fontWeight: 800 }}>
-                                            {(currentPage - 1) * pageSize + idx + 1}
+                                        <td>
+                                            <span className={`rank-badge-premium ${((currentPage - 1) * pageSize + idx) < 3 ? 'rank-gold' : ''}`}>
+                                                {(currentPage - 1) * pageSize + idx + 1}
+                                            </span>
                                         </td>
                                         <td className="p-name"
                                             style={{ textAlign: 'center', cursor: 'pointer' }}
@@ -210,9 +215,8 @@ export default function AlAhlyReferees({ matches, playerDetails, howPenMissed })
                             )}
                         </tbody>
                         <tfoot>
-                            <tr className="grand-total-row">
-                                <td></td>
-                                <td className="total-label" style={{ textAlign: 'center' }}>G. TOTAL</td>
+                            <tr className="total-row-premium">
+                                <td colSpan="2" style={{ textAlign: 'center' }}>TOTAL</td>
                                 <td>{grandTotals.matches}</td>
                                 <td className="w-cell">{grandTotals.wins}</td>
                                 <td>{grandTotals.pDraws}</td>

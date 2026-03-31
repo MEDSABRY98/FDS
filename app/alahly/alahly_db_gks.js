@@ -141,6 +141,17 @@ export default function AlAhlyGKs({ gkDetails, howPenMissed, filteredMatches, pl
         });
     }, [gkDetails, howPenMissed, matchResultsMap, currentMatchIds, teamFilter, opponentFilter, searchTerm, playerDetails]);
 
+    // Calculate Totals for GKs
+    const totals = useMemo(() => {
+        return gkStats.reduce((acc, curr) => ({
+            matches: acc.matches + curr.matches,
+            goalsConceded: acc.goalsConceded + curr.goalsConceded,
+            cleanSheets: acc.cleanSheets + curr.cleanSheets,
+            penaltiesReceived: acc.penaltiesReceived + curr.penaltiesReceived,
+            penaltiesSaved: acc.penaltiesSaved + curr.penaltiesSaved
+        }), { matches: 0, goalsConceded: 0, cleanSheets: 0, penaltiesReceived: 0, penaltiesSaved: 0 });
+    }, [gkStats]);
+
     const [selectedGK, setSelectedGK] = useState(null);
 
     useEffect(() => {
@@ -232,7 +243,7 @@ export default function AlAhlyGKs({ gkDetails, howPenMissed, filteredMatches, pl
                                 ) : (
                                     gkStats.map((g, i) => (
                                         <tr key={g.name} style={{ opacity: g.name === '?' ? 0.4 : 1 }}>
-                                            <td><span className={`rank-badge ${i < 3 && g.name !== '?' ? 'rank-1' : ''}`}>{i + 1}</span></td>
+                                            <td><span className={`rank-badge-premium ${i < 3 && g.name !== '?' ? 'rank-gold' : ''}`}>{i + 1}</span></td>
                                             <td className="p-name" onClick={() => setSelectedGK(g.name)} style={{ cursor: 'pointer' }}>{g.name}</td>
                                             <td style={{ color: 'var(--gold)', fontWeight: 800 }}>{g.matches}</td>
                                             <td style={{ color: '#e74c3c' }}>{g.goalsConceded}</td>
@@ -243,6 +254,18 @@ export default function AlAhlyGKs({ gkDetails, howPenMissed, filteredMatches, pl
                                     ))
                                 )}
                             </tbody>
+                            {gkStats.length > 0 && (
+                                <tfoot className="total-row-premium">
+                                    <tr>
+                                        <td colSpan="2" style={{ textAlign: 'center' }}>TOTAL</td>
+                                        <td style={{ color: 'var(--gold)' }}>{totals.matches}</td>
+                                        <td style={{ color: '#e74c3c' }}>{totals.goalsConceded}</td>
+                                        <td style={{ color: '#2ecc71' }}>{totals.cleanSheets}</td>
+                                        <td style={{ color: '#9b59b6' }}>{totals.penaltiesReceived}</td>
+                                        <td style={{ color: '#3498db' }}>{totals.penaltiesSaved}</td>
+                                    </tr>
+                                </tfoot>
+                            )}
                         </table>
                     </div>
                 </div>
@@ -268,11 +291,11 @@ export default function AlAhlyGKs({ gkDetails, howPenMissed, filteredMatches, pl
                 .dropdown-option-item.selected { background: #000; color: var(--gold); font-weight: 700; }
                 .player-table-container { background: #fff; border-radius: 12px; box-shadow: 0 20px 60px rgba(0,0,0,0.1); overflow: hidden; border: 1px solid var(--border); }
                 .modern-player-table { width: 100%; border-collapse: collapse; }
-                .modern-player-table th { background: #0a0a0a; color: rgba(255,255,255,0.85); font-size: 13px; padding: 28px 25px; text-align: center; font-family: 'Space Mono', monospace; text-transform: uppercase; letter-spacing: 2px; }
-                .modern-player-table td { padding: 18px; border-bottom: 1px solid #f2f2f2; text-align: center; font-size: 16px; font-weight: 600; }
-                .p-name { color: #000; font-weight: 800 !important; }
-                .rank-badge { width: 28px; height: 28px; border-radius: 50%; background: #f0f0f0; display: inline-flex; align-items: center; justify-content: center; font-size: 12px; }
-                .rank-1 { background: var(--gold); color: #000; }
+                .modern-player-table th { background: #0a0a0a; color: rgba(255,255,255,0.85); font-size: 15px; padding: 25px 15px; text-align: center; font-family: 'Space Mono', monospace; text-transform: uppercase; letter-spacing: 1.5px; }
+                .modern-player-table td { padding: 20px 15px; border-bottom: 1px solid #f2f2f2; text-align: center; font-size: 18px; font-weight: 700; vertical-align: middle; }
+                .p-name { color: #000; font-weight: 800 !important; font-size: 18px !important; text-align: center !important; }
+                .total-row-premium { background: #f9f9f9; border-top: 2px solid #000; font-weight: 900; }
+                .total-row-premium td { padding: 20px 15px; color: #000 !important; font-family: 'Space Mono', monospace !important; }
                 .fade-in { animation: fadeIn 0.4s ease-out; }
                 @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
             `}</style>

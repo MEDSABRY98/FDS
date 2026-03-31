@@ -296,6 +296,24 @@ export default function AlAhlyPlayers({ playerDetails, lineupDetails, filteredMa
         return list;
     }, [allStats, searchTerm, activeSubTab]);
 
+    // Calculate Totals for Players
+    const totals = useMemo(() => {
+        return filteredRows.reduce((acc, curr) => {
+            const t = { ...acc };
+            Object.keys(curr).forEach(key => {
+                if (typeof curr[key] === 'number') {
+                    t[key] = (t[key] || 0) + curr[key];
+                }
+            });
+            return t;
+        }, {
+            caps: 0, mins: 0, goals: 0, assists: 0, ga: 0, penalties: 0,
+            total: 0, goal: 0, miss: 0, wonGoal: 0, wonMiss: 0, makeGoal: 0, makeMiss: 0,
+            braceG: 0, hatG: 0, superG: 0, braceA: 0, hatA: 0, superA: 0,
+            goalWinImpact: 0, goalDrawImpact: 0, assistWinImpact: 0, assistDrawImpact: 0
+        });
+    }, [filteredRows]);
+
     const totalPages = Math.ceil(filteredRows.length / pageSize);
     const paginatedRows = filteredRows.slice((currentPage - 1) * pageSize, currentPage * pageSize);
 
@@ -334,7 +352,7 @@ export default function AlAhlyPlayers({ playerDetails, lineupDetails, filteredMa
                     onBack={() => setSelectedPlayer(null)}
                 />
             ) : (
-                <div className="players-premium-wrap" style={{ maxWidth: '1450px' }}>
+                <div className="players-premium-wrap" style={{ maxWidth: '1400px' }}>
                     <div className="header-tabs-container">
                         <div style={{ display: 'flex', alignItems: 'center', gap: '30px' }}>
                             <div className="section-title">AL AHLY <span className="accent">PLAYERS</span></div>
@@ -389,7 +407,7 @@ export default function AlAhlyPlayers({ playerDetails, lineupDetails, filteredMa
                                             const realIdx = (currentPage - 1) * pageSize + i;
                                             return (
                                                 <tr key={r.name}>
-                                                    <td><span className={`rank-badge rank-${realIdx < 3 ? realIdx + 1 : 'none'}`}>{realIdx + 1}</span></td>
+                                                    <td><span className={`rank-badge-premium ${realIdx < 3 ? 'rank-gold' : ''}`}>{realIdx + 1}</span></td>
                                                     <td className="p-name" onClick={() => setSelectedPlayer(r.name)} style={{ cursor: 'pointer' }}>{r.name}</td>
                                                     <td style={{ color: 'var(--gold)' }}>{r.caps}</td>
                                                     <td style={{ fontSize: '14px', opacity: 0.8 }}>{r.mins}</td>
@@ -410,7 +428,7 @@ export default function AlAhlyPlayers({ playerDetails, lineupDetails, filteredMa
                                 <tbody>
                                     {paginatedRows.length > 0 ? (
                                         paginatedRows.map((r, i) => (
-                                            <tr key={r.name}><td><span className="rank-badge">{(currentPage - 1) * pageSize + i + 1}</span></td><td className="p-name" onClick={() => setSelectedPlayer(r.name)} style={{ cursor: 'pointer' }}>{r.name}</td><td style={{ fontWeight: 800 }}>{r.total}</td><td className="g-val">{r.goal}</td><td className="p-val">{r.miss}</td><td>{r.wonGoal}</td><td>{r.wonMiss}</td><td>{r.makeGoal}</td><td>{r.makeMiss}</td></tr>
+                                            <tr key={r.name}><td><span className={`rank-badge-premium ${((currentPage - 1) * pageSize + i) < 3 ? 'rank-gold' : ''}`}>{(currentPage - 1) * pageSize + i + 1}</span></td><td className="p-name" onClick={() => setSelectedPlayer(r.name)} style={{ cursor: 'pointer' }}>{r.name}</td><td style={{ fontWeight: 800 }}>{r.total}</td><td className="g-val">{r.goal}</td><td className="p-val">{r.miss}</td><td>{r.wonGoal}</td><td>{r.wonMiss}</td><td>{r.makeGoal}</td><td>{r.makeMiss}</td></tr>
                                         ))
                                     ) : (
                                         <tr><td colSpan="9" style={{ padding: '100px', opacity: 0.4 }}>No matching legends found.</td></tr>
@@ -427,7 +445,7 @@ export default function AlAhlyPlayers({ playerDetails, lineupDetails, filteredMa
                                 <tbody>
                                     {paginatedRows.length > 0 ? (
                                         paginatedRows.map((r, i) => (
-                                            <tr key={r.name}><td><span className="rank-badge">{(currentPage - 1) * pageSize + i + 1}</span></td><td className="p-name" onClick={() => setSelectedPlayer(r.name)} style={{ cursor: 'pointer' }}>{r.name}</td><td className="g-val">{r.braceG}</td><td className="g-val">{r.hatG}</td><td className="g-val">{r.superG}</td><td className="a-val">{r.braceA}</td><td className="a-val">{r.hatA}</td><td className="a-val">{r.superA}</td></tr>
+                                            <tr key={r.name}><td><span className={`rank-badge-premium ${((currentPage - 1) * pageSize + i) < 3 ? 'rank-gold' : ''}`}>{(currentPage - 1) * pageSize + i + 1}</span></td><td className="p-name" onClick={() => setSelectedPlayer(r.name)} style={{ cursor: 'pointer' }}>{r.name}</td><td className="g-val">{r.braceG}</td><td className="g-val">{r.hatG}</td><td className="g-val">{r.superG}</td><td className="a-val">{r.braceA}</td><td className="a-val">{r.hatA}</td><td className="a-val">{r.superA}</td></tr>
                                         ))
                                     ) : (
                                         <tr><td colSpan="8" style={{ padding: '100px', opacity: 0.4 }}>No matching legends found.</td></tr>
@@ -456,7 +474,7 @@ export default function AlAhlyPlayers({ playerDetails, lineupDetails, filteredMa
                                     {paginatedRows.length > 0 ? (
                                         paginatedRows.map((r, i) => (
                                             <tr key={r.name}>
-                                                <td><span className="rank-badge">{(currentPage - 1) * pageSize + i + 1}</span></td>
+                                                <td><span className={`rank-badge-premium ${((currentPage - 1) * pageSize + i) < 3 ? 'rank-gold' : ''}`}>{(currentPage - 1) * pageSize + i + 1}</span></td>
                                                 <td className="p-name" onClick={() => setSelectedPlayer(r.name)} style={{ cursor: 'pointer' }}>{r.name}</td>
                                                 <td className="g-val">{r.goalWinImpact}</td>
                                                 <td style={{ color: '#e67e22' }}>{r.goalDrawImpact}</td>
@@ -505,19 +523,17 @@ export default function AlAhlyPlayers({ playerDetails, lineupDetails, filteredMa
                 .dropdown-option-item.selected { background: #000; color: var(--gold); font-weight: 700; }
                 .player-table-container { background: #fff; border-radius: 12px; box-shadow: 0 20px 60px rgba(0,0,0,0.1); overflow: hidden; border: 1px solid var(--border); }
                 .modern-player-table { width: 100%; border-collapse: collapse; }
-                .modern-player-table th { background: #0a0a0a; color: rgba(255,255,255,0.85); font-size: 13px; padding: 28px 25px; text-align: center; font-family: 'Space Mono', monospace; text-transform: uppercase; letter-spacing: 2px; }
-                .modern-player-table td { padding: 16px 12px; border-bottom: 1px solid #f2f2f2; text-align: center; font-size: 18px; font-weight: 600; vertical-align: middle; }
-                .p-name { color: #000; font-weight: 800 !important; transition: 0.3s; font-size: 17px !important; text-align: center !important; }
+                .modern-player-table th { background: #0a0a0a; color: rgba(255,255,255,0.85); font-size: 15px; padding: 25px 15px; text-align: center; font-family: 'Space Mono', monospace; text-transform: uppercase; letter-spacing: 1.5px; }
+                .modern-player-table td { padding: 20px 15px; border-bottom: 1px solid #f2f2f2; text-align: center; font-size: 18px; font-weight: 700; vertical-align: middle; }
+                .p-name { color: #000; font-weight: 800 !important; transition: 0.3s; font-size: 18px !important; text-align: center !important; }
                 .p-name:hover { color: var(--gold); text-decoration: underline; }
-                .rank-badge { width: 32px; height: 32px; border-radius: 50%; background: #f0f0f0; display: inline-flex; align-items: center; justify-content: center; font-size: 13px; font-family: 'Space Mono'; font-weight: 800; }
-                .rank-rank-1 { background: var(--gold); color: #000; }
-                .rank-rank-2 { background: #c0c0c0; color: #000; }
-                .rank-rank-3 { background: #cd7f32; color: #000; }
                 .ga-pill { background: #000; color: var(--gold); padding: 8px 16px; border-radius: 8px; font-size: 18px; display: inline-block; font-weight: 800; border: 1px solid var(--gold); font-family: 'Space Mono'; min-width: 45px; }
                 .g-val { color: #2ecc71; font-weight: 800; font-size: 22px; font-family: 'Space Mono'; }
                 .a-val { color: #3498db; font-weight: 800; font-size: 22px; font-family: 'Space Mono'; }
                 .p-val { color: #e74c3c; font-weight: 800; font-size: 22px; font-family: 'Space Mono'; }
-                .modern-player-table td:not(.p-name):not(.name-th) { font-family: 'Space Mono', monospace; font-size: 20px; }
+                .modern-player-table td:not(.p-name):not(.name-th) { font-family: 'Space Mono', monospace; font-size: 18px; }
+                .total-row-premium { background: #f9f9f9; border-top: 2px solid #000; font-weight: 900; }
+                .total-row-premium td { padding: 20px 15px; color: #000 !important; font-family: 'Space Mono', monospace !important; }
                 .pagination-premium { margin-top: 40px; display: flex; align-items: center; justify-content: center; gap: 30px; }
                 .page-btn { background: #000; color: #fff; border: 1px solid #333; padding: 12px 30px; border-radius: 8px; font-family: 'Space Mono', monospace; font-weight: 700; cursor: pointer; transition: 0.3s; }
                 .page-btn:hover:not(:disabled) { background: var(--gold); color: #000; border-color: var(--gold); }

@@ -149,3 +149,26 @@ body {
     margin-right: auto;
   }
 }
+
+/* ─── UNIFIED RANK BADGE STYLES (PREMIUM) ───────────────── */
+.rank-badge-premium {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: #f0f0f0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 14px;
+  font-family: 'Space Mono', monospace;
+  font-weight: 800;
+  color: #000;
+  border: 1px solid rgba(0, 0, 0, 0.05);
+  margin: 0 auto;
+}
+
+.rank-gold {
+  background: #c9a84c;
+  color: #000;
+  box-shadow: 0 4px 10px rgba(201, 168, 76, 0.3);
+}

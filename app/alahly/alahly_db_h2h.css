@@ -1,0 +1,199 @@
+/* H2H Premium Design - Based on AlAhly GKs Tab */
+
+.h2h-premium-wrap {
+    margin: 0 auto;
+    padding: 0 40px 100px;
+    max-width: 1400px;
+}
+
+.header-tabs-container {
+    display: flex;
+    align-items: center;
+    gap: 30px;
+    margin-bottom: 5px;
+}
+
+.section-title {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 32px;
+    letter-spacing: 2px;
+    color: #000;
+}
+
+.section-title .accent {
+    color: #c9a84c;
+}
+
+.gold-line {
+    height: 3px;
+    background: linear-gradient(90deg, #c9a84c 0%, rgba(201, 168, 76, 0.1) 100%);
+    margin-bottom: 30px;
+    border-radius: 2px;
+}
+
+.h2h-controls {
+    margin-bottom: 30px;
+    display: flex;
+    justify-content: center;
+    gap: 20px;
+    align-items: center;
+    flex-wrap: nowrap;
+}
+
+.search-wrap-premium {
+    width: 350px;
+    flex: none;
+}
+
+.h2h-search-input {
+    background: #fff;
+    border: 2px solid #eee;
+    padding: 15px 30px;
+    width: 100%;
+    border-radius: 50px;
+    text-align: center;
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.03);
+    transition: all 0.3s;
+    font-weight: 600;
+    outline: none;
+}
+
+.h2h-search-input:focus {
+    border-color: #c9a84c;
+    box-shadow: 0 8px 25px rgba(201, 168, 76, 0.1);
+}
+
+.table-container-premium {
+    background: #fff;
+    border-radius: 12px;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.1);
+    overflow: hidden;
+    border: 1px solid rgba(0, 0, 0, 0.05);
+}
+
+.modern-h2h-table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.modern-h2h-table th {
+    background: #0a0a0a;
+    color: rgba(255, 255, 255, 0.85);
+    font-size: 15px;
+    padding: 25px 15px;
+    text-align: center;
+    font-family: 'Space Mono', monospace;
+    text-transform: uppercase;
+    letter-spacing: 1.5px;
+}
+
+.modern-h2h-table td {
+    padding: 20px 15px;
+    border-bottom: 1px solid #f2f2f2;
+    text-align: center;
+    font-size: 18px;
+    font-weight: 700;
+}
+
+.team-name-cell {
+    color: #000;
+    font-weight: 800 !important;
+    text-align: center !important;
+    padding-left: 15px !important;
+}
+
+.stat-badge {
+    display: inline-block;
+    padding: 4px 10px;
+    border-radius: 6px;
+    font-size: 14px;
+    font-weight: 800;
+}
+
+.win-text {
+    color: #2ecc71;
+}
+
+.draw-text {
+    color: #f1c40f;
+}
+
+.loss-text {
+    color: #e74c3c;
+}
+
+.gf-text {
+    color: #3498db;
+}
+
+.ga-text {
+    color: #e67e22;
+}
+
+.gd-text {
+    color: #9b59b6;
+}
+
+.rank-badge-premium {
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    background: #f0f0f0;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 14px;
+    font-family: 'Space Mono', monospace;
+    font-weight: 800;
+    color: #000;
+    border: 1px solid rgba(0, 0, 0, 0.05);
+}
+
+.rank-gold {
+    background: #c9a84c;
+    color: #000;
+    box-shadow: 0 4px 10px rgba(201, 168, 76, 0.3);
+}
+
+.fade-in {
+    animation: fadeIn 0.4s ease-out;
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(5px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.percentage-bar-wrap {
+    width: 100%;
+    height: 6px;
+    background: #f0f0f0;
+    border-radius: 10px;
+    margin-top: 8px;
+    overflow: hidden;
+}
+
+.percentage-bar-fill {
+    height: 100%;
+    background: #c9a84c;
+    border-radius: 10px;
+}
+
+.total-row-premium {
+    background: #f9f9f9;
+    border-top: 2px solid #000;
+    font-weight: 900;
+}
+
+.total-row-premium td {
+    padding: 20px 15px !important;
+    color: #000 !important;
+    font-family: 'Space Mono', monospace !important;
+}
