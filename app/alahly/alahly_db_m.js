@@ -2,10 +2,11 @@
 
 import "./alahly_db_m.css";
 
-export default function AlAhlyMobileNav({ activeTab, setActiveTab }) {
+export default function AlAhlyMobileNav({ activeTab, setActiveTab, setIsFilterOpen }) {
     const navItems = [
         { id: 'dashboard', label: 'DASHBOARD', icon: 'D' },
         { id: 'matches', label: 'MATCHES', icon: 'M' },
+        { id: 'filters', label: 'FILTERS', icon: 'F' },
         { id: 'editor', label: 'EDITOR', icon: 'E' },
         { id: 'seasons', label: 'S-NAME', icon: 'S' },
         { id: 'seasons_n', label: 'S-NUM', icon: 'N' },
@@ -14,8 +15,7 @@ export default function AlAhlyMobileNav({ activeTab, setActiveTab }) {
         { id: 'gks', label: 'GKS', icon: 'GK' },
         { id: 'managers', label: 'MANAGERS', icon: 'M' },
         { id: 'referees', label: 'REFEREES', icon: 'R' },
-        { id: 'h2h', label: 'H2H', icon: 'H' },
-        { id: 'filters', label: 'FILTERS', icon: 'F' }
+        { id: 'h2h', label: 'H2H', icon: 'H' }
     ];
 
     return (
@@ -30,14 +30,18 @@ export default function AlAhlyMobileNav({ activeTab, setActiveTab }) {
             {navItems.map(item => (
                 <button
                     key={item.id}
-                    className={`bottom-nav-item ${activeTab === item.id ? 'active' : ''}`}
+                    className={`bottom-nav-item ${activeTab === item.id || (item.id === 'filters' && false) ? 'active' : ''}`}
                     onClick={() => {
-                        setActiveTab(item.id);
-                        window.scrollTo({ top: 0, behavior: 'smooth' });
+                        if (item.id === 'filters') {
+                            setIsFilterOpen(true);
+                        } else {
+                            setActiveTab(item.id);
+                            window.scrollTo({ top: 0, behavior: 'smooth' });
+                        }
                     }}
                 >
-                    <span className="bottom-nav-icon" style={{ fontFamily: "'Bebas Neue', sans-serif" }}>{item.icon}</span>
-                    <span className="bottom-nav-label">{item.label}</span>
+                    <span className="bottom-nav-icon" style={{ fontFamily: "'Bebas Neue', sans-serif", color: item.id === 'filters' ? 'var(--gold)' : 'inherit' }}>{item.icon}</span>
+                    <span className="bottom-nav-label" style={{ color: item.id === 'filters' ? 'var(--gold)' : 'inherit' }}>{item.label}</span>
                 </button>
             ))}
         </nav>

@@ -89,7 +89,7 @@ export default function PlayerAssistImpactTable({ playerName, filteredMatches = 
                     <thead>
                         <tr>
                             <th>DATE</th>
-                            <th>COMPETITION</th>
+                            <th>SEASON NAME</th>
                             <th>OPPONENT</th>
                             <th>SCORE</th>
                             <th>ASSIST MIN</th>
@@ -102,7 +102,7 @@ export default function PlayerAssistImpactTable({ playerName, filteredMatches = 
                             displayMatches.map((item, idx) => (
                                 <tr key={idx}>
                                     <td style={{ fontSize: '14px', opacity: 0.8 }}>{item.match.DATE}</td>
-                                    <td style={{ fontSize: '14px', opacity: 0.8 }}>{item.match.CHAMPION}</td>
+                                    <td style={{ fontSize: '14px', opacity: 0.8 }}>{item.match["SEASON - NAME"]}</td>
                                     <td style={{ color: 'var(--player-gold)', fontWeight: 800, fontSize: '16px' }}>{item.match["OPPONENT TEAM"]}</td>
                                     <td style={{ fontFamily: 'Space Mono', fontWeight: 800, fontSize: '17px' }}>{item.match.GF} - {item.match.GA}</td>
                                     <td style={{ fontSize: '15px', fontWeight: 800 }}>{item.playerMins ? item.playerMins.join(", ") + "'" : "—"}</td>

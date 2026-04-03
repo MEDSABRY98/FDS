@@ -129,15 +129,12 @@ function SearchableSelect({ label, value, options, onChange }) {
 
 // --- MAIN FILTERS COMPONENT ---
 export default function AlAhlyFilters({
-    dbFilters, updateFilter, filterOptions,
+    dbFilters, updateFilter, resetFilters, filterOptions,
     startDate, setStartDate, endDate, setEndDate
 }) {
     return (
-        <div className="tab-content" id="tab-filters">
-            <div className="filters-wrap" style={{ maxWidth: '1400px', width: '95%', margin: '0 auto' }}>
-                <div className="section-title">AL AHLY <span className="accent">FILTERS</span></div>
-                <div className="gold-line"></div>
-
+        <div style={{ padding: '30px' }}>
+            <div className="filters-wrap" style={{ maxWidth: '1400px', width: '100%', margin: '0 auto' }}>
                 <div className="filter-grid-layout">
                     {/* ROW 1 */}
                     <SearchableSelect label="MATCH ID" value={dbFilters.match_id} options={filterOptions?.match_ids || []} onChange={(v) => updateFilter('match_id', v)} />
@@ -176,7 +173,7 @@ export default function AlAhlyFilters({
                 </div>
 
                 <div className="filter-footer">
-                    <button className="reset-btn" onClick={() => window.location.reload()}>RESET ALL FILTERS</button>
+                    <button className="reset-btn" onClick={resetFilters}>RESET ALL FILTERS</button>
                 </div>
             </div>
 

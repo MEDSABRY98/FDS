@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useMemo } from "react";
-import { Download } from "lucide-react";
+import { Download, SlidersHorizontal, X } from "lucide-react";
 
 import { AlAhlyService } from "./alahly_db_service";
 import AlAhlyDashboard from "./alahly_db_dashboard";
@@ -28,6 +28,7 @@ export default function AlAhlyDatabase() {
     const [howPenMissed, setHowPenMissed] = useState([]);
     const [loading, setLoading] = useState(true);
     const [selectedMatchId, setSelectedMatchId] = useState(null);
+    const [isFilterOpen, setIsFilterOpen] = useState(false);
 
     // Date Range State
     const [startDate, setStartDate] = useState("");
@@ -84,6 +85,34 @@ export default function AlAhlyDatabase() {
 
     const updateFilter = (key, value) => {
         setDbFilters(prev => ({ ...prev, [key]: value }));
+    };
+
+    const resetFilters = () => {
+        setStartDate("");
+        setEndDate("");
+        setDbFilters({
+            match_id: 'All',
+            champion_system: 'All',
+            year: 'All',
+            champion: 'All',
+            season: 'All',
+            sy: 'All',
+            ahly_manager: 'All',
+            opponent_manager: 'All',
+            referee: 'All',
+            round: 'All',
+            han: 'All',
+            stad: 'All',
+            ahly_team: 'All',
+            gf: 'All',
+            ga: 'All',
+            et: 'All',
+            pen: 'All',
+            opponent_team: 'All',
+            wdl: 'All',
+            clean_sheet: 'All',
+            note: 'All'
+        });
     };
 
     // Advanced Comprehensive Filter Logic with Date Range & Year
@@ -220,6 +249,31 @@ export default function AlAhlyDatabase() {
                     <Download size={16} strokeWidth={3} />
                 </button>
 
+                <button
+                    className="global-filter-btn"
+                    onClick={() => setIsFilterOpen(true)}
+                    title="OPEN DATABASE FILTERS"
+                    style={{
+                        position: 'absolute',
+                        left: '75px',
+                        background: 'rgba(201, 168, 76, 0.1)',
+                        color: '#c9a84c',
+                        border: '1px solid rgba(201, 168, 76, 0.25)',
+                        width: '36px',
+                        height: '36px',
+                        borderRadius: '10px',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        cursor: 'pointer',
+                        transition: 'all 0.4s cubic-bezier(0.4, 0, 0.2, 1)',
+                        backdropFilter: 'blur(5px)',
+                        zIndex: 10000
+                    }}
+                >
+                    <SlidersHorizontal size={16} strokeWidth={3} />
+                </button>
+
 
 
                 <div
@@ -261,8 +315,7 @@ export default function AlAhlyDatabase() {
                         { id: 'gks', label: 'GKs', icon: 'GK' },
                         { id: 'managers', label: 'Managers', icon: 'M' },
                         { id: 'referees', label: 'Referees', icon: 'R' },
-                        { id: 'h2h', label: 'H2H', icon: 'H' },
-                        { id: 'filters', label: 'Filters', icon: 'F' }
+                        { id: 'h2h', label: 'H2H', icon: 'H' }
                     ].map(tab => (
                         <button
                             key={tab.id}
@@ -316,19 +369,102 @@ export default function AlAhlyDatabase() {
                 {activeTab === 'managers' && <AlAhlyManagers matches={filteredMatches} playerDetails={playerDetails} lineupDetails={lineupDetails} />}
                 {activeTab === 'h2h' && <AlAhlyH2H matches={filteredMatches} />}
                 {activeTab === 'referees' && <AlAhlyReferees matches={filteredMatches} playerDetails={playerDetails} howPenMissed={howPenMissed} />}
-                {activeTab === 'filters' && (
-                    <AlAhlyFilters
-                        dbFilters={dbFilters}
-                        updateFilter={updateFilter}
-                        filterOptions={filterOptions}
-                        startDate={startDate} setStartDate={setStartDate}
-                        endDate={endDate} setEndDate={setEndDate}
-                    />
-                )}
                 {activeTab === 'editor' && <AlAhlyEditor />}
             </main>
 
-            <AlAhlyMobileNav activeTab={activeTab} setActiveTab={setActiveTab} />
+            {/* FILTER POPUP MODAL */}
+            {isFilterOpen && (
+                <div style={{
+                    position: 'fixed',
+                    top: 0, left: 0, right: 0, bottom: 0,
+                    zIndex: 100000,
+                    background: 'rgba(0,0,0,0.85)',
+                    backdropFilter: 'blur(10px)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    padding: '20px'
+                }}>
+                    <div style={{
+                        background: '#fff',
+                        width: '100%',
+                        maxWidth: '1200px',
+                        maxHeight: '90vh',
+                        borderRadius: '0',
+                        position: 'relative',
+                        display: 'flex',
+                        flexDirection: 'column',
+                        border: '5px solid var(--gold)',
+                        boxShadow: '0 0 50px rgba(201,168,76,0.3)'
+                    }}>
+                        <div style={{
+                            padding: '20px 30px',
+                            background: '#0a0a0a',
+                            color: '#fff',
+                            display: 'flex',
+                            justifyContent: 'space-between',
+                            alignItems: 'center',
+                            borderBottom: '1px solid rgba(255,255,255,0.1)'
+                        }}>
+                            <div style={{ fontFamily: 'Bebas Neue', fontSize: '24px', letterSpacing: '2px' }}>
+                                DATABASE <span style={{ color: 'var(--gold)' }}>FILTERS</span>
+                            </div>
+                            <button 
+                                onClick={() => setIsFilterOpen(false)}
+                                style={{
+                                    background: 'transparent',
+                                    border: 'none',
+                                    color: '#fff',
+                                    cursor: 'pointer',
+                                    padding: '5px',
+                                    transition: '0.3s'
+                                }}
+                                onMouseOver={(e) => e.currentTarget.style.color = 'var(--gold)'}
+                                onMouseOut={(e) => e.currentTarget.style.color = '#fff'}
+                            >
+                                <X size={24} />
+                            </button>
+                        </div>
+                        
+                        <div style={{ flex: 1, overflowY: 'auto' }}>
+                            <AlAhlyFilters
+                                dbFilters={dbFilters}
+                                updateFilter={updateFilter}
+                                resetFilters={resetFilters}
+                                filterOptions={filterOptions}
+                                startDate={startDate} setStartDate={setStartDate}
+                                endDate={endDate} setEndDate={setEndDate}
+                            />
+                        </div>
+
+                        <div style={{
+                            padding: '20px',
+                            background: '#f9f9f9',
+                            display: 'flex',
+                            justifyContent: 'center',
+                            borderTop: '1px solid #eee'
+                        }}>
+                            <button 
+                                onClick={() => setIsFilterOpen(false)}
+                                style={{
+                                    background: 'var(--black)',
+                                    color: 'var(--gold)',
+                                    border: '1px solid var(--gold)',
+                                    padding: '12px 40px',
+                                    fontFamily: 'Bebas Neue',
+                                    fontSize: '18px',
+                                    letterSpacing: '1px',
+                                    cursor: 'pointer'
+                                }}
+                            >
+                                APPLY FILTERS & CLOSE
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            <AlAhlyMobileNav activeTab={activeTab} setActiveTab={setActiveTab} setIsFilterOpen={setIsFilterOpen} isFilterOpen={isFilterOpen} />
         </div>
     );
 }

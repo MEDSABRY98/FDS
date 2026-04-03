@@ -514,7 +514,7 @@ export default function PlayerDetails({ playerName, playerData, playerDetails, l
         return () => window.removeEventListener('alahly-export-excel', handleGlobalExport);
     }, [stats, activeTab]);
 
-    const handleExport = () => {
+    const handleExport = async () => {
         let exportData = [];
         let filename = `AlAhly_${playerName}_${activeTab}`;
 
@@ -531,26 +531,50 @@ export default function PlayerDetails({ playerName, playerData, playerDetails, l
                 break;
             case 'matches':
                 exportData = stats.matchHistory.map((m, i) => ({
-                    "#": i + 1, "DATE": m.date, "SEASON": m.season, "SY": m.sy, "CHAMPION": m.champion, "OPPONENT": m.opponent, "ROLE": m.role, "MINS": m.mins, "G": m.goals, "A": m.assists
+                    "#": i + 1,
+                    "MATCH ID": m.id,
+                    "DATE": m.date,
+                    "SEASON": m.season,
+                    "OPPONENT TEAM": m.opponent,
+                    "STATUS": m.role === 'اساسي' ? 'Starter' : 'Sub',
+                    "TIME": `${m.mins}'`,
+                    "G": m.goals,
+                    "A": m.assists,
+                    "W-D-L": m.wdl
                 }));
                 break;
             case 'match_events':
                 exportData = stats.matchEventsHistory.map((m, i) => ({
-                    "#": i + 1, "DATE": m.date, "SEASON": m.season, "SY": m.sy, "CHAMPION": m.champion, "OPPONENT": m.opponent, "G": m.goals, "A": m.assists, "PG": m.penGoals, "PM": m.penMissed, "PS": m.penSaved, "W-P(G)": m.wonGoal, "W-P(M)": m.wonMiss, "C-P(G)": m.makeGoal, "C-P(M)": m.makeMiss
+                    "#": i + 1,
+                    "MATCH ID": m.id,
+                    "DATE": m.date,
+                    "SEASON": m.season,
+                    "OPPONENT TEAM": m.opponent,
+                    "STATUS": m.role === 'اساسي' ? 'Starter' : 'Sub',
+                    "TIME": `${m.mins}'`,
+                    "G": m.goals,
+                    "A": m.assists,
+                    "P-G": m.penGoals,
+                    "P-M": m.penMissed,
+                    "P-S": m.penSaved,
+                    "W-P(G)": m.wonGoal,
+                    "W-P(M)": m.wonMiss,
+                    "C-P(G)": m.makeGoal,
+                    "C-P(M)": m.makeMiss
                 }));
                 break;
             case 'championships':
-                exportData = Object.keys(stats.compStats).map((c, i) => {
+                exportData = Object.keys(stats.compStats).sort().map((c, i) => {
                     const s = stats.compStats[c];
-                    return { "#": i + 1, "CHAMPION": c, "APPS": s.apps, "W": s.wins, "D": s.draws, "L": s.losses, "MINS": s.mins, "G": s.goals, "A": s.assists, "PG": s.penGoals };
+                    return { "#": i + 1, "CHAMPION": c, "APPS": s.apps, "MINS": s.mins, "W": s.wins, "D": s.draws, "L": s.losses, "G": s.goals, "A": s.assists, "P-G": s.penGoals };
                 });
                 break;
             case 'season_name':
                 exportData = [];
-                Object.keys(stats.statsByChampSeason).forEach(comp => {
-                    Object.keys(stats.statsByChampSeason[comp]).forEach(season => {
+                Object.keys(stats.statsByChampSeason).sort().forEach(comp => {
+                    Object.keys(stats.statsByChampSeason[comp]).sort().forEach(season => {
                         const s = stats.statsByChampSeason[comp][season];
-                        exportData.push({ "CHAMPION": comp, "SEASON": season, "APPS": s.apps, "MINS": s.mins, "G": s.goals, "A": s.assists });
+                        exportData.push({ "CHAMPION": comp, "SEASON": season, "APPS": s.apps, "MINS": s.mins, "G": s.goals, "A": s.assists, "P-G": s.penGoals });
                     });
                 });
                 break;
@@ -563,14 +587,14 @@ export default function PlayerDetails({ playerName, playerData, playerDetails, l
             case 'vs_teams':
                 exportData = Object.keys(stats.statsByOpponent).sort((a, b) => stats.statsByOpponent[b].apps - stats.statsByOpponent[a].apps).map((opp, i) => {
                     const s = stats.statsByOpponent[opp];
-                    return { "#": i + 1, "OPPONENT": opp, "APPS": s.apps, "G": s.goals, "A": s.assists, "PG": s.penGoals, "PM": s.penMissed, "PS": s.penSaved };
+                    return { "#": i + 1, "OPPONENT": opp, "APPS": s.apps, "G": s.goals, "A": s.assists, "P-G": s.penGoals, "P-M": s.penMissed, "P-S": s.penSaved };
                 });
                 break;
             case 'vs_gks':
                 exportData = Object.keys(stats.statsByGK).sort((a, b) => stats.statsByGK[b].totalGoals - stats.statsByGK[a].totalGoals).map((gkName, i) => {
                     const gk = stats.statsByGK[gkName];
                     const teamsStr = Object.keys(gk.teams).join(', ');
-                    return { "#": i + 1, "GK NAME": gkName, "TEAMS": teamsStr, "G": gk.totalGoals, "PG": gk.totalPenGoals, "PM": gk.totalPenMissed, "PS": gk.totalPenSaved };
+                    return { "#": i + 1, "GK NAME": gkName, "TEAMS": teamsStr, "G": gk.totalGoals, "P-G": gk.totalPenGoals, "P-M": gk.totalPenMissed, "P-S": gk.totalPenSaved };
                 });
                 break;
             case 'player_with_player':
@@ -580,15 +604,36 @@ export default function PlayerDetails({ playerName, playerData, playerDetails, l
                 })).sort((a, b) => b.TOTAL - a.TOTAL);
                 break;
             case 'goal_impact':
-                // Logic for goal impact export (mapped to matches)
-                exportData = stats.matchHistory.filter(m => m.goals > 0).map((m, i) => ({
-                    "#": i + 1, "DATE": m.date, "SEASON": m.season, "SY": m.sy, "CHAMPION": m.champion, "OPPONENT": m.opponent, "GOALS": m.goals
-                }));
+                const gImpact = await AlAhlyService.getPlayerGoalImpact(playerName);
+                const gFilteredIds = new Set(stats.matchHistory.map(m => String(m.id).trim()));
+                exportData = gImpact.impactMatches
+                    .filter(item => gFilteredIds.has(String(item.match.MATCH_ID).trim()))
+                    .map((item, i) => ({
+                        "#": i + 1,
+                        "DATE": item.match.DATE,
+                        "SEASON NAME": item.match["SEASON - NAME"],
+                        "OPPONENT": item.match["OPPONENT TEAM"],
+                        "SCORE": `${item.match.GF} - ${item.match.GA}`,
+                        "GOAL MINS": item.playerMins ? item.playerMins.join(", ") + "'" : "—",
+                        "IMPACT TYPE": item.type,
+                        "RESULT": item.match["W-D-L"] === 'W' ? 'WIN' : 'DRAW'
+                    }));
                 break;
             case 'assist_impact':
-                exportData = stats.matchHistory.filter(m => m.assists > 0).map((m, i) => ({
-                    "#": i + 1, "DATE": m.date, "SEASON": m.season, "SY": m.sy, "CHAMPION": m.champion, "OPPONENT": m.opponent, "ASSISTS": m.assists
-                }));
+                const aImpact = await AlAhlyService.getPlayerAssistImpact(playerName);
+                const aFilteredIds = new Set(stats.matchHistory.map(m => String(m.id).trim()));
+                exportData = aImpact.impactMatches
+                    .filter(item => aFilteredIds.has(String(item.match.MATCH_ID).trim()))
+                    .map((item, i) => ({
+                        "#": i + 1,
+                        "DATE": item.match.DATE,
+                        "SEASON NAME": item.match["SEASON - NAME"],
+                        "OPPONENT": item.match["OPPONENT TEAM"],
+                        "SCORE": `${item.match.GF} - ${item.match.GA}`,
+                        "ASSIST MINS": item.playerMins ? item.playerMins.join(", ") + "'" : "—",
+                        "IMPACT TYPE": item.type,
+                        "RESULT": item.match["W-D-L"] === 'W' ? 'WIN' : 'DRAW'
+                    }));
                 break;
         }
 
