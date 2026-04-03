@@ -1,0 +1,43 @@
+/* SEASONS NUMBER TAB STYLES */
+.seasons-wrap {
+    padding: 0 40px 40px;
+    max-width: 1400px;
+    margin: 0 auto;
+}
+
+.matches-wrap {
+    padding: 0 40px 40px;
+    max-width: 1400px;
+    margin: 0 auto;
+}
+
+.stats-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 20px;
+}
+
+.stat-box {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    padding: 24px;
+    border-radius: 2px;
+    text-align: center;
+}
+
+.stat-label {
+    font-size: 12px;
+    color: var(--text-muted);
+    margin-bottom: 8px;
+}
+
+.stat-number {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 32px;
+    color: var(--gold);
+}
+
+.tab-content {
+    display: block !important;
+    padding: 24px;
+}

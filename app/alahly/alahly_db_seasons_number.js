@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo, useEffect } from "react";
-import "./alahly_db_seasons.css";
+import "./alahly_db_seasons_number.css";
 import { AlAhlyService } from "./alahly_db_service";
 
 export default function AlAhlySeasonsN({ matches }) {

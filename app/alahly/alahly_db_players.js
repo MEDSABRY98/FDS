@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo, useState, useEffect, useRef } from "react";
-import "./alahly_db_seasons.css";
+import "./alahly_db_seasons_name.css";
 import PlayerDetails from "./alahly_db_player_details";
 import { AlAhlyService } from "./alahly_db_service";
 
