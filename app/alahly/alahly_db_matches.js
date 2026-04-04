@@ -194,9 +194,23 @@ export default function AlAhlyMatches({ matches, onMatchClick }) {
 
                 {totalPages > 1 && (
                     <div className="pagination-matches">
-                        <button className="page-btn prev-btn" onClick={() => setCurrentPage(p => Math.max(1, p - 1))} disabled={currentPage === 1}>PREV</button>
-                        <div className="page-info">PAGE <span className="p-num">{currentPage}</span> OF <span className="p-num">{totalPages}</span></div>
-                        <button className="page-btn next-btn" onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))} disabled={currentPage === totalPages}>NEXT</button>
+                        <button 
+                            className="page-btn prev-btn" 
+                            onClick={() => { setCurrentPage(p => Math.max(1, p - 1)); window.scrollTo({ top: 0, behavior: 'smooth' }); }} 
+                            disabled={currentPage === 1}
+                        >
+                            PREV
+                        </button>
+                        <div className="page-info">
+                            PAGE <span className="p-num">{currentPage}</span> OF <span className="p-num">{totalPages}</span>
+                        </div>
+                        <button 
+                            className="page-btn next-btn" 
+                            onClick={() => { setCurrentPage(p => Math.min(totalPages, p + 1)); window.scrollTo({ top: 0, behavior: 'smooth' }); }} 
+                            disabled={currentPage === totalPages}
+                        >
+                            NEXT
+                        </button>
                     </div>
                 )}
             </div>
@@ -213,11 +227,38 @@ export default function AlAhlyMatches({ matches, onMatchClick }) {
                 .modern-match-row-h:hover { transform: translateX(5px); border-color: var(--gold); box-shadow: 0 5px 15px rgba(0,0,0,0.05); }
                 
                 .pagination-matches { margin-top: 50px; display: flex; align-items: center; justify-content: center; gap: 30px; padding: 30px 0; }
-                .page-btn { background: #fff; border: 2px solid #eee; padding: 10px 25px; border-radius: 50px; font-size: 12px; font-weight: 800; cursor: pointer; transition: all 0.3s; color: #000; letter-spacing: 1px; }
-                .page-btn:hover:not(:disabled) { border-color: var(--gold); box-shadow: 0 5px 15px rgba(201,168,76,0.15); }
-                .page-btn:disabled { opacity: 0.3; cursor: not-allowed; }
-                .page-info { font-family: 'Space Mono', monospace; font-size: 13px; font-weight: 400; color: #888; }
-                .p-num { color: #000; font-weight: 800; padding: 0 4px; }
+                .page-btn { 
+                    background: rgba(201, 168, 76, 0.1); 
+                    border: 1px solid rgba(201, 168, 76, 0.2); 
+                    padding: 10px 25px; 
+                    border-radius: 10px; 
+                    font-size: 12px; 
+                    font-weight: 800; 
+                    cursor: pointer; 
+                    transition: all 0.3s; 
+                    color: var(--gold); 
+                    letter-spacing: 1px; 
+                    font-family: 'Space Mono', monospace;
+                }
+                .page-btn:hover:not(:disabled) { 
+                    background: var(--gold); 
+                    color: #000;
+                    border-color: var(--gold);
+                    box-shadow: 0 5px 15px rgba(201,168,76,0.15); 
+                }
+                .page-btn:disabled { opacity: 0.15; cursor: not-allowed; }
+                .page-info { 
+                    font-family: 'Space Mono', monospace; 
+                    font-size: 13px; 
+                    font-weight: 800; 
+                    color: var(--gold); 
+                    transition: 0.3s;
+                    cursor: default;
+                }
+                .page-info:hover {
+                    text-shadow: 0 0 10px rgba(201, 168, 76, 0.3);
+                }
+                .p-num { color: var(--gold); font-weight: 900; padding: 0 4px; }
 
                 .venue-circle { width: 32px; height: 32px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 900; font-family: 'Space Mono', monospace; flex-shrink: 0; box-shadow: 0 2px 10px rgba(0,0,0,0.05); }
                 .venue-circle.ahly { background: #000; color: var(--gold); border: 2px solid var(--gold); }

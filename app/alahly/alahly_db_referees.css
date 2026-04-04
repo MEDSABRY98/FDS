@@ -123,42 +123,51 @@
 }
 
 .page-btn {
-    background: #fff;
-    border: 2px solid #eee;
+    background: rgba(201, 168, 76, 0.1);
+    border: 1px solid rgba(201, 168, 76, 0.2);
     padding: 12px 25px;
-    border-radius: 50px;
+    border-radius: 10px;
     font-family: 'Space Mono', monospace;
-    font-weight: 700;
+    font-weight: 800;
     font-size: 13px;
     cursor: pointer;
     transition: 0.3s;
     letter-spacing: 1px;
+    color: #c9a84c;
 }
 
 .page-btn:hover:not(:disabled) {
-    background: #000;
-    color: var(--gold);
-    border-color: #000;
+    background: #c9a84c;
+    color: #000;
+    border-color: #c9a84c;
     transform: translateY(-2px);
-    box-shadow: 0 10px 20px rgba(0, 0, 0, 0.1);
+    box-shadow: 0 5px 15px rgba(201, 168, 76, 0.2);
 }
 
 .page-btn:disabled {
-    opacity: 0.3;
+    opacity: 0.15;
     cursor: not-allowed;
 }
 
 .page-info {
     font-family: 'Space Mono', monospace;
-    font-weight: 700;
+    font-weight: 800;
     font-size: 14px;
-    color: #888;
+    color: #c9a84c;
+    letter-spacing: 1px;
+    transition: 0.3s;
+    cursor: default;
+}
+
+.page-info:hover {
+    text-shadow: 0 0 10px rgba(201, 168, 76, 0.3);
 }
 
 .p-num {
-    color: #000;
+    color: #c9a84c;
     margin: 0 5px;
     font-size: 16px;
+    font-weight: 900;
 }
 
 @media (max-width: 1200px) {

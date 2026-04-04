@@ -11,6 +11,8 @@ import { AlAhlyService } from "./alahly_db_service";
 export default function AlAhlyH2H({ matches }) {
     const [searchTerm, setSearchTerm] = useState("");
     const [sortConfig, setSortConfig] = useState({ key: 'matches', direction: 'desc' });
+    const [currentPage, setCurrentPage] = useState(1);
+    const pageSize = 50;
 
     // Aggregate Stats from Matches
     const h2hStats = useMemo(() => {
@@ -60,10 +62,6 @@ export default function AlAhlyH2H({ matches }) {
 
             if (ga === 0) statsMap[oppName].csFor += 1;
             if (gf === 0) statsMap[oppName].csAgainst += 1;
-
-            // Clean Sheets Calculation
-            if (ga === 0) statsMap[oppName].csFor += 1;
-            if (gf === 0) statsMap[oppName].csAgainst += 1;
         });
 
         // Calculate Derived Stats
@@ -102,6 +100,15 @@ export default function AlAhlyH2H({ matches }) {
 
         return result;
     }, [h2hStats, searchTerm, sortConfig]);
+
+    const totalPages = Math.ceil(filteredStats.length / pageSize);
+    const paginatedStats = useMemo(() => {
+        return filteredStats.slice((currentPage - 1) * pageSize, currentPage * pageSize);
+    }, [filteredStats, currentPage]);
+
+    useEffect(() => {
+        setCurrentPage(1);
+    }, [searchTerm]);
 
     // Calculate Totals
     const totals = useMemo(() => {
@@ -213,25 +220,28 @@ export default function AlAhlyH2H({ matches }) {
                             </tr>
                         </thead>
                         <tbody>
-                            {filteredStats.length === 0 ? (
+                            {paginatedStats.length === 0 ? (
                                 <tr><td colSpan="12" style={{ padding: '100px', opacity: 0.4 }}>No H2H records found.</td></tr>
                             ) : (
-                                filteredStats.map((s, i) => (
-                                    <tr key={s.opponent}>
-                                        <td><span className={`rank-badge-premium ${i < 3 ? 'rank-gold' : ''}`}>{i + 1}</span></td>
-                                        <td className="team-name-cell">{s.opponent}</td>
-                                        <td>{s.matches}</td>
-                                        <td className="win-text">{s.wins}</td>
-                                        <td className="draw-text">{s.pDraws}</td>
-                                        <td className="draw-text" style={{ opacity: 0.7 }}>{s.nDraws}</td>
-                                        <td className="loss-text">{s.losses}</td>
-                                        <td className="gf-text">{s.gf}</td>
-                                        <td className="ga-text">{s.ga}</td>
-                                        <td className="gd-text" style={{ color: s.gd >= 0 ? '#2ecc71' : '#e74c3c' }}>{s.gd > 0 ? `+${s.gd}` : s.gd}</td>
-                                        <td style={{ color: '#2ecc71', fontWeight: 800 }}>{s.csFor}</td>
-                                        <td style={{ color: '#e74c3c', fontWeight: 800 }}>{s.csAgainst}</td>
-                                    </tr>
-                                ))
+                                paginatedStats.map((s, i) => {
+                                    const actualIndex = (currentPage - 1) * pageSize + i;
+                                    return (
+                                        <tr key={s.opponent}>
+                                            <td><span className={`rank-badge-premium ${actualIndex < 3 ? 'rank-gold' : ''}`}>{actualIndex + 1}</span></td>
+                                            <td className="team-name-cell">{s.opponent}</td>
+                                            <td>{s.matches}</td>
+                                            <td className="win-text">{s.wins}</td>
+                                            <td className="draw-text">{s.pDraws}</td>
+                                            <td className="draw-text" style={{ opacity: 0.7 }}>{s.nDraws}</td>
+                                            <td className="loss-text">{s.losses}</td>
+                                            <td className="gf-text">{s.gf}</td>
+                                            <td className="ga-text">{s.ga}</td>
+                                            <td className="gd-text" style={{ color: s.gd >= 0 ? '#2ecc71' : '#e74c3c' }}>{s.gd > 0 ? `+${s.gd}` : s.gd}</td>
+                                            <td style={{ color: '#2ecc71', fontWeight: 800 }}>{s.csFor}</td>
+                                            <td style={{ color: '#e74c3c', fontWeight: 800 }}>{s.csAgainst}</td>
+                                        </tr>
+                                    );
+                                })
                             )}
                         </tbody>
                         {filteredStats.length > 0 && (
@@ -253,6 +263,28 @@ export default function AlAhlyH2H({ matches }) {
                         )}
                     </table>
                 </div>
+
+                {totalPages > 1 && (
+                    <div className="pagination-h2h">
+                        <button 
+                            className="page-btn prev-btn" 
+                            onClick={() => { setCurrentPage(p => Math.max(1, p - 1)); window.scrollTo({ top: 0, behavior: 'smooth' }); }} 
+                            disabled={currentPage === 1}
+                        >
+                            PREV
+                        </button>
+                        <div className="page-info">
+                            PAGE {currentPage} OF {totalPages}
+                        </div>
+                        <button 
+                            className="page-btn next-btn" 
+                            onClick={() => { setCurrentPage(p => Math.min(totalPages, p + 1)); window.scrollTo({ top: 0, behavior: 'smooth' }); }} 
+                            disabled={currentPage === totalPages}
+                        >
+                            NEXT
+                        </button>
+                    </div>
+                )}
             </div>
         </div>
     );

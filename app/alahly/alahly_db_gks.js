@@ -141,6 +141,19 @@ export default function AlAhlyGKs({ gkDetails, howPenMissed, filteredMatches, pl
         });
     }, [gkDetails, howPenMissed, matchResultsMap, currentMatchIds, teamFilter, opponentFilter, searchTerm, playerDetails]);
 
+    const [currentPage, setCurrentPage] = useState(1);
+    const pageSize = 50;
+
+    useEffect(() => {
+        setCurrentPage(1);
+    }, [searchTerm, teamFilter, opponentFilter]);
+
+    const paginatedStats = useMemo(() => {
+        return gkStats.slice((currentPage - 1) * pageSize, currentPage * pageSize);
+    }, [gkStats, currentPage]);
+
+    const totalPages = Math.ceil(gkStats.length / pageSize);
+
     // Calculate Totals for GKs
     const totals = useMemo(() => {
         return gkStats.reduce((acc, curr) => ({
@@ -238,23 +251,26 @@ export default function AlAhlyGKs({ gkDetails, howPenMissed, filteredMatches, pl
                                 </tr>
                             </thead>
                             <tbody>
-                                {gkStats.length === 0 ? (
+                                {paginatedStats.length === 0 ? (
                                     <tr><td colSpan="7" style={{ padding: '100px', opacity: 0.4 }}>No keeper data recorded for these matches.</td></tr>
                                 ) : (
-                                    gkStats.map((g, i) => (
-                                        <tr key={g.name} style={{ opacity: g.name === '?' ? 0.4 : 1 }}>
-                                            <td><span className={`rank-badge-premium ${i < 3 && g.name !== '?' ? 'rank-gold' : ''}`}>{i + 1}</span></td>
-                                            <td className="p-name" onClick={() => setSelectedGK(g.name)} style={{ cursor: 'pointer' }}>{g.name}</td>
-                                            <td style={{ color: 'var(--gold)', fontWeight: 800 }}>{g.matches}</td>
-                                            <td style={{ color: '#e74c3c' }}>{g.goalsConceded}</td>
-                                            <td style={{ color: '#2ecc71', fontWeight: 800 }}>{g.cleanSheets}</td>
-                                            <td style={{ color: '#9b59b6', fontWeight: 800 }}>{g.penaltiesReceived}</td>
-                                            <td style={{ color: '#3498db', fontWeight: 800 }}>{g.penaltiesSaved}</td>
-                                        </tr>
-                                    ))
+                                    paginatedStats.map((g, i) => {
+                                        const actualIndex = (currentPage - 1) * pageSize + i;
+                                        return (
+                                            <tr key={g.name} style={{ opacity: g.name === '?' ? 0.4 : 1 }}>
+                                                <td><span className={`rank-badge-premium ${actualIndex < 3 && g.name !== '?' ? 'rank-gold' : ''}`}>{actualIndex + 1}</span></td>
+                                                <td className="p-name" onClick={() => setSelectedGK(g.name)} style={{ cursor: 'pointer' }}>{g.name}</td>
+                                                <td style={{ color: 'var(--gold)', fontWeight: 800 }}>{g.matches}</td>
+                                                <td style={{ color: '#e74c3c' }}>{g.goalsConceded}</td>
+                                                <td style={{ color: '#2ecc71', fontWeight: 800 }}>{g.cleanSheets}</td>
+                                                <td style={{ color: '#9b59b6', fontWeight: 800 }}>{g.penaltiesReceived}</td>
+                                                <td style={{ color: '#3498db', fontWeight: 800 }}>{g.penaltiesSaved}</td>
+                                            </tr>
+                                        );
+                                    })
                                 )}
                             </tbody>
-                            {gkStats.length > 0 && (
+                            {(paginatedStats.length > 0 || gkStats.length > 0) && (
                                 <tfoot className="total-row-premium">
                                     <tr>
                                         <td colSpan="2" style={{ textAlign: 'center' }}>TOTAL</td>
@@ -268,6 +284,28 @@ export default function AlAhlyGKs({ gkDetails, howPenMissed, filteredMatches, pl
                             )}
                         </table>
                     </div>
+
+                    {totalPages > 1 && (
+                        <div className="pagination-gks">
+                            <button 
+                                className="page-btn prev-btn" 
+                                onClick={() => { setCurrentPage(p => Math.max(1, p - 1)); window.scrollTo({ top: 0, behavior: 'smooth' }); }} 
+                                disabled={currentPage === 1}
+                            >
+                                PREV
+                            </button>
+                            <div className="page-info">
+                                PAGE {currentPage} OF {totalPages}
+                            </div>
+                            <button 
+                                className="page-btn next-btn" 
+                                onClick={() => { setCurrentPage(p => Math.min(totalPages, p + 1)); window.scrollTo({ top: 0, behavior: 'smooth' }); }} 
+                                disabled={currentPage === totalPages}
+                            >
+                                NEXT
+                            </button>
+                        </div>
+                    )}
                 </div>
             )}
         </div>
