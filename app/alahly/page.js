@@ -18,7 +18,7 @@ import AlAhlyMatchDetails from "./alahly_db_match_details";
 import AlAhlyEditor from "./alahly_db_editor";
 import AlAhlyReferees from "./alahly_db_referees";
 import AlAhlyH2H from "./alahly_db_h2h";
-
+import AlAhlyMediaTracker from "./alahly_db_media_tracker";
 export default function AlAhlyDatabase() {
     const [activeTab, setActiveTab] = useState("dashboard");
     const [matches, setMatches] = useState([]);
@@ -26,6 +26,7 @@ export default function AlAhlyDatabase() {
     const [lineupDetails, setLineupDetails] = useState([]);
     const [gkDetails, setGkDetails] = useState([]);
     const [howPenMissed, setHowPenMissed] = useState([]);
+    const [mediaTrackerData, setMediaTrackerData] = useState([]);
     const [loading, setLoading] = useState(true);
     const [selectedMatchId, setSelectedMatchId] = useState(null);
     const [isFilterOpen, setIsFilterOpen] = useState(false);
@@ -63,19 +64,21 @@ export default function AlAhlyDatabase() {
         fetchMatchData();
     }, []);
 
-    async function fetchMatchData() {
-        setLoading(true);
+    async function fetchMatchData(silent = false) {
+        if (!silent) setLoading(true);
         const data = await AlAhlyService.getAllMatches();
         const pData = await AlAhlyService.getAllPlayerDetails();
         const lData = await AlAhlyService.getAllLineupDetails();
         const gData = await AlAhlyService.getAllGKDetails();
         const hData = await AlAhlyService.getAllHowPenMissed();
+        const mTrackerData = await AlAhlyService.getAllMediaTracker();
         setMatches(data);
         setPlayerDetails(pData);
         setLineupDetails(lData);
         setGkDetails(gData);
         setHowPenMissed(hData);
-        setLoading(false);
+        setMediaTrackerData(mTrackerData);
+        if (!silent) setLoading(false);
     }
 
     // Dynamic Filter Options for ALL columns
@@ -315,7 +318,8 @@ export default function AlAhlyDatabase() {
                         { id: 'gks', label: 'GKs', icon: 'GK' },
                         { id: 'managers', label: 'Managers', icon: 'M' },
                         { id: 'referees', label: 'Referees', icon: 'R' },
-                        { id: 'h2h', label: 'H2H', icon: 'H' }
+                        { id: 'h2h', label: 'H2H', icon: 'H' },
+                        { id: 'media-tracker', label: 'Media Tracker', icon: 'MT' }
                     ].map(tab => (
                         <button
                             key={tab.id}
@@ -369,6 +373,7 @@ export default function AlAhlyDatabase() {
                 {activeTab === 'managers' && <AlAhlyManagers matches={filteredMatches} playerDetails={playerDetails} lineupDetails={lineupDetails} />}
                 {activeTab === 'h2h' && <AlAhlyH2H matches={filteredMatches} />}
                 {activeTab === 'referees' && <AlAhlyReferees matches={filteredMatches} playerDetails={playerDetails} howPenMissed={howPenMissed} />}
+                {activeTab === 'media-tracker' && <AlAhlyMediaTracker matches={filteredMatches} mediaTrackerData={mediaTrackerData} onDataChange={fetchMatchData} />}
                 {activeTab === 'editor' && <AlAhlyEditor />}
             </main>
 
@@ -409,7 +414,7 @@ export default function AlAhlyDatabase() {
                             <div style={{ fontFamily: 'Bebas Neue', fontSize: '24px', letterSpacing: '2px' }}>
                                 DATABASE <span style={{ color: 'var(--gold)' }}>FILTERS</span>
                             </div>
-                            <button 
+                            <button
                                 onClick={() => setIsFilterOpen(false)}
                                 style={{
                                     background: 'transparent',
@@ -425,7 +430,7 @@ export default function AlAhlyDatabase() {
                                 <X size={24} />
                             </button>
                         </div>
-                        
+
                         <div style={{ flex: 1, overflowY: 'auto' }}>
                             <AlAhlyFilters
                                 dbFilters={dbFilters}
@@ -444,7 +449,7 @@ export default function AlAhlyDatabase() {
                             justifyContent: 'center',
                             borderTop: '1px solid #eee'
                         }}>
-                            <button 
+                            <button
                                 onClick={() => setIsFilterOpen(false)}
                                 style={{
                                     background: 'var(--black)',

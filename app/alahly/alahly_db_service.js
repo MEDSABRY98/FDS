@@ -38,6 +38,56 @@ export const AlAhlyService = {
     },
 
     /**
+     * Fetch ALL media tracker details from alahly_MEDIATRACKER.
+     */
+    async getAllMediaTracker() {
+        try {
+            let allData = [];
+            let from = 0;
+            const step = 1000;
+            let finished = false;
+
+            while (!finished) {
+                const { data, error } = await supabase
+                    .from('alahly_MEDIATRACKER')
+                    .select('*')
+                    .range(from, from + step - 1);
+
+                if (error) throw error;
+                if (data && data.length > 0) {
+                    allData = [...allData, ...data];
+                    from += step;
+                    if (data.length < step) finished = true;
+                } else {
+                    finished = true;
+                }
+            }
+            return allData;
+        } catch (error) {
+            console.error("Error fetching MediaTracker:", error.message);
+            return [];
+        }
+    },
+
+    /**
+     * Update a single media tracker record.
+     */
+    async updateMediaRecord(rowId, updates) {
+        try {
+            const { error } = await supabase
+                .from('alahly_MEDIATRACKER')
+                .update(updates)
+                .eq('ROW_ID', rowId);
+
+            if (error) throw error;
+            return true;
+        } catch (error) {
+            console.error("Error updating MediaTracker record:", error.message);
+            throw error;
+        }
+    },
+
+    /**
      * Fetch ALL player details from alahly_PLAYERDETAILS using pagination to bypass limit.
      */
     async getAllPlayerDetails() {
