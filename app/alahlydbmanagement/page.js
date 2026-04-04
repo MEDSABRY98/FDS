@@ -191,12 +191,35 @@ export default function DatabaseManagement() {
                     cols.unshift(rowIdKey);
                 }
                 setColumns(cols);
+                // Fetch match dates for joined sorting if table is alahly_MEDIATRACKER
+                let matchDateMap = {};
+                if (selectedTable === 'alahly_MEDIATRACKER' && cols.includes('MATCH_ID')) {
+                    try {
+                        const { data: datesData } = await supabase.from('alahly_MATCHDETAILS').select('MATCH_ID, DATE');
+                        if (datesData) {
+                            datesData.forEach(d => {
+                                matchDateMap[d.MATCH_ID] = new Date(d.DATE).getTime();
+                            });
+                        }
+                    } catch(err) { console.error("Error fetching dates for sort:", err); }
+                }
+
                 // Deterministic secondary sorting logic
                 const tablesToSortByRowId = ['alahly_GKSDETAILS', 'alahly_HOWPENMISSED', 'alahly_LINEUPDETAILS'];
                 const ridKey = cols.find(c => c.toUpperCase() === "ROW_ID");
 
                 if (selectedTable === 'alahly_MATCHDETAILS' && cols.includes('DATE')) {
                     allData.sort((a, b) => new Date(b.DATE) - new Date(a.DATE));
+                } else if (selectedTable === 'alahly_MEDIATRACKER' && cols.includes('MATCH_ID')) {
+                    allData.sort((a, b) => {
+                        const dateA = matchDateMap[a.MATCH_ID] || 0;
+                        const dateB = matchDateMap[b.MATCH_ID] || 0;
+                        // 1. Primary Sort: Date Descending (Latest first)
+                        if (dateB !== dateA) return dateB - dateA;
+                        
+                        // 2. Secondary Sort: Match ID if dates are equal/missing
+                        return String(b.MATCH_ID).localeCompare(String(a.MATCH_ID), undefined, { numeric: true });
+                    });
                 } else if (tablesToSortByRowId.includes(selectedTable) && ridKey) {
                     allData.sort((a, b) => String(a[ridKey]).localeCompare(String(b[ridKey]), undefined, { numeric: true }));
                 } else if (cols.includes('MATCH_ID')) {
