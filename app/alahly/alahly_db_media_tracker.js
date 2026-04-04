@@ -379,9 +379,6 @@ export default function AlAhlyMediaTracker({ matches, mediaTrackerData, onDataCh
                                                         >
                                                             <Edit2 size={16} />
                                                         </button>
-                                                        {savedId === item.ROW_ID && (
-                                                            <CheckCircle2 size={16} color="#2ecc71" className="mt-fade-in" />
-                                                        )}
                                                     </div>
                                                 )}
                                             </td>
