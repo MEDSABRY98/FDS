@@ -296,7 +296,9 @@ export default function AlAhlyDatabase() {
                         maxWidth: '1300px',
                         overflowX: 'auto',
                         scrollbarWidth: 'none',
-                        msOverflowStyle: 'none'
+                        msOverflowStyle: 'none',
+                        paddingLeft: '130px', /* padding to protect absolute buttons */
+                        paddingRight: '20px'
                     }}
                 >
                     <style jsx global>{`

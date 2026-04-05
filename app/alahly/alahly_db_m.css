@@ -1,5 +1,5 @@
 /* MOBILE BOTTOM NAV STYLES */
-.bottom-nav {
+.bottom-nav-wrapper {
     display: none;
     position: fixed;
     bottom: 0;
@@ -8,10 +8,23 @@
     height: 70px;
     background: #0a0a0a;
     border-top: 1px solid rgba(201, 168, 76, 0.15);
+    z-index: 10000;
+    align-items: center;
+}
+
+@media (max-width: 1100px) {
+    .bottom-nav-wrapper {
+        display: flex;
+    }
+}
+
+.bottom-nav {
+    display: flex;
     align-items: center;
     justify-content: flex-start;
-    padding: 0 10px;
-    z-index: 10000;
+    padding: 0 10px 0 100px;
+    height: 100%;
+    width: 100%;
     overflow-x: auto;
     white-space: nowrap;
     scrollbar-width: none;
@@ -19,16 +32,6 @@
     flex-wrap: nowrap;
     touch-action: pan-x;
     -webkit-overflow-scrolling: touch;
-}
-
-.bottom-nav::-webkit-scrollbar {
-    display: none;
-}
-
-@media (max-width: 1100px) {
-    .bottom-nav {
-        display: flex;
-    }
 }
 
 .bottom-nav-item {
