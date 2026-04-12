@@ -14,6 +14,8 @@ import PlayerChampionshipsTable from "./alahly_db_player_details_championships";
 import PlayerWithPlayerTable from "./alahly_db_player_details_player_with_player";
 import PlayerGoalImpactTable from "./alahly_db_player_details_goal_impact";
 import PlayerAssistImpactTable from "./alahly_db_player_details_assist_impact";
+import PlayerPresenceTable from "./alahly_db_player_details_squad_influence";
+import PlayerTimingTable from "./alahly_db_player_details_timing";
 import { AlAhlyService } from "./alahly_db_service";
 
 export default function PlayerDetails({ playerName, playerData, playerDetails, lineupDetails, masterMatches, gkDetails, howPenMissed, onBack }) {
@@ -59,7 +61,14 @@ export default function PlayerDetails({ playerName, playerData, playerDetails, l
             statsBySY: {}, // { SY: { apps, mins, goals, assists, penGoals, penMissed } }
             statsByOpponent: {}, // { Opponent: { apps, goals, assists, penGoals, penMissed, penSaved } },
             statsByGK: {}, // { GKName: { team, goals, penGoals, penMissed, penSaved } },
-            playerWithPlayerStats: { assistsFrom: {}, assistsTo: {} }
+            playerWithPlayerStats: { assistsFrom: {}, assistsTo: {} },
+            impactStats: { 
+                presence: { matches: 0, wins: 0, draws: 0, losses: 0, gf: 0, ga: 0, cleanSheets: 0, failedToScore: 0 },
+                absence: { matches: 0, wins: 0, draws: 0, losses: 0, gf: 0, ga: 0, cleanSheets: 0, failedToScore: 0 },
+                careerRange: { start: "—", end: "—" }
+            },
+            statsByMinute: {},
+            assistsByMinute: {}
         };
 
         if (!playerName) return { stats: summary, playerTeams: [], playerSYs: [], playerComps: [], playerOpps: [] };
@@ -101,8 +110,11 @@ export default function PlayerDetails({ playerName, playerData, playerDetails, l
                 season: String(m["SEASON - NAME"] || "Unknown").trim(),
                 sy: String(m["SEASON - NUMBER"] || "Unknown").trim(),
                 date: m.DATE || "—",
+                dateVal: m.DATE ? new Date(m.DATE.split('/').reverse().join('-')) : new Date(0),
                 ahlyT: String(m["AHLY TEAM"] || "الأهلي").trim(),
-                oppT: String(m["OPPONENT TEAM"] || "—").trim()
+                oppT: String(m["OPPONENT TEAM"] || "—").trim(),
+                gf: parseInt(m.GF) || 0,
+                ga: parseInt(m.GA) || 0
             };
             allCompSet.add(mType);
         });
@@ -288,6 +300,28 @@ export default function PlayerDetails({ playerName, playerData, playerDetails, l
             const mEvents = playerEvents.filter(e => String(e.MATCH_ID) === String(mId));
             const data = buildMatchData(mId, app, mEvents);
             matchDataMap[mId] = data;
+
+            // --- Aggregate Minutes Tracking ---
+            mEvents.forEach(e => {
+                const type = String(e.TYPE || "").trim();
+                const sub = String(e.TYPE_SUB || "").trim();
+                const isGoal = type === "GOAL" || type === "هدف" || sub === "PENGOAL" || sub === "هدف جزاء";
+                const isAssist = type === "ASSIST" || type === "اسيست" || type === "صنع";
+                
+                if (isGoal) {
+                    const min = String(e.MINUTE || "").trim();
+                    if (min) {
+                        summary.statsByMinute[min] = (summary.statsByMinute[min] || 0) + 1;
+                    }
+                }
+                if (isAssist) {
+                    const min = String(e.MINUTE || "").trim();
+                    if (min) {
+                        if (!summary.assistsByMinute) summary.assistsByMinute = {};
+                        summary.assistsByMinute[min] = (summary.assistsByMinute[min] || 0) + 1;
+                    }
+                }
+            });
 
             // Global Totals
             summary.goals += data.goals;
@@ -491,7 +525,71 @@ export default function PlayerDetails({ playerName, playerData, playerDetails, l
                     summary.playerWithPlayerStats.assistsTo[partner] = (summary.playerWithPlayerStats.assistsTo[partner] || 0) + 1;
                 }
             });
+            // --- Presence Impact (Team Performance with Player) ---
+            if (app) {
+                const playerMatchTeam = (app?.TEAM || app?.CLUB || app?.["TEAM NAME"] || app?.Team || mEvents[0]?.TEAM || mEvents[0]?.CLUB || mEvents[0]?.["TEAM NAME"] || mEvents[0]?.Team || "").trim();
+                const isAhlySide = isAhly(playerMatchTeam);
+                
+                const pSideGF = isAhlySide ? ctx.gf : ctx.ga;
+                const pSideGA = isAhlySide ? ctx.ga : ctx.gf;
+
+                summary.impactStats.presence.matches += 1;
+                summary.impactStats.presence.gf += pSideGF;
+                summary.impactStats.presence.ga += pSideGA;
+                if (pSideGA === 0) summary.impactStats.presence.cleanSheets += 1;
+                if (pSideGF === 0) summary.impactStats.presence.failedToScore += 1;
+
+                if (pSideGF > pSideGA) summary.impactStats.presence.wins += 1;
+                else if (pSideGF < pSideGA) summary.impactStats.presence.losses += 1;
+                else summary.impactStats.presence.draws += 1;
+            }
         });
+
+        // --- Absence Impact (Team Performance within Career Range) ---
+        // 1. Determine Career Range (First and Last Lineup Appearance)
+        const careerDates = allAppearances.map(l => {
+            const ctx = matchContextMap[String(l.MATCH_ID)];
+            return ctx && ctx.dateVal && ctx.dateVal.getTime() > 0 ? ctx.dateVal.getTime() : null;
+        }).filter(Boolean);
+
+        if (careerDates.length > 0) {
+            const minDate = Math.min(...careerDates);
+            const maxDate = Math.max(...careerDates);
+
+            (masterMatches || []).forEach(m => {
+                const mctx = matchContextMap[String(m.MATCH_ID)];
+                if (!mctx || !mctx.dateVal || mctx.dateVal.getTime() < minDate || mctx.dateVal.getTime() > maxDate) return;
+
+                // Skip if player was in the lineup for this match
+                if (appearanceMatchIds.has(String(m.MATCH_ID))) return;
+
+                // Apply Global Filters (Team, Comp, SY) to keep comparison fair
+                if (selectedComps.length > 0 && !selectedComps.includes(mctx.champion)) return;
+                if (selectedSYs.length > 0 && !selectedSYs.includes(mctx.sy)) return;
+                // For absence, since player isn't there, we check if his "likely team" (Al Ahly) match the selected teams filter
+                if (selectedTeams.length > 0 && !selectedTeams.includes(mctx.ahlyT)) return;
+                if (selectedOpps.length > 0 && !selectedOpps.includes(mctx.oppT)) return;
+
+                // Aggregate Absence Stats (Assume "We" refers to Al Ahly)
+                summary.impactStats.absence.matches += 1;
+                summary.impactStats.absence.gf += mctx.gf;
+                summary.impactStats.absence.ga += mctx.ga;
+                if (mctx.ga === 0) summary.impactStats.absence.cleanSheets += 1;
+                if (mctx.gf === 0) summary.impactStats.absence.failedToScore += 1;
+
+                if (mctx.gf > mctx.ga) summary.impactStats.absence.wins += 1;
+                else if (mctx.gf < mctx.ga) summary.impactStats.absence.losses += 1;
+                else summary.impactStats.absence.draws += 1;
+            });
+
+            // Set formatted career range for display
+            const firstMatch = allAppearances.find(l => matchContextMap[String(l.MATCH_ID)]?.dateVal?.getTime() === minDate);
+            const lastMatch = allAppearances.find(l => matchContextMap[String(l.MATCH_ID)]?.dateVal?.getTime() === maxDate);
+            summary.impactStats.careerRange = {
+                start: matchContextMap[String(firstMatch?.MATCH_ID)]?.date || "—",
+                end: matchContextMap[String(lastMatch?.MATCH_ID)]?.date || "—"
+            };
+        }
 
         const rawHistory = Object.values(matchDataMap).filter(d => appearanceMatchIds.has(d.id));
         const matchEventsList = Object.values(matchDataMap).filter(d => eventMatchIds.has(d.id));
@@ -634,6 +732,22 @@ export default function PlayerDetails({ playerName, playerData, playerDetails, l
                         "IMPACT TYPE": item.type,
                         "RESULT": item.match["W-D-L"] === 'W' ? 'WIN' : 'DRAW'
                     }));
+                break;
+            case 'presence':
+                const pres = stats.impactStats.presence;
+                const abs = stats.impactStats.absence;
+                exportData = [
+                    { "TYPE": "PRESENCE", "METRIC": "Matches", "VALUE": pres.matches },
+                    { "TYPE": "PRESENCE", "METRIC": "Wins", "VALUE": pres.wins },
+                    { "TYPE": "PRESENCE", "METRIC": "Draws", "VALUE": pres.draws },
+                    { "TYPE": "PRESENCE", "METRIC": "Losses", "VALUE": pres.losses },
+                    { "TYPE": "PRESENCE", "METRIC": "Win Rate (%)", "VALUE": pres.matches > 0 ? ((pres.wins / pres.matches) * 100).toFixed(1) : 0 },
+                    { "TYPE": "ABSENCE", "METRIC": "Matches", "VALUE": abs.matches },
+                    { "TYPE": "ABSENCE", "METRIC": "Wins", "VALUE": abs.wins },
+                    { "TYPE": "ABSENCE", "METRIC": "Draws", "VALUE": abs.draws },
+                    { "TYPE": "ABSENCE", "METRIC": "Losses", "VALUE": abs.losses },
+                    { "TYPE": "ABSENCE", "METRIC": "Win Rate (%)", "VALUE": abs.matches > 0 ? ((abs.wins / abs.matches) * 100).toFixed(1) : 0 }
+                ];
                 break;
         }
 
@@ -800,11 +914,17 @@ export default function PlayerDetails({ playerName, playerData, playerDetails, l
                 <div className={`player-tab-item ${activeTab === 'dashboard' ? 'active' : ''}`} onClick={() => setActiveTab('dashboard')}>
                     <span className="tab-title">DASHBOARD</span>
                 </div>
+                <div className={`player-tab-item ${activeTab === 'presence' ? 'active' : ''}`} onClick={() => setActiveTab('presence')}>
+                    <span className="tab-title">SQUAD INFLUENCE</span>
+                </div>
                 <div className={`player-tab-item ${activeTab === 'goal_impact' ? 'active' : ''}`} onClick={() => setActiveTab('goal_impact')}>
                     <span className="tab-title">GOAL IMPACT</span>
                 </div>
                 <div className={`player-tab-item ${activeTab === 'assist_impact' ? 'active' : ''}`} onClick={() => setActiveTab('assist_impact')}>
                     <span className="tab-title">ASSIST IMPACT</span>
+                </div>
+                <div className={`player-tab-item ${activeTab === 'timing' ? 'active' : ''}`} onClick={() => setActiveTab('timing')}>
+                    <span className="tab-title">TIMING</span>
                 </div>
                 <div className={`player-tab-item ${activeTab === 'matches' ? 'active' : ''}`} onClick={() => setActiveTab('matches')}>
                     <span className="tab-title">MATCHES</span>
@@ -907,8 +1027,20 @@ export default function PlayerDetails({ playerName, playerData, playerDetails, l
             )}
             {activeTab === 'assist_impact' && (
                 <PlayerAssistImpactTable
+                    stats={stats}
+                />
+            )}
+            {activeTab === 'timing' && (
+                <PlayerTimingTable
+                    stats={stats}
+                />
+            )}
+            {activeTab === 'presence' && (
+                <PlayerPresenceTable
+                    impactStats={stats.impactStats}
+                    masterMatches={masterMatches}
+                    lineupDetails={lineupDetails}
                     playerName={playerName}
-                    filteredMatches={stats.matchHistory}
                 />
             )}
             <style jsx>{`

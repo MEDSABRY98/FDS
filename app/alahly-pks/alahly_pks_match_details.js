@@ -78,12 +78,15 @@ export default function AlAhlyPKsMatchDetails({ matchPks, onBack }) {
                     <div className="team-text-luxury">{matchInfo["OPPONENT TEAM"] || matchInfo.OPPONENT}</div>
                 </div>
                 <div className="shootout-meta-info">
+                    <div className="meta-badge starter-badge">
+                        <span className="starter-val">{(matchInfo["WHO START?"] || matchInfo.WHO_START || matchInfo["بداية"] || "---").toUpperCase()}</span>
+                    </div>
                     <div className="meta-badge">PKS ID: {matchInfo.PKS_ID}</div>
                     <div className="meta-badge">MATCH ID: {matchInfo.MATCH_ID}</div>
                     <div className="meta-badge">DATE: {formatDate(matchInfo.DATE)}</div>
                     <div className="meta-badge">{matchInfo.CHAMPION}</div>
                     <div className="meta-badge">{matchInfo.SEASON}</div>
-                    <div className="meta-badge">{matchInfo.ROUND}</div>
+                    <div className="meta-badge">{matchInfo.ROUND || matchInfo["الدور"] || ""}</div>
                     <div className={`meta-badge status-${(() => {
                         const scoreAhly = parseInt(matchInfo["G-AHLY"] || 0);
                         const scoreOpp = parseInt(matchInfo["G-OPPONENT"] || 0);
