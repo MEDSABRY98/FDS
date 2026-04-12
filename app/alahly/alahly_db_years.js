@@ -3,6 +3,7 @@
 import { useMemo, useEffect } from "react";
 import "./alahly_db_years.css";
 import { AlAhlyService } from "./alahly_db_service";
+import NoData_db from "../lib/NoData_db";
 
 export default function AlAhlyYears({ matches }) {
 
@@ -138,7 +139,7 @@ export default function AlAhlyYears({ matches }) {
                         </thead>
                         <tbody>
                             {sortedYears.length === 0 ? (
-                                <tr><td colSpan="10" style={{ textAlign: 'center', padding: '100px', opacity: 0.4 }}>No data found.</td></tr>
+                                <NoData_db isTable={true} colSpan={10} message="No data found." />
                             ) : (
                                 sortedYears.map(year => {
                                     const s = statsByYear[year];

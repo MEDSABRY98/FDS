@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo } from "react";
+import NoData_db from "../lib/NoData_db";
 
 export default function PlayerSeasonNumberTable({ stats }) {
     const statsBySY = stats.statsBySY || {};
@@ -57,7 +58,7 @@ export default function PlayerSeasonNumberTable({ stats }) {
                         </thead>
                         <tbody>
                             {sortedSYs.length === 0 ? (
-                                <tr><td colSpan="8" style={{ textAlign: 'center', padding: '100px', opacity: 0.4 }}>No data found for this player.</td></tr>
+                                <NoData_db isTable={true} colSpan={8} message="No data found for this player." />
                             ) : (
                                 sortedSYs.map((sy, idx) => {
                                     const s = statsBySY[sy];

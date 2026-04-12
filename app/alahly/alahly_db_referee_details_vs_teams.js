@@ -1,6 +1,8 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import NoData_db from "../lib/NoData_db";
+import SearchBar_db from "../lib/SearchBar_db";
 
 export default function Referee_VsTeams_Module({ stats }) {
     const [search, setSearch] = useState("");
@@ -35,14 +37,11 @@ export default function Referee_VsTeams_Module({ stats }) {
 
             {/* Replicated Premium Search Box Centered */}
             <div style={{ width: '100%', display: 'flex', justifyContent: 'center', marginBottom: '35px' }}>
-                <div className="search-wrap-premium" style={{ flex: 'none', width: '100%', maxWidth: '450px' }}>
-                    <input
-                        type="text"
-                        placeholder="SEARCH OPPONENT TEAM..."
+                <div style={{ flex: 'none', width: '100%', maxWidth: '450px' }}>
+                    <SearchBar_db
                         value={search}
-                        onChange={(e) => setSearch(e.target.value)}
-                        className="p-search-input"
-                        style={{ textAlign: 'center' }}
+                        onChange={setSearch}
+                        placeholder="SEARCH OPPONENT TEAM..."
                     />
                 </div>
             </div>
@@ -64,9 +63,7 @@ export default function Referee_VsTeams_Module({ stats }) {
                     </thead>
                     <tbody>
                         {oppNames.length === 0 ? (
-                            <tr>
-                                <td colSpan="9" style={{ textAlign: 'center', padding: '100px', opacity: 0.3, fontFamily: 'Space Mono' }}>No opponent data found matching filters.</td>
-                            </tr>
+                            <NoData_db isTable={true} colSpan={9} message="No opponent data found matching filters." />
                         ) : (
                             oppNames.map(name => {
                                 const s = oppStore[name];

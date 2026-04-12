@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo } from "react";
+import NoData_db from "../lib/NoData_db";
 
 export default function GK_SeasonName_Component_Unique({ stats }) {
     const statsByChampSeason = stats.statsByChampSeason || {};
@@ -23,26 +24,7 @@ export default function GK_SeasonName_Component_Unique({ stats }) {
                 <div className="gold-line" style={{ height: '2px', background: 'var(--player-gold)', width: '60px', marginBottom: '30px' }}></div>
 
                 {sortedChamps.length === 0 ? (
-                    <div className="no-data-premium" style={{
-                        textAlign: 'center',
-                        padding: '120px 20px',
-                        background: 'rgba(255,255,255,0.02)',
-                        borderRadius: '24px',
-                        border: '1px dashed rgba(255,255,255,0.1)',
-                        marginTop: '40px'
-                    }}>
-                        <div style={{ fontSize: '48px', marginBottom: '20px', filter: 'grayscale(1)', opacity: 0.5 }}>📊</div>
-                        <div style={{
-                            fontFamily: 'Bebas Neue',
-                            fontSize: '28px',
-                            color: 'var(--player-gold)',
-                            letterSpacing: '3px',
-                            textShadow: '0 0 10px rgba(201,168,76,0.2)'
-                        }}>
-                            NO DATA AVAILABLE FOR THIS GK
-                        </div>
-                        <div style={{ color: '#666', fontFamily: 'Space Mono', fontSize: '11px', marginTop: '10px' }}>Try adjusting your filters to see more results</div>
-                    </div>
+                    <NoData_db message="NO DATA AVAILABLE FOR THIS GK" />
                 ) : (
                     sortedChamps.map(champ => {
                         const sortedSeasons = Object.keys(statsByChampSeason[champ]).sort((a, b) => {

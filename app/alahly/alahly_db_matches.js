@@ -3,6 +3,8 @@
 import { useMemo, useState, useEffect } from "react";
 import { AlAhlyService } from "./alahly_db_service";
 import "./alahly_db_matches.css";
+import NoData_db from "../lib/NoData_db";
+import SearchBar_db from "../lib/SearchBar_db";
 
 export default function AlAhlyMatches({ matches, onMatchClick }) {
     const [currentPage, setCurrentPage] = useState(1);
@@ -111,32 +113,17 @@ export default function AlAhlyMatches({ matches, onMatchClick }) {
 
                     <div className="match-search-container" style={{ display: 'flex', justifyContent: 'center', marginTop: '20px' }}>
                         <div style={{ width: '100%', maxWidth: '500px' }}>
-                            <input
-                                type="text"
-                                placeholder="Search matches (ID, Team, Manager, Stad, Referee...)"
+                            <SearchBar_db
                                 value={searchTerm}
-                                onChange={(e) => setSearchTerm(e.target.value)}
-                                style={{
-                                    width: '100%',
-                                    background: '#fff',
-                                    border: '2px solid #eee',
-                                    borderRadius: '50px',
-                                    padding: '18px 30px',
-                                    fontSize: '15px',
-                                    fontFamily: 'Outfit, sans-serif',
-                                    boxShadow: '0 8px 25px rgba(0,0,0,0.04)',
-                                    outline: 'none',
-                                    textAlign: 'center',
-                                    transition: '0.3s'
-                                }}
-                                className="m-search-box"
+                                onChange={setSearchTerm}
+                                placeholder="Search matches (ID, Team, Manager, Stad, Referee...)"
                             />
                         </div>
                     </div>
                 </div>
 
                 {Object.keys(groupedMatches).length === 0 ? (
-                    <div className="empty-state-lux">No matches found for current filters.</div>
+                    <NoData_db message="No matches found for current filters." />
                 ) : (
                     Object.keys(groupedMatches).map(monthYear => (
                         <div key={monthYear} className="month-section fade-in">

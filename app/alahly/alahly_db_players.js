@@ -1,6 +1,9 @@
 "use client";
 
 import { useMemo, useState, useEffect, useRef } from "react";
+import NoData_db from "../lib/NoData_db";
+import SearchBar_db from "../lib/SearchBar_db";
+import DropDownList_db from "../lib/DropDownList_db";
 import "./alahly_db_players.css";
 import PlayerDetails from "./alahly_db_player_details";
 import { AlAhlyService } from "./alahly_db_service";
@@ -9,11 +12,6 @@ export default function AlAhlyPlayers({ playerDetails, lineupDetails, filteredMa
     const [searchTerm, setSearchTerm] = useState("");
     const [teamFilter, setTeamFilter] = useState("all");
     const [opponentFilter, setOpponentFilter] = useState("all");
-    const [isOpen, setIsOpen] = useState(false);
-    const [isOppOpen, setIsOppOpen] = useState(false);
-    const [oppSearch, setOppSearch] = useState("");
-    const dropdownRef = useRef(null);
-    const oppDropdownRef = useRef(null);
     const [currentPage, setCurrentPage] = useState(1);
     const pageSize = 50;
     const [activeSubTab, setActiveSubTab] = useState(1);
@@ -21,14 +19,6 @@ export default function AlAhlyPlayers({ playerDetails, lineupDetails, filteredMa
 
     const filterLabels = { all: "All Legends", ahly: "With Al Ahly", opponents: "Against Al Ahly" };
 
-    useEffect(() => {
-        function handleClickOutside(event) {
-            if (dropdownRef.current && !dropdownRef.current.contains(event.target)) setIsOpen(false);
-            if (oppDropdownRef.current && !oppDropdownRef.current.contains(event.target)) setIsOppOpen(false);
-        }
-        document.addEventListener("mousedown", handleClickOutside);
-        return () => document.removeEventListener("mousedown", handleClickOutside);
-    }, []);
 
     const allStats = useMemo(() => {
         const stats = {};
@@ -278,10 +268,6 @@ export default function AlAhlyPlayers({ playerDetails, lineupDetails, filteredMa
         return Array.from(opps).sort((a, b) => a.localeCompare(b, 'ar'));
     }, [lineupDetails, playerDetails, filteredMatches]);
 
-    const filteredOpponents = useMemo(() => {
-        if (!oppSearch) return uniqueOpponents;
-        return uniqueOpponents.filter(o => o.toLowerCase().includes(oppSearch.toLowerCase()));
-    }, [uniqueOpponents, oppSearch]);
 
     const filteredRows = useMemo(() => {
         let list = allStats;
@@ -366,36 +352,32 @@ export default function AlAhlyPlayers({ playerDetails, lineupDetails, filteredMa
                     </div>
                     <div className="gold-line"></div>
                     <div className="player-controls">
-                        <div className="search-wrap-premium"><input type="text" placeholder="Search legend..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} className="p-search-input" /></div>
+                        <SearchBar_db 
+                            value={searchTerm} 
+                            onChange={setSearchTerm} 
+                            placeholder="Search legend..." 
+                            className="search-wrap-premium" 
+                        />
 
-                        <div className="custom-dropdown-wrap" ref={dropdownRef}>
-                            <div className={`dropdown-trigger ${isOpen ? 'active' : ''}`} onClick={() => setIsOpen(!isOpen)}><span className="current-label">{teamFilter === 'all' ? "Select Category" : filterLabels[teamFilter]}</span><span className="dropdown-arrow"></span></div>
-                            {isOpen && <div className="dropdown-options-list">{Object.keys(filterLabels).map(key => <div key={key} className={`dropdown-option-item ${teamFilter === key ? 'selected' : ''}`} onClick={() => { setTeamFilter(key); setIsOpen(false); }}>{filterLabels[key]}</div>)}</div>}
-                        </div>
+                        <DropDownList_db 
+                            options={Object.keys(filterLabels).map(key => ({ value: key, label: filterLabels[key] }))}
+                            value={teamFilter}
+                            onChange={setTeamFilter}
+                            placeholder="Select Category"
+                            className="custom-dropdown-wrap"
+                        />
 
-                        <div className="custom-dropdown-wrap" ref={oppDropdownRef}>
-                            <div className={`dropdown-trigger ${isOppOpen ? 'active' : ''}`} onClick={() => setIsOppOpen(!isOppOpen)}><span className="current-label">{opponentFilter === 'all' ? "Select Opponent" : opponentFilter}</span><span className="dropdown-arrow"></span></div>
-                            {isOppOpen && (
-                                <div className="dropdown-options-list" style={{ width: '100%', padding: '0', boxSizing: 'border-box' }}>
-                                    <div style={{ padding: '12px', borderBottom: '1px solid #f0f0f0', background: '#fafafa' }}>
-                                        <input
-                                            type="text"
-                                            placeholder="Find team..."
-                                            value={oppSearch}
-                                            onChange={(e) => setOppSearch(e.target.value)}
-                                            onClick={(e) => e.stopPropagation()}
-                                            style={{ width: '100%', boxSizing: 'border-box', padding: '10px 15px', borderRadius: '8px', border: '1px solid #ddd', fontSize: '12px', outline: 'none', background: '#fff' }}
-                                        />
-                                    </div>
-                                    <div className="premium-scroll" style={{ maxHeight: '250px', overflowY: 'auto', padding: '5px' }}>
-                                        <div className={`dropdown-option-item ${opponentFilter === 'all' ? 'selected' : ''}`} onClick={() => { setOpponentFilter("all"); setIsOppOpen(false); }}>All Opponents</div>
-                                        {filteredOpponents.map(opp => (
-                                            <div key={opp} className={`dropdown-option-item ${opponentFilter === opp ? 'selected' : ''}`} onClick={() => { setOpponentFilter(opp); setIsOppOpen(false); }}>{opp}</div>
-                                        ))}
-                                    </div>
-                                </div>
-                            )}
-                        </div>
+                        <DropDownList_db 
+                            options={[
+                                { value: 'all', label: 'All Opponents' },
+                                ...uniqueOpponents.map(opp => ({ value: opp, label: opp }))
+                            ]}
+                            value={opponentFilter}
+                            onChange={setOpponentFilter}
+                            placeholder="Select Opponent"
+                            searchable={true}
+                            className="custom-dropdown-wrap"
+                        />
                     </div>
                     <div className="player-table-container">
                         {activeSubTab === 1 && (
@@ -417,7 +399,7 @@ export default function AlAhlyPlayers({ playerDetails, lineupDetails, filteredMa
                                             );
                                         })
                                     ) : (
-                                        <tr><td colSpan="8" style={{ padding: '100px', opacity: 0.4 }}>No matching legends found.</td></tr>
+                                        <NoData_db isTable={true} colSpan={8} message="No matching legends found." />
                                     )}
                                 </tbody>
                             </table>
@@ -431,7 +413,7 @@ export default function AlAhlyPlayers({ playerDetails, lineupDetails, filteredMa
                                             <tr key={r.name}><td><span className={`rank-badge-premium ${((currentPage - 1) * pageSize + i) < 3 ? 'rank-gold' : ''}`}>{(currentPage - 1) * pageSize + i + 1}</span></td><td className="p-name" onClick={() => setSelectedPlayer(r.name)} style={{ cursor: 'pointer' }}>{r.name}</td><td style={{ fontWeight: 800 }}>{r.total}</td><td className="g-val">{r.goal}</td><td className="p-val">{r.miss}</td><td>{r.wonGoal}</td><td>{r.wonMiss}</td><td>{r.makeGoal}</td><td>{r.makeMiss}</td></tr>
                                         ))
                                     ) : (
-                                        <tr><td colSpan="9" style={{ padding: '100px', opacity: 0.4 }}>No matching legends found.</td></tr>
+                                        <NoData_db isTable={true} colSpan={9} message="No matching legends found." />
                                     )}
                                 </tbody>
                             </table>
@@ -448,7 +430,7 @@ export default function AlAhlyPlayers({ playerDetails, lineupDetails, filteredMa
                                             <tr key={r.name}><td><span className={`rank-badge-premium ${((currentPage - 1) * pageSize + i) < 3 ? 'rank-gold' : ''}`}>{(currentPage - 1) * pageSize + i + 1}</span></td><td className="p-name" onClick={() => setSelectedPlayer(r.name)} style={{ cursor: 'pointer' }}>{r.name}</td><td className="g-val">{r.braceG}</td><td className="g-val">{r.hatG}</td><td className="g-val">{r.superG}</td><td className="a-val">{r.braceA}</td><td className="a-val">{r.hatA}</td><td className="a-val">{r.superA}</td></tr>
                                         ))
                                     ) : (
-                                        <tr><td colSpan="8" style={{ padding: '100px', opacity: 0.4 }}>No matching legends found.</td></tr>
+                                        <NoData_db isTable={true} colSpan={8} message="No matching legends found." />
                                     )}
                                 </tbody>
                             </table>
@@ -484,7 +466,7 @@ export default function AlAhlyPlayers({ playerDetails, lineupDetails, filteredMa
                                             </tr>
                                         ))
                                     ) : (
-                                        <tr><td colSpan="7" style={{ padding: '100px', opacity: 0.4 }}>No matching legends found.</td></tr>
+                                        <NoData_db isTable={true} colSpan={7} message="No matching legends found." />
                                     )}
                                 </tbody>
                             </table>

@@ -3,81 +3,12 @@
 import { useMemo, useState, useEffect, useRef } from "react";
 import "./alahly_db_media_tracker.css";
 import { AlAhlyService } from "./alahly_db_service";
-import { Save, Edit2, CheckCircle2, ChevronDown, Search } from "lucide-react";
+import { Save, Edit2, CheckCircle2 } from "lucide-react";
+import NoData_db from "../lib/NoData_db";
+import SearchBar_db from "../lib/SearchBar_db";
+import DropDownList_db from "../lib/DropDownList_db";
 
 // Custom Premium Searchable Dropdown Component
-function SearchableDropdown({ value, onChange, options, placeholder, width = "220px" }) {
-    const [isOpen, setIsOpen] = useState(false);
-    const [search, setSearch] = useState("");
-    const dropdownRef = useRef(null);
-
-    useEffect(() => {
-        const handleClickOutside = (event) => {
-            if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
-                setIsOpen(false);
-            }
-        };
-        document.addEventListener("mousedown", handleClickOutside);
-        return () => document.removeEventListener("mousedown", handleClickOutside);
-    }, []);
-
-    const filteredOptions = useMemo(() => {
-        if (!search) return options;
-        return options.filter(o => o.toLowerCase().includes(search.toLowerCase()));
-    }, [options, search]);
-
-    return (
-        <div className="mt-dropdown-container" ref={dropdownRef} style={{ position: 'relative', width, flex: 'none' }}>
-            <div 
-                className={`mt-search-input mt-dropdown-header ${isOpen ? 'mt-dropdown-open' : ''}`}
-                onClick={() => setIsOpen(!isOpen)}
-                style={{ cursor: 'pointer', display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '15px 25px' }}
-            >
-                <div style={{ opacity: value ? 1 : 0.4, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', color: value ? '#000' : 'inherit' }}>
-                    {value || placeholder}
-                </div>
-                <ChevronDown size={16} style={{ color: '#c9a84c', transition: 'transform 0.3s', transform: isOpen ? 'rotate(180deg)' : 'rotate(0deg)' }} />
-            </div>
-
-            {isOpen && (
-                <div className="mt-dropdown-menu">
-                    <div style={{ position: 'relative' }}>
-                        <Search size={14} style={{ position: 'absolute', left: '15px', top: '16px', color: '#aaa' }} />
-                        <input 
-                            type="text" 
-                            className="mt-dropdown-search"
-                            placeholder="Type to search..."
-                            value={search}
-                            onChange={(e) => setSearch(e.target.value)}
-                            autoFocus
-                        />
-                    </div>
-                    <div className="mt-dropdown-list mt-custom-scrollbar">
-                        <div 
-                            className={`mt-dropdown-item ${value === "" ? 'mt-dropdown-selected' : ''}`}
-                            onClick={() => { onChange(""); setIsOpen(false); setSearch(""); }}
-                        >
-                            <span style={{ fontWeight: 800 }}>Show All</span>
-                        </div>
-                        {filteredOptions.length === 0 ? (
-                            <div className="mt-dropdown-item" style={{ opacity: 0.5, cursor: 'default' }}>No results found</div>
-                        ) : (
-                            filteredOptions.map(opt => (
-                                <div 
-                                    key={opt}
-                                    className={`mt-dropdown-item ${value === opt ? 'mt-dropdown-selected' : ''}`}
-                                    onClick={() => { onChange(opt); setIsOpen(false); setSearch(""); }}
-                                >
-                                    {opt}
-                                </div>
-                            ))
-                        )}
-                    </div>
-                </div>
-            )}
-        </div>
-    );
-}
 
 export default function AlAhlyMediaTracker({ matches, mediaTrackerData, onDataChange }) {
     const [searchTerm, setSearchTerm] = useState("");
@@ -215,41 +146,55 @@ export default function AlAhlyMediaTracker({ matches, mediaTrackerData, onDataCh
                 
                 <div className="mt-controls">
                     <div className="mt-search-wrap" style={{ display: 'flex', gap: '20px', width: '100%', maxWidth: '1200px', flexWrap: 'nowrap', justifyContent: 'center' }}>
-                        <input 
-                            type="text" 
-                            placeholder="Type opponent, Match ID, or notes..." 
-                            value={searchTerm} 
-                            onChange={(e) => setSearchTerm(e.target.value)} 
-                            className="mt-search-input" 
-                            style={{ width: '320px', flex: 'none', paddingLeft: '45px', backgroundImage: 'url("data:image/svg+xml,%3Csvg xmlns=\'http://www.w3.org/2000/svg\' width=\'18\' height=\'18\' viewBox=\'0 0 24 24\' fill=\'none\' stroke=\'%23aaaaaa\' stroke-width=\'2\' stroke-linecap=\'round\' stroke-linejoin=\'round\'%3E%3Ccircle cx=\'11\' cy=\'11\' r=\'8\'%3E%3C/circle%3E%3Cline x1=\'21\' y1=\'21\' x2=\'16.65\' y2=\'16.65\'%3E%3C/line%3E%3C/svg%3E")', backgroundRepeat: 'no-repeat', backgroundPosition: '15px center' }}
+                        <SearchBar_db
+                            value={searchTerm}
+                            onChange={setSearchTerm}
+                            placeholder="Type opponent, Match ID, or notes..."
+                            className="search-wrap-premium"
+                            style={{ width: '320px', flex: 'none' }}
                         />
-                        <SearchableDropdown 
-                            value={mediaStatusFilter} 
-                            onChange={setMediaStatusFilter} 
+
+                        <DropDownList_db
+                            value={mediaStatusFilter}
+                            onChange={setMediaStatusFilter}
                             options={[
-                                "Have Both",
-                                "Only Full Match",
-                                "Only Highlight",
-                                "Missing Both",
-                                "Missing Full Match",
-                                "Missing Highlight"
-                            ]} 
+                                { value: "", label: "Show All Status" },
+                                { value: "Have Both", label: "Have Both" },
+                                { value: "Only Full Match", label: "Only Full Match" },
+                                { value: "Only Highlight", label: "Only Highlight" },
+                                { value: "Missing Both", label: "Missing Both" },
+                                { value: "Missing Full Match", label: "Missing Full Match" },
+                                { value: "Missing Highlight", label: "Missing Highlight" }
+                            ]}
                             placeholder="Media Status"
-                            width="230px"
+                            className="mt-dropdown-container"
+                            style={{ width: '230px', flex: 'none' }}
                         />
-                        <SearchableDropdown 
-                            value={champFilter} 
-                            onChange={setChampFilter} 
-                            options={uniqueChampions} 
+
+                        <DropDownList_db
+                            value={champFilter}
+                            onChange={setChampFilter}
+                            options={[
+                                { value: "", label: "All Champions" },
+                                ...uniqueChampions.map(c => ({ value: c, label: c }))
+                            ]}
                             placeholder="Select Champion"
-                            width="230px"
+                            searchable={true}
+                            className="mt-dropdown-container"
+                            style={{ width: '230px', flex: 'none' }}
                         />
-                        <SearchableDropdown 
-                            value={seasonFilter} 
-                            onChange={setSeasonFilter} 
-                            options={uniqueSeasons} 
+
+                        <DropDownList_db
+                            value={seasonFilter}
+                            onChange={setSeasonFilter}
+                            options={[
+                                { value: "", label: "All Seasons" },
+                                ...uniqueSeasons.map(s => ({ value: s, label: s }))
+                            ]}
                             placeholder="Select Season"
-                            width="230px"
+                            searchable={true}
+                            className="mt-dropdown-container"
+                            style={{ width: '230px', flex: 'none' }}
                         />
                     </div>
                 </div>
@@ -272,7 +217,7 @@ export default function AlAhlyMediaTracker({ matches, mediaTrackerData, onDataCh
                         </thead>
                         <tbody>
                             {paginatedData.length === 0 ? (
-                                <tr><td colSpan="10" style={{ padding: '100px', opacity: 0.4 }}>No media tracker records found.</td></tr>
+                                <NoData_db isTable={true} colSpan={10} message="No media tracker records found." />
                             ) : (
                                 paginatedData.map((item, i) => {
                                     const actualIndex = (currentPage - 1) * pageSize + i;

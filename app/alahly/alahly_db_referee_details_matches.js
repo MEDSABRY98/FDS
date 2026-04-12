@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import NoData_db from "../lib/NoData_db";
 
 export default function Referee_Matches_Module({ stats }) {
     const [currentPage, setCurrentPage] = useState(1);
@@ -63,11 +64,7 @@ export default function Referee_Matches_Module({ stats }) {
                                 </tr>
                             ))
                         ) : (
-                            <tr>
-                                <td colSpan="8" style={{ padding: '80px', textAlign: 'center', opacity: 0.4, fontFamily: 'Space Mono' }}>
-                                    NO MATCH RECORDS FOUND FOR THIS REFEREE
-                                </td>
-                            </tr>
+                            <NoData_db isTable={true} colSpan={8} message="NO MATCH RECORDS FOUND FOR THIS REFEREE" />
                         )}
                     </tbody>
                 </table>

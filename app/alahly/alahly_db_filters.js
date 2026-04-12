@@ -171,10 +171,6 @@ export default function AlAhlyFilters({
                     <SearchableSelect label="CLEAN SHEET" value={dbFilters.clean_sheet} options={filterOptions?.clean_sheets || []} onChange={(v) => updateFilter('clean_sheet', v)} />
                     <SearchableSelect label="NOTE" value={dbFilters.note} options={filterOptions?.notes || []} onChange={(v) => updateFilter('note', v)} />
                 </div>
-
-                <div className="filter-footer">
-                    <button className="reset-btn" onClick={resetFilters}>RESET ALL FILTERS</button>
-                </div>
             </div>
 
             <style jsx>{`

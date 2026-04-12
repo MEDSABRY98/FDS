@@ -1,6 +1,8 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import NoData_db from "../lib/NoData_db";
+import SearchBar_db from "../lib/SearchBar_db";
 
 export default function Manager_VsTeams_Module({ stats, managerStatus }) {
     const [search, setSearch] = useState("");
@@ -54,14 +56,11 @@ export default function Manager_VsTeams_Module({ stats, managerStatus }) {
                 </div>
 
                 {/* Search Box */}
-                <div className="search-wrap-premium" style={{ width: '100%', maxWidth: '450px' }}>
-                    <input
-                        type="text"
-                        placeholder={role === 'AHLY' ? "SEARCH OPPONENT TEAM..." : "SEARCH MANAGED TEAM..."}
+                <div style={{ width: '100%', maxWidth: '450px' }}>
+                    <SearchBar_db
                         value={search}
-                        onChange={(e) => setSearch(e.target.value)}
-                        className="p-search-input"
-                        style={{ textAlign: 'center' }}
+                        onChange={setSearch}
+                        placeholder={role === 'AHLY' ? "SEARCH OPPONENT TEAM..." : "SEARCH MANAGED TEAM..."}
                     />
                 </div>
             </div>
@@ -85,14 +84,14 @@ export default function Manager_VsTeams_Module({ stats, managerStatus }) {
                     </thead>
                     <tbody>
                         {oppNames.length === 0 ? (
-                            <tr>
-                                <td colSpan="9" style={{ textAlign: 'center', padding: '100px', opacity: 0.3 }}>
-                                    {role === 'AHLY'
-                                        ? "No manager matches as Al Ahly manager found."
-                                        : "No matches as opponent manager (against Al Ahly) found."
-                                    }
-                                </td>
-                            </tr>
+                            <NoData_db 
+                                isTable={true} 
+                                colSpan={9} 
+                                message={role === 'AHLY' 
+                                    ? "No manager matches as Al Ahly manager found." 
+                                    : "No matches as opponent manager (against Al Ahly) found."
+                                } 
+                            />
                         ) : (
                             oppNames.map(name => {
                                 const s = oppStore[name];

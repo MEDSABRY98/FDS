@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo } from "react";
+import NoData_db from "../lib/NoData_db";
 
 export default function GK_SeasonNumber_Component_Unique({ stats }) {
     const statsBySY = stats.statsBySY || {};
@@ -53,7 +54,7 @@ export default function GK_SeasonNumber_Component_Unique({ stats }) {
                         </thead>
                         <tbody>
                             {sortedSYs.length === 0 ? (
-                                <tr><td colSpan="6" style={{ textAlign: 'center', padding: '100px', opacity: 0.4 }}>No data found for this GK.</td></tr>
+                                <NoData_db isTable={true} colSpan={6} message="No data found for this GK." />
                             ) : (
                                 sortedSYs.map((sy, idx) => {
                                     const s = statsBySY[sy];

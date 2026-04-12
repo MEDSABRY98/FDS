@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo } from "react";
+import NoData_db from "../lib/NoData_db";
 
 export default function Referee_SeasonNumber_Module({ stats }) {
     const statsBySY = stats.statsBySY || {};
@@ -48,7 +49,7 @@ export default function Referee_SeasonNumber_Module({ stats }) {
                         </thead>
                         <tbody>
                             {sortedSYs.length === 0 ? (
-                                <tr><td colSpan="9" style={{ textAlign: 'center', padding: '100px', opacity: 0.4 }}>No data found for this referee.</td></tr>
+                                <NoData_db isTable={true} colSpan={9} message="No data found for this referee." />
                             ) : (
                                 sortedSYs.map((sy, idx) => {
                                     const s = statsBySY[sy];

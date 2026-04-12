@@ -4,31 +4,19 @@ import { useState, useMemo, useEffect, useRef } from "react";
 import { AlAhlyService } from "./alahly_db_service";
 import "./alahly_db_managers.css";
 import Manager_Details_Hub from "./alahly_db_manager_details.js";
+import NoData_db from "../lib/NoData_db";
+import SearchBar_db from "../lib/SearchBar_db";
+import DropDownList_db from "../lib/DropDownList_db";
 
 export default function AlAhlyManagers({ matches, playerDetails, lineupDetails }) {
     const [managerStatus, setManagerStatus] = useState("alahly"); // "alahly" or "opponent"
     const [searchTerm, setSearchTerm] = useState("");
     const [teamFilter, setTeamFilter] = useState("All");
-    const [isStatusOpen, setIsStatusOpen] = useState(false);
-    const [isTeamOpen, setIsTeamOpen] = useState(false);
-    const [teamSearch, setTeamSearch] = useState("");
 
     // Selection state for sub-tabs
     const [selectedManager, setSelectedManager] = useState(null);
 
-    const statusDropdownRef = useRef(null);
-    const teamDropdownRef = useRef(null);
-
     const statusLabels = { alahly: "Al Ahly Managers", opponent: "Opponent Managers" };
-
-    useEffect(() => {
-        function handleClickOutside(event) {
-            if (statusDropdownRef.current && !statusDropdownRef.current.contains(event.target)) setIsStatusOpen(false);
-            if (teamDropdownRef.current && !teamDropdownRef.current.contains(event.target)) setIsTeamOpen(false);
-        }
-        document.addEventListener("mousedown", handleClickOutside);
-        return () => document.removeEventListener("mousedown", handleClickOutside);
-    }, []);
 
     const managerColumn = managerStatus === "alahly" ? "AHLY MANAGER" : "OPPONENT MANAGER";
     const teamColumn = managerStatus === "alahly" ? "AHLY TEAM" : "OPPONENT TEAM";
@@ -37,11 +25,6 @@ export default function AlAhlyManagers({ matches, playerDetails, lineupDetails }
         const set = new Set((matches || []).map(m => m[teamColumn]).filter(Boolean));
         return ["All", ...Array.from(set).sort()];
     }, [matches, teamColumn]);
-
-    const filteredTeamsForSearch = useMemo(() => {
-        if (!teamSearch) return teams;
-        return teams.filter(t => t.toLowerCase().includes(teamSearch.toLowerCase()));
-    }, [teams, teamSearch]);
 
     const managerStats = useMemo(() => {
         const stats = {};
@@ -145,67 +128,29 @@ export default function AlAhlyManagers({ matches, playerDetails, lineupDetails }
                 <div className="gold-line"></div>
 
                 <div className="mgr-controls">
-                    <div className="mgr-search-wrap" style={{ flex: 1 }}>
-                        <input
-                            type="text"
-                            placeholder="Search manager name..."
-                            value={searchTerm}
-                            onChange={(e) => setSearchTerm(e.target.value)}
-                            className="mgr-search-input"
-                        />
-                    </div>
+                    <SearchBar_db
+                        value={searchTerm}
+                        onChange={setSearchTerm}
+                        placeholder="Search manager name..."
+                        className="search-wrap-premium"
+                    />
 
-                    <div className="mgr-dropdown-wrap" ref={statusDropdownRef}>
-                        <div className={`mgr-dropdown-trigger ${isStatusOpen ? 'active' : ''}`} onClick={() => setIsStatusOpen(!isStatusOpen)}>
-                            <span className="current-label">{statusLabels[managerStatus]}</span>
-                            <span className="mgr-dropdown-arrow"></span>
-                        </div>
-                        {isStatusOpen && (
-                            <div className="mgr-dropdown-options">
-                                {Object.keys(statusLabels).map(key => (
-                                    <div
-                                        key={key}
-                                        className={`mgr-dropdown-item ${managerStatus === key ? 'selected' : ''}`}
-                                        onClick={() => { setManagerStatus(key); setTeamFilter("All"); setIsStatusOpen(false); }}
-                                    >
-                                        {statusLabels[key]}
-                                    </div>
-                                ))}
-                            </div>
-                        )}
-                    </div>
+                    <DropDownList_db
+                        options={Object.keys(statusLabels).map(key => ({ value: key, label: statusLabels[key] }))}
+                        value={managerStatus}
+                        onChange={(val) => { setManagerStatus(val); setTeamFilter("All"); }}
+                        placeholder="Select Role"
+                        className="custom-dropdown-wrap"
+                    />
 
-                    <div className="mgr-dropdown-wrap" ref={teamDropdownRef}>
-                        <div className={`mgr-dropdown-trigger ${isTeamOpen ? 'active' : ''}`} onClick={() => setIsTeamOpen(!isTeamOpen)}>
-                            <span className="current-label">{teamFilter === 'All' ? "Select Team" : teamFilter}</span>
-                            <span className="mgr-dropdown-arrow"></span>
-                        </div>
-                        {isTeamOpen && (
-                            <div className="mgr-dropdown-options" style={{ width: '100%', padding: '0', boxSizing: 'border-box' }}>
-                                <div style={{ padding: '12px', borderBottom: '1px solid #f0f0f0', background: '#fafafa' }}>
-                                    <input
-                                        type="text"
-                                        placeholder="Find team..."
-                                        value={teamSearch}
-                                        onChange={(e) => setTeamSearch(e.target.value)}
-                                        onClick={(e) => e.stopPropagation()}
-                                        style={{ width: '100%', boxSizing: 'border-box', padding: '10px 15px', borderRadius: '8px', border: '1px solid #ddd', fontSize: '12px', outline: 'none', background: '#fff' }}
-                                    />
-                                </div>
-                                <div className="premium-scroll" style={{ maxHeight: '250px', overflowY: 'auto', padding: '5px' }}>
-                                    {filteredTeamsForSearch.map(t => (
-                                        <div
-                                            key={t}
-                                            className={`mgr-dropdown-item ${teamFilter === t ? 'selected' : ''}`}
-                                            onClick={() => { setTeamFilter(t); setIsTeamOpen(false); }}
-                                        >
-                                            {t}
-                                        </div>
-                                    ))}
-                                </div>
-                            </div>
-                        )}
-                    </div>
+                    <DropDownList_db
+                        options={teams.map(t => ({ value: t, label: t }))}
+                        value={teamFilter}
+                        onChange={setTeamFilter}
+                        placeholder="Select Team"
+                        searchable={true}
+                        className="custom-dropdown-wrap"
+                    />
                 </div>
 
                 <div className="mgr-table-container">
@@ -256,9 +201,11 @@ export default function AlAhlyManagers({ matches, playerDetails, lineupDetails }
                                     </tr>
                                 ))
                             ) : (
-                                <tr>
-                                    <td colSpan="11" style={{ padding: '100px', opacity: 0.4 }}>No managers found.</td>
-                                </tr>
+                            <NoData_db 
+                                isTable={true} 
+                                colSpan={11} 
+                                message="No managers found matching your criteria." 
+                            />
                             )}
                         </tbody>
                         <tfoot>

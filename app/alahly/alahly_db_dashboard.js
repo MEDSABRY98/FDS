@@ -1,6 +1,7 @@
 "use client";
 
 import "./alahly_db_dashboard.css";
+import NoData_db from "../lib/NoData_db";
 
 export default function AlAhlyDashboard({ matches, season }) {
     // --- STATISTICS CALCULATIONS ---
@@ -125,7 +126,7 @@ export default function AlAhlyDashboard({ matches, season }) {
                                     </div>
                                     <div className="scorer-goals" style={{ color: 'var(--gold)' }}>{m.GF} - {m.GA}</div>
                                 </div>
-                            )) : <div style={{ opacity: 0.4, padding: '20px' }}>No wins recorded yet.</div>}
+                            )) : <NoData_db message="No wins recorded yet." />}
                         </div>
                     </div>
 
@@ -144,7 +145,7 @@ export default function AlAhlyDashboard({ matches, season }) {
                                     </div>
                                     <div className="scorer-goals" style={{ color: '#ff4d4d' }}>{m.GF} - {m.GA}</div>
                                 </div>
-                            )) : <div style={{ opacity: 0.4, padding: '20px' }}>No losses recorded yet.</div>}
+                            )) : <NoData_db message="No losses recorded yet." />}
                         </div>
                     </div>
                 </div>

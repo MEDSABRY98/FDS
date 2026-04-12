@@ -2,6 +2,7 @@
 
 import { useMemo, useState, useEffect } from "react";
 import "./alahly_db_match_details.css";
+import NoData_db from "../lib/NoData_db";
 
 export default function AlAhlyMatchDetails({
     matchId,
@@ -412,7 +413,7 @@ export default function AlAhlyMatchDetails({
                     <div className="timeline-view">
                         <div className="timeline-container">
                             {events.chronological.length === 0 ? (
-                                <div className="no-events">No specific match events recorded for this game.</div>
+                                <NoData_db message="No specific match events recorded for this game." />
                             ) : (
                                 <div className="timeline-track">
                                     {events.chronological.map((e, i) => {
@@ -464,7 +465,7 @@ export default function AlAhlyMatchDetails({
                                     .sort((a, b) => a.minute - b.minute);
 
                                 if (subEvents.length === 0) {
-                                    return <div className="no-events">No substitutions recorded for this game.</div>;
+                                    return <NoData_db message="No substitutions recorded for this game." />;
                                 }
 
                                 return (

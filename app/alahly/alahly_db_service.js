@@ -184,6 +184,92 @@ export const AlAhlyService = {
     },
 
     /**
+     * Update a single PK record in alahly_PKS.
+     */
+    async updatePKSRecord(rowId, updates) {
+        try {
+            const { error } = await supabase
+                .from('alahly_PKS')
+                .update(updates)
+                .eq('ROW_ID', rowId);
+
+            if (error) throw error;
+            return true;
+        } catch (error) {
+            console.error("Error updating PK record:", error.message);
+            throw error;
+        }
+    },
+
+    /**
+     * Create a new PK record in alahly_PKS.
+     */
+    async createPKSRecord(newRecord) {
+        try {
+            const { data, error } = await supabase
+                .from('alahly_PKS')
+                .insert([newRecord])
+                .select();
+
+            if (error) throw error;
+            return data[0];
+        } catch (error) {
+            console.error("Error creating PK record:", error.message);
+            throw error;
+        }
+    },
+
+    /**
+     * Delete a single PK record from alahly_PKS.
+     */
+    async deletePKSRecord(rowId) {
+        try {
+            const { error } = await supabase
+                .from('alahly_PKS')
+                .delete()
+                .eq('ROW_ID', rowId);
+
+            if (error) throw error;
+            return true;
+        } catch (error) {
+            console.error("Error deleting PK record:", error.message);
+            throw error;
+        }
+    },
+
+    /**
+     * Fetch ALL penalty kick details from alahly_PKS.
+     */
+    async getAllPKs() {
+        try {
+            let allData = [];
+            let from = 0;
+            const step = 1000;
+            let finished = false;
+
+            while (!finished) {
+                const { data, error } = await supabase
+                    .from('alahly_PKS')
+                    .select('*')
+                    .range(from, from + step - 1);
+
+                if (error) throw error;
+                if (data && data.length > 0) {
+                    allData = [...allData, ...data];
+                    from += step;
+                    if (data.length < step) finished = true;
+                } else {
+                    finished = true;
+                }
+            }
+            return allData;
+        } catch (error) {
+            console.error("Error fetching PKs:", error.message);
+            return [];
+        }
+    },
+
+    /**
      * Fetch ALL penalty miss details from alahly_HOWPENMISSED.
      */
     async getAllHowPenMissed() {

@@ -3,6 +3,8 @@
 import { useMemo, useState, useEffect } from "react";
 import "./alahly_db_h2h.css";
 import { AlAhlyService } from "./alahly_db_service";
+import NoData_db from "../lib/NoData_db";
+import SearchBar_db from "../lib/SearchBar_db";
 
 /**
  * Head-to-Head (H2H) Tab Component
@@ -168,15 +170,12 @@ export default function AlAhlyH2H({ matches }) {
                 <div className="gold-line"></div>
 
                 <div className="h2h-controls">
-                    <div className="search-wrap-premium">
-                        <input
-                            type="text"
-                            placeholder="Find an opponent..."
-                            value={searchTerm}
-                            onChange={(e) => setSearchTerm(e.target.value)}
-                            className="h2h-search-input"
-                        />
-                    </div>
+                    <SearchBar_db
+                        value={searchTerm}
+                        onChange={setSearchTerm}
+                        placeholder="Find an opponent..."
+                        className="search-wrap-premium"
+                    />
                 </div>
 
                 <div className="table-container-premium">
@@ -221,7 +220,7 @@ export default function AlAhlyH2H({ matches }) {
                         </thead>
                         <tbody>
                             {paginatedStats.length === 0 ? (
-                                <tr><td colSpan="12" style={{ padding: '100px', opacity: 0.4 }}>No H2H records found.</td></tr>
+                                <NoData_db isTable={true} colSpan={12} message="No H2H records found." />
                             ) : (
                                 paginatedStats.map((s, i) => {
                                     const actualIndex = (currentPage - 1) * pageSize + i;

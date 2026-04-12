@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import NoData_db from "../lib/NoData_db";
 
 export default function GK_Dashboard_Component_Unique({
     stats,
@@ -229,7 +230,7 @@ export default function GK_Dashboard_Component_Unique({
 
                 <div className="seasonal-chart-container" style={{ display: 'flex', height: '400px', alignItems: 'flex-end', gap: '50px', paddingBottom: '20px', paddingTop: '50px', overflowX: 'auto', overflowY: 'visible' }}>
                     {compsWithPens.length === 0 ? (
-                        <div style={{ width: '100%', textAlign: 'center', padding: '80px', opacity: 0.3 }}>NO PENALTY RECORDS FOUND FOR THIS GK (COMPETITIONS)</div>
+                        <NoData_db message="NO PENALTY RECORDS FOUND FOR THIS GK (COMPETITIONS)" />
                     ) : (
                         compsWithPens.map(comp => {
                             const c = stats.compStats[comp];
@@ -260,7 +261,7 @@ export default function GK_Dashboard_Component_Unique({
 
                 <div className="seasonal-chart-container" style={{ display: 'flex', height: '400px', alignItems: 'flex-end', gap: '50px', paddingBottom: '20px', paddingTop: '50px', overflowX: 'auto', overflowY: 'visible' }}>
                     {seasonsWithPens.length === 0 ? (
-                        <div style={{ width: '100%', textAlign: 'center', padding: '80px', opacity: 0.3 }}>NO PENALTY RECORDS FOUND FOR THIS GK (SEASONS)</div>
+                        <NoData_db message="NO PENALTY RECORDS FOUND FOR THIS GK (SEASONS)" />
                     ) : (
                         seasonsWithPens.map(season => {
                             const s = stats.seasonalStats[season];

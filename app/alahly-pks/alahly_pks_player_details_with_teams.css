@@ -1,0 +1,96 @@
+.player-teams-tab {
+    padding: 0 0 30px;
+}
+
+.teams-table-wrapper {
+    width: 100%;
+    overflow-x: auto;
+}
+
+.teams-grid-header {
+    background: #0a0a0a;
+    color: #fff;
+    display: flex;
+    padding: 16px 28px;
+    font-size: 11px;
+    font-weight: 900;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    font-family: 'Space Mono', monospace;
+}
+
+.teams-grid-row {
+    display: flex;
+    align-items: center;
+    padding: 14px 28px;
+    border-bottom: 1px solid #f5f5f5;
+    transition: background 0.2s;
+}
+
+.teams-grid-row:hover {
+    background: #fafafa;
+}
+
+.teams-grid-row:last-child {
+    border-bottom: none;
+}
+
+.t-col {
+    display: flex;
+    align-items: center;
+}
+
+.t-col.rank-col {
+    width: 70px;
+    justify-content: center;
+}
+
+.t-col.team-name {
+    flex: 1;
+    gap: 12px;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 15px;
+    font-weight: 800;
+    color: #111;
+    justify-content: center;
+    text-align: center;
+}
+
+.t-col.t-num {
+    width: 120px;
+    justify-content: center;
+}
+
+.team-rank {
+    font-family: 'Space Mono', monospace;
+    font-size: 11px;
+    color: #bbb;
+    font-weight: 700;
+    min-width: 28px;
+}
+
+.t-badge {
+    padding: 5px 18px;
+    border-radius: 20px;
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 18px;
+    font-weight: 400;
+    letter-spacing: 1px;
+    min-width: 50px;
+    text-align: center;
+}
+
+.t-badge.neutral {
+    background: #f0f0f0;
+    color: #555;
+}
+
+.t-badge.goal {
+    background: #e8f5e9;
+    color: #1b5e20;
+}
+
+.t-badge.miss {
+    background: #ffebee;
+    color: #b71c1c;
+}

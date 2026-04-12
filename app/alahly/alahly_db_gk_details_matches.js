@@ -2,6 +2,8 @@
 
 import { useState, useMemo } from "react";
 
+import NoData_db from "../lib/NoData_db";
+
 export default function GK_Matches_Component_Unique({
     stats,
     gkName,
@@ -151,11 +153,11 @@ export default function GK_Matches_Component_Unique({
                                 </tr>
                             ))
                         ) : (
-                            <tr>
-                                <td colSpan="9" style={{ padding: '80px', textAlign: 'center', opacity: 0.4, fontFamily: 'Space Mono' }}>
-                                    NO MATCH RECORDS FOUND FOR THIS GK
-                                </td>
-                            </tr>
+                            <NoData_db 
+                                isTable={true} 
+                                colSpan={9} 
+                                message="NO MATCH RECORDS FOUND FOR THIS GK" 
+                            />
                         )}
                     </tbody>
                 </table>

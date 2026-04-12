@@ -1,4 +1,6 @@
 import { useState, Fragment } from "react";
+import NoData_db from "../lib/NoData_db";
+import SearchBar_db from "../lib/SearchBar_db";
 
 export default function PlayerVsGksTable({ stats }) {
     const [search, setSearch] = useState("");
@@ -34,14 +36,11 @@ export default function PlayerVsGksTable({ stats }) {
 
             {/* Premium Search Box Centered */}
             <div style={{ width: '100%', display: 'flex', justifyContent: 'center', marginBottom: '35px' }}>
-                <div className="search-wrap-premium" style={{ flex: 'none', width: '100%', maxWidth: '450px' }}>
-                    <input
-                        type="text"
-                        placeholder="SEARCH GOALKEEPER OR TEAM..."
+                <div style={{ flex: 'none', width: '100%', maxWidth: '450px' }}>
+                    <SearchBar_db
                         value={search}
-                        onChange={(e) => setSearch(e.target.value)}
-                        className="p-search-input"
-                        style={{ textAlign: 'center' }}
+                        onChange={setSearch}
+                        placeholder="SEARCH GOALKEEPER OR TEAM..."
                     />
                 </div>
             </div>
@@ -59,9 +58,7 @@ export default function PlayerVsGksTable({ stats }) {
                     </thead>
                     <tbody>
                         {gkNames.length === 0 ? (
-                            <tr>
-                                <td colSpan="6" style={{ textAlign: 'center', padding: '40px', color: '#999' }}>No goalkeeper data available.</td>
-                            </tr>
+                            <NoData_db isTable={true} colSpan={6} message="No goalkeeper data available." />
                         ) : (
                             gkNames.map(name => {
                                 const s = gkStore[name];

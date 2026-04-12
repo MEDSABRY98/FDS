@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo } from "react";
+import NoData_db from "../lib/NoData_db";
 
 export default function Referee_SeasonName_Module({ stats }) {
     const statsByChampSeason = stats.statsByChampSeason || {};
@@ -23,7 +24,7 @@ export default function Referee_SeasonName_Module({ stats }) {
                 <div className="gold-line" style={{ height: '2px', background: 'var(--player-gold)', width: '60px', marginBottom: '30px' }}></div>
 
                 {sortedChamps.length === 0 ? (
-                    <div style={{ textAlign: 'center', padding: '100px', opacity: 0.4 }}>No seasonal data found for this referee.</div>
+                    <NoData_db message="No seasonal data found for this referee." />
                 ) : (
                     sortedChamps.map(champ => {
                         const sortedSeasons = Object.keys(statsByChampSeason[champ]).sort((a, b) => {

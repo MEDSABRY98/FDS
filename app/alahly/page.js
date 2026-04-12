@@ -385,8 +385,7 @@ export default function AlAhlyDatabase() {
                     position: 'fixed',
                     top: 0, left: 0, right: 0, bottom: 0,
                     zIndex: 100000,
-                    background: 'rgba(0,0,0,0.85)',
-                    backdropFilter: 'blur(10px)',
+                    background: 'transparent',
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',
@@ -402,7 +401,7 @@ export default function AlAhlyDatabase() {
                         display: 'flex',
                         flexDirection: 'column',
                         border: '5px solid var(--gold)',
-                        boxShadow: '0 0 50px rgba(201,168,76,0.3)'
+                        boxShadow: 'none'
                     }}>
                         <div style={{
                             padding: '20px 30px',
@@ -445,23 +444,54 @@ export default function AlAhlyDatabase() {
                         </div>
 
                         <div style={{
-                            padding: '20px',
+                            padding: '20px 40px',
                             background: '#f9f9f9',
                             display: 'flex',
                             justifyContent: 'center',
+                            alignItems: 'center',
+                            gap: '20px',
                             borderTop: '1px solid #eee'
                         }}>
                             <button
+                                onClick={resetFilters}
+                                style={{
+                                    background: 'transparent',
+                                    border: '1px solid #ddd',
+                                    color: '#888',
+                                    padding: '0 30px',
+                                    height: '50px',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    justifyContent: 'center',
+                                    fontFamily: "'Space Mono', monospace",
+                                    fontSize: '11px',
+                                    letterSpacing: '2px',
+                                    cursor: 'pointer',
+                                    transition: '0.2s',
+                                    textTransform: 'uppercase',
+                                    borderRadius: '2px'
+                                }}
+                                onMouseOver={(e) => { e.currentTarget.style.color = 'var(--gold)'; e.currentTarget.style.borderColor = 'var(--gold)'; e.currentTarget.style.background = 'rgba(201,168,76,0.05)'; }}
+                                onMouseOut={(e) => { e.currentTarget.style.color = '#888'; e.currentTarget.style.borderColor = '#ddd'; e.currentTarget.style.background = 'transparent'; }}
+                            >
+                                RESET ALL FILTERS
+                            </button>
+                            <button
                                 onClick={() => setIsFilterOpen(false)}
                                 style={{
-                                    background: 'var(--black)',
+                                    background: '#0a0a0a',
                                     color: 'var(--gold)',
                                     border: '1px solid var(--gold)',
-                                    padding: '12px 40px',
+                                    padding: '0 40px',
+                                    height: '50px',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    justifyContent: 'center',
                                     fontFamily: 'Bebas Neue',
                                     fontSize: '18px',
                                     letterSpacing: '1px',
-                                    cursor: 'pointer'
+                                    cursor: 'pointer',
+                                    transition: '0.3s'
                                 }}
                             >
                                 APPLY FILTERS & CLOSE

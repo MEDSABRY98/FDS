@@ -1,0 +1,117 @@
+/* app/lib/NoData_db.css */
+
+.nodata-premium-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    padding: 60px 20px;
+    background: rgba(255, 255, 255, 0.02);
+    border-radius: 24px;
+    border: 1px dashed rgba(201, 168, 76, 0.2);
+    transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+    position: relative;
+    overflow: hidden;
+    backdrop-filter: blur(5px);
+}
+
+.nodata-premium-container:hover {
+    border-color: rgba(201, 168, 76, 0.4);
+    background: rgba(255, 255, 255, 0.04);
+    transform: translateY(-2px);
+}
+
+.nodata-icon-wrapper {
+    margin-bottom: 24px;
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.nodata-icon-bg {
+    position: absolute;
+    width: 80px;
+    height: 80px;
+    background: radial-gradient(circle, rgba(201, 168, 76, 0.15) 0%, transparent 70%);
+    border-radius: 50%;
+    animation: nodata-pulse 3s infinite ease-in-out;
+}
+
+.nodata-main-icon {
+    width: 48px;
+    height: 48px;
+    color: var(--player-gold, #c9a84c);
+    filter: drop-shadow(0 0 10px rgba(201, 168, 76, 0.3));
+    z-index: 1;
+}
+
+.nodata-content {
+    text-align: center;
+    max-width: 400px;
+    z-index: 1;
+}
+
+.nodata-title {
+    font-family: 'Space Mono', monospace;
+    font-size: 14px;
+    font-weight: 700;
+    color: var(--player-gold, #c9a84c);
+    letter-spacing: 4px;
+    margin-bottom: 12px;
+    text-transform: uppercase;
+}
+
+.nodata-message {
+    font-family: 'Outfit', sans-serif;
+    font-size: 16px;
+    color: #888;
+    line-height: 1.6;
+    font-weight: 500;
+}
+
+.nodata-decoration {
+    position: absolute;
+    bottom: -20px;
+    right: -20px;
+    width: 100px;
+    height: 100px;
+    background: linear-gradient(135deg, transparent 50%, rgba(201, 168, 76, 0.03) 50%);
+    border-radius: 50%;
+}
+
+@keyframes nodata-pulse {
+    0% { transform: scale(1); opacity: 0.5; }
+    50% { transform: scale(1.2); opacity: 0.8; }
+    100% { transform: scale(1); opacity: 0.5; }
+}
+
+/* Table Specific Styles */
+.nodata-table-row {
+    background: transparent !important;
+}
+
+.nodata-table-row td {
+    padding: 0 !important;
+    border: none !important;
+}
+
+.nodata-table-row:hover {
+    background: transparent !important;
+}
+
+.fade-in-up {
+    animation: fadeInUp 0.6s ease-out forwards;
+}
+
+@keyframes fadeInUp {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}

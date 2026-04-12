@@ -1,6 +1,8 @@
 "use client";
 
 import { useState } from "react";
+import NoData_db from "../lib/NoData_db";
+import SearchBar_db from "../lib/SearchBar_db";
 
 export default function GK_VsPlayers_Component_Unique({ stats }) {
     const [search, setSearch] = useState("");
@@ -24,14 +26,11 @@ export default function GK_VsPlayers_Component_Unique({ stats }) {
 
             {/* Exact Replicated Search Box from VS TEAMS */}
             <div style={{ width: '100%', display: 'flex', justifyContent: 'center', marginBottom: '35px' }}>
-                <div className="search-wrap-premium" style={{ flex: 'none', width: '100%', maxWidth: '450px' }}>
-                    <input
-                        type="text"
-                        placeholder="SEARCH SCORER NAME..."
+                <div style={{ flex: 'none', width: '100%', maxWidth: '450px' }}>
+                    <SearchBar_db
                         value={search}
-                        onChange={(e) => setSearch(e.target.value)}
-                        className="p-search-input"
-                        style={{ textAlign: 'center' }}
+                        onChange={setSearch}
+                        placeholder="SEARCH SCORER NAME..."
                     />
                 </div>
             </div>
@@ -48,9 +47,7 @@ export default function GK_VsPlayers_Component_Unique({ stats }) {
                     </thead>
                     <tbody>
                         {scorerNames.length === 0 ? (
-                            <tr>
-                                <td colSpan="4" style={{ textAlign: 'center', padding: '40px', color: '#999' }}>No data available.</td>
-                            </tr>
+                            <NoData_db isTable={true} colSpan={4} message="No data available." />
                         ) : (
                             scorerNames.map(name => {
                                 const s = scorerStore[name];

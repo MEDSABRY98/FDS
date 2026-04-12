@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import NoData_db from "../lib/NoData_db";
 import { AlAhlyService } from "./alahly_db_service";
 
 export default function PlayerGoalImpactTable({ playerName, filteredMatches = [] }) {
@@ -117,11 +118,7 @@ export default function PlayerGoalImpactTable({ playerName, filteredMatches = []
                                 </tr>
                             ))
                         ) : (
-                            <tr>
-                                <td colSpan="7" style={{ padding: '80px', textAlign: 'center', opacity: 0.4, fontFamily: 'Space Mono' }}>
-                                    NO RECORDED GOAL IMPACTS FOR THIS PLAYER
-                                </td>
-                            </tr>
+                            <NoData_db isTable={true} colSpan={7} message="NO RECORDED GOAL IMPACTS FOR THIS PLAYER" />
                         )}
                     </tbody>
                 </table>

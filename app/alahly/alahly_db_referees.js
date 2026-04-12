@@ -4,6 +4,8 @@ import { useMemo, useState, useRef, useEffect } from "react";
 import { AlAhlyService } from "./alahly_db_service";
 import "./alahly_db_referees.css";
 import Referee_Details_Hub from "./alahly_db_referee_details";
+import NoData_db from "../lib/NoData_db";
+import SearchBar_db from "../lib/SearchBar_db";
 
 export default function AlAhlyReferees({ matches, playerDetails, howPenMissed }) {
     const [searchTerm, setSearchTerm] = useState("");
@@ -137,15 +139,12 @@ export default function AlAhlyReferees({ matches, playerDetails, howPenMissed })
                 <div className="gold-line"></div>
 
                 <div className="referee-controls">
-                    <div className="referee-search-wrap">
-                        <input
-                            type="text"
-                            placeholder="Search referee name..."
-                            value={searchTerm}
-                            onChange={(e) => setSearchTerm(e.target.value)}
-                            className="referee-search-input"
-                        />
-                    </div>
+                    <SearchBar_db
+                        value={searchTerm}
+                        onChange={setSearchTerm}
+                        placeholder="Search referee name..."
+                        className="referee-search-wrap"
+                    />
                 </div>
 
                 <div className="referee-table-container premium-scroll">
@@ -211,7 +210,7 @@ export default function AlAhlyReferees({ matches, playerDetails, howPenMissed })
                                     </tr>
                                 ))
                             ) : (
-                                <tr><td colSpan="13" style={{ padding: '100px', opacity: 0.4 }}>No referees found.</td></tr>
+                                <NoData_db isTable={true} colSpan={13} message="No referees found." />
                             )}
                         </tbody>
                         <tfoot>

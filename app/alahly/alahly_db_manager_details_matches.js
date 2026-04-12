@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import NoData_db from "../lib/NoData_db";
 
 export default function Manager_Matches_Module({ stats }) {
     const [currentPage, setCurrentPage] = useState(1);
@@ -59,11 +60,7 @@ export default function Manager_Matches_Module({ stats }) {
                                 </tr>
                             ))
                         ) : (
-                            <tr>
-                                <td colSpan="7" style={{ padding: '80px', textAlign: 'center', opacity: 0.4, fontFamily: 'Space Mono' }}>
-                                    NO MATCH RECORDS FOUND FOR THIS MANAGER
-                                </td>
-                            </tr>
+                            <NoData_db isTable={true} colSpan={7} message="NO MATCH RECORDS FOUND FOR THIS MANAGER" />
                         )}
                     </tbody>
                 </table>

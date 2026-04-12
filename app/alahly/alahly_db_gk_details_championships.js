@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo } from "react";
+import NoData_db from "../lib/NoData_db";
 
 export default function GK_Championships_Module({ stats }) {
     const compStore = stats.compStats || {};
@@ -42,9 +43,7 @@ export default function GK_Championships_Module({ stats }) {
                     </thead>
                     <tbody>
                         {comps.length === 0 ? (
-                            <tr>
-                                <td colSpan="6" style={{ textAlign: 'center', padding: '100px', opacity: 0.3 }}>No championship data available.</td>
-                            </tr>
+                            <NoData_db isTable={true} colSpan={6} message="No championship data available." />
                         ) : (
                             comps.map(name => {
                                 const s = compStore[name];

@@ -1,0 +1,149 @@
+.pks-champions-container {
+    padding: 30px;
+    background: #ffffff;
+    min-height: 100vh;
+}
+
+.champs-header-row {
+    max-width: 800px;
+    margin: 0 auto 30px;
+    text-align: center;
+}
+
+.champs-title {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 42px;
+    letter-spacing: 6px;
+    margin-bottom: 20px;
+    color: #0a0a0a;
+}
+
+.gold-text {
+    color: var(--gold);
+}
+
+
+.champs-table-wrapper {
+    width: 100%;
+    max-width: 1550px; 
+    margin: 0 auto;
+    background: #fff;
+    border-radius: 12px;
+    overflow: hidden;
+    box-shadow: 0 10px 40px rgba(0,0,0,0.06);
+    border: 1px solid #eee;
+}
+
+.champs-main-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-family: 'DM Sans', sans-serif;
+}
+
+.champs-main-table th {
+    background: #0a0a0a;
+    color: #fff;
+    padding: 15px 10px;
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    font-weight: 700;
+}
+
+.group-header {
+    font-size: 16px !important;
+    letter-spacing: 2px !important;
+}
+
+.shootout-group { background: #1a1a1a !important; color: var(--gold) !important; }
+.ahly-group { background: #000 !important; color: #fff !important; }
+.opp-group { background: #222 !important; color: #ddd !important; }
+
+.sub-th {
+    background: #fcfcfc !important;
+    color: #666 !important;
+    font-size: 14px !important;
+    border: 1px solid #eee !important;
+    font-weight: 800 !important;
+}
+
+.champs-row {
+    border-bottom: 1px solid #f0f0f0;
+    transition: 0.2s;
+}
+
+.champs-row:hover {
+    background: rgba(201, 168, 76, 0.03);
+    transform: translateX(4px);
+}
+
+.champs-row td {
+    padding: 18px 10px;
+    text-align: center;
+    font-size: 16px;
+    font-weight: 700;
+    color: #333;
+}
+
+.champ-name {
+    text-align: center !important;
+    padding: 18px 25px !important;
+    font-family: 'Outfit', sans-serif;
+    font-size: 18px !important;
+    font-weight: 800 !important;
+    color: #000 !important;
+    min-width: 250px;
+}
+
+.stat-num {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 28px !important;
+    letter-spacing: 1px;
+    font-weight: 400 !important;
+}
+
+.played { color: #555; background: #fdfdfd; }
+.win { color: #2e7d32; background: rgba(46, 125, 50, 0.05); }
+.loss { color: #c62828; background: rgba(198, 40, 40, 0.05); }
+.rate { color: var(--gold); font-weight: 400 !important; }
+
+.total-champs-row {
+    background: #0a0a0a;
+    color: var(--gold);
+}
+
+.total-champs-row td {
+    padding: 22px 10px;
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 28px !important;
+    font-weight: 400 !important;
+    color: var(--gold) !important;
+    border-top: 3px solid var(--gold);
+    text-align: center;
+}
+
+.empty-row {
+    padding: 120px 20px !important;
+    text-align: center !important;
+    color: #999 !important;
+    font-family: 'Space Mono', monospace !important;
+    font-size: 14px !important;
+    letter-spacing: 2px;
+    background: #fff;
+    border: none !important;
+}
+
+.champs-legend {
+    max-width: 1200px;
+    margin: 30px auto;
+    display: flex;
+    justify-content: center;
+    gap: 25px;
+    font-family: 'Space Mono', monospace;
+    font-size: 12px;
+    color: #888;
+    background: #f9f9f9;
+    padding: 15px;
+    border-radius: 8px;
+}

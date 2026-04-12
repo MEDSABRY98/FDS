@@ -1,6 +1,8 @@
 "use client";
 
 import { useState } from "react";
+import NoData_db from "../lib/NoData_db";
+import SearchBar_db from "../lib/SearchBar_db";
 
 export default function GK_VsTeams_Component_Unique({ stats }) {
     const [search, setSearch] = useState("");
@@ -26,14 +28,11 @@ export default function GK_VsTeams_Component_Unique({ stats }) {
 
             {/* Replicated Premium Search Box Centered */}
             <div style={{ width: '100%', display: 'flex', justifyContent: 'center', marginBottom: '35px' }}>
-                <div className="search-wrap-premium" style={{ flex: 'none', width: '100%', maxWidth: '450px' }}>
-                    <input
-                        type="text"
-                        placeholder="SEARCH OPPONENT TEAM..."
+                <div style={{ flex: 'none', width: '100%', maxWidth: '450px' }}>
+                    <SearchBar_db
                         value={search}
-                        onChange={(e) => setSearch(e.target.value)}
-                        className="p-search-input"
-                        style={{ textAlign: 'center' }}
+                        onChange={setSearch}
+                        placeholder="SEARCH OPPONENT TEAM..."
                     />
                 </div>
             </div>
@@ -51,9 +50,7 @@ export default function GK_VsTeams_Component_Unique({ stats }) {
                     </thead>
                     <tbody>
                         {oppNames.length === 0 ? (
-                            <tr>
-                                <td colSpan="6" style={{ textAlign: 'center', padding: '40px', color: '#999' }}>No opponent data available.</td>
-                            </tr>
+                            <NoData_db isTable={true} colSpan={6} message="No opponent data available." />
                         ) : (
                             oppNames.map(name => {
                                 const s = oppStore[name];

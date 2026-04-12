@@ -1,4 +1,5 @@
 import { useState, useMemo } from "react";
+import NoData_db from "../lib/NoData_db";
 
 export default function PlayerEventsTable({
     stats,
@@ -159,11 +160,7 @@ export default function PlayerEventsTable({
                                 </tr>
                             ))
                         ) : (
-                            <tr>
-                                <td colSpan="8" style={{ padding: '80px', textAlign: 'center', opacity: 0.4, fontFamily: 'Space Mono' }}>
-                                    NO PERFORMANCE EVENTS FOUND FOR THIS PLAYER
-                                </td>
-                            </tr>
+                            <NoData_db isTable={true} colSpan={8} message="NO PERFORMANCE EVENTS FOUND FOR THIS PLAYER" />
                         )}
                     </tbody>
                 </table>

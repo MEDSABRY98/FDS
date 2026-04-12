@@ -34,6 +34,7 @@ export default function DatabaseManagement() {
     const [currentPage, setCurrentPage] = useState(1);
     const pageSize = 100;
     const [syncing, setSyncing] = useState(false);
+    const [saving, setSaving] = useState(false);
 
 
     const handleDownloadExcel = () => {
@@ -191,9 +192,9 @@ export default function DatabaseManagement() {
                     cols.unshift(rowIdKey);
                 }
                 setColumns(cols);
-                // Fetch match dates for joined sorting if table is alahly_MEDIATRACKER
+                // Fetch match dates for joined sorting if table is alahly_MEDIATRACKER or alahly_PLAYERDETAILS
                 let matchDateMap = {};
-                if (selectedTable === 'alahly_MEDIATRACKER' && cols.includes('MATCH_ID')) {
+                if (['alahly_MEDIATRACKER', 'alahly_PLAYERDETAILS'].includes(selectedTable) && cols.includes('MATCH_ID')) {
                     try {
                         const { data: datesData } = await supabase.from('alahly_MATCHDETAILS').select('MATCH_ID, DATE');
                         if (datesData) {
@@ -205,7 +206,7 @@ export default function DatabaseManagement() {
                 }
 
                 // Deterministic secondary sorting logic
-                const tablesToSortByRowId = ['alahly_GKSDETAILS', 'alahly_HOWPENMISSED', 'alahly_LINEUPDETAILS'];
+                const tablesToSortByRowId = ['alahly_GKSDETAILS', 'alahly_HOWPENMISSED', 'alahly_LINEUPDETAILS', 'alahly_PKS'];
                 const ridKey = cols.find(c => c.toUpperCase() === "ROW_ID");
 
                 if (selectedTable === 'alahly_MATCHDETAILS' && cols.includes('DATE')) {
@@ -219,6 +220,27 @@ export default function DatabaseManagement() {
                         
                         // 2. Secondary Sort: Match ID if dates are equal/missing
                         return String(b.MATCH_ID).localeCompare(String(a.MATCH_ID), undefined, { numeric: true });
+                    });
+                } else if (selectedTable === 'alahly_PLAYERDETAILS' && cols.includes('MATCH_ID')) {
+                    allData.sort((a, b) => {
+                        const dateA = matchDateMap[a.MATCH_ID] || 0;
+                        const dateB = matchDateMap[b.MATCH_ID] || 0;
+                        
+                        // 1. Primary Sort: Date Descending (Latest first)
+                        if (dateB !== dateA) return dateB - dateA;
+                        
+                        // 2. Secondary Sort: EVENT_ID Ascending within same match
+                        if (cols.includes('EVENT_ID')) {
+                            const getNum = (id) => {
+                                if (!id) return 0;
+                                const parts = String(id).split('-');
+                                const last = parts[parts.length - 1];
+                                const n = parseInt(last);
+                                return isNaN(n) ? 0 : n;
+                            };
+                            return getNum(a.EVENT_ID) - getNum(b.EVENT_ID);
+                        }
+                        return 0;
                     });
                 } else if (tablesToSortByRowId.includes(selectedTable) && ridKey) {
                     allData.sort((a, b) => String(a[ridKey]).localeCompare(String(b[ridKey]), undefined, { numeric: true }));
@@ -265,7 +287,7 @@ export default function DatabaseManagement() {
 
     const handleSaveEdit = async () => {
         if (!editingRow) return;
-        setLoading(true);
+        setSaving(true);
         try {
             // Find a unique identifier: 'ROW_ID' (user requested), 'id' (exact), or anything ending in 'id'
             const pkField = columns.find(c => c.toUpperCase() === "ROW_ID") ||
@@ -302,7 +324,7 @@ export default function DatabaseManagement() {
             console.error("Update error:", error);
             alert("Update FAILED: " + error.message);
         } finally {
-            setLoading(false);
+            setSaving(false);
         }
     }
 
@@ -527,9 +549,16 @@ export default function DatabaseManagement() {
                                     </div>
                                 ))}
                             </div>
-                            <div className="modal-actions">
-                                <button className="cancel-btn" onClick={() => setEditingRow(null)}>CANCEL</button>
-                                <button className="save-btn" onClick={handleSaveEdit}>SAVE CHANGES</button>
+                            <div className="modal-actions" style={{ justifyContent: 'center' }}>
+                                <button className="cancel-btn" onClick={() => setEditingRow(null)} disabled={saving}>CANCEL</button>
+                                <button className="save-btn" onClick={handleSaveEdit} disabled={saving}>
+                                    {saving ? (
+                                        <div className="btn-loader-wrap">
+                                            <div className="btn-spinner"></div>
+                                            <span>SAVING...</span>
+                                        </div>
+                                    ) : "SAVE CHANGES"}
+                                </button>
                             </div>
                         </div>
                     </div>
@@ -968,7 +997,8 @@ export default function DatabaseManagement() {
                 }
 
                 .cancel-btn, .save-btn {
-                    padding: 14px 30px;
+                    flex: 1;
+                    padding: 16px 30px;
                     font-size: 12px;
                     font-family: 'Outfit', sans-serif;
                     font-weight: 800;
@@ -977,6 +1007,10 @@ export default function DatabaseManagement() {
                     border-radius: 12px;
                     transition: all 0.2s;
                     text-transform: uppercase;
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    min-height: 54px;
                 }
                 
                 .cancel-btn {
@@ -995,6 +1029,31 @@ export default function DatabaseManagement() {
                     background: #c9a84c;
                     color: #000;
                     box-shadow: 0 8px 20px rgba(201,168,76,0.3);
+                }
+
+                .save-btn:disabled {
+                    opacity: 0.7;
+                    cursor: not-allowed;
+                }
+
+                .btn-loader-wrap {
+                    display: flex;
+                    align-items: center;
+                    gap: 12px;
+                }
+
+                .btn-spinner {
+                    width: 18px;
+                    height: 18px;
+                    border: 3px solid rgba(201, 168, 76, 0.3);
+                    border-top-color: #c9a84c;
+                    border-radius: 50%;
+                    animation: btnRotation 0.8s linear infinite;
+                }
+
+                @keyframes btnRotation {
+                    from { transform: rotate(0deg); }
+                    to { transform: rotate(360deg); }
                 }
 
                 .pagination-controls {

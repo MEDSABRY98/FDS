@@ -1,4 +1,5 @@
 import { useState } from "react";
+import NoData_db from "../lib/NoData_db";
 
 export default function PlayerMatchesTable({
     stats,
@@ -55,11 +56,7 @@ export default function PlayerMatchesTable({
                                 </tr>
                             ))
                         ) : (
-                            <tr>
-                                <td colSpan="8" style={{ padding: '80px', textAlign: 'center', opacity: 0.4, fontFamily: 'Space Mono' }}>
-                                    NO MATCH RECORDS FOUND FOR THIS PLAYER
-                                </td>
-                            </tr>
+                            <NoData_db isTable={true} colSpan={8} message="NO MATCH RECORDS FOUND FOR THIS PLAYER" />
                         )}
                     </tbody>
                 </table>

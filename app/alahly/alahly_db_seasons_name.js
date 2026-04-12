@@ -3,6 +3,7 @@
 import { useEffect, useMemo } from "react";
 import "./alahly_db_seasons_name.css";
 import { AlAhlyService } from "./alahly_db_service";
+import NoData_db from "../lib/NoData_db";
 
 export default function AlAhlySeasons({ matches }) {
 
@@ -101,7 +102,7 @@ export default function AlAhlySeasons({ matches }) {
                 <div className="gold-line"></div>
 
                 {sortedChamps.length === 0 ? (
-                    <div style={{ textAlign: 'center', padding: '100px', opacity: 0.4 }}>No data found.</div>
+                    <NoData_db message="No data found." />
                 ) : (
                     sortedChamps.map(champ => {
                         // SMART SORT: Extract year and sort descending

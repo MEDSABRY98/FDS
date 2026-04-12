@@ -3,6 +3,7 @@
 import { useState, useCallback, useEffect } from "react";
 import { supabase } from "../lib/supabase";
 import AlAhlyAuth from "./alahly_db_auth";
+import SearchBar_db from "../lib/SearchBar_db";
 
 
 
@@ -938,19 +939,12 @@ export default function AlAhlyEditor() {
                             Type the Match ID to load all linked records for editing
                         </div>
                         <div style={{ display: 'flex', gap: 12, justifyContent: 'center', width: '100%', maxWidth: 520 }}>
-                            <input
+                            <SearchBar_db
                                 value={searchId}
-                                onChange={e => setSearchId(e.target.value)}
+                                onChange={setSearchId}
                                 onKeyDown={e => e.key === 'Enter' && handleSearch()}
                                 placeholder="Match ID..."
-                                style={{
-                                    flex: 1, border: '2px solid #e8e8e8', borderRadius: 14, padding: '16px 22px',
-                                    fontSize: 15, fontFamily: "'Space Mono', monospace", fontWeight: 700, outline: 'none',
-                                    transition: 'border-color 0.2s', color: '#0a0a0a', textAlign: 'center',
-                                    letterSpacing: 1
-                                }}
-                                onFocus={e => e.target.style.borderColor = '#c9a84c'}
-                                onBlur={e => e.target.style.borderColor = '#e8e8e8'}
+                                style={{ flex: 1 }}
                             />
                             <button
                                 onClick={handleSearch}

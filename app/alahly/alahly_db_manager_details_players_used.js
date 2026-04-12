@@ -1,6 +1,8 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import NoData_db from "../lib/NoData_db";
+import SearchBar_db from "../lib/SearchBar_db";
 
 export default function Manager_PlayersUsed_Module({ stats }) {
     const [searchTerm, setSearchTerm] = useState("");
@@ -59,14 +61,11 @@ export default function Manager_PlayersUsed_Module({ stats }) {
 
             {/* Search Container */}
             <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '40px' }}>
-                <div className="search-wrap-premium" style={{ width: '100%', maxWidth: '450px' }}>
-                    <input
-                        type="text"
-                        placeholder="SEARCH PLAYER NAME..."
+                <div style={{ width: '100%', maxWidth: '450px' }}>
+                    <SearchBar_db
                         value={searchTerm}
-                        onChange={(e) => setSearchTerm(e.target.value)}
-                        className="p-search-input"
-                        style={{ textAlign: 'center' }}
+                        onChange={setSearchTerm}
+                        placeholder="SEARCH PLAYER NAME..."
                     />
                 </div>
             </div>
@@ -118,11 +117,7 @@ export default function Manager_PlayersUsed_Module({ stats }) {
                     </thead>
                     <tbody>
                         {playersList.length === 0 ? (
-                            <tr>
-                                <td colSpan="7" style={{ textAlign: 'center', padding: '100px', opacity: 0.3 }}>
-                                    No players found for this manager.
-                                </td>
-                            </tr>
+                            <NoData_db isTable={true} colSpan={7} message="No players found for this manager." />
                         ) : (
                             playersList.map((p, idx) => (
                                 <tr key={p.name}>

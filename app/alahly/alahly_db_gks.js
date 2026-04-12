@@ -4,27 +4,14 @@ import { useMemo, useState, useEffect, useRef } from "react";
 import "./alahly_db_gks.css";
 import GK_Details_Hub from "./alahly_db_gk_details";
 import { AlAhlyService } from "./alahly_db_service";
+import NoData_db from "../lib/NoData_db";
+import SearchBar_db from "../lib/SearchBar_db";
+import DropDownList_db from "../lib/DropDownList_db";
 
 export default function AlAhlyGKs({ gkDetails, howPenMissed, filteredMatches, playerDetails }) {
     const [searchTerm, setSearchTerm] = useState("");
     const [teamFilter, setTeamFilter] = useState("all");
     const [opponentFilter, setOpponentFilter] = useState("all");
-    const [isOpen, setIsOpen] = useState(false);
-    const [isOppOpen, setIsOppOpen] = useState(false);
-    const [oppSearch, setOppSearch] = useState("");
-    const dropdownRef = useRef(null);
-    const oppDropdownRef = useRef(null);
-
-    const filterLabels = { all: "All Keepers", ahly: "With Al Ahly", opponents: "Against Al Ahly" };
-
-    useEffect(() => {
-        function handleClickOutside(event) {
-            if (dropdownRef.current && !dropdownRef.current.contains(event.target)) setIsOpen(false);
-            if (oppDropdownRef.current && !oppDropdownRef.current.contains(event.target)) setIsOppOpen(false);
-        }
-        document.addEventListener("mousedown", handleClickOutside);
-        return () => document.removeEventListener("mousedown", handleClickOutside);
-    }, []);
 
     const matchResultsMap = useMemo(() => {
         const map = {};
@@ -52,11 +39,6 @@ export default function AlAhlyGKs({ gkDetails, howPenMissed, filteredMatches, pl
         });
         return Array.from(opps).sort((a, b) => a.localeCompare(b, 'ar'));
     }, [gkDetails, currentMatchIds]);
-
-    const filteredOpponents = useMemo(() => {
-        if (!oppSearch) return uniqueOpponents;
-        return uniqueOpponents.filter(o => o.toLowerCase().includes(oppSearch.toLowerCase()));
-    }, [uniqueOpponents, oppSearch]);
 
     const gkStats = useMemo(() => {
         const stats = {};
@@ -206,36 +188,36 @@ export default function AlAhlyGKs({ gkDetails, howPenMissed, filteredMatches, pl
                     </div>
                     <div className="gold-line"></div>
                     <div className="player-controls">
-                        <div className="search-wrap-premium"><input type="text" placeholder="Search keepers..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} className="p-search-input" /></div>
+                        <SearchBar_db
+                            value={searchTerm}
+                            onChange={setSearchTerm}
+                            placeholder="Search keepers..."
+                            className="search-wrap-premium"
+                        />
 
-                        <div className="custom-dropdown-wrap" ref={dropdownRef}>
-                            <div className={`dropdown-trigger ${isOpen ? 'active' : ''}`} onClick={() => setIsOpen(!isOpen)}><span className="current-label">{teamFilter === 'all' ? "Select Category" : filterLabels[teamFilter]}</span><span className="dropdown-arrow"></span></div>
-                            {isOpen && <div className="dropdown-options-list">{Object.keys(filterLabels).map(key => <div key={key} className={`dropdown-option-item ${teamFilter === key ? 'selected' : ''}`} onClick={() => { setTeamFilter(key); setIsOpen(false); }}>{filterLabels[key]}</div>)}</div>}
-                        </div>
+                        <DropDownList_db
+                            options={[
+                                { value: 'all', label: 'All Keepers' },
+                                { value: 'ahly', label: 'With Al Ahly' },
+                                { value: 'opponents', label: 'Against Al Ahly' }
+                            ]}
+                            value={teamFilter}
+                            onChange={setTeamFilter}
+                            placeholder="Select Category"
+                            className="custom-dropdown-wrap"
+                        />
 
-                        <div className="custom-dropdown-wrap" ref={oppDropdownRef}>
-                            <div className={`dropdown-trigger ${isOppOpen ? 'active' : ''}`} onClick={() => setIsOppOpen(!isOppOpen)}><span className="current-label">{opponentFilter === 'all' ? "Select Opponent" : opponentFilter}</span><span className="dropdown-arrow"></span></div>
-                            {isOppOpen && (
-                                <div className="dropdown-options-list" style={{ width: '100%', padding: '0', boxSizing: 'border-box' }}>
-                                    <div style={{ padding: '12px', borderBottom: '1px solid #f0f0f0', background: '#fafafa' }}>
-                                        <input
-                                            type="text"
-                                            placeholder="Find team..."
-                                            value={oppSearch}
-                                            onChange={(e) => setOppSearch(e.target.value)}
-                                            onClick={(e) => e.stopPropagation()}
-                                            style={{ width: '100%', boxSizing: 'border-box', padding: '10px 15px', borderRadius: '8px', border: '1px solid #ddd', fontSize: '12px', outline: 'none', background: '#fff' }}
-                                        />
-                                    </div>
-                                    <div className="premium-scroll" style={{ maxHeight: '250px', overflowY: 'auto', padding: '5px' }}>
-                                        <div className={`dropdown-option-item ${opponentFilter === 'all' ? 'selected' : ''}`} onClick={() => { setOpponentFilter("all"); setIsOppOpen(false); }}>All Opponents</div>
-                                        {filteredOpponents.map(opp => (
-                                            <div key={opp} className={`dropdown-option-item ${opponentFilter === opp ? 'selected' : ''}`} onClick={() => { setOpponentFilter(opp); setIsOppOpen(false); }}>{opp}</div>
-                                        ))}
-                                    </div>
-                                </div>
-                            )}
-                        </div>
+                        <DropDownList_db
+                            options={[
+                                { value: 'all', label: 'All Opponents' },
+                                ...uniqueOpponents.map(opp => ({ value: opp, label: opp }))
+                            ]}
+                            value={opponentFilter}
+                            onChange={setOpponentFilter}
+                            placeholder="Select Opponent"
+                            searchable={true}
+                            className="custom-dropdown-wrap"
+                        />
                     </div>
                     <div className="player-table-container">
                         <table className="modern-player-table fade-in">
@@ -252,7 +234,7 @@ export default function AlAhlyGKs({ gkDetails, howPenMissed, filteredMatches, pl
                             </thead>
                             <tbody>
                                 {paginatedStats.length === 0 ? (
-                                    <tr><td colSpan="7" style={{ padding: '100px', opacity: 0.4 }}>No keeper data recorded for these matches.</td></tr>
+                                    <NoData_db isTable={true} colSpan={7} message="No keeper data recorded for these matches." />
                                 ) : (
                                     paginatedStats.map((g, i) => {
                                         const actualIndex = (currentPage - 1) * pageSize + i;
