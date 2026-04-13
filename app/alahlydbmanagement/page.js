@@ -202,7 +202,7 @@ export default function DatabaseManagement() {
                                 matchDateMap[d.MATCH_ID] = new Date(d.DATE).getTime();
                             });
                         }
-                    } catch(err) { console.error("Error fetching dates for sort:", err); }
+                    } catch (err) { console.error("Error fetching dates for sort:", err); }
                 }
 
                 // Deterministic secondary sorting logic
@@ -217,7 +217,7 @@ export default function DatabaseManagement() {
                         const dateB = matchDateMap[b.MATCH_ID] || 0;
                         // 1. Primary Sort: Date Descending (Latest first)
                         if (dateB !== dateA) return dateB - dateA;
-                        
+
                         // 2. Secondary Sort: Match ID if dates are equal/missing
                         return String(b.MATCH_ID).localeCompare(String(a.MATCH_ID), undefined, { numeric: true });
                     });
@@ -225,10 +225,10 @@ export default function DatabaseManagement() {
                     allData.sort((a, b) => {
                         const dateA = matchDateMap[a.MATCH_ID] || 0;
                         const dateB = matchDateMap[b.MATCH_ID] || 0;
-                        
+
                         // 1. Primary Sort: Date Descending (Latest first)
                         if (dateB !== dateA) return dateB - dateA;
-                        
+
                         // 2. Secondary Sort: EVENT_ID Ascending within same match
                         if (cols.includes('EVENT_ID')) {
                             const getNum = (id) => {
@@ -267,6 +267,34 @@ export default function DatabaseManagement() {
                         return 0;
                     });
                 }
+
+                // Custom sorting for FINALS tables (handling mixed date formats)
+                if (selectedTable.startsWith('alahly_FINALS_') && cols.includes('DATE')) {
+                    const ridKey = cols.find(c => c.toUpperCase() === "ROW_ID");
+                    allData.sort((a, b) => {
+                        const parseDate = (d) => {
+                            if (!d) return 0;
+                            if (d.includes('/')) {
+                                const [day, month, year] = d.split('/');
+                                return new Date(`${year}-${month}-${day}`).getTime();
+                            }
+                            return new Date(d).getTime();
+                        };
+
+                        const dateA = parseDate(a.DATE);
+                        const dateB = parseDate(b.DATE);
+
+                        // 1. Primary Sort: Date Descending (Latest first)
+                        if (dateB !== dateA) return dateB - dateA;
+
+                        // 2. Secondary Sort: ROW_ID Ascending (for Lineup and Player details)
+                        if (ridKey && (selectedTable.includes('LINEUPDETAILS') || selectedTable.includes('PLAYERDETAILS'))) {
+                            return String(a[ridKey]).localeCompare(String(b[ridKey]), undefined, { numeric: true });
+                        }
+                        return 0;
+                    });
+                }
+
                 setTableData(allData);
             } else {
                 setTableData([]);
@@ -704,15 +732,17 @@ export default function DatabaseManagement() {
                     gap: 12px;
                     overflow-x: auto;
                     padding: 10px;
-                    scrollbar-width: none;
+                    scrollbar-width: none; /* Hide scrollbar for Firefox */
+                    max-width: 1280px; /* Width of roughly 8 tabs */
                 }
-                .table-selector::-webkit-scrollbar { display: none; }
+                .table-selector::-webkit-scrollbar { display: none; } /* Hide scrollbar for Chrome/Safari */
 
                 .table-btn {
                     background: rgba(255,255,255,0.03);
                     border: 1px solid rgba(255,255,255,0.1);
                     color: rgba(255,255,255,0.7);
                     padding: 10px 22px;
+                    min-width: 140px; /* Ensuring consistent tab width */
                     font-size: 11px;
                     font-family: 'Space Mono', monospace;
                     font-weight: 700;
@@ -721,6 +751,7 @@ export default function DatabaseManagement() {
                     border-radius: 50px;
                     white-space: nowrap;
                     letter-spacing: 0.5px;
+                    flex-shrink: 0; /* Prevent shrinking to force scroll */
                 }
 
                 .table-btn:hover {
