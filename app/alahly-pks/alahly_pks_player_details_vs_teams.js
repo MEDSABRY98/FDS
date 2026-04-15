@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo } from "react";
+import "./alahly_pks_player_details_vs_teams.css";
 import NoData_db from "../lib/NoData_db";
 
 export default function AlAhlyPKsPlayerDetailsVsTeams({ pksData, playerName }) {

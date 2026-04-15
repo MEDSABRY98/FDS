@@ -190,16 +190,6 @@
     text-align: center;
 }
 
-/* VS Teams Specific Stat Cells */
-.vs-teams-table td {
-    font-size: 17px;
-    font-weight: 700;
-}
-
-.vs-teams-table th {
-    font-size: 15px;
-    color: #666;
-}
 
 /* Stats Badges */
 .m-mini-pill {

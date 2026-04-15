@@ -7,7 +7,7 @@ import { supabase } from "../lib/supabase";
 import { AlAhlyService } from "../alahly/alahly_db_service";
 import * as XLSX from "xlsx";
 import { Download } from "lucide-react";
-import AlAhlyAuth from "../alahly/alahly_db_auth";
+import Login_db from "../lib/Login_db";
 
 
 // Dynamic Table Loading logic added inside component
@@ -408,7 +408,7 @@ export default function DatabaseManagement() {
     const paginatedData = filteredData.slice((currentPage - 1) * pageSize, currentPage * pageSize);
 
     return (
-        <AlAhlyAuth title="DB MANAGEMENT ACCESS" subtitle="PRIVATE DATABASE CONTROL">
+        <Login_db title="DB MANAGEMENT ACCESS" subtitle="PRIVATE DATABASE CONTROL">
             <div id="db-management-page">
                 <nav className="db-nav">
                     <div className="nav-title-group">
@@ -1133,6 +1133,6 @@ export default function DatabaseManagement() {
                 }
             `}</style>
             </div>
-        </AlAhlyAuth>
+        </Login_db>
     );
 }

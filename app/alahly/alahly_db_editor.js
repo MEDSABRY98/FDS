@@ -2,7 +2,7 @@
 
 import { useState, useCallback, useEffect } from "react";
 import { supabase } from "../lib/supabase";
-import AlAhlyAuth from "./alahly_db_auth";
+import Login_db from "../lib/Login_db";
 import SearchBar_db from "../lib/SearchBar_db";
 
 
@@ -877,7 +877,7 @@ export default function AlAhlyEditor() {
     const penCols = Object.keys(EMPTY_PEN);
 
     return (
-        <AlAhlyAuth title="MATCH EDITOR ACCESS" subtitle="AUTHORIZATION REQUIRED">
+        <Login_db title="MATCH EDITOR ACCESS" subtitle="AUTHORIZATION REQUIRED">
             <div style={{ fontFamily: "'Outfit', sans-serif", maxWidth: 1610, margin: '0 auto', padding: '0 0 100px' }}>
                 <Toast toasts={toasts} />
 
@@ -1262,6 +1262,6 @@ export default function AlAhlyEditor() {
                 }
             `}</style>
             </div>
-        </AlAhlyAuth>
+        </Login_db>
     );
 }

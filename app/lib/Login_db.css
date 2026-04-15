@@ -1,0 +1,166 @@
+/* PREMIUM LOGIN STYLES */
+:root {
+    --login-gold: #c9a84c;
+    --login-dark: #0a0a0a;
+    --login-red: #ff3b30;
+    --login-glass: rgba(255, 255, 255, 0.03);
+}
+
+.login-db-container {
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: #ffffff;
+    font-family: 'Outfit', sans-serif;
+    padding: 20px;
+    position: relative;
+    overflow: hidden;
+}
+
+
+.login-db-card {
+    background: #fff;
+    width: 100%;
+    max-width: 420px;
+    padding: 60px 45px;
+    border-radius: 40px;
+    border: 1px solid #f0f0f0;
+    text-align: center;
+    position: relative;
+    z-index: 2;
+    box-shadow: 0 40px 100px -20px rgba(0, 0, 0, 0.1);
+    animation: loginSlideUp 0.8s cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+@keyframes loginSlideUp {
+    from { opacity: 0; transform: translateY(40px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+.login-db-icon {
+    font-size: 50px;
+    margin-bottom: 30px;
+    filter: drop-shadow(0 10px 20px rgba(0,0,0,0.1));
+    display: inline-block;
+}
+
+.login-db-title {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 34px;
+    letter-spacing: 4px;
+    color: var(--login-dark);
+    margin: 0 0 10px;
+    text-transform: uppercase;
+}
+
+.login-db-subtitle {
+    font-size: 11px;
+    font-weight: 800;
+    color: #aaa;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    margin-bottom: 40px;
+}
+
+.login-db-form {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
+.login-db-input-group {
+    position: relative;
+}
+
+.login-db-input {
+    width: 100%;
+    padding: 22px;
+    background: #fafafa;
+    border: 2px solid #eee;
+    border-radius: 20px;
+    color: var(--login-dark);
+    font-size: 24px;
+    text-align: center;
+    letter-spacing: 12px;
+    outline: none;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    box-sizing: border-box;
+}
+
+.login-db-input:focus {
+    border-color: var(--login-gold);
+    background: #fff;
+    box-shadow: 0 10px 30px rgba(201, 168, 76, 0.1);
+}
+
+.login-db-input.error {
+    border-color: var(--login-red);
+    animation: shake 0.4s ease-in-out;
+}
+
+@keyframes shake {
+    0%, 100% { transform: translateX(0); }
+    25% { transform: translateX(-8px); }
+    75% { transform: translateX(8px); }
+}
+
+.login-db-error-msg {
+    color: var(--login-red);
+    font-size: 11px;
+    font-weight: 700;
+    font-family: 'Space Mono', monospace;
+    margin-top: 10px;
+}
+
+.login-db-submit {
+    background: var(--login-dark);
+    color: #fff;
+    border: none;
+    padding: 20px;
+    border-radius: 20px;
+    font-size: 14px;
+    font-weight: 900;
+    font-family: 'Space Mono', monospace;
+    letter-spacing: 2px;
+    cursor: pointer;
+    transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+    box-shadow: 0 15px 35px rgba(0,0,0,0.15);
+}
+
+.login-db-submit:hover {
+    background: #000;
+    transform: translateY(-3px);
+    box-shadow: 0 20px 45px rgba(0,0,0,0.25);
+}
+
+.login-db-submit:active {
+    transform: translateY(-1px);
+}
+
+.login-db-back {
+    background: transparent;
+    border: none;
+    color: #bbb;
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: 1px;
+    margin-top: 30px;
+    cursor: pointer;
+    transition: color 0.3s;
+}
+
+.login-db-back:hover {
+    color: var(--login-dark);
+}
+
+/* Dark Mode Support (if parent has .dark) */
+.dark .login-db-container {
+    background: #050505;
+}
+.dark .login-db-card {
+    background: #0a0a0a;
+    border-color: #1a1a1a;
+}
+.dark .login-db-title { color: #fff; }
+.dark .login-db-input { background: #111; border-color: #222; color: #fff; }

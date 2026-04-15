@@ -12,6 +12,7 @@ import AlAhlyPKsFilter from "./alahly_pks_filters";
 import AlAhlyPKsH2H from "./alahly_pks_h2h";
 import AlAhlyPKsManagers from "./alahly_pks_managers";
 import AlAhlyPKsEditor from "./alahly_pks_editor";
+import Login_db from "../lib/Login_db";
 
 export default function AlAhlyPKsDatabase() {
     const [activeTab, setActiveTab] = useState("alahly_pks_matches");
@@ -48,7 +49,7 @@ export default function AlAhlyPKsDatabase() {
         const enrichedData = pks.map(pk => {
             const pkMatchId = String(pk.MATCH_ID || pk.PKS_ID || "").trim().toUpperCase();
             const matchInfo = matchMap.get(pkMatchId);
-            
+
             // Try different possible column names for managers
             const ahlyMgr = matchInfo?.["AHLY MANAGER"] || matchInfo?.AHLY_MANAGER || pk["AHLY MANAGER"] || "---";
             const oppMgr = matchInfo?.["OPPONENT MANAGER"] || matchInfo?.OPPONENT_MANAGER || pk["OPPONENT MANAGER"] || "---";
@@ -75,7 +76,11 @@ export default function AlAhlyPKsDatabase() {
             case "alahly_pks_matches":
                 return <AlAhlyPKsMatches pksData={filteredData} onSelectMatch={(id) => setSelectedPksId(id)} />;
             case "alahly_pks_editor":
-                return <AlAhlyPKsEditor pksData={pksData} />;
+                return (
+                    <Login_db title="EDITOR ACCESS" subtitle="RESTRICTED DATA MANAGEMENT">
+                        <AlAhlyPKsEditor pksData={pksData} />
+                    </Login_db>
+                );
             case "alahly_pks_champions":
                 return <AlAhlyPKsChampions pksData={filteredData} />;
             case "alahly_pks_players":
@@ -232,7 +237,7 @@ export default function AlAhlyPKsDatabase() {
                 {renderAppContent()}
             </main>
 
-            <AlAhlyPKsFilter 
+            <AlAhlyPKsFilter
                 data={pksData}
                 onFilter={(filtered) => setFilteredData(filtered)}
                 isOpen={isFilterOpen}
