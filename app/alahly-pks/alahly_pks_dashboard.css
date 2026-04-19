@@ -1,0 +1,346 @@
+.pks-dashboard-container {
+    padding: 30px 0;
+    color: #0a0a0a;
+    font-family: 'Bebas Neue', sans-serif;
+    letter-spacing: 0.5px;
+}
+
+.dashboard-header {
+    text-align: center;
+    margin-bottom: 30px;
+}
+
+.dashboard-title {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 42px;
+    letter-spacing: 6px;
+    margin-bottom: 20px;
+    color: #0a0a0a;
+    text-align: center;
+}
+
+.gold-text {
+    color: #c9a84c;
+}
+
+/* Main Stats Grid */
+.stats-grid-main {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 20px;
+    margin-bottom: 40px;
+}
+
+.luxury-card {
+    background: #ffffff;
+    border: 1px solid rgba(0, 0, 0, 0.08);
+    border-radius: 16px;
+    padding: 25px;
+    display: flex;
+    align-items: center;
+    gap: 20px;
+    transition: all 0.3s ease;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.05);
+    color: #0a0a0a;
+}
+
+.luxury-card:hover {
+    transform: translateY(-5px);
+    border-color: #c9a84c;
+    box-shadow: 0 15px 40px rgba(201, 168, 76, 0.15);
+}
+
+.card-icon {
+    width: 60px;
+    height: 60px;
+    background: rgba(201, 168, 76, 0.1);
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #c9a84c;
+}
+
+.win .card-icon {
+    background: rgba(34, 197, 94, 0.1);
+    color: #22c55e;
+}
+
+.loss .card-icon {
+    background: rgba(239, 68, 68, 0.1);
+    color: #ef4444;
+}
+
+.card-content {
+    display: flex;
+    flex-direction: column;
+}
+
+.card-label {
+    font-family: 'Space Mono', monospace;
+    font-size: 10px;
+    color: #666;
+    letter-spacing: 2px;
+}
+
+.card-value {
+    font-size: 44px;
+    line-height: 1;
+    margin-top: 5px;
+}
+
+.value-row {
+    display: flex;
+    align-items: baseline;
+    gap: 12px;
+}
+
+.card-sub-value {
+    font-family: 'Space Mono', monospace;
+    font-size: 16px;
+    font-weight: 700;
+}
+
+.card-sub-value.success {
+    color: #22c55e;
+}
+
+.card-sub-value.danger {
+    color: #ef4444;
+}
+
+/* Comparison Section */
+.comparison-container {
+    display: flex;
+    background: #f8f9fa;
+    border: 1px solid rgba(0,0,0,0.05);
+    border-radius: 24px;
+    overflow: hidden;
+    margin-bottom: 40px;
+    position: relative;
+    min-height: 400px;
+    color: #0a0a0a;
+}
+
+.comparison-side {
+    flex: 1;
+    padding: 40px;
+}
+
+.side-header {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    margin-bottom: 30px;
+}
+
+.team-logo-mini {
+    height: 40px;
+    width: auto;
+}
+
+.side-header h2 {
+    font-size: 32px;
+    margin: 0;
+}
+
+.side-stats-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 30px;
+}
+
+.side-stat-item {
+    display: flex;
+    flex-direction: column;
+}
+
+.side-label {
+    font-family: 'Space Mono', monospace;
+    font-size: 13px;
+    color: #666;
+    margin-bottom: 10px;
+    letter-spacing: 1.5px;
+}
+
+.side-value {
+    font-size: 54px;
+    line-height: 1;
+    margin-bottom: 15px;
+}
+
+.highlight-goal .side-value {
+    color: #c9a84c;
+}
+
+.highlight-miss .side-value {
+    color: #ef4444;
+}
+
+.highlight-saved .side-value {
+    color: #3b82f6; /* Blue for goalkeeper saves */
+}
+
+.side-stat-item.full-width {
+    grid-column: span 2;
+}
+
+.progress-bar-container {
+    height: 6px;
+    background: #eee;
+    border-radius: 3px;
+    margin-bottom: 8px;
+    overflow: hidden;
+}
+
+.progress-fill {
+    height: 100%;
+    border-radius: 3px;
+    transition: width 1s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.progress-fill.success {
+    background: #c9a84c;
+}
+
+.progress-fill.miss {
+    background: #ef4444;
+}
+
+.progress-fill.saved {
+    background: #3b82f6;
+}
+
+.percentage-value {
+    font-size: 20px;
+    color: #0a0a0a;
+}
+
+.percentage-value-small {
+    font-size: 22px;
+    color: #0a0a0a;
+    font-weight: bold;
+}
+
+.rates-row-container {
+    grid-column: span 2;
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 15px;
+    margin-top: 10px;
+}
+
+.rate-item {
+    display: flex;
+    flex-direction: column;
+}
+
+.progress-bar-container.mini {
+    height: 4px;
+    margin-bottom: 5px;
+}
+
+.comparison-divider {
+    width: 60px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+}
+
+.vs-badge {
+    background: #0a0a0a;
+    color: #c9a84c;
+    width: 44px;
+    height: 44px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 16px;
+    border: 2px solid #c9a84c;
+    z-index: 2;
+}
+
+.comparison-divider::before {
+    content: '';
+    position: absolute;
+    top: 40px;
+    bottom: 40px;
+    left: 50%;
+    width: 1px;
+    background: rgba(0,0,0,0.1);
+    transform: translateX(-50%);
+}
+
+/* Insights */
+.insights-grid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 20px;
+}
+
+.insight-card {
+    background: #0a0a0a;
+    border-radius: 16px;
+    padding: 30px;
+    color: #fff;
+}
+
+.insight-card h3 {
+    margin: 0 0 20px 0;
+    font-size: 20px;
+    letter-spacing: 2px;
+}
+
+.insight-row {
+    display: flex;
+    justify-content: space-between;
+    padding: 12px 0;
+    border-bottom: 1px solid rgba(255,255,255,0.05);
+}
+
+.insight-row:last-child {
+    border-bottom: none;
+}
+
+.insight-row span:first-child {
+    color: #888;
+    font-family: 'Space Mono', monospace;
+    font-size: 12px;
+}
+
+.insight-row span:last-child {
+    font-size: 18px;
+}
+
+/* Responsive */
+@media (max-width: 992px) {
+    .comparison-container {
+        flex-direction: column;
+    }
+    .comparison-divider {
+        width: 100%;
+        height: 60px;
+    }
+    .comparison-divider::before {
+        width: 80%;
+        height: 1px;
+        top: 50%;
+    }
+}
+
+@media (max-width: 600px) {
+    .side-stats-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+.fade-in {
+    animation: fadeIn 0.8s ease-out forwards;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+}

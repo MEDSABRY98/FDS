@@ -1,0 +1,241 @@
+.finals-players-container {
+    padding: 0 40px;
+    animation: fadeIn 0.5s ease;
+}
+
+.players-header {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    margin-bottom: 40px;
+    gap: 20px;
+}
+
+.players-title {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 42px;
+    letter-spacing: 6px;
+    color: #0a0a0a;
+    margin: 0;
+    text-align: center;
+    font-weight: 300;
+}
+
+.gold-text {
+    color: #c9a84c;
+}
+
+.players-search-wrapper {
+    width: 100%;
+    max-width: 600px;
+}
+
+/* Table Design */
+.stats-table-wrapper {
+    background: #fff;
+    border-radius: 12px;
+    overflow: hidden;
+    border: 1px solid rgba(0, 0, 0, 0.05);
+    margin-bottom: 60px;
+}
+
+.shadow-premium {
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.08);
+}
+
+.players-table-header {
+    display: grid;
+    grid-template-columns: 80px 1fr 100px 100px 100px 110px 90px 90px 90px 90px 90px;
+    background: #0a0a0a;
+    padding: 18px 10px;
+    border-bottom: 2px solid #c9a84c;
+    position: sticky;
+    top: 0;
+    z-index: 10;
+}
+
+.players-table-header div {
+    color: #fff;
+    font-family: 'Space Mono', monospace;
+    font-size: 15px;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    text-align: center;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: 0.2s;
+}
+
+.sortable {
+    cursor: pointer;
+    user-select: none;
+}
+
+.sortable:hover {
+    color: #c9a84c !important;
+    background: rgba(255, 255, 255, 0.05);
+}
+
+.stats-table-body {
+    background: #fff;
+}
+
+.player-stats-row {
+    display: grid;
+    grid-template-columns: 80px 1fr 100px 100px 100px 110px 90px 90px 90px 90px 90px;
+    padding: 12px 10px;
+    border-bottom: 1px solid #f2f2f2;
+    transition: 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    align-items: center;
+}
+
+.player-stats-row:hover {
+    background: #f9f9f9;
+    transform: translateX(5px);
+}
+
+.player-stats-row>div {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    font-family: 'Inter', sans-serif;
+    font-size: 15px;
+    color: #333;
+}
+
+.col-name {
+    justify-content: center !important;
+}
+
+.player-stats-row .col-name {
+    font-weight: 500;
+    font-size: 19px !important;
+    color: #000 !important;
+}
+
+.player-stats-row .col-rank {
+    font-family: 'Space Mono', monospace;
+    font-weight: 800;
+}
+
+.rank-badge {
+    background: #f0f0f0;
+    width: 28px;
+    height: 28px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    font-size: 11px;
+    border: 1px solid rgba(0, 0, 0, 0.05);
+}
+
+.player-stats-row .col-num {
+    font-family: 'Space Mono', monospace !important;
+    font-weight: 700;
+    font-size: 21px !important;
+}
+
+.font-bold {
+    font-weight: 900;
+    color: #000;
+}
+
+.player-stats-row .win-text {
+    color: #16a34a;
+    font-weight: 800;
+    font-size: 21px !important;
+}
+
+.player-stats-row .loss-text {
+    color: #dc2626;
+    font-weight: 800;
+    font-size: 21px !important;
+}
+
+.player-stats-row .perc-text {
+    color: #c9a84c;
+    font-weight: 900;
+    font-size: 21px !important;
+}
+
+.player-stats-row .ga-text {
+    color: #000;
+    font-weight: 900;
+    font-size: 22px !important;
+}
+
+.player-stats-row .goal-text {
+    color: #000;
+    font-weight: 800;
+    font-size: 21px !important;
+}
+
+.player-stats-row .assist-text {
+    color: #666;
+    font-weight: 800;
+    font-size: 21px !important;
+}
+
+.player-stats-row .pen-text {
+    color: #c9a84c;
+    font-weight: 800;
+    font-size: 21px !important;
+}
+
+.player-stats-row .text-muted {
+    color: #000;
+    font-size: 21px !important;
+    font-weight: 700;
+}
+
+.player-stats-row.total-row-premium {
+    background: #f9f9f9;
+    border-top: 2px solid #000;
+    border-bottom: 2px solid rgba(201, 168, 76, 0.2);
+    position: sticky;
+    bottom: 0;
+    z-index: 5;
+    padding: 20px 10px !important;
+}
+
+.total-row-premium .col-rank {
+    font-size: 22px !important;
+    color: #c9a84c;
+    font-family: 'Space Mono', monospace !important;
+}
+
+.total-row-premium .col-name {
+    font-weight: 500 !important;
+    font-size: 20px !important;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}
+
+.total-row-premium .col-num {
+    color: #000 !important;
+    font-weight: 900 !important;
+    font-size: 22px !important;
+    font-family: 'Space Mono', monospace !important;
+}
+
+.no-players-msg {
+    padding: 40px;
+    text-align: center;
+    font-family: 'Space Mono', monospace;
+    color: #999;
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(10px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}

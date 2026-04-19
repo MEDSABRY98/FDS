@@ -2,104 +2,97 @@
 
 import { useState, useEffect } from "react";
 import { Download, Filter } from "lucide-react";
-import { AlAhlyService } from "../alahly/alahly_db_service";
-import AlAhlyPKsMatches from "./alahly_pks_matches";
-import AlAhlyPKsMatchDetails from "./alahly_pks_match_details";
-import AlAhlyPKsPlayers from "./alahly_pks_players";
-import AlAhlyPKsGKs from "./alahly_pks_gks";
-import AlAhlyPKsChampions from "./alahly_pks_champions";
-import AlAhlyPKsFilter from "./alahly_pks_filters";
-import AlAhlyPKsH2H from "./alahly_pks_h2h";
-import AlAhlyPKsManagers from "./alahly_pks_managers";
-import AlAhlyPKsEditor from "./alahly_pks_editor";
-import AlAhlyPKsDashboard from "./alahly_pks_dashboard";
+import { AlAhlyFinalsService } from "../alahly/alahly_finals_service";
+import AlAhlyFinalsDashboard from "./alahly_finals_dashboard";
+import AlAhlyFinalsMatches from "./alahly_finals_matches";
+import AlAhlyFinalsPlayers from "./alahly_finals_players";
+import AlAhlyFinalsChampions from "./alahly_finals_champions";
+import AlAhlyFinalsManagers from "./alahly_finals_managers";
+import AlAhlyFinalsEditor from "./alahly_finals_editor";
+import AlAhlyFinalsFilter from "./alahly_finals_filters";
 import Login_db from "../lib/Login_db";
 
-export default function AlAhlyPKsDatabase() {
-    const [activeTab, setActiveTab] = useState("alahly_pks_dashboard");
-    const [pksData, setPksData] = useState([]);
+export default function AlAhlyFinalsDatabase() {
+    const [activeTab, setActiveTab] = useState("finals_dashboard");
+    const [matchesData, setMatchesData] = useState([]);
+    const [lineupsData, setLineupsData] = useState([]);
+    const [playersData, setPlayersData] = useState([]);
+
     const [filteredData, setFilteredData] = useState([]);
     const [loading, setLoading] = useState(true);
-    const [selectedPksId, setSelectedPksId] = useState(null);
+    const [selectedMatchId, setSelectedMatchId] = useState(null);
     const [isFilterOpen, setIsFilterOpen] = useState(false);
 
     useEffect(() => {
-        fetchPKData();
+        fetchFinalsData();
     }, []);
 
     useEffect(() => {
         window.scrollTo(0, 0);
-    }, [selectedPksId, activeTab]);
+    }, [selectedMatchId, activeTab]);
 
-    async function fetchPKData() {
+    async function fetchFinalsData() {
         setLoading(true);
-        // Fetch both PKs and Matches to join manager info
-        const [pks, matches] = await Promise.all([
-            AlAhlyService.getAllPKs(),
-            AlAhlyService.getAllMatches()
-        ]);
+        try {
+            const [matches, lineups, players] = await Promise.all([
+                AlAhlyFinalsService.getAllFinalsMatches(),
+                AlAhlyFinalsService.getAllFinalsLineups(),
+                AlAhlyFinalsService.getAllFinalsPlayerDetails()
+            ]);
 
-        // Create a fast lookup map for matches
-        const matchMap = new Map();
-        matches.forEach(m => {
-            const mId = String(m.MATCH_ID || m.id || "").trim().toUpperCase();
-            if (mId) matchMap.set(mId, m);
-        });
-
-        // Enrich PKs with manager data from MATCHDETAILS
-        const enrichedData = pks.map(pk => {
-            const pkMatchId = String(pk.MATCH_ID || pk.PKS_ID || "").trim().toUpperCase();
-            const matchInfo = matchMap.get(pkMatchId);
-
-            // Try different possible column names for managers
-            const ahlyMgr = matchInfo?.["AHLY MANAGER"] || matchInfo?.AHLY_MANAGER || pk["AHLY MANAGER"] || "---";
-            const oppMgr = matchInfo?.["OPPONENT MANAGER"] || matchInfo?.OPPONENT_MANAGER || pk["OPPONENT MANAGER"] || "---";
-
-            return {
-                ...pk,
-                "AHLY MANAGER": ahlyMgr,
-                "OPPONENT MANAGER": oppMgr
-            };
-        });
-
-        setPksData(enrichedData);
-        setFilteredData(enrichedData);
-        setLoading(false);
+            setMatchesData(matches);
+            setLineupsData(lineups);
+            setPlayersData(players);
+            setFilteredData(matches);
+        } catch (error) {
+            console.error("Error fetching finals data:", error);
+        } finally {
+            setLoading(false);
+        }
     }
 
     const renderAppContent = () => {
-        if (selectedPksId) {
-            const matchKicks = filteredData.filter(k => k.PKS_ID === selectedPksId);
-            return <AlAhlyPKsMatchDetails matchPks={matchKicks} onBack={() => setSelectedPksId(null)} />;
+        // Handle Match Details drill-down if needed
+        if (selectedMatchId) {
+            // Placeholder: Could create AlAhlyFinalsMatchDetails if required
+            const matchInfo = matchesData.find(m => m.MATCH_ID === selectedMatchId || m.FINAL_ID === selectedMatchId);
+            return (
+                <div style={{ padding: '40px', color: '#0a0a0a', textAlign: 'center' }}>
+                    <h2 style={{ color: '#c9a84c' }}>MATCH DETAILS [ID: {selectedMatchId}]</h2>
+                    <p style={{ opacity: 0.7 }}>Coming soon... Drilling down into specific finals details.</p>
+                    <button
+                        onClick={() => setSelectedMatchId(null)}
+                        style={{ background: '#c9a84c', color: '#000', border: 'none', padding: '10px 20px', borderRadius: '5px', marginTop: '20px', cursor: 'pointer' }}
+                    >
+                        BACK TO LIST
+                    </button>
+                </div>
+            );
         }
 
         switch (activeTab) {
-            case "alahly_pks_dashboard":
-                return <AlAhlyPKsDashboard pksData={filteredData} />;
-            case "alahly_pks_matches":
-                return <AlAhlyPKsMatches pksData={filteredData} onSelectMatch={(id) => setSelectedPksId(id)} />;
-            case "alahly_pks_editor":
+            case "finals_dashboard":
+                return <AlAhlyFinalsDashboard finalsData={filteredData} />;
+            case "finals_matches":
+                return <AlAhlyFinalsMatches finalsData={filteredData} onSelectMatch={(id) => setSelectedMatchId(id)} />;
+            case "finals_players":
+                return <AlAhlyFinalsPlayers playersData={playersData} matchesData={matchesData} lineupsData={lineupsData} />;
+            case "finals_champions":
+                return <AlAhlyFinalsChampions finalsData={filteredData} />;
+            case "finals_managers":
+                return <AlAhlyFinalsManagers finalsData={filteredData} />;
+            case "finals_editor":
                 return (
                     <Login_db title="EDITOR ACCESS" subtitle="AUTHORIZATION REQUIRED">
-                        <AlAhlyPKsEditor pksData={pksData} />
+                        <AlAhlyFinalsEditor
+                            matchesData={matchesData}
+                            lineupsData={lineupsData}
+                            playersData={playersData}
+                        />
                     </Login_db>
                 );
-            case "alahly_pks_champions":
-                return <AlAhlyPKsChampions pksData={filteredData} />;
-            case "alahly_pks_players":
-                return <AlAhlyPKsPlayers pksData={filteredData} />;
-            case "alahly_pks_gks":
-                return <AlAhlyPKsGKs pksData={filteredData} />;
-            case "alahly_pks_h2h":
-                return <AlAhlyPKsH2H pksData={filteredData} />;
-            case "alahly_pks_managers":
-                return <AlAhlyPKsManagers pksData={filteredData} />;
             default:
-                return (
-                    <div style={{ padding: '100px', textAlign: 'center', color: '#888' }}>
-                        <h1>COMING <span style={{ color: '#c9a84c' }}>SOON</span></h1>
-                    </div>
-                );
+                return null;
         }
     };
 
@@ -116,16 +109,17 @@ export default function AlAhlyPKsDatabase() {
                 fontFamily: 'Bebas Neue, sans-serif'
             }}>
                 <div style={{ fontSize: '48px', letterSpacing: '8px', marginBottom: '10px' }}>
-                    AL AHLY <span style={{ color: '#c9a84c' }}>PKs DATABASE</span>
+                    AL AHLY <span style={{ color: '#c9a84c' }}>FINALS DATABASE</span>
                 </div>
                 <div style={{
                     fontFamily: 'Space Mono, monospace',
                     fontSize: '10px',
                     letterSpacing: '4px',
-                    color: '#888',
+                    color: '#c9a84c',
+                    opacity: 0.8,
                     animation: 'pulse 1.5s infinite'
                 }}>
-                    SYNCING REAL-TIME FOOTBALL DATA...
+                    RETRIEVING CHAMPIONSHIP DATA...
                 </div>
                 <style jsx>{`
                     @keyframes pulse {
@@ -139,7 +133,7 @@ export default function AlAhlyPKsDatabase() {
     }
 
     return (
-        <div style={{ background: '#ffffff', minHeight: '100vh', overflow: 'visible' }}>
+        <div style={{ backgroundColor: '#ffffff', minHeight: '100vh', paddingBottom: '100px', color: '#0a0a0a' }}>
             <nav style={{
                 position: 'sticky',
                 top: 0,
@@ -151,13 +145,12 @@ export default function AlAhlyPKsDatabase() {
                 width: '100%',
                 minHeight: '74px',
                 padding: '10px 0',
-                borderBottom: '1px solid rgba(255,255,255,0.08)'
+                borderBottom: '1px solid rgba(255, 255, 255, 0.08)'
             }}>
-                <div className="nav-action-buttons" style={{ position: 'absolute', left: '25px', display: 'flex', gap: '10px' }}>
+                <div style={{ position: 'absolute', left: '25px', display: 'flex', gap: '10px' }}>
                     <button
-                        className="global-export-btn"
                         onClick={() => window.dispatchEvent(new CustomEvent('alahly-export-excel'))}
-                        title="DOWNLOAD CURRENT VIEW AS EXCEL"
+                        title="DOWNLOAD AS EXCEL"
                         style={{
                             background: 'rgba(201, 168, 76, 0.1)',
                             color: '#c9a84c',
@@ -177,9 +170,8 @@ export default function AlAhlyPKsDatabase() {
                         <Download size={16} strokeWidth={3} />
                     </button>
                     <button
-                        className="global-filter-btn"
-                        onClick={() => { console.log("Filter button clicked!"); setIsFilterOpen(true); }}
-                        title="OPEN ADVANCED FILTERS"
+                        onClick={() => setIsFilterOpen(true)}
+                        title="OPEN FILTERS"
                         style={{
                             background: 'rgba(201, 168, 76, 0.1)',
                             color: '#c9a84c',
@@ -199,20 +191,19 @@ export default function AlAhlyPKsDatabase() {
                         <Filter size={16} strokeWidth={3} />
                     </button>
                 </div>
-                <div style={{ display: 'flex', gap: '20px' }}>
+
+                <div style={{ display: 'flex', gap: '5px' }}>
                     {[
-                        { id: 'alahly_pks_dashboard', label: 'DASHBOARD', icon: 'D' },
-                        { id: 'alahly_pks_matches', label: 'MATCHES', icon: 'M' },
-                        { id: 'alahly_pks_editor', label: 'EDITORS', icon: 'E' },
-                        { id: 'alahly_pks_champions', label: 'CHAMPIONS', icon: 'C' },
-                        { id: 'alahly_pks_players', label: 'PLAYERS', icon: 'P' },
-                        { id: 'alahly_pks_gks', label: 'GKs', icon: 'GK' },
-                        { id: 'alahly_pks_managers', label: 'MANAGERS', icon: 'MG' },
-                        { id: 'alahly_pks_h2h', label: 'H2H', icon: 'H' },
+                        { id: 'finals_dashboard', label: 'DASHBOARD', icon: 'D' },
+                        { id: 'finals_matches', label: 'MATCHES', icon: 'M' },
+                        { id: 'finals_editor', label: 'EDITOR', icon: 'E' },
+                        { id: 'finals_champions', label: 'CHAMPIONS', icon: 'C' },
+                        { id: 'finals_players', label: 'PLAYERS', icon: 'P' },
+                        { id: 'finals_managers', label: 'MANAGERS', icon: 'M' },
                     ].map(tab => (
                         <button
                             key={tab.id}
-                            onClick={() => { setActiveTab(tab.id); setSelectedPksId(null); }}
+                            onClick={() => { setActiveTab(tab.id); setSelectedMatchId(null); }}
                             style={{
                                 background: 'transparent',
                                 border: 'none',
@@ -237,12 +228,12 @@ export default function AlAhlyPKsDatabase() {
                 </div>
             </nav>
 
-            <main style={{ padding: '0', maxWidth: (activeTab === 'alahly_pks_h2h' || activeTab === 'alahly_pks_champions' || activeTab === 'alahly_pks_managers' || activeTab === 'alahly_pks_editor') ? '100%' : '1200px', margin: '0 auto' }}>
+            <main style={{ padding: '30px 0', maxWidth: (activeTab === 'finals_editor') ? '100%' : '1400px', margin: '0 auto' }}>
                 {renderAppContent()}
             </main>
 
-            <AlAhlyPKsFilter
-                data={pksData}
+            <AlAhlyFinalsFilter
+                data={matchesData}
                 onFilter={(filtered) => setFilteredData(filtered)}
                 isOpen={isFilterOpen}
                 onClose={() => setIsFilterOpen(false)}

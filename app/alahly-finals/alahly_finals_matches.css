@@ -1,0 +1,253 @@
+.finals-matches-page {
+    padding: 0 20px;
+    animation: fadeIn 0.5s ease;
+}
+
+.finals-matches-header {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    margin-bottom: 40px;
+    gap: 20px;
+}
+
+.matches-title {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 42px;
+    letter-spacing: 6px;
+    color: #0a0a0a;
+    margin: 0;
+    text-align: center;
+    font-weight: 300;
+}
+
+.gold-text {
+    color: #c9a84c;
+}
+
+.matches-search-box {
+    flex: 1;
+    max-width: 600px;
+    width: 100%;
+}
+
+/* Premium Table Structure */
+.finals-list-container {
+    padding: 0 40px;
+}
+
+.finals-table-wrapper {
+    background: #fff;
+    border-radius: 12px;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.08);
+    overflow: hidden;
+    border: 1px solid rgba(0, 0, 0, 0.05);
+}
+
+.finals-table-header {
+    display: grid;
+    grid-template-columns: 80px 150px 140px 180px 1fr 140px 120px 1fr 80px;
+    background: #0a0a0a;
+    padding: 20px 10px;
+    border-bottom: 2px solid #c9a84c;
+    position: sticky;
+    top: 0;
+    z-index: 10;
+}
+
+.finals-table-header div {
+    color: #fff;
+    font-family: 'Space Mono', monospace;
+    font-size: 13px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    text-align: center;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.finals-table-body {
+    background: #fff;
+}
+
+.f-row {
+    display: grid;
+    grid-template-columns: 80px 150px 140px 180px 1fr 140px 120px 1fr 80px;
+    padding: 15px 10px;
+    border-bottom: 1px solid #f2f2f2;
+    transition: 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    align-items: center;
+}
+
+.f-row:hover {
+    background: #f9f9f9;
+    transform: translateX(5px);
+}
+
+.f-row > div {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    font-family: 'Inter', sans-serif;
+    font-size: 15px;
+    color: #333;
+}
+
+/* Column Specific Styles - Body Only */
+.f-row .f-col-index {
+    font-family: 'Space Mono', monospace !important;
+    font-weight: 800;
+}
+
+.idx-badge {
+    background: #f0f0f0;
+    width: 30px;
+    height: 30px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    font-size: 12px;
+    border: 1px solid rgba(0, 0, 0, 0.05);
+}
+
+.f-row .f-col-id {
+    font-family: 'Space Mono', monospace !important;
+    font-size: 13px !important;
+    color: #c9a84c !important;
+    font-weight: 700;
+}
+
+.f-row .f-col-date {
+    font-family: 'Space Mono', monospace !important;
+    font-size: 14px !important;
+    font-weight: 700;
+}
+
+.f-row .f-col-season {
+    font-weight: 700;
+}
+
+.f-row .f-col-team {
+    font-weight: 800;
+    font-size: 16px !important;
+}
+
+.f-row .f-col-score {
+    font-family: 'Space Mono', monospace !important;
+}
+
+.score-pill {
+    background: #000;
+    color: #fff;
+    padding: 6px 15px;
+    border-radius: 20px;
+    font-weight: 800;
+}
+
+.f-row .f-col-pks {
+    font-family: 'Space Mono', monospace !important;
+}
+
+.pks-pill {
+    background: rgba(201, 168, 76, 0.1);
+    color: #c9a84c;
+    padding: 4px 12px;
+    border-radius: 4px;
+    font-weight: 700;
+    border: 1px solid rgba(201, 168, 76, 0.2);
+}
+
+.outcome-status {
+    font-family: 'Inter', sans-serif;
+    font-size: 18px;
+    font-weight: 900;
+    padding: 0;
+    text-align: center;
+    text-transform: uppercase;
+}
+
+.win {
+    color: #16a34a;
+}
+
+.loss {
+    color: #dc2626;
+}
+
+.neutral {
+    color: #666;
+}
+
+/* Pagination */
+.finals-pagination {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 30px;
+    margin-top: 40px;
+    padding-bottom: 60px;
+}
+
+.finals-pagination button {
+    background: #ffffff;
+    border: 1px solid rgba(0, 0, 0, 0.1);
+    color: #666;
+    padding: 10px 25px;
+    border-radius: 8px;
+    font-family: 'Space Mono', monospace;
+    font-size: 12px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: 0.3s;
+}
+
+.finals-pagination button:hover:not(:disabled) {
+    border-color: #c9a84c;
+    color: #c9a84c;
+    background: rgba(201, 168, 76, 0.05);
+}
+
+.finals-pagination button:disabled {
+    opacity: 0.3;
+    cursor: not-allowed;
+}
+
+.page-nums {
+    display: flex;
+    gap: 10px;
+}
+
+.page-nums button {
+    width: 40px;
+    height: 40px;
+    padding: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.page-nums button.active {
+    background: #c9a84c;
+    color: #fff;
+    border-color: #c9a84c;
+    font-weight: 800;
+    box-shadow: 0 4px 15px rgba(201, 168, 76, 0.3);
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.fade-in {
+    animation: fadeIn 0.4s ease forwards;
+}

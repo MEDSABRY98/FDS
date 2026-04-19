@@ -408,7 +408,7 @@ export default function DatabaseManagement() {
     const paginatedData = filteredData.slice((currentPage - 1) * pageSize, currentPage * pageSize);
 
     return (
-        <Login_db title="DB MANAGEMENT ACCESS" subtitle="PRIVATE DATABASE CONTROL">
+        <Login_db title="EDITOR ACCESS" subtitle="AUTHORIZATION REQUIRED">
             <div id="db-management-page">
                 <nav className="db-nav">
                     <div className="nav-title-group">

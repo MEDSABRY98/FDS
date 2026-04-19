@@ -1,8 +1,10 @@
 "use client";
 
 import { useState, useCallback, useEffect } from "react";
+import "./alahly_db_editor.css";
 import { supabase } from "../lib/supabase";
 import Login_db from "../lib/Login_db";
+import NoData_db from "../lib/NoData_db";
 import SearchBar_db from "../lib/SearchBar_db";
 
 
@@ -200,16 +202,6 @@ function Toast({ toasts }) {
                     </div>
                 );
             })}
-            <style jsx>{`
-                @keyframes toastSlideIn {
-                    from { opacity: 0; transform: translateX(50px) scale(0.9); }
-                    to { opacity: 1; transform: translateX(0) scale(1); }
-                }
-                @keyframes toastProgress {
-                    from { width: 100%; }
-                    to { width: 0%; }
-                }
-            `}</style>
         </div>
     );
 }
@@ -267,21 +259,21 @@ function EditableTable({ title, color, rows, setRows, columns, matchId, emptyRow
             </div>
 
             {/* Data table */}
-            <div style={{ overflowX: 'auto', borderRadius: 16, border: '1px solid #eee', boxShadow: '0 4px 20px rgba(0,0,0,0.04)' }}>
-                <table style={{ width: '100%', borderCollapse: 'collapse', fontFamily: "'Outfit', sans-serif", fontSize: 13 }}>
+            <div className="table-wrap">
+                <table className="data-table">
                     <thead>
-                        <tr style={{ background: '#f8f8f8' }}>
+                        <tr>
                             {columns.map(col => (
-                                <th key={col} style={{ padding: '10px 14px', textAlign: 'center', fontWeight: 800, fontSize: 10, letterSpacing: 1.5, color: '#888', borderBottom: '1px solid #eee', whiteSpace: 'nowrap' }}>
+                                <th key={col}>
                                     {col}
                                 </th>
                             ))}
-                            <th style={{ padding: '10px 14px', fontSize: 10, color: '#888', borderBottom: '1px solid #eee', textAlign: 'center' }}>ACT</th>
+                            <th>ACT</th>
                         </tr>
                     </thead>
                     <tbody>
                         {rows.map((row, ri) => (
-                            <tr key={row._key || ri} style={{ background: row._isNew ? 'rgba(34,197,94,0.04)' : 'white', borderBottom: '1px solid #f5f5f5', transition: 'background 0.2s' }}>
+                            <tr key={row._key || ri} className={row._isNew ? "table-row-new" : ""} style={{ borderBottom: '1px solid #f5f5f5', transition: 'background 0.2s' }}>
                                 {columns.map(col => (
                                     <td key={col} style={{ padding: '6px 10px', textAlign: 'center' }}>
                                         {columnOptions[col] ? (
@@ -290,12 +282,12 @@ function EditableTable({ title, color, rows, setRows, columns, matchId, emptyRow
                                                 options={columnOptions[col]}
                                                 placeholder={col}
                                                 onChange={val => setRows(prev => prev.map((r, i) => i === ri ? { ...r, [col]: val, _isDirty: true } : r))}
+                                                className="field-input"
                                                 style={{
                                                     border: row._isDirty || row._isNew ? '1.5px solid ' + color : '1px solid #f0f0f0',
-                                                    borderRadius: 8, padding: '5px 10px', fontSize: 12, fontFamily: "'Outfit', sans-serif",
-                                                    width: '100%', minWidth: col === 'PLAYER NAME' || col === 'PLAYER NAME OUT' ? 140 : 80,
-                                                    background: 'transparent', outline: 'none', color: '#0a0a0a', fontWeight: 500,
-                                                    textAlign: 'center', transition: 'border-color 0.2s'
+                                                    padding: '5px 10px', fontSize: 12,
+                                                    minWidth: col === 'PLAYER NAME' || col === 'PLAYER NAME OUT' ? 140 : 80,
+                                                    textAlign: 'center'
                                                 }}
                                             />
                                         ) : (
@@ -305,12 +297,12 @@ function EditableTable({ title, color, rows, setRows, columns, matchId, emptyRow
                                                     const val = e.target.value;
                                                     setRows(prev => prev.map((r, i) => i === ri ? { ...r, [col]: val, _isDirty: true } : r));
                                                 }}
+                                                className="field-input"
                                                 style={{
                                                     border: row._isDirty || row._isNew ? '1.5px solid ' + color : '1px solid #f0f0f0',
-                                                    borderRadius: 8, padding: '5px 10px', fontSize: 12, fontFamily: "'Outfit', sans-serif",
-                                                    width: '100%', minWidth: col === 'PLAYER NAME' || col === 'PLAYER NAME OUT' ? 140 : 80,
-                                                    background: 'transparent', outline: 'none', color: '#0a0a0a', fontWeight: 500,
-                                                    textAlign: 'center', transition: 'border-color 0.2s'
+                                                    padding: '5px 10px', fontSize: 12,
+                                                    minWidth: col === 'PLAYER NAME' || col === 'PLAYER NAME OUT' ? 140 : 80,
+                                                    textAlign: 'center'
                                                 }}
                                             />
                                         )}
@@ -320,12 +312,14 @@ function EditableTable({ title, color, rows, setRows, columns, matchId, emptyRow
                                     <div style={{ display: 'flex', gap: 6, alignItems: 'center', justifyContent: 'center' }}>
                                         {(row._isDirty || row._isNew) && (
                                             <button onClick={() => onSave(row, ri, tableName)} disabled={isSaving}
-                                                style={{ background: '#22c55e', color: '#fff', border: 'none', borderRadius: 8, padding: '5px 12px', cursor: 'pointer', fontSize: 11, fontWeight: 800, fontFamily: "'Outfit', sans-serif" }}>
+                                                className="row-action-btn"
+                                                style={{ background: '#22c55e', color: '#fff' }}>
                                                 {isSaving ? '...' : '💾'}
                                             </button>
                                         )}
                                         <button onClick={() => onDelete(row, ri, tableName, setRows)}
-                                            style={{ background: '#fee2e2', color: '#ef4444', border: 'none', borderRadius: 8, padding: '5px 10px', cursor: 'pointer', fontSize: 11, fontWeight: 800 }}>
+                                            className="row-action-btn"
+                                            style={{ background: '#fee2e2', color: '#ef4444', padding: '5px 10px' }}>
                                             ✕
                                         </button>
                                     </div>
@@ -333,7 +327,11 @@ function EditableTable({ title, color, rows, setRows, columns, matchId, emptyRow
                             </tr>
                         ))}
                         {rows.length === 0 && (
-                            <tr><td colSpan={columns.length + 1} style={{ padding: '28px', textAlign: 'center', color: '#ccc', fontFamily: "'Space Mono', monospace", fontSize: 11, letterSpacing: 1 }}>NO ROWS YET</td></tr>
+                            <NoData_db 
+                                isTable={true} 
+                                colSpan={columns.length + 1} 
+                                message={`NO ${title.toUpperCase()} RECORDS FOUND`} 
+                            />
                         )}
                     </tbody>
                 </table>
@@ -341,12 +339,7 @@ function EditableTable({ title, color, rows, setRows, columns, matchId, emptyRow
 
             {/* Add Row Panel */}
             {addOpen && (
-                <div style={{
-                    marginTop: 12, borderRadius: 16,
-                    border: '1.5px solid rgba(201,168,76,0.25)',
-                    background: 'linear-gradient(135deg, rgba(201,168,76,0.06), rgba(201,168,76,0.02))',
-                    padding: '20px 24px', boxShadow: '0 4px 24px rgba(201,168,76,0.1)',
-                }}>
+                <div className="add-row-panel">
                     <div style={{ fontFamily: "'Space Mono', monospace", fontSize: 10, color: '#c9a84c', letterSpacing: 2, marginBottom: 16, fontWeight: 700 }}>
                         ✦ NEW ROW
                     </div>
@@ -355,8 +348,8 @@ function EditableTable({ title, color, rows, setRows, columns, matchId, emptyRow
                             const isAuto = col in autoFields;
                             return (
                                 <div key={col} style={{ minWidth: 100 }}>
-                                    <div style={{ fontSize: 9, fontWeight: 800, letterSpacing: 1.5, color: isAuto ? '#c9a84c' : '#aaa', marginBottom: 4, textTransform: 'uppercase', display: 'flex', alignItems: 'center', gap: 4 }}>
-                                        {col} {isAuto && <span style={{ background: '#c9a84c', color: '#0a0a0a', borderRadius: 3, padding: '1px 4px', fontSize: 7, letterSpacing: 0, fontWeight: 900 }}>AUTO</span>}
+                                    <div className="field-label" style={{ color: isAuto ? '#c9a84c' : '#aaa' }}>
+                                        {col} {isAuto && <span className="auto-badge">AUTO</span>}
                                     </div>
                                     {columnOptions[col] ? (
                                         <AutocompleteInput
@@ -365,14 +358,10 @@ function EditableTable({ title, color, rows, setRows, columns, matchId, emptyRow
                                             disabled={isAuto}
                                             placeholder="—"
                                             onChange={val => { if (!isAuto) setNewRow(prev => ({ ...prev, [col]: val })); }}
+                                            className="field-input"
                                             style={{
-                                                width: '100%', boxSizing: 'border-box',
                                                 border: isAuto ? '1.5px solid rgba(201,168,76,0.5)' : '1.5px solid #e8e8e8',
-                                                borderRadius: 8, padding: '7px 10px', fontSize: 12,
-                                                fontFamily: "'Outfit', sans-serif",
                                                 background: isAuto ? 'rgba(201,168,76,0.08)' : '#fff',
-                                                outline: 'none', color: '#0a0a0a', fontWeight: 600,
-                                                cursor: isAuto ? 'not-allowed' : 'text', transition: 'border-color 0.2s'
                                             }}
                                         />
                                     ) : (
@@ -381,17 +370,11 @@ function EditableTable({ title, color, rows, setRows, columns, matchId, emptyRow
                                             value={newRow[col] ?? ''}
                                             disabled={isAuto}
                                             onChange={e => { if (!isAuto) setNewRow(prev => ({ ...prev, [col]: e.target.value })); }}
+                                            className="field-input"
                                             style={{
-                                                width: '100%', boxSizing: 'border-box',
                                                 border: isAuto ? '1.5px solid rgba(201,168,76,0.5)' : '1.5px solid #e8e8e8',
-                                                borderRadius: 8, padding: '7px 10px', fontSize: 12,
-                                                fontFamily: "'Outfit', sans-serif",
                                                 background: isAuto ? 'rgba(201,168,76,0.08)' : '#fff',
-                                                outline: 'none', color: '#0a0a0a', fontWeight: 600,
-                                                cursor: isAuto ? 'not-allowed' : 'text', transition: 'border-color 0.2s'
                                             }}
-                                            onFocus={e => { if (!isAuto) e.target.style.borderColor = '#c9a84c'; }}
-                                            onBlur={e => { if (!isAuto) e.target.style.borderColor = '#e8e8e8'; }}
                                         />
                                     )}
                                 </div>
@@ -400,11 +383,11 @@ function EditableTable({ title, color, rows, setRows, columns, matchId, emptyRow
                     </div>
                     <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end' }}>
                         <button onClick={() => { setAddOpen(false); setNewRow({ ...emptyRow, MATCH_ID: matchId }); }}
-                            style={{ background: '#f5f5f5', color: '#666', border: 'none', borderRadius: 10, padding: '9px 20px', cursor: 'pointer', fontWeight: 700, fontSize: 12, fontFamily: "'Outfit', sans-serif" }}>
+                            className="tab-btn" style={{ padding: '9px 20px', fontSize: 12 }}>
                             Cancel
                         </button>
                         <button onClick={handleAdd}
-                            style={{ background: '#0a0a0a', color: '#c9a84c', border: 'none', borderRadius: 10, padding: '9px 24px', cursor: 'pointer', fontWeight: 800, fontSize: 12, fontFamily: "'Outfit', sans-serif", letterSpacing: 0.5 }}>
+                            className="load-btn" style={{ padding: '9px 24px', fontSize: 12 }}>
                             ✓ ADD ROW
                         </button>
                     </div>
@@ -877,33 +860,22 @@ export default function AlAhlyEditor() {
     const penCols = Object.keys(EMPTY_PEN);
 
     return (
-        <Login_db title="MATCH EDITOR ACCESS" subtitle="AUTHORIZATION REQUIRED">
-            <div style={{ fontFamily: "'Outfit', sans-serif", maxWidth: 1610, margin: '0 auto', padding: '0 0 100px' }}>
+        <Login_db title="EDITOR ACCESS" subtitle="AUTHORIZATION REQUIRED">
+            <div className="editor-container">
                 <Toast toasts={toasts} />
 
                 {/* ── Header ── */}
-                <div style={{
-                    background: '#0a0a0a', borderRadius: 24, padding: '36px 48px', marginBottom: 30,
-                    display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-                    boxShadow: '0 20px 60px rgba(0,0,0,0.15)'
-                }}>
+                <div className="editor-header">
                     <div>
-                        <div style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: 36, letterSpacing: 5, color: '#fff' }}>
-                            MATCH <span style={{ color: '#c9a84c' }}>EDITOR</span>
+                        <div className="editor-title">
+                            MATCH <span className="accent">EDITOR</span>
                         </div>
-
                     </div>
                     <div style={{ display: 'flex', gap: 10 }}>
                         <button
                             onClick={() => { setMode('search'); setMatchData(null); }}
                             title="Search & Edit"
-                            style={{
-                                background: mode === 'search' || mode === 'edit' ? '#c9a84c' : 'rgba(255,255,255,0.08)',
-                                color: mode === 'search' || mode === 'edit' ? '#0a0a0a' : '#fff',
-                                border: 'none', borderRadius: 12, width: 44, height: 44, cursor: 'pointer',
-                                fontSize: 20, display: 'flex', alignItems: 'center', justifyContent: 'center',
-                                transition: 'all 0.2s'
-                            }}>
+                            className={`mode-toggle-btn ${(mode === 'search' || mode === 'edit') ? 'active' : ''}`}>
                             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
                                 <circle cx="11" cy="11" r="7" />
                                 <line x1="17" y1="17" x2="22" y2="22" />
@@ -912,30 +884,18 @@ export default function AlAhlyEditor() {
                         <button
                             onClick={() => { setMode('new'); setMatchData(null); setNewMatchData({ ...EMPTY_MATCH }); }}
                             title="Add New Match"
-                            style={{
-                                background: mode === 'new' ? '#c9a84c' : 'rgba(255,255,255,0.08)',
-                                color: mode === 'new' ? '#0a0a0a' : '#fff',
-                                border: 'none', borderRadius: 12, width: 44, height: 44, cursor: 'pointer',
-                                fontSize: 20, display: 'flex', alignItems: 'center', justifyContent: 'center',
-                                transition: 'all 0.2s'
-                            }}>➕</button>
+                            className={`mode-toggle-btn ${mode === 'new' ? 'active' : ''}`}>➕</button>
                     </div>
                 </div>
 
                 {/* ── Mode: Search = portal ── */}
                 {(mode === 'search') && (
-                    <div style={{
-                        background: '#fff', borderRadius: 20, border: '1px solid #f0f0f0',
-                        padding: '100px 48px', textAlign: 'center',
-                        boxShadow: '0 10px 40px rgba(0,0,0,0.05)',
-                        display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
-                        minHeight: 420
-                    }}>
-                        <div style={{ fontSize: 56, marginBottom: 20, lineHeight: 1 }}>🔎</div>
-                        <div style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: 32, letterSpacing: 4, marginBottom: 10, color: '#0a0a0a' }}>
+                    <div className="portal-container">
+                        <div className="portal-icon">🔎</div>
+                        <div className="portal-title">
                             ENTER MATCH ID
                         </div>
-                        <div style={{ color: '#aaa', fontSize: 13, marginBottom: 40, fontFamily: "'Outfit', sans-serif", letterSpacing: 0.5 }}>
+                        <div className="portal-subtitle">
                             Type the Match ID to load all linked records for editing
                         </div>
                         <div style={{ display: 'flex', gap: 12, justifyContent: 'center', width: '100%', maxWidth: 520 }}>
@@ -949,13 +909,7 @@ export default function AlAhlyEditor() {
                             <button
                                 onClick={handleSearch}
                                 disabled={loading}
-                                style={{
-                                    background: '#0a0a0a', color: '#c9a84c', border: 'none', borderRadius: 14,
-                                    padding: '16px 32px', cursor: loading ? 'not-allowed' : 'pointer',
-                                    fontWeight: 800, fontSize: 14, fontFamily: "'Outfit', sans-serif",
-                                    transition: 'all 0.2s', opacity: loading ? 0.6 : 1, whiteSpace: 'nowrap',
-                                    letterSpacing: 1
-                                }}>
+                                className="load-btn">
                                 {loading ? 'Loading...' : 'LOAD →'}
                             </button>
                         </div>
@@ -966,15 +920,17 @@ export default function AlAhlyEditor() {
                 {mode === 'new' && (
                     <>
                         {/* Match Details form */}
-                        <div style={{ background: '#fff', borderRadius: 20, border: '1px solid #f0f0f0', padding: '40px 48px', marginBottom: 24, boxShadow: '0 10px 40px rgba(0,0,0,0.05)' }}>
-                            <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 30 }}>
-                                <div style={{ width: 4, height: 28, background: '#22c55e', borderRadius: 4 }} />
-                                <h2 style={{ margin: 0, fontFamily: "'Bebas Neue', sans-serif", fontSize: 24, letterSpacing: 3 }}>NEW MATCH DETAILS</h2>
+                        <div className="editor-card">
+                            <div className="card-header" style={{ marginBottom: 30 }}>
+                                <div className="card-title-wrap">
+                                    <div className="card-indicator" style={{ background: '#22c55e' }} />
+                                    <h2 className="card-title">NEW MATCH DETAILS</h2>
+                                </div>
                             </div>
-                            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))', gap: 14, marginBottom: 30 }}>
+                            <div className="grid-fields" style={{ marginBottom: 30 }}>
                                 {matchInfoFields.map(field => (
                                     <div key={field}>
-                                        <div style={{ fontSize: 10, fontWeight: 800, letterSpacing: 1.5, color: field === 'MATCH_ID' ? '#22c55e' : '#999', marginBottom: 5, textTransform: 'uppercase' }}>
+                                        <div className="field-label" style={{ color: field === 'MATCH_ID' ? '#22c55e' : '#999' }}>
                                             {field} {field === 'MATCH_ID' && <span style={{ color: '#aaa', fontWeight: 400, letterSpacing: 0 }}>(auto)</span>}
                                         </div>
                                         {AUTOCOMPLETE_FIELDS.includes(field) ? (
@@ -997,13 +953,10 @@ export default function AlAhlyEditor() {
                                                     if (field === 'MATCH_ID') return;
                                                     setNewMatchData(prev => ({ ...prev, [field]: e.target.value }));
                                                 }}
+                                                className="field-input"
                                                 style={{
-                                                    width: '100%', boxSizing: 'border-box',
                                                     border: field === 'MATCH_ID' ? '2px solid #22c55e' : '1.5px solid #e8e8e8',
-                                                    borderRadius: 10, padding: '10px 14px', fontSize: 13, fontFamily: "'Outfit', sans-serif",
-                                                    fontWeight: 600, outline: 'none', color: '#0a0a0a', transition: 'border-color 0.2s',
                                                     background: field === 'MATCH_ID' ? 'rgba(34,197,94,0.05)' : '#fff',
-                                                    cursor: field === 'MATCH_ID' ? 'not-allowed' : 'text'
                                                 }}
                                                 onFocus={e => { if (field !== 'MATCH_ID') e.target.style.borderColor = '#c9a84c'; }}
                                                 onBlur={e => { if (field !== 'MATCH_ID') e.target.style.borderColor = '#e8e8e8'; }}
@@ -1016,29 +969,26 @@ export default function AlAhlyEditor() {
                                 <button
                                     onClick={handleCreateMatch}
                                     disabled={isSaving}
-                                    style={{
-                                        background: '#22c55e', color: '#fff', border: 'none', borderRadius: 14,
-                                        padding: '14px 36px', cursor: isSaving ? 'not-allowed' : 'pointer',
-                                        fontWeight: 800, fontSize: 15, fontFamily: "'Outfit', sans-serif",
-                                        boxShadow: '0 8px 24px rgba(34,197,94,0.25)', transition: 'all 0.2s'
-                                    }}>
+                                    className="create-match-btn">
                                     {isSaving ? 'Creating...' : '✓ CREATE MATCH'}
                                 </button>
                             </div>
                         </div>
 
                         {/* Linked tables - staged before create */}
-                        <div style={{ background: '#fff', borderRadius: 20, border: '1px solid #f0f0f0', padding: '40px 48px', boxShadow: '0 10px 40px rgba(0,0,0,0.05)' }}>
-                            <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 30 }}>
-                                <div style={{ width: 4, height: 28, background: '#3b82f6', borderRadius: 4 }} />
-                                <h2 style={{ margin: 0, fontFamily: "'Bebas Neue', sans-serif", fontSize: 24, letterSpacing: 3 }}>LINKED TABLE DATA</h2>
+                        <div className="editor-card">
+                            <div className="card-header">
+                                <div className="card-title-wrap">
+                                    <div className="card-indicator" style={{ background: '#3b82f6' }} />
+                                    <h2 className="card-title">LINKED TABLE DATA</h2>
+                                </div>
                             </div>
 
-                            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 10, marginBottom: 30 }}>
-                                <button onClick={() => setActiveLinkedTab('lineup')} style={{ background: activeLinkedTab === 'lineup' ? '#3b82f6' : '#f8f8f8', color: activeLinkedTab === 'lineup' ? '#fff' : '#888', border: 'none', padding: '14px', borderRadius: '12px', fontWeight: 800, cursor: 'pointer', fontFamily: "'Outfit', sans-serif", fontSize: 13, transition: 'all 0.2s' }}>LINEUP DETAILS</button>
-                                <button onClick={() => setActiveLinkedTab('events')} style={{ background: activeLinkedTab === 'events' ? '#8b5cf6' : '#f8f8f8', color: activeLinkedTab === 'events' ? '#fff' : '#888', border: 'none', padding: '14px', borderRadius: '12px', fontWeight: 800, cursor: 'pointer', fontFamily: "'Outfit', sans-serif", fontSize: 13, transition: 'all 0.2s' }}>PLAYER EVENTS</button>
-                                <button onClick={() => setActiveLinkedTab('gks')} style={{ background: activeLinkedTab === 'gks' ? '#f59e0b' : '#f8f8f8', color: activeLinkedTab === 'gks' ? '#fff' : '#888', border: 'none', padding: '14px', borderRadius: '12px', fontWeight: 800, cursor: 'pointer', fontFamily: "'Outfit', sans-serif", fontSize: 13, transition: 'all 0.2s' }}>GK DETAILS</button>
-                                <button onClick={() => setActiveLinkedTab('pens')} style={{ background: activeLinkedTab === 'pens' ? '#ef4444' : '#f8f8f8', color: activeLinkedTab === 'pens' ? '#fff' : '#888', border: 'none', padding: '14px', borderRadius: '12px', fontWeight: 800, cursor: 'pointer', fontFamily: "'Outfit', sans-serif", fontSize: 13, transition: 'all 0.2s' }}>PENALTY MISSES</button>
+                            <div className="linked-tabs-grid">
+                                <button onClick={() => setActiveLinkedTab('lineup')} className="tab-btn" style={{ background: activeLinkedTab === 'lineup' ? '#3b82f6' : '#f8f8f8', color: activeLinkedTab === 'lineup' ? '#fff' : '#888' }}>LINEUP DETAILS</button>
+                                <button onClick={() => setActiveLinkedTab('events')} className="tab-btn" style={{ background: activeLinkedTab === 'events' ? '#8b5cf6' : '#f8f8f8', color: activeLinkedTab === 'events' ? '#fff' : '#888' }}>PLAYER EVENTS</button>
+                                <button onClick={() => setActiveLinkedTab('gks')} className="tab-btn" style={{ background: activeLinkedTab === 'gks' ? '#f59e0b' : '#f8f8f8', color: activeLinkedTab === 'gks' ? '#fff' : '#888' }}>GK DETAILS</button>
+                                <button onClick={() => setActiveLinkedTab('pens')} className="tab-btn" style={{ background: activeLinkedTab === 'pens' ? '#ef4444' : '#f8f8f8', color: activeLinkedTab === 'pens' ? '#fff' : '#888' }}>PENALTY MISSES</button>
                             </div>
 
                             {activeLinkedTab === 'lineup' && (
@@ -1106,12 +1056,12 @@ export default function AlAhlyEditor() {
                 {mode === 'edit' && matchData && (
                     <>
                         {/* Match Details Card */}
-                        <div style={{ background: '#fff', borderRadius: 20, border: '1px solid #f0f0f0', padding: '40px 48px', marginBottom: 24, boxShadow: '0 10px 40px rgba(0,0,0,0.05)' }}>
-                            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 30 }}>
-                                <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-                                    <div style={{ width: 4, height: 28, background: '#c9a84c', borderRadius: 4 }} />
+                        <div className="editor-card">
+                            <div className="card-header">
+                                <div className="card-title-wrap">
+                                    <div className="card-indicator" style={{ background: '#c9a84c' }} />
                                     <div>
-                                        <h2 style={{ margin: 0, fontFamily: "'Bebas Neue', sans-serif", fontSize: 24, letterSpacing: 3 }}>MATCH DETAILS</h2>
+                                        <h2 className="card-title">MATCH DETAILS</h2>
                                         <div style={{ fontFamily: "'Space Mono', monospace", fontSize: 10, color: '#888', marginTop: 2 }}>ID: {matchData.MATCH_ID}</div>
                                     </div>
                                 </div>
@@ -1119,62 +1069,51 @@ export default function AlAhlyEditor() {
                                     <button
                                         onClick={() => { setMode('search'); setMatchData(null); }}
                                         title="Back to search"
-                                        style={{ background: '#f5f5f5', color: '#333', border: 'none', borderRadius: 12, width: 42, height: 42, cursor: 'pointer', fontSize: 18, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                                        className="action-btn-circle">
                                         ←
                                     </button>
                                     <button
                                         onClick={handleSaveMatch}
                                         disabled={isSaving}
                                         title="Save match"
-                                        style={{
-                                            background: '#c9a84c', color: '#0a0a0a', border: 'none', borderRadius: 12,
-                                            width: 42, height: 42, cursor: isSaving ? 'not-allowed' : 'pointer',
-                                            fontSize: 18, display: 'flex', alignItems: 'center', justifyContent: 'center',
-                                            boxShadow: '0 4px 16px rgba(201,168,76,0.25)', transition: 'all 0.2s',
-                                            opacity: isSaving ? 0.6 : 1
-                                        }}>
+                                        className="save-match-btn">
                                         {isSaving ? '⏳' : '💾'}
                                     </button>
                                 </div>
                             </div>
 
-                            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))', gap: 14 }}>
+                            <div className="grid-fields">
                                 {matchInfoFields.map(field => (
                                     <div key={field}>
-                                        <div style={{ fontSize: 10, fontWeight: 800, letterSpacing: 1.5, color: '#999', marginBottom: 5, textTransform: 'uppercase' }}>{field}</div>
+                                        <div className="field-label">{field}</div>
                                         <input
                                             type={field === 'DATE' ? 'date' : 'text'}
                                             value={matchData[field] ?? ''}
                                             disabled={field === 'MATCH_ID'}
                                             onChange={e => setMatchData(prev => ({ ...prev, [field]: e.target.value }))}
-                                            style={{
-                                                width: '100%', boxSizing: 'border-box',
-                                                border: field === 'MATCH_ID' ? '1.5px solid #f0f0f0' : '1.5px solid #e8e8e8',
-                                                borderRadius: 10, padding: '10px 14px', fontSize: 13,
-                                                fontFamily: "'Outfit', sans-serif", fontWeight: 600, outline: 'none',
-                                                color: '#0a0a0a', background: field === 'MATCH_ID' ? '#f9f9f9' : '#fff',
-                                                transition: 'border-color 0.2s'
-                                            }}
-                                            onFocus={e => { if (field !== 'MATCH_ID') e.target.style.borderColor = '#c9a84c'; }}
-                                            onBlur={e => { if (field !== 'MATCH_ID') e.target.style.borderColor = '#e8e8e8'; }}
-                                        />
+                                                className="field-input"
+                                                onFocus={e => { if (field !== 'MATCH_ID') e.target.style.borderColor = '#c9a84c'; }}
+                                                onBlur={e => { if (field !== 'MATCH_ID') e.target.style.borderColor = '#e8e8e8'; }}
+                                            />
                                     </div>
                                 ))}
                             </div>
                         </div>
 
                         {/* Linked Tables */}
-                        <div style={{ background: '#fff', borderRadius: 20, border: '1px solid #f0f0f0', padding: '40px 48px', boxShadow: '0 10px 40px rgba(0,0,0,0.05)' }}>
-                            <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 30 }}>
-                                <div style={{ width: 4, height: 28, background: '#3b82f6', borderRadius: 4 }} />
-                                <h2 style={{ margin: 0, fontFamily: "'Bebas Neue', sans-serif", fontSize: 24, letterSpacing: 3 }}>LINKED TABLE DATA</h2>
+                        <div className="editor-card">
+                            <div className="card-header">
+                                <div className="card-title-wrap">
+                                    <div className="card-indicator" style={{ background: '#3b82f6' }} />
+                                    <h2 className="card-title">LINKED TABLE DATA</h2>
+                                </div>
                             </div>
 
-                            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 10, marginBottom: 30 }}>
-                                <button onClick={() => setActiveLinkedTab('lineup')} style={{ background: activeLinkedTab === 'lineup' ? '#3b82f6' : '#f8f8f8', color: activeLinkedTab === 'lineup' ? '#fff' : '#888', border: 'none', padding: '14px', borderRadius: '12px', fontWeight: 800, cursor: 'pointer', fontFamily: "'Outfit', sans-serif", fontSize: 13, transition: 'all 0.2s' }}>LINEUP DETAILS</button>
-                                <button onClick={() => setActiveLinkedTab('events')} style={{ background: activeLinkedTab === 'events' ? '#8b5cf6' : '#f8f8f8', color: activeLinkedTab === 'events' ? '#fff' : '#888', border: 'none', padding: '14px', borderRadius: '12px', fontWeight: 800, cursor: 'pointer', fontFamily: "'Outfit', sans-serif", fontSize: 13, transition: 'all 0.2s' }}>PLAYER EVENTS</button>
-                                <button onClick={() => setActiveLinkedTab('gks')} style={{ background: activeLinkedTab === 'gks' ? '#f59e0b' : '#f8f8f8', color: activeLinkedTab === 'gks' ? '#fff' : '#888', border: 'none', padding: '14px', borderRadius: '12px', fontWeight: 800, cursor: 'pointer', fontFamily: "'Outfit', sans-serif", fontSize: 13, transition: 'all 0.2s' }}>GK DETAILS</button>
-                                <button onClick={() => setActiveLinkedTab('pens')} style={{ background: activeLinkedTab === 'pens' ? '#ef4444' : '#f8f8f8', color: activeLinkedTab === 'pens' ? '#fff' : '#888', border: 'none', padding: '14px', borderRadius: '12px', fontWeight: 800, cursor: 'pointer', fontFamily: "'Outfit', sans-serif", fontSize: 13, transition: 'all 0.2s' }}>PENALTY MISSES</button>
+                            <div className="linked-tabs-grid">
+                                <button onClick={() => setActiveLinkedTab('lineup')} className="tab-btn" style={{ background: activeLinkedTab === 'lineup' ? '#3b82f6' : '#f8f8f8', color: activeLinkedTab === 'lineup' ? '#fff' : '#888' }}>LINEUP DETAILS</button>
+                                <button onClick={() => setActiveLinkedTab('events')} className="tab-btn" style={{ background: activeLinkedTab === 'events' ? '#8b5cf6' : '#f8f8f8', color: activeLinkedTab === 'events' ? '#fff' : '#888' }}>PLAYER EVENTS</button>
+                                <button onClick={() => setActiveLinkedTab('gks')} className="tab-btn" style={{ background: activeLinkedTab === 'gks' ? '#f59e0b' : '#f8f8f8', color: activeLinkedTab === 'gks' ? '#fff' : '#888' }}>GK DETAILS</button>
+                                <button onClick={() => setActiveLinkedTab('pens')} className="tab-btn" style={{ background: activeLinkedTab === 'pens' ? '#ef4444' : '#f8f8f8', color: activeLinkedTab === 'pens' ? '#fff' : '#888' }}>PENALTY MISSES</button>
                             </div>
 
                             {activeLinkedTab === 'lineup' && (
@@ -1237,30 +1176,6 @@ export default function AlAhlyEditor() {
                         </div>
                     </>
                 )}
-
-                <style jsx>{`
-                @keyframes slideIn {
-                    from { opacity: 0; transform: translateY(10px); }
-                    to { opacity: 1; transform: translateY(0); }
-                }
-                @keyframes slideUp {
-                    from { opacity: 0; transform: translateY(-10px); }
-                    to { opacity: 1; transform: translateY(0); }
-                }
-                .premium-scroll::-webkit-scrollbar {
-                    width: 6px;
-                }
-                .premium-scroll::-webkit-scrollbar-track {
-                    background: transparent;
-                }
-                .premium-scroll::-webkit-scrollbar-thumb {
-                    background: rgba(0,0,0,0.1);
-                    border-radius: 10px;
-                }
-                .premium-scroll::-webkit-scrollbar-thumb:hover {
-                    background: rgba(0,0,0,0.2);
-                }
-            `}</style>
             </div>
         </Login_db>
     );

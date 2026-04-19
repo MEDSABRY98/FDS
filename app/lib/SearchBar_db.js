@@ -1,7 +1,7 @@
 "use client";
 
 import React from 'react';
-import './Components_db.css';
+import './SearchBar_db.css';
 
 /**
  * Premium Search Bar Component
