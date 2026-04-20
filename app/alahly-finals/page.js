@@ -11,6 +11,8 @@ import AlAhlyFinalsManagers from "./alahly_finals_managers";
 import AlAhlyFinalsEditor from "./alahly_finals_editor";
 import AlAhlyFinalsFilter from "./alahly_finals_filters";
 import Login_db from "../lib/Login_db";
+import Loading_db from "../lib/Loading_db";
+
 
 export default function AlAhlyFinalsDatabase() {
     const [activeTab, setActiveTab] = useState("finals_dashboard");
@@ -97,40 +99,9 @@ export default function AlAhlyFinalsDatabase() {
     };
 
     if (loading) {
-        return (
-            <div style={{
-                display: 'flex',
-                height: '100vh',
-                flexDirection: 'column',
-                alignItems: 'center',
-                justifyContent: 'center',
-                background: '#ffffff',
-                color: '#0a0a0a',
-                fontFamily: 'Bebas Neue, sans-serif'
-            }}>
-                <div style={{ fontSize: '48px', letterSpacing: '8px', marginBottom: '10px' }}>
-                    AL AHLY <span style={{ color: '#c9a84c' }}>FINALS DATABASE</span>
-                </div>
-                <div style={{
-                    fontFamily: 'Space Mono, monospace',
-                    fontSize: '10px',
-                    letterSpacing: '4px',
-                    color: '#c9a84c',
-                    opacity: 0.8,
-                    animation: 'pulse 1.5s infinite'
-                }}>
-                    RETRIEVING CHAMPIONSHIP DATA...
-                </div>
-                <style jsx>{`
-                    @keyframes pulse {
-                        0% { opacity: 0.4; }
-                        50% { opacity: 1; }
-                        100% { opacity: 0.4; }
-                    }
-                `}</style>
-            </div>
-        );
+        return <Loading_db subtitle="FINALS DATABASE" message="RETRIEVING CHAMPIONSHIPS" />;
     }
+
 
     return (
         <div style={{ backgroundColor: '#ffffff', minHeight: '100vh', paddingBottom: '100px', color: '#0a0a0a' }}>

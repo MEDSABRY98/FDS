@@ -19,6 +19,8 @@ import AlAhlyEditor from "./alahly_db_editor";
 import AlAhlyReferees from "./alahly_db_referees";
 import AlAhlyH2H from "./alahly_db_h2h";
 import AlAhlyMediaTracker from "./alahly_db_media_tracker";
+import Loading_db from "../lib/Loading_db";
+
 export default function AlAhlyDatabase() {
     const [activeTab, setActiveTab] = useState("dashboard");
     const [matches, setMatches] = useState([]);
@@ -167,48 +169,9 @@ export default function AlAhlyDatabase() {
     }, [matches, dbFilters, startDate, endDate]);
 
     if (loading) {
-        return (
-            <div style={{
-                display: 'flex',
-                height: '100vh',
-                flexDirection: 'column',
-                alignItems: 'center',
-                justifyContent: 'center',
-                background: '#ffffff',
-                color: '#0a0a0a',
-                fontFamily: 'Bebas Neue, sans-serif'
-            }}>
-                <div style={{ fontSize: '48px', letterSpacing: '8px', marginBottom: '10px' }}>
-                    AL AHLY <span style={{ color: '#c9a84c' }}>DATABASE</span>
-                </div>
-                <div style={{
-                    fontFamily: 'Space Mono, monospace',
-                    fontSize: '10px',
-                    letterSpacing: '4px',
-                    color: '#888',
-                    animation: 'pulse 1.5s infinite'
-                }}>
-                    SYNCING REAL-TIME FOOTBALL DATA...
-                </div>
-                <style jsx>{`
-                    @keyframes pulse {
-                        0% { opacity: 0.4; }
-                        50% { opacity: 1; }
-                        100% { opacity: 0.4; }
-                    }
-                    .sub-tabs-selection { display: flex; gap: 8px; }
-                    .global-export-btn:hover {
-                        background: #c9a84c !important;
-                        color: #000 !important;
-                        transform: scale(1.1) rotate(5deg) !important;
-                        box-shadow: 0 0 25px rgba(201,168,76,0.35) !important;
-                        border-color: #c9a84c !important;
-                    }
-                    .global-export-btn:active { transform: scale(0.95); }
-                `}</style>
-            </div>
-        );
+        return <Loading_db message="SYNCING DATA" />;
     }
+
 
     return (
         <div id="main-app" style={{ display: 'block', minHeight: '100vh', paddingBottom: '70px', background: 'var(--bg)' }}>

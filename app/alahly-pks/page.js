@@ -14,6 +14,8 @@ import AlAhlyPKsManagers from "./alahly_pks_managers";
 import AlAhlyPKsEditor from "./alahly_pks_editor";
 import AlAhlyPKsDashboard from "./alahly_pks_dashboard";
 import Login_db from "../lib/Login_db";
+import Loading_db from "../lib/Loading_db";
+
 
 export default function AlAhlyPKsDatabase() {
     const [activeTab, setActiveTab] = useState("alahly_pks_dashboard");
@@ -104,39 +106,9 @@ export default function AlAhlyPKsDatabase() {
     };
 
     if (loading) {
-        return (
-            <div style={{
-                display: 'flex',
-                height: '100vh',
-                flexDirection: 'column',
-                alignItems: 'center',
-                justifyContent: 'center',
-                background: '#ffffff',
-                color: '#0a0a0a',
-                fontFamily: 'Bebas Neue, sans-serif'
-            }}>
-                <div style={{ fontSize: '48px', letterSpacing: '8px', marginBottom: '10px' }}>
-                    AL AHLY <span style={{ color: '#c9a84c' }}>PKs DATABASE</span>
-                </div>
-                <div style={{
-                    fontFamily: 'Space Mono, monospace',
-                    fontSize: '10px',
-                    letterSpacing: '4px',
-                    color: '#888',
-                    animation: 'pulse 1.5s infinite'
-                }}>
-                    SYNCING REAL-TIME FOOTBALL DATA...
-                </div>
-                <style jsx>{`
-                    @keyframes pulse {
-                        0% { opacity: 0.4; }
-                        50% { opacity: 1; }
-                        100% { opacity: 0.4; }
-                    }
-                `}</style>
-            </div>
-        );
+        return <Loading_db subtitle="PKs DATABASE" message="RETRIEVING PENALTIES" />;
     }
+
 
     return (
         <div style={{ background: '#ffffff', minHeight: '100vh', overflow: 'visible' }}>
