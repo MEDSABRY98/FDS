@@ -1,0 +1,155 @@
+/* Ahly vs Zamalek Players CSS */
+.avz-players-container {
+    display: flex;
+    flex-direction: column;
+    gap: 30px;
+    animation: avz-fadeIn 0.5s ease-out;
+}
+
+.avz-players-header {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 15px;
+    margin-bottom: 10px;
+}
+
+.avz-players-controls {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 20px;
+    width: 100%;
+    max-width: 1200px;
+}
+
+.avz-search-box {
+    width: 400px;
+    flex-shrink: 0;
+}
+
+.avz-team-filter-box {
+    width: 250px;
+    flex-shrink: 0;
+}
+
+
+.avz-players-title {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 2.2rem;
+    font-weight: normal;
+    color: #111;
+    letter-spacing: 2px;
+    margin: 0;
+}
+
+
+.avz-table-wrapper {
+    width: 100%;
+    overflow-x: auto;
+    background: #fff;
+    border: 1px solid #eaeaea;
+    border-radius: 12px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
+}
+
+.avz-data-table {
+    width: 100%;
+    table-layout: fixed;
+    border-collapse: collapse;
+    font-family: 'Inter', sans-serif;
+    font-size: 0.95rem;
+    min-width: 1000px;
+}
+
+.avz-data-table th {
+    background: #111;
+    color: #fff;
+    padding: 18px 20px;
+    text-align: center;
+    font-weight: 600;
+    font-size: 0.85rem;
+    letter-spacing: 1px;
+}
+
+.sortable-header {
+    cursor: pointer;
+    user-select: none;
+    transition: background 0.2s;
+}
+
+.sortable-header:hover {
+    background: #222 !important;
+}
+
+.avz-data-table td {
+    padding: 15px 20px;
+    border-bottom: 1px solid #f0f0f0;
+    color: #333;
+    text-align: center;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+/* Explicit Column Widths */
+.avz-data-table th:nth-child(1), .avz-data-table td:nth-child(1) { width: 60px; }
+.avz-data-table th:nth-child(2), .avz-data-table td:nth-child(2) { width: 250px; text-align: center; }
+.avz-data-table th:nth-child(3), .avz-data-table td:nth-child(3) { width: 110px; }
+.avz-data-table th:nth-child(4), .avz-data-table td:nth-child(4) { width: 110px; }
+.avz-data-table th:nth-child(5), .avz-data-table td:nth-child(5) { width: 100px; }
+.avz-data-table th:nth-child(6), .avz-data-table td:nth-child(6) { width: 100px; }
+.avz-data-table th:nth-child(7), .avz-data-table td:nth-child(7) { width: 120px; }
+.avz-data-table th:nth-child(8), .avz-data-table td:nth-child(8) { width: 100px; }
+
+
+.avz-data-table tr:last-child td {
+    border-bottom: none;
+}
+
+.avz-data-table tr:hover td {
+    background: #fafafa;
+}
+
+.avz-text-bold {
+    font-weight: 700;
+    color: #111 !important;
+}
+
+.avz-team-badge {
+    padding: 2px 8px;
+    border-radius: 4px;
+    font-size: 0.7rem;
+    font-weight: 800;
+    color: #fff;
+    min-width: 20px;
+    text-align: center;
+}
+
+.avz-team-badge.ahly {
+    background: #da1b22;
+}
+
+.avz-team-badge.zamalek {
+    background: #111;
+    border: 1px solid #aaa;
+}
+
+.avz-highlight-stat {
+    font-family: 'Space Mono', monospace;
+    font-weight: 700;
+    font-size: 1.1rem;
+    color: #c9a84c !important;
+}
+
+.avz-danger-text {
+    color: #da1b22 !important;
+    font-weight: 700;
+}
+
+.avz-no-data {
+    text-align: center !important;
+    color: #888 !important;
+    padding: 40px !important;
+    font-family: 'Space Mono', monospace;
+}

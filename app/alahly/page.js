@@ -13,7 +13,7 @@ import AlAhlyPlayers from "./alahly_db_players";
 import AlAhlyGKs from "./alahly_db_gks";
 import AlAhlyManagers from "./alahly_db_managers";
 import AlAhlyFilters from "./alahly_db_filters";
-import AlAhlyMobileNav from "./alahly_db_m";
+
 import AlAhlyMatchDetails from "./alahly_db_match_details";
 import AlAhlyEditor from "./alahly_db_editor";
 import AlAhlyReferees from "./alahly_db_referees";
@@ -464,7 +464,7 @@ export default function AlAhlyDatabase() {
                 </div>
             )}
 
-            <AlAhlyMobileNav activeTab={activeTab} setActiveTab={setActiveTab} setIsFilterOpen={setIsFilterOpen} isFilterOpen={isFilterOpen} />
+
         </div>
     );
 }

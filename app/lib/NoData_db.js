@@ -52,8 +52,8 @@ const NoData_db = ({
             
             <div className="nodata-content">
                 <div className="nodata-title">Empty Results</div>
-                <p className="nodata-message">{message}</p>
             </div>
+
             
             <div className="nodata-decoration"></div>
         </div>

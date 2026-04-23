@@ -164,7 +164,7 @@ export default function DatabaseManagement() {
                 // Deterministic ordering based on table type
                 if (selectedTable === "alahly_PLAYERDATABASE") {
                     query = query.order("PLAYER NAME", { ascending: true });
-                } else if (selectedTable === "alahly_MATCHDETAILS") {
+                } else if (selectedTable === "alahly_MATCHDETAILS" || selectedTable === "alahly_vs_zamalek_MATCHDETAILS") {
                     query = query.order("DATE", { ascending: false });
                 } else if (selectedTable.includes("DETAILS") || selectedTable.includes("MISSED")) {
                     query = query.order("MATCH_ID", { ascending: false });
@@ -194,12 +194,17 @@ export default function DatabaseManagement() {
                 setColumns(cols);
                 // Fetch match dates for joined sorting if table is alahly_MEDIATRACKER or alahly_PLAYERDETAILS
                 let matchDateMap = {};
-                if (['alahly_MEDIATRACKER', 'alahly_PLAYERDETAILS'].includes(selectedTable) && cols.includes('MATCH_ID')) {
+                if (['alahly_MEDIATRACKER', 'alahly_PLAYERDETAILS', 'alahly_vs_zamalek_LINEUPDETAILS', 'alahly_vs_zamalek_PLAYERDETAILS'].includes(selectedTable) && cols.includes('MATCH_ID')) {
                     try {
-                        const { data: datesData } = await supabase.from('alahly_MATCHDETAILS').select('MATCH_ID, DATE');
+                        const matchTable = selectedTable.startsWith('alahly_vs_zamalek') ? 'alahly_vs_zamalek_MATCHDETAILS' : 'alahly_MATCHDETAILS';
+                        const { data: datesData } = await supabase.from(matchTable).select('MATCH_ID, DATE');
                         if (datesData) {
                             datesData.forEach(d => {
                                 matchDateMap[d.MATCH_ID] = new Date(d.DATE).getTime();
+                                if (isNaN(matchDateMap[d.MATCH_ID]) && d.DATE && d.DATE.includes('/')) {
+                                    const [day, month, year] = d.DATE.split('/');
+                                    matchDateMap[d.MATCH_ID] = new Date(`${year}-${month}-${day}`).getTime();
+                                }
                             });
                         }
                     } catch (err) { console.error("Error fetching dates for sort:", err); }
@@ -209,8 +214,18 @@ export default function DatabaseManagement() {
                 const tablesToSortByRowId = ['alahly_GKSDETAILS', 'alahly_HOWPENMISSED', 'alahly_LINEUPDETAILS', 'alahly_PKS'];
                 const ridKey = cols.find(c => c.toUpperCase() === "ROW_ID");
 
-                if (selectedTable === 'alahly_MATCHDETAILS' && cols.includes('DATE')) {
-                    allData.sort((a, b) => new Date(b.DATE) - new Date(a.DATE));
+                if ((selectedTable === 'alahly_MATCHDETAILS' || selectedTable === 'alahly_vs_zamalek_MATCHDETAILS') && cols.includes('DATE')) {
+                    const parseDate = (d) => {
+                        if (!d) return 0;
+                        if (String(d).includes('/')) {
+                            const [day, month, year] = String(d).split('/');
+                            const dateObj = new Date(`${year}-${month}-${day}`);
+                            return isNaN(dateObj.getTime()) ? 0 : dateObj.getTime();
+                        }
+                        const dateObj = new Date(d);
+                        return isNaN(dateObj.getTime()) ? 0 : dateObj.getTime();
+                    };
+                    allData.sort((a, b) => parseDate(b.DATE) - parseDate(a.DATE));
                 } else if (selectedTable === 'alahly_MEDIATRACKER' && cols.includes('MATCH_ID')) {
                     allData.sort((a, b) => {
                         const dateA = matchDateMap[a.MATCH_ID] || 0;
@@ -220,6 +235,23 @@ export default function DatabaseManagement() {
 
                         // 2. Secondary Sort: Match ID if dates are equal/missing
                         return String(b.MATCH_ID).localeCompare(String(a.MATCH_ID), undefined, { numeric: true });
+                    });
+                } else if (selectedTable === 'alahly_vs_zamalek_LINEUPDETAILS' && cols.includes('MATCH_ID')) {
+                    allData.sort((a, b) => {
+                        const dateA = matchDateMap[a.MATCH_ID] || 0;
+                        const dateB = matchDateMap[b.MATCH_ID] || 0;
+                        // 1. Primary: Date Descending
+                        if (dateB !== dateA) return dateB - dateA;
+                        
+                        // 2. Secondary: Team
+                        const teamA = String(a.TEAM || "").toUpperCase();
+                        const teamB = String(b.TEAM || "").toUpperCase();
+                        if (teamA !== teamB) return teamA.localeCompare(teamB);
+
+                        // 3. Tertiary: ROW_ID Ascending
+                        const ridA = a.ROW_ID ? parseInt(a.ROW_ID) : 0;
+                        const ridB = b.ROW_ID ? parseInt(b.ROW_ID) : 0;
+                        return ridA - ridB;
                     });
                 } else if (selectedTable === 'alahly_PLAYERDETAILS' && cols.includes('MATCH_ID')) {
                     allData.sort((a, b) => {

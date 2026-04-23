@@ -39,6 +39,13 @@ export default function HomeDbSelection() {
                     </div>
                     <div className="card-name">AL AHLY FINALS</div>
                 </Link>
+
+                <Link href="/ahly-v-zamalek" className="section-card">
+                    <div className="card-icon-wrap">
+                        <span className="card-emoji" style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: "36px" }}>D</span>
+                    </div>
+                    <div className="card-name">CAIRO DERBY</div>
+                </Link>
             </div>
         </div>
     );

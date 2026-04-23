@@ -1,0 +1,267 @@
+/* Ahly vs Zamalek Filter Popup CSS */
+.avz-filter-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.4);
+    backdrop-filter: blur(4px);
+    z-index: 10000;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 30px;
+    animation: avzFilterFadeIn 0.3s ease;
+}
+
+.avz-filter-container {
+    width: 1200px;
+    max-width: 95%;
+    max-height: 85vh;
+    background: #ffffff;
+    border-radius: 24px;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.2);
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    animation: avzFilterPopIn 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+    border: 1px solid rgba(0, 0, 0, 0.05);
+}
+
+.avz-filter-header {
+    padding: 24px 32px;
+    border-bottom: 1px solid #f0f0f0;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: #fff;
+}
+
+.avz-filter-title {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 26px;
+    letter-spacing: 2px;
+    color: #111;
+}
+
+.avz-gold-text {
+    color: #c9a84c;
+}
+
+.avz-filter-close-btn {
+    background: #f5f5f5;
+    border: none;
+    color: #333;
+    width: 38px;
+    height: 38px;
+    border-radius: 50%;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.3s;
+}
+
+.avz-filter-close-btn:hover {
+    background: #da1b22;
+    color: #fff;
+    transform: rotate(90deg);
+}
+
+.avz-filter-body {
+    flex: 1;
+    overflow-y: auto;
+    padding: 32px;
+    background: #ffffff;
+}
+
+.avz-filter-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 24px;
+}
+
+/* Dropdown Components */
+.avz-filter-dropdown-container {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    position: relative;
+}
+
+.avz-filter-dropdown-label {
+    font-family: 'Space Mono', monospace;
+    font-size: 10px;
+    font-weight: 700;
+    color: #888;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+}
+
+.avz-filter-dropdown-trigger {
+    background: #fdfdfd;
+    border: 1px solid #eee;
+    padding: 12px 18px;
+    border-radius: 12px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    cursor: pointer;
+    transition: all 0.3s;
+    min-height: 50px;
+}
+
+.avz-filter-dropdown-trigger:hover {
+    border-color: #c9a84c;
+    background: #fff;
+    box-shadow: 0 4px 12px rgba(201, 168, 76, 0.1);
+}
+
+.avz-filter-dropdown-trigger.active {
+    border-color: #c9a84c;
+    background: #fff;
+}
+
+.avz-filter-current-value {
+    font-size: 13px;
+    color: #222;
+    font-weight: 500;
+}
+
+.avz-filter-arrow {
+    font-size: 10px;
+    color: #c9a84c;
+    transition: 0.3s;
+}
+
+.avz-filter-dropdown-menu {
+    position: absolute;
+    top: calc(100% + 8px);
+    left: 0;
+    right: 0;
+    background: #ffffff;
+    border: 1px solid #eee;
+    border-radius: 14px;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.12);
+    z-index: 1000;
+    overflow: hidden;
+}
+
+.avz-filter-dropdown-menu.open-up {
+    top: auto;
+    bottom: calc(100% + 8px);
+}
+
+.avz-filter-dropdown-search {
+    width: 100%;
+    border: none;
+    border-bottom: 1px solid #f0f0f0;
+    padding: 12px 16px;
+    font-family: inherit;
+    font-size: 12px;
+    outline: none;
+    background: #fafafa;
+}
+
+.avz-filter-options-list {
+    max-height: 180px;
+    overflow-y: auto;
+}
+
+.avz-filter-option-item {
+    padding: 10px 16px;
+    font-size: 13px;
+    color: #444;
+    cursor: pointer;
+    transition: 0.2s;
+}
+
+.avz-filter-option-item:hover {
+    background: #f9f9f9;
+    color: #c9a84c;
+    padding-left: 20px;
+}
+
+.avz-filter-option-item.selected {
+    background: #111;
+    color: #fff;
+}
+
+.avz-filter-no-results {
+    padding: 15px;
+    text-align: center;
+    color: #999;
+    font-size: 12px;
+}
+
+/* Footer */
+.avz-filter-footer {
+    padding: 24px 32px;
+    border-top: 1px solid #f0f0f0;
+    background: #fff;
+    display: flex;
+    gap: 16px;
+}
+
+.avz-filter-reset-btn {
+    flex: 1;
+    background: #f5f5f5;
+    border: 1px solid #ddd;
+    color: #666;
+    height: 50px;
+    border-radius: 12px;
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 18px;
+    letter-spacing: 1px;
+    cursor: pointer;
+    transition: 0.3s;
+}
+
+.avz-filter-reset-btn:hover {
+    background: #111;
+    color: #fff;
+    border-color: #111;
+}
+
+.avz-filter-apply-btn {
+    flex: 1;
+    background: #c9a84c;
+    border: none;
+    color: #000;
+    height: 50px;
+    border-radius: 12px;
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 18px;
+    letter-spacing: 1px;
+    cursor: pointer;
+    transition: 0.3s;
+    font-weight: bold;
+}
+
+
+.avz-filter-apply-btn:hover {
+    background: #111;
+    color: #c9a84c;
+    box-shadow: 0 8px 20px rgba(0,0,0,0.15);
+}
+
+/* Animations */
+@keyframes avzFilterFadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+@keyframes avzFilterPopIn {
+    from { opacity: 0; transform: scale(0.95) translateY(20px); }
+    to { opacity: 1; transform: scale(1) translateY(0); }
+}
+
+/* Custom Scrollbar for dropdowns */
+.avz-filter-options-list::-webkit-scrollbar {
+    width: 5px;
+}
+.avz-filter-options-list::-webkit-scrollbar-thumb {
+    background: #eee;
+    border-radius: 10px;
+}
+.avz-filter-options-list:hover::-webkit-scrollbar-thumb {
+    background: #c9a84c;
+}

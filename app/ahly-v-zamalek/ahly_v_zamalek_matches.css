@@ -1,0 +1,148 @@
+/* Ahly vs Zamalek Matches CSS */
+.avz-matches-container {
+    display: flex;
+    flex-direction: column;
+    gap: 30px;
+    animation: avz-fadeIn 0.5s ease-out;
+}
+
+.avz-matches-header {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 15px;
+    margin-bottom: 10px;
+}
+
+.avz-matches-title {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 2.2rem;
+    font-weight: normal;
+    color: #111;
+    letter-spacing: 2px;
+    margin: 0;
+}
+
+
+.avz-search-box {
+    width: 100%;
+    max-width: 500px;
+}
+
+.avz-search-input {
+    width: 100%;
+    padding: 15px 20px;
+    border: 2px solid #eaeaea;
+    border-radius: 8px;
+    font-family: 'Space Mono', monospace;
+    font-size: 1rem;
+    color: #111;
+    transition: all 0.3s;
+}
+
+.avz-search-input:focus {
+    outline: none;
+    border-color: #da1b22;
+    box-shadow: 0 0 0 3px rgba(218, 27, 34, 0.1);
+}
+
+.avz-matches-list {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+}
+
+.avz-match-card {
+    background: #fff;
+    border: 1px solid #eaeaea;
+    border-radius: 12px;
+    padding: 25px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 15px;
+    transition: all 0.3s ease;
+}
+
+.avz-match-card.no-click {
+    cursor: default;
+}
+
+.avz-match-card:hover {
+    border-color: #c9a84c;
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.05);
+}
+
+.avz-meta-date {
+    font-weight: 700;
+    color: #111;
+}
+
+.avz-divider {
+    color: #c9a84c;
+    font-weight: bold;
+}
+
+.avz-meta-referee {
+    color: #da1b22;
+}
+
+
+.avz-match-date {
+    font-family: 'Space Mono', monospace;
+    font-size: 0.9rem;
+    color: #888;
+}
+
+.avz-match-teams {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 30px;
+    width: 100%;
+    font-size: 1.5rem;
+    font-weight: 800;
+}
+
+.avz-team {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+}
+
+.avz-team.winner {
+    color: #da1b22; /* Highlighting the winner, generic for this purpose is Ahly Red, maybe dynamic? Let's keep it bold. */
+}
+
+.avz-score {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 2.5rem;
+    color: #111;
+    background: #f7f7f7;
+    padding: 5px 15px;
+    border-radius: 5px;
+}
+
+.avz-vs {
+    font-family: 'Inter', sans-serif;
+    font-size: 0.9rem;
+    color: #999;
+}
+
+.avz-match-meta {
+    display: flex;
+    gap: 15px;
+    font-size: 0.85rem;
+    color: #666;
+    text-transform: uppercase;
+}
+
+.avz-no-matches {
+    text-align: center;
+    padding: 50px;
+    font-family: 'Space Mono', monospace;
+    color: #888;
+    background: #fdfdfd;
+    border: 1px dashed #ddd;
+    border-radius: 8px;
+}

@@ -4,7 +4,9 @@ import { useMemo, useState } from "react";
 import { User, Award, ArrowUpDown, Search } from "lucide-react";
 import SearchBar_db from "../lib/SearchBar_db";
 import DropDownList_db from "../lib/DropDownList_db";
+import NoData_db from "../lib/NoData_db";
 import "./alahly_finals_managers.css";
+
 
 export default function AlAhlyFinalsManagers({ finalsData }) {
     const [searchTerm, setSearchTerm] = useState("");
@@ -219,7 +221,8 @@ export default function AlAhlyFinalsManagers({ finalsData }) {
 
                     <div className="stats-table-body">
                         {filteredManagers.length === 0 ? (
-                            <div className="no-managers-msg">No manager found with this name.</div>
+                            <NoData_db isTable={false} height="200px" />
+
                         ) : (
                             <>
                                 {filteredManagers.map((mgr, idx) => (

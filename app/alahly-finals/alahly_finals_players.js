@@ -3,7 +3,9 @@
 import { useMemo, useState } from "react";
 import { User, Award, Percent, Target, Trophy, XCircle, Footprints, Zap, ArrowUpDown } from "lucide-react";
 import SearchBar_db from "../lib/SearchBar_db";
+import NoData_db from "../lib/NoData_db";
 import "./alahly_finals_players.css";
+
 
 export default function AlAhlyFinalsPlayers({ playersData, matchesData, lineupsData }) {
     const [searchTerm, setSearchTerm] = useState("");
@@ -195,7 +197,8 @@ export default function AlAhlyFinalsPlayers({ playersData, matchesData, lineupsD
 
                     <div className="stats-table-body">
                         {filteredPlayers.length === 0 ? (
-                            <div className="no-players-msg">No legend found with this name.</div>
+                            <NoData_db isTable={false} height="200px" />
+
                         ) : (
                             <>
                                 {filteredPlayers.map((player, idx) => (
