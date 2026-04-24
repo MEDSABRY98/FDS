@@ -61,6 +61,7 @@ export default function AhlyVZamalekPlayers({ playersData, matchesData, lineupsD
                 const playerName = event["PLAYER NAME"].trim();
                 const team = (event.TEAM || "").toUpperCase();
                 const type = String(event.TYPE || "").toUpperCase();
+                const typeSub = String(event.TYPE_SUB || "").toUpperCase();
                 const matchId = event.MATCH_ID;
                 const key = `${playerName}_${team}`;
 
@@ -85,7 +86,7 @@ export default function AhlyVZamalekPlayers({ playersData, matchesData, lineupsD
 
                 if (type.includes("GOAL")) {
                     pStat.goals++;
-                    if (type.includes("PEN")) {
+                    if (typeSub === "PENGOAL") {
                         pStat.penGoals++;
                     }
                 } else if (type.includes("ASSIST")) {
