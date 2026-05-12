@@ -24,7 +24,7 @@ const EMPTY_PEN = { "MATCH_ID": "", "PARENT_EVENT_ID": "", "HOW MISSED?": "", "T
 
 
 // ── Autocomplete Input ───────────────────────────────────────────────────────
-function AutocompleteInput({ value, onChange, options = [], placeholder, style, disabled }) {
+function AutocompleteInput({ value, onChange, options = [], placeholder, style, disabled, className }) {
     const [open, setOpen] = useState(false);
     const [query, setQuery] = useState(value || '');
     const [rect, setRect] = useState(null);
@@ -63,6 +63,7 @@ function AutocompleteInput({ value, onChange, options = [], placeholder, style, 
                 value={query}
                 disabled={disabled}
                 placeholder={placeholder}
+                className={className}
                 onChange={e => { setQuery(e.target.value); onChange(e.target.value); setOpen(true); }}
                 onFocus={() => { setOpen(true); if (ref.current) setRect(ref.current.getBoundingClientRect()); }}
                 onBlur={() => setTimeout(() => setOpen(false), 180)}
@@ -285,7 +286,7 @@ function EditableTable({ title, color, rows, setRows, columns, matchId, emptyRow
                                                 className="field-input"
                                                 style={{
                                                     border: row._isDirty || row._isNew ? '1.5px solid ' + color : '1px solid #f0f0f0',
-                                                    padding: '5px 10px', fontSize: 12,
+                                                    height: '34px', fontSize: '12px',
                                                     minWidth: col === 'PLAYER NAME' || col === 'PLAYER NAME OUT' ? 140 : 80,
                                                     textAlign: 'center'
                                                 }}
@@ -300,7 +301,7 @@ function EditableTable({ title, color, rows, setRows, columns, matchId, emptyRow
                                                 className="field-input"
                                                 style={{
                                                     border: row._isDirty || row._isNew ? '1.5px solid ' + color : '1px solid #f0f0f0',
-                                                    padding: '5px 10px', fontSize: 12,
+                                                    height: '34px', fontSize: '12px',
                                                     minWidth: col === 'PLAYER NAME' || col === 'PLAYER NAME OUT' ? 140 : 80,
                                                     textAlign: 'center'
                                                 }}
@@ -938,11 +939,7 @@ export default function AlAhlyEditor() {
                                                 value={newMatchData[field] ?? ''}
                                                 options={matchFieldOptions[field] || []}
                                                 onChange={val => setNewMatchData(prev => ({ ...prev, [field]: val }))}
-                                                style={{
-                                                    border: '1.5px solid #e8e8e8', borderRadius: 10,
-                                                    padding: '10px 14px', fontSize: 13, fontFamily: "'Outfit', sans-serif",
-                                                    fontWeight: 600, outline: 'none', color: '#0a0a0a'
-                                                }}
+                                                className="field-input"
                                             />
                                         ) : (
                                             <input
