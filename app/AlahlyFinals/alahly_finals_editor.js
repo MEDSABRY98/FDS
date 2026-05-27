@@ -2,7 +2,7 @@
 
 import { useState, useMemo, useCallback, useEffect } from "react";
 import { Loader2, Shield, Clock, Users, Save, Trash2, Search, Plus, CheckCircle, AlertCircle } from "lucide-react";
-import { AlAhlyFinalsService } from "../alahly/alahly_finals_service";
+import { AlAhlyFinalsService } from "../Alahly/alahly_finals_service";
 import SearchBar_db from "../lib/SearchBar_db";
 import NoData_db from "../lib/NoData_db";
 import Login_db from "../lib/Login_db";

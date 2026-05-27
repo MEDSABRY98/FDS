@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { Download, Filter } from "lucide-react";
-import { AlAhlyFinalsService } from "../alahly/alahly_finals_service";
+import { AlAhlyFinalsService } from "../Alahly/alahly_finals_service";
 import AlAhlyFinalsDashboard from "./alahly_finals_dashboard";
 import AlAhlyFinalsMatches from "./alahly_finals_matches";
 import AlAhlyFinalsPlayers from "./alahly_finals_players";

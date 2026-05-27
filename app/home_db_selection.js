@@ -12,35 +12,35 @@ export default function HomeDbSelection() {
             <div className="home-sys-sub">SELECT A SECTION TO CONTINUE</div>
 
             <div className="section-cards">
-                <Link href="/alahlydbmanagement" className="section-card">
+                <Link href="/AlahlydbManagement" className="section-card">
                     <div className="card-icon-wrap">
                         <span className="card-emoji" style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: "36px" }}>DB</span>
                     </div>
                     <div className="card-name">AL AHLY DB MANAGEMENT</div>
                 </Link>
 
-                <Link href="/alahly" className="section-card">
+                <Link href="/Alahly" className="section-card">
                     <div className="card-icon-wrap">
                         <span className="card-emoji" style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: "36px" }}>A</span>
                     </div>
                     <div className="card-name">AL AHLY SC</div>
                 </Link>
 
-                <Link href="/alahly-pks" className="section-card">
+                <Link href="/AlahlyPKS" className="section-card">
                     <div className="card-icon-wrap">
                         <span className="card-emoji" style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: "36px" }}>PK</span>
                     </div>
                     <div className="card-name">AL AHLY PKs</div>
                 </Link>
 
-                <Link href="/alahly-finals" className="section-card">
+                <Link href="/AlahlyFinals" className="section-card">
                     <div className="card-icon-wrap">
                         <span className="card-emoji" style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: "36px" }}>F</span>
                     </div>
                     <div className="card-name">AL AHLY FINALS</div>
                 </Link>
 
-                <Link href="/ahly-v-zamalek" className="section-card">
+                <Link href="/AhlyVZamalek" className="section-card">
                     <div className="card-icon-wrap">
                         <span className="card-emoji" style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: "36px" }}>D</span>
                     </div>

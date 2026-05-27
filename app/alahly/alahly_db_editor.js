@@ -209,29 +209,14 @@ function Toast({ toasts }) {
 
 // ── Editable Table ───────────────────────────────────────────────────────────
 function EditableTable({ title, color, rows, setRows, columns, matchId, emptyRow, tableName, onSave, onDelete, isSaving, autoFields = {}, columnOptions = {} }) {
-    const [newRow, setNewRow] = useState({ ...emptyRow, MATCH_ID: matchId });
-    const [addOpen, setAddOpen] = useState(false);
-
-    // Compute auto values whenever panel opens or row count changes
-    const computeAutos = (currentRows) => {
-        const computed = {};
-        Object.entries(autoFields).forEach(([field, fn]) => {
-            computed[field] = fn(matchId, currentRows);
-        });
-        return computed;
-    };
-
-    const openPanel = () => {
-        setNewRow(prev => ({ ...prev, ...computeAutos(rows) }));
-        setAddOpen(true);
-    };
 
     const handleAdd = () => {
-        const row = { ...newRow, MATCH_ID: matchId };
-        const next = [...rows, { ...row, _isNew: true, _key: Date.now() }];
-        setRows(next);
-        setNewRow({ ...emptyRow, MATCH_ID: matchId, ...computeAutos(next) });
-        setAddOpen(false);
+        const computed = {};
+        Object.entries(autoFields).forEach(([field, fn]) => {
+            computed[field] = fn(matchId, rows);
+        });
+        const row = { ...emptyRow, ...computed, MATCH_ID: matchId, _isNew: true, _key: Date.now() };
+        setRows([...rows, row]);
     };
 
     return (
@@ -245,16 +230,16 @@ function EditableTable({ title, color, rows, setRows, columns, matchId, emptyRow
                     </h3>
                 </div>
                 <button
-                    onClick={openPanel}
+                    onClick={handleAdd}
                     style={{
-                        background: addOpen ? '#c9a84c' : '#0a0a0a',
-                        color: addOpen ? '#0a0a0a' : '#c9a84c',
+                        background: '#0a0a0a',
+                        color: '#c9a84c',
                         border: 'none', borderRadius: 10, padding: '7px 18px',
                         cursor: 'pointer', fontWeight: 800, fontSize: 12,
                         fontFamily: "'Outfit', sans-serif", display: 'flex', alignItems: 'center', gap: 6,
                         transition: 'all 0.2s', letterSpacing: 0.5
                     }}>
-                    <span style={{ fontSize: 16, lineHeight: 1, transition: 'transform 0.2s', transform: addOpen ? 'rotate(45deg)' : 'none' }}>+</span>
+                    <span style={{ fontSize: 16, lineHeight: 1 }}>+</span>
                     ADD ROW
                 </button>
             </div>
@@ -275,40 +260,53 @@ function EditableTable({ title, color, rows, setRows, columns, matchId, emptyRow
                     <tbody>
                         {rows.map((row, ri) => (
                             <tr key={row._key || ri} className={row._isNew ? "table-row-new" : ""} style={{ borderBottom: '1px solid #f5f5f5', transition: 'background 0.2s' }}>
-                                {columns.map(col => (
-                                    <td key={col} style={{ padding: '6px 10px', textAlign: 'center' }}>
-                                        {columnOptions[col] ? (
-                                            <AutocompleteInput
-                                                value={row[col] ?? ''}
-                                                options={columnOptions[col]}
-                                                placeholder={col}
-                                                onChange={val => setRows(prev => prev.map((r, i) => i === ri ? { ...r, [col]: val, _isDirty: true } : r))}
-                                                className="field-input"
-                                                style={{
-                                                    border: row._isDirty || row._isNew ? '1.5px solid ' + color : '1px solid #f0f0f0',
-                                                    height: '34px', fontSize: '12px',
-                                                    minWidth: col === 'PLAYER NAME' || col === 'PLAYER NAME OUT' ? 140 : 80,
-                                                    textAlign: 'center'
-                                                }}
-                                            />
-                                        ) : (
-                                            <input
-                                                value={row[col] ?? ''}
-                                                onChange={e => {
-                                                    const val = e.target.value;
-                                                    setRows(prev => prev.map((r, i) => i === ri ? { ...r, [col]: val, _isDirty: true } : r));
-                                                }}
-                                                className="field-input"
-                                                style={{
-                                                    border: row._isDirty || row._isNew ? '1.5px solid ' + color : '1px solid #f0f0f0',
-                                                    height: '34px', fontSize: '12px',
-                                                    minWidth: col === 'PLAYER NAME' || col === 'PLAYER NAME OUT' ? 140 : 80,
-                                                    textAlign: 'center'
-                                                }}
-                                            />
-                                        )}
-                                    </td>
-                                ))}
+                                {columns.map(col => {
+                                    const isAuto = col in autoFields;
+                                    return (
+                                        <td key={col} style={{ padding: '6px 10px', textAlign: 'center' }}>
+                                            {columnOptions[col] ? (
+                                                <AutocompleteInput
+                                                    value={row[col] ?? ''}
+                                                    options={columnOptions[col]}
+                                                    placeholder={col}
+                                                    disabled={isAuto}
+                                                    onChange={val => setRows(prev => prev.map((r, i) => i === ri ? { ...r, [col]: val, _isDirty: true } : r))}
+                                                    className="field-input"
+                                                    style={{
+                                                        border: isAuto 
+                                                            ? '1.5px solid rgba(201, 168, 76, 0.4)' 
+                                                            : (row._isDirty || row._isNew ? '1.5px solid ' + color : '1px solid #f0f0f0'),
+                                                        background: isAuto ? 'rgba(201, 168, 76, 0.05)' : '#fff',
+                                                        height: '34px', fontSize: '12px',
+                                                        minWidth: col === 'PLAYER NAME' || col === 'PLAYER NAME OUT' ? 140 : 80,
+                                                        textAlign: 'center',
+                                                        color: isAuto ? '#888' : '#000'
+                                                    }}
+                                                />
+                                            ) : (
+                                                <input
+                                                    value={row[col] ?? ''}
+                                                    disabled={isAuto}
+                                                    onChange={e => {
+                                                        const val = e.target.value;
+                                                        setRows(prev => prev.map((r, i) => i === ri ? { ...r, [col]: val, _isDirty: true } : r));
+                                                    }}
+                                                    className="field-input"
+                                                    style={{
+                                                        border: isAuto 
+                                                            ? '1.5px solid rgba(201, 168, 76, 0.4)' 
+                                                            : (row._isDirty || row._isNew ? '1.5px solid ' + color : '1px solid #f0f0f0'),
+                                                        background: isAuto ? 'rgba(201, 168, 76, 0.05)' : '#fff',
+                                                        height: '34px', fontSize: '12px',
+                                                        minWidth: col === 'PLAYER NAME' || col === 'PLAYER NAME OUT' ? 140 : 80,
+                                                        textAlign: 'center',
+                                                        color: isAuto ? '#888' : '#000'
+                                                    }}
+                                                />
+                                            )}
+                                        </td>
+                                    );
+                                })}
                                 <td style={{ padding: '6px 10px', verticalAlign: 'middle', textAlign: 'center' }}>
                                     <div style={{ display: 'flex', gap: 6, alignItems: 'center', justifyContent: 'center' }}>
                                         {(row._isDirty || row._isNew) && (
@@ -337,63 +335,6 @@ function EditableTable({ title, color, rows, setRows, columns, matchId, emptyRow
                     </tbody>
                 </table>
             </div>
-
-            {/* Add Row Panel */}
-            {addOpen && (
-                <div className="add-row-panel">
-                    <div style={{ fontFamily: "'Space Mono', monospace", fontSize: 10, color: '#c9a84c', letterSpacing: 2, marginBottom: 16, fontWeight: 700 }}>
-                        ✦ NEW ROW
-                    </div>
-                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))', gap: 10, marginBottom: 16 }}>
-                        {columns.filter(col => col !== 'MATCH_ID').map(col => {
-                            const isAuto = col in autoFields;
-                            return (
-                                <div key={col} style={{ minWidth: 100 }}>
-                                    <div className="field-label" style={{ color: isAuto ? '#c9a84c' : '#aaa' }}>
-                                        {col} {isAuto && <span className="auto-badge">AUTO</span>}
-                                    </div>
-                                    {columnOptions[col] ? (
-                                        <AutocompleteInput
-                                            value={newRow[col] ?? ''}
-                                            options={columnOptions[col]}
-                                            disabled={isAuto}
-                                            placeholder="—"
-                                            onChange={val => { if (!isAuto) setNewRow(prev => ({ ...prev, [col]: val })); }}
-                                            className="field-input"
-                                            style={{
-                                                border: isAuto ? '1.5px solid rgba(201,168,76,0.5)' : '1.5px solid #e8e8e8',
-                                                background: isAuto ? 'rgba(201,168,76,0.08)' : '#fff',
-                                            }}
-                                        />
-                                    ) : (
-                                        <input
-                                            placeholder="—"
-                                            value={newRow[col] ?? ''}
-                                            disabled={isAuto}
-                                            onChange={e => { if (!isAuto) setNewRow(prev => ({ ...prev, [col]: e.target.value })); }}
-                                            className="field-input"
-                                            style={{
-                                                border: isAuto ? '1.5px solid rgba(201,168,76,0.5)' : '1.5px solid #e8e8e8',
-                                                background: isAuto ? 'rgba(201,168,76,0.08)' : '#fff',
-                                            }}
-                                        />
-                                    )}
-                                </div>
-                            );
-                        })}
-                    </div>
-                    <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end' }}>
-                        <button onClick={() => { setAddOpen(false); setNewRow({ ...emptyRow, MATCH_ID: matchId }); }}
-                            className="tab-btn" style={{ padding: '9px 20px', fontSize: 12 }}>
-                            Cancel
-                        </button>
-                        <button onClick={handleAdd}
-                            className="load-btn" style={{ padding: '9px 24px', fontSize: 12 }}>
-                            ✓ ADD ROW
-                        </button>
-                    </div>
-                </div>
-            )}
         </div>
     );
 }
