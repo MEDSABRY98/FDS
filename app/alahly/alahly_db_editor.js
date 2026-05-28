@@ -273,8 +273,8 @@ function EditableTable({ title, color, rows, setRows, columns, matchId, emptyRow
                                                     onChange={val => setRows(prev => prev.map((r, i) => i === ri ? { ...r, [col]: val, _isDirty: true } : r))}
                                                     className="field-input"
                                                     style={{
-                                                        border: isAuto 
-                                                            ? '1.5px solid rgba(201, 168, 76, 0.4)' 
+                                                        border: isAuto
+                                                            ? '1.5px solid rgba(201, 168, 76, 0.4)'
                                                             : (row._isDirty || row._isNew ? '1.5px solid ' + color : '1px solid #f0f0f0'),
                                                         background: isAuto ? 'rgba(201, 168, 76, 0.05)' : '#fff',
                                                         height: '34px', fontSize: '12px',
@@ -293,8 +293,8 @@ function EditableTable({ title, color, rows, setRows, columns, matchId, emptyRow
                                                     }}
                                                     className="field-input"
                                                     style={{
-                                                        border: isAuto 
-                                                            ? '1.5px solid rgba(201, 168, 76, 0.4)' 
+                                                        border: isAuto
+                                                            ? '1.5px solid rgba(201, 168, 76, 0.4)'
                                                             : (row._isDirty || row._isNew ? '1.5px solid ' + color : '1px solid #f0f0f0'),
                                                         background: isAuto ? 'rgba(201, 168, 76, 0.05)' : '#fff',
                                                         height: '34px', fontSize: '12px',
@@ -326,10 +326,10 @@ function EditableTable({ title, color, rows, setRows, columns, matchId, emptyRow
                             </tr>
                         ))}
                         {rows.length === 0 && (
-                            <NoData_db 
-                                isTable={true} 
-                                colSpan={columns.length + 1} 
-                                message={`NO ${title.toUpperCase()} RECORDS FOUND`} 
+                            <NoData_db
+                                isTable={true}
+                                colSpan={columns.length + 1}
+                                message={`NO ${title.toUpperCase()} RECORDS FOUND`}
                             />
                         )}
                     </tbody>
@@ -807,12 +807,7 @@ export default function AlAhlyEditor() {
                 <Toast toasts={toasts} />
 
                 {/* ── Header ── */}
-                <div className="editor-header">
-                    <div>
-                        <div className="editor-title">
-                            MATCH <span className="accent">EDITOR</span>
-                        </div>
-                    </div>
+                <div className="editor-header" style={{ justifyContent: 'flex-end' }}>
                     <div style={{ display: 'flex', gap: 10 }}>
                         <button
                             onClick={() => { setMode('search'); setMatchData(null); }}
@@ -1029,10 +1024,10 @@ export default function AlAhlyEditor() {
                                             value={matchData[field] ?? ''}
                                             disabled={field === 'MATCH_ID'}
                                             onChange={e => setMatchData(prev => ({ ...prev, [field]: e.target.value }))}
-                                                className="field-input"
-                                                onFocus={e => { if (field !== 'MATCH_ID') e.target.style.borderColor = '#c9a84c'; }}
-                                                onBlur={e => { if (field !== 'MATCH_ID') e.target.style.borderColor = '#e8e8e8'; }}
-                                            />
+                                            className="field-input"
+                                            onFocus={e => { if (field !== 'MATCH_ID') e.target.style.borderColor = '#c9a84c'; }}
+                                            onBlur={e => { if (field !== 'MATCH_ID') e.target.style.borderColor = '#e8e8e8'; }}
+                                        />
                                     </div>
                                 ))}
                             </div>

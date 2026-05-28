@@ -6,8 +6,9 @@ import { useRouter } from "next/navigation";
 import { supabase } from "../lib/supabase";
 import { AlAhlyService } from "../Alahly/alahly_db_service";
 import * as XLSX from "xlsx";
-import { Download } from "lucide-react";
+import { Download, Database, ArrowLeft, X, Menu } from "lucide-react";
 import Login_db from "../lib/Login_db";
+import "../lib/AlahlySidebar.css";
 
 
 // Dynamic Table Loading logic added inside component
@@ -16,6 +17,8 @@ import Login_db from "../lib/Login_db";
 export default function DatabaseManagement() {
     const router = useRouter();
     const [availableTables, setAvailableTables] = useState([]);
+    const [isSidebarMobileOpen, setIsSidebarMobileOpen] = useState(false);
+    const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
     const [selectedTable, setSelectedTable] = useState("");
     const [tableData, setTableData] = useState([]);
     const [columns, setColumns] = useState([]);
@@ -441,32 +444,98 @@ export default function DatabaseManagement() {
 
     return (
         <Login_db title="EDITOR ACCESS" subtitle="AUTHORIZATION REQUIRED">
-            <div id="db-management-page">
-                <nav className="db-nav">
-                    <div className="nav-title-group">
+            <div id="db-management-page" className={`alahly-container ${isSidebarCollapsed ? 'sidebar-collapsed' : ''}`}>
+                {/* Backdrop for mobile drawer */}
+                <div 
+                    className={`alahly-sidebar-backdrop ${isSidebarMobileOpen ? 'active' : ''}`} 
+                    onClick={() => setIsSidebarMobileOpen(false)}
+                />
 
-                        <button
-                            className="download-excel-btn"
-                            onClick={handleDownloadExcel}
-                            title="DOWNLOAD CURRENT VIEW AS EXCEL"
+                {/* Sidebar navigation */}
+                <aside className={`alahly-sidebar ${isSidebarMobileOpen ? 'mobile-open' : ''}`}>
+                    <div className="alahly-sidebar-header">
+                        <Link href="/" className="alahly-sidebar-brand">
+                            <div className="alahly-sidebar-logo-hex">
+                                <span className="alahly-sidebar-logo-text">A</span>
+                            </div>
+                            <div className="alahly-sidebar-brand-name">
+                                AHLY <span>DB MGMT</span>
+                            </div>
+                        </Link>
+                        <button 
+                            className="alahly-sidebar-close-btn" 
+                            onClick={() => setIsSidebarMobileOpen(false)}
+                            title="CLOSE MENU"
                         >
-                            <Download size={16} strokeWidth={3} />
+                            <X size={20} />
                         </button>
                     </div>
-                    <div className="table-selector">
+
+                    <div className="alahly-sidebar-menu">
                         {availableTables.map(t => (
                             <button
                                 key={t.name}
-                                className={`table-btn ${selectedTable === t.name ? 'active' : ''}`}
-                                onClick={() => setSelectedTable(t.name)}
+                                className={`alahly-sidebar-item ${selectedTable === t.name ? 'active' : ''}`}
+                                onClick={() => {
+                                    setSelectedTable(t.name);
+                                    setIsSidebarMobileOpen(false);
+                                }}
                             >
-                                {t.label}
+                                <Database size={16} className="alahly-sidebar-item-icon" />
+                                <span>{t.label.toUpperCase()}</span>
                             </button>
                         ))}
                     </div>
-                </nav>
 
-                <main className="db-content">
+                    <div className="alahly-sidebar-actions">
+                        <button
+                            className="alahly-sidebar-collapse-toggle-btn"
+                            onClick={() => setIsSidebarCollapsed(!isSidebarCollapsed)}
+                            title={isSidebarCollapsed ? "EXPAND MENU" : "COLLAPSE MENU"}
+                        >
+                            <ArrowLeft size={14} style={{ transform: isSidebarCollapsed ? 'rotate(180deg)' : 'none', transition: 'transform 0.3s' }} />
+                            <span>COLLAPSE MENU</span>
+                        </button>
+                        <button 
+                            className="alahly-sidebar-action-btn export-btn" 
+                            onClick={handleDownloadExcel}
+                            title="DOWNLOAD CURRENT VIEW AS EXCEL"
+                        >
+                            <Download size={14} />
+                            <span>EXPORT TO EXCEL</span>
+                        </button>
+                    </div>
+                </aside>
+
+                <div className="alahly-main-content">
+                    {/* Mobile Top Bar */}
+                    <header className="alahly-mobile-top-bar">
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                            <button 
+                                className="alahly-menu-toggle-btn" 
+                                onClick={() => setIsSidebarMobileOpen(true)}
+                                title="OPEN MENU"
+                            >
+                                <Menu size={22} />
+                            </button>
+                            <Link href="/" className="alahly-mobile-brand">
+                                <div className="alahly-mobile-brand-name">
+                                    AHLY <span>DB MGMT</span>
+                                </div>
+                            </Link>
+                        </div>
+                        <div className="alahly-mobile-actions">
+                            <button 
+                                onClick={handleDownloadExcel} 
+                                className="alahly-mobile-action-icon"
+                                title="DOWNLOAD CURRENT VIEW AS EXCEL"
+                            >
+                                <Download size={16} />
+                            </button>
+                        </div>
+                    </header>
+
+                    <main className="db-content">
                     <div className="data-toolbar">
                         <div className="search-wrap">
                             <input
@@ -689,6 +758,7 @@ export default function DatabaseManagement() {
                         </div>
                     </div>
                 )}
+                </div> {/* closing alahly-main-content */}
 
                 <style jsx>{`
                 #db-management-page {
@@ -696,107 +766,6 @@ export default function DatabaseManagement() {
                     background: #f8f9fa;
                     color: #1a1a1a;
                     font-family: 'Outfit', sans-serif;
-                }
-
-                .db-nav {
-                    background: #0a0a0a;
-                    color: #fff;
-                    padding: 0 40px;
-                    display: flex;
-                    align-items: center;
-                    justify-content: center;
-                    position: sticky;
-                    top: 0;
-                    z-index: 1000;
-                    height: 80px;
-                    box-shadow: 0 4px 30px rgba(0,0,0,0.1);
-                    border-bottom: 2px solid #c9a84c;
-                }
-
-                .nav-title-group {
-                    position: absolute;
-                    left: 40px;
-                    display: flex;
-                    align-items: center;
-                    gap: 15px;
-                }
-
-                .nav-title {
-                    font-family: 'Bebas Neue', sans-serif;
-                    font-size: 22px;
-                    letter-spacing: 2px;
-                    display: flex;
-                    align-items: center;
-                    gap: 8px;
-                }
-
-                .nav-title span { color: #c9a84c; }
-
-                .download-excel-btn {
-                    background: rgba(201, 168, 76, 0.1);
-                    color: #c9a84c;
-                    border: 1px solid rgba(201, 168, 76, 0.25);
-                    width: 36px;
-                    height: 36px;
-                    border-radius: 10px;
-                    display: flex;
-                    align-items: center;
-                    justify-content: center;
-                    cursor: pointer;
-                    transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
-                    backdrop-filter: blur(5px);
-                }
-
-                .download-excel-btn:hover {
-                    background: #c9a84c;
-                    color: #000;
-                    transform: scale(1.1) rotate(5deg);
-                    box-shadow: 0 0 25px rgba(201, 168, 76, 0.35);
-                    border-color: #c9a84c;
-                }
-
-                .download-excel-btn:active {
-                    transform: scale(0.95);
-                }
-
-                .table-selector {
-                    display: flex;
-                    gap: 12px;
-                    overflow-x: auto;
-                    padding: 10px;
-                    scrollbar-width: none; /* Hide scrollbar for Firefox */
-                    max-width: 1280px; /* Width of roughly 8 tabs */
-                }
-                .table-selector::-webkit-scrollbar { display: none; } /* Hide scrollbar for Chrome/Safari */
-
-                .table-btn {
-                    background: rgba(255,255,255,0.03);
-                    border: 1px solid rgba(255,255,255,0.1);
-                    color: rgba(255,255,255,0.7);
-                    padding: 10px 22px;
-                    min-width: 140px; /* Ensuring consistent tab width */
-                    font-size: 11px;
-                    font-family: 'Space Mono', monospace;
-                    font-weight: 700;
-                    cursor: pointer;
-                    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-                    border-radius: 50px;
-                    white-space: nowrap;
-                    letter-spacing: 0.5px;
-                    flex-shrink: 0; /* Prevent shrinking to force scroll */
-                }
-
-                .table-btn:hover {
-                    background: rgba(255,255,255,0.08);
-                    color: #fff;
-                    border-color: rgba(255,255,255,0.3);
-                }
-
-                .table-btn.active {
-                    background: #c9a84c;
-                    color: #000;
-                    border-color: #c9a84c;
-                    box-shadow: 0 0 20px rgba(201,168,76,0.25);
                 }
 
                 .db-content {

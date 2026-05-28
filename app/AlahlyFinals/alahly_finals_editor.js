@@ -2,7 +2,7 @@
 
 import { useState, useMemo, useCallback, useEffect } from "react";
 import { Loader2, Shield, Clock, Users, Save, Trash2, Search, Plus, CheckCircle, AlertCircle } from "lucide-react";
-import { AlAhlyFinalsService } from "../Alahly/alahly_finals_service";
+import { AlAhlyFinalsService } from "./alahly_finals_service";
 import SearchBar_db from "../lib/SearchBar_db";
 import NoData_db from "../lib/NoData_db";
 import Login_db from "../lib/Login_db";
@@ -96,7 +96,7 @@ function Toast({ toasts }) {
 
 function DateSelectionModal({ matches, onSelect, onClose }) {
     if (!matches || matches.length === 0) return null;
-    
+
     return (
         <div className="premium-modal-overlay" onClick={onClose}>
             <div className="date-picker-modal" onClick={e => e.stopPropagation()}>
@@ -128,7 +128,7 @@ function DateSelectionModal({ matches, onSelect, onClose }) {
 function EditableTable({ title, color, rows, setRows, columns, parentId, emptyRow, onSave, isSaving, columnOptions = {}, autoFields = {} }) {
     const handleAdd = () => {
         let newRow = { ...emptyRow, _isNew: true, _key: Date.now() };
-        
+
         // Apply auto-generation logic
         Object.keys(autoFields).forEach(fieldKey => {
             const generator = autoFields[fieldKey];
@@ -192,10 +192,10 @@ function EditableTable({ title, color, rows, setRows, columns, parentId, emptyRo
                                 </tr>
                             ))}
                             {rows.length === 0 && (
-                                <NoData_db 
-                                    isTable={true} 
-                                    colSpan={columns.length + 1} 
-                                    message={`NO ${title.toUpperCase()} RECORDS FOUND`} 
+                                <NoData_db
+                                    isTable={true}
+                                    colSpan={columns.length + 1}
+                                    message={`NO ${title.toUpperCase()} RECORDS FOUND`}
                                 />
                             )}
                         </tbody>
@@ -260,7 +260,7 @@ export default function AlAhlyFinalsEditor({ matchesData, lineupsData, playersDa
         try {
             const dt = new Date(d);
             if (!isNaN(dt.getTime())) return dt.toISOString().split('T')[0];
-        } catch (e) {}
+        } catch (e) { }
         return s;
     };
 
@@ -286,7 +286,7 @@ export default function AlAhlyFinalsEditor({ matchesData, lineupsData, playersDa
             if (row.STATU === 'اساسي' || row.STATU === 'أساسي') {
                 const playerName = String(row["PLAYER NAME"] || "").trim();
                 const subOutRow = playerName ? next.find(r => String(r["PLAYER NAME OUT"] || "").trim() === playerName) : null;
-                
+
                 if (subOutRow) {
                     const actualOutMin = parseInt(subOutRow["OUT MINUTE"]);
                     total = !isNaN(actualOutMin) ? actualOutMin : matchMin;
@@ -301,10 +301,10 @@ export default function AlAhlyFinalsEditor({ matchesData, lineupsData, playersDa
                 total = row["TOTAL MINUTE"] || "";
             }
 
-            return { 
-                ...row, 
-                "MATCH MINUTE": matchMinuteRef, 
-                "TOTAL MINUTE": total.toString() 
+            return {
+                ...row,
+                "MATCH MINUTE": matchMinuteRef,
+                "TOTAL MINUTE": total.toString()
             };
         });
     };
@@ -316,9 +316,9 @@ export default function AlAhlyFinalsEditor({ matchesData, lineupsData, playersDa
         if (!id) return;
         setLoading(true);
         setPendingMatches([]);
-        
+
         // Search in both FINAL_ID and MATCH_ID for robustness
-        const matches = matchesData.filter(m => 
+        const matches = matchesData.filter(m =>
             String(m.FINAL_ID || '').trim().toUpperCase() === id ||
             String(m.MATCH_ID || '').trim().toUpperCase() === id
         );
@@ -337,12 +337,12 @@ export default function AlAhlyFinalsEditor({ matchesData, lineupsData, playersDa
     const loadMatch = (match) => {
         const inputDate = formatToInputDate(match.DATE);
         setMatchForm({ ...match, DATE: inputDate });
-        
+
         const matchFinalId = String(match.FINAL_ID || '').trim().toUpperCase();
         const matchDate = standardizeDate(match.DATE);
 
-        const relatedLineups = lineupsData.filter(l => 
-            String(l.FINAL_ID || '').trim().toUpperCase() === matchFinalId && 
+        const relatedLineups = lineupsData.filter(l =>
+            String(l.FINAL_ID || '').trim().toUpperCase() === matchFinalId &&
             standardizeDate(l.DATE) === matchDate
         );
 
@@ -352,10 +352,10 @@ export default function AlAhlyFinalsEditor({ matchesData, lineupsData, playersDa
         });
 
         setLineupRows(relatedLineups.map((l, i) => ({ ...l, _key: i })));
-        setEventRows(relatedEvents.map((e, i) => ({ 
-            ...e, 
+        setEventRows(relatedEvents.map((e, i) => ({
+            ...e,
             "FINAL_ID": e["FINAL ID"] || e.FINAL_ID,
-            _key: i 
+            _key: i
         })));
         setMode("EDIT");
         setSelectedMatch(match);
@@ -420,15 +420,15 @@ export default function AlAhlyFinalsEditor({ matchesData, lineupsData, playersDa
     // Sync IDs from matchForm to existing lineup rows
     useEffect(() => {
         if (mode === 'CREATE' || mode === 'EDIT') {
-            setLineupRows(prev => prev.map(r => ({ 
-                ...r, 
-                FINAL_ID: matchForm.FINAL_ID || '', 
-                DATE: matchForm.DATE || '' 
+            setLineupRows(prev => prev.map(r => ({
+                ...r,
+                FINAL_ID: matchForm.FINAL_ID || '',
+                DATE: matchForm.DATE || ''
             })));
-            setEventRows(prev => prev.map(r => ({ 
-                ...r, 
-                "FINAL ID": matchForm.FINAL_ID || '', 
-                DATE: matchForm.DATE || '' 
+            setEventRows(prev => prev.map(r => ({
+                ...r,
+                "FINAL ID": matchForm.FINAL_ID || '',
+                DATE: matchForm.DATE || ''
             })));
         }
     }, [matchForm.FINAL_ID, matchForm.DATE, mode]);
@@ -495,12 +495,12 @@ export default function AlAhlyFinalsEditor({ matchesData, lineupsData, playersDa
                             {f.type === "suggest" ? (
                                 <AutocompleteInput value={matchForm[f.key]} options={f.options} onChange={val => setMatchForm({ ...matchForm, [f.key]: val })} />
                             ) : (
-                                <input 
-                                    type={f.type === "date" ? "date" : "text"} 
-                                    value={matchForm[f.key] || ""} 
-                                    onChange={e => setMatchForm({ ...matchForm, [f.key]: e.target.value })} 
-                                    className="premium-input-field" 
-                                    disabled={f.key === 'FINAL_ID' && mode === 'EDIT'} 
+                                <input
+                                    type={f.type === "date" ? "date" : "text"}
+                                    value={matchForm[f.key] || ""}
+                                    onChange={e => setMatchForm({ ...matchForm, [f.key]: e.target.value })}
+                                    className="premium-input-field"
+                                    disabled={f.key === 'FINAL_ID' && mode === 'EDIT'}
                                 />
                             )}
                         </div>
@@ -584,9 +584,9 @@ export default function AlAhlyFinalsEditor({ matchesData, lineupsData, playersDa
                             parentId={matchForm.FINAL_ID}
                             columns={["FINAL_ID", "EVENT_ID", "PARENT_EVENT_ID", "PLAYER NAME", "TEAM", "TYPE", "TYPE_SUB", "MINUTE"]}
                             emptyRow={{ "FINAL_ID": "", "EVENT_ID": "", "PARENT_EVENT_ID": "", "PLAYER NAME": "", TEAM: "الأهلي", TYPE: "GOAL", TYPE_SUB: "", MINUTE: "" }}
-                            autoFields={{ 
+                            autoFields={{
                                 "EVENT_ID": (id, rows) => `${id}-${rows.length + 1}`,
-                                "FINAL_ID": (id) => id 
+                                "FINAL_ID": (id) => id
                             }}
                             columnOptions={{
                                 "PLAYER NAME": suggestions.players,

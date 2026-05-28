@@ -1,7 +1,21 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Download, Filter } from "lucide-react";
+import { 
+    Download, 
+    SlidersHorizontal, 
+    X, 
+    LayoutDashboard, 
+    Trophy, 
+    FileText, 
+    Users, 
+    Shield, 
+    User, 
+    GitCompare, 
+    Menu, 
+    ArrowLeft 
+} from "lucide-react";
+import Link from "next/link";
 import { AlAhlyService } from "../Alahly/alahly_db_service";
 import AlAhlyPKsMatches from "./alahly_pks_matches";
 import AlAhlyPKsMatchDetails from "./alahly_pks_match_details";
@@ -15,15 +29,29 @@ import AlAhlyPKsEditor from "./alahly_pks_editor";
 import AlAhlyPKsDashboard from "./alahly_pks_dashboard";
 import Login_db from "../lib/Login_db";
 import Loading_db from "../lib/Loading_db";
+import "../lib/AlahlySidebar.css";
 
 
 export default function AlAhlyPKsDatabase() {
     const [activeTab, setActiveTab] = useState("alahly_pks_dashboard");
+    const [isSidebarMobileOpen, setIsSidebarMobileOpen] = useState(false);
+    const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
     const [pksData, setPksData] = useState([]);
     const [filteredData, setFilteredData] = useState([]);
     const [loading, setLoading] = useState(true);
     const [selectedPksId, setSelectedPksId] = useState(null);
     const [isFilterOpen, setIsFilterOpen] = useState(false);
+
+    const tabs = [
+        { id: 'alahly_pks_dashboard', label: 'Dashboard', icon: LayoutDashboard },
+        { id: 'alahly_pks_matches', label: 'Matches', icon: Trophy },
+        { id: 'alahly_pks_editor', label: 'Editors', icon: FileText },
+        { id: 'alahly_pks_champions', label: 'Champions', icon: Trophy },
+        { id: 'alahly_pks_players', label: 'Players', icon: Users },
+        { id: 'alahly_pks_gks', label: 'GKs', icon: Shield },
+        { id: 'alahly_pks_managers', label: 'Managers', icon: User },
+        { id: 'alahly_pks_h2h', label: 'H2H', icon: GitCompare }
+    ];
 
     useEffect(() => {
         fetchPKData();
@@ -111,107 +139,121 @@ export default function AlAhlyPKsDatabase() {
 
 
     return (
-        <div style={{ background: '#ffffff', minHeight: '100vh', overflow: 'visible' }}>
-            <nav style={{
-                position: 'sticky',
-                top: 0,
-                zIndex: 9999,
-                background: '#0a0a0a',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                width: '100%',
-                minHeight: '74px',
-                padding: '10px 0',
-                borderBottom: '1px solid rgba(255,255,255,0.08)'
-            }}>
-                <div className="nav-action-buttons" style={{ position: 'absolute', left: '25px', display: 'flex', gap: '10px' }}>
+        <div id="main-app" className={`alahly-container ${isSidebarCollapsed ? 'sidebar-collapsed' : ''}`}>
+            {/* Backdrop for mobile drawer */}
+            <div 
+                className={`alahly-sidebar-backdrop ${isSidebarMobileOpen ? 'active' : ''}`} 
+                onClick={() => setIsSidebarMobileOpen(false)}
+            />
+
+            {/* Sidebar navigation */}
+            <aside className={`alahly-sidebar ${isSidebarMobileOpen ? 'mobile-open' : ''}`}>
+                <div className="alahly-sidebar-header">
+                    <Link href="/" className="alahly-sidebar-brand">
+                        <div className="alahly-sidebar-logo-hex">
+                            <span className="alahly-sidebar-logo-text">A</span>
+                        </div>
+                        <div className="alahly-sidebar-brand-name">
+                            AL AHLY <span>PKS</span>
+                        </div>
+                    </Link>
+                    <button 
+                        className="alahly-sidebar-close-btn" 
+                        onClick={() => setIsSidebarMobileOpen(false)}
+                        title="CLOSE MENU"
+                    >
+                        <X size={20} />
+                    </button>
+                </div>
+
+                <div className="alahly-sidebar-menu">
+                    {tabs.map(tab => {
+                        const Icon = tab.icon;
+                        return (
+                            <button
+                                key={tab.id}
+                                className={`alahly-sidebar-item ${activeTab === tab.id ? 'active' : ''}`}
+                                onClick={() => {
+                                    setActiveTab(tab.id);
+                                    setSelectedPksId(null);
+                                    setIsSidebarMobileOpen(false);
+                                }}
+                            >
+                                <Icon size={16} className="alahly-sidebar-item-icon" />
+                                <span>{tab.label}</span>
+                            </button>
+                        );
+                    })}
+                </div>
+
+                <div className="alahly-sidebar-actions">
                     <button
-                        className="global-export-btn"
+                        className="alahly-sidebar-collapse-toggle-btn"
+                        onClick={() => setIsSidebarCollapsed(!isSidebarCollapsed)}
+                        title={isSidebarCollapsed ? "EXPAND MENU" : "COLLAPSE MENU"}
+                    >
+                        <ArrowLeft size={14} style={{ transform: isSidebarCollapsed ? 'rotate(180deg)' : 'none', transition: 'transform 0.3s' }} />
+                        <span>COLLAPSE MENU</span>
+                    </button>
+                    <button 
+                        className="alahly-sidebar-action-btn export-btn" 
                         onClick={() => window.dispatchEvent(new CustomEvent('alahly-export-excel'))}
                         title="DOWNLOAD CURRENT VIEW AS EXCEL"
-                        style={{
-                            background: 'rgba(201, 168, 76, 0.1)',
-                            color: '#c9a84c',
-                            border: '1px solid rgba(201, 168, 76, 0.25)',
-                            width: '36px',
-                            height: '36px',
-                            borderRadius: '10px',
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                            cursor: 'pointer',
-                            transition: 'all 0.4s cubic-bezier(0.4, 0, 0.2, 1)',
-                            backdropFilter: 'blur(5px)',
-                            zIndex: 10000
-                        }}
                     >
-                        <Download size={16} strokeWidth={3} />
+                        <Download size={14} />
+                        <span>EXPORT TO EXCEL</span>
                     </button>
-                    <button
-                        className="global-filter-btn"
-                        onClick={() => { console.log("Filter button clicked!"); setIsFilterOpen(true); }}
+                    <button 
+                        className="alahly-sidebar-action-btn filter-btn" 
+                        onClick={() => setIsFilterOpen(true)}
                         title="OPEN ADVANCED FILTERS"
-                        style={{
-                            background: 'rgba(201, 168, 76, 0.1)',
-                            color: '#c9a84c',
-                            border: '1px solid rgba(201, 168, 76, 0.25)',
-                            width: '36px',
-                            height: '36px',
-                            borderRadius: '10px',
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                            cursor: 'pointer',
-                            transition: 'all 0.4s cubic-bezier(0.4, 0, 0.2, 1)',
-                            backdropFilter: 'blur(5px)',
-                            zIndex: 10000
-                        }}
                     >
-                        <Filter size={16} strokeWidth={3} />
+                        <SlidersHorizontal size={14} />
+                        <span>FILTERS</span>
                     </button>
                 </div>
-                <div style={{ display: 'flex', gap: '20px' }}>
-                    {[
-                        { id: 'alahly_pks_dashboard', label: 'DASHBOARD', icon: 'D' },
-                        { id: 'alahly_pks_matches', label: 'MATCHES', icon: 'M' },
-                        { id: 'alahly_pks_editor', label: 'EDITORS', icon: 'E' },
-                        { id: 'alahly_pks_champions', label: 'CHAMPIONS', icon: 'C' },
-                        { id: 'alahly_pks_players', label: 'PLAYERS', icon: 'P' },
-                        { id: 'alahly_pks_gks', label: 'GKs', icon: 'GK' },
-                        { id: 'alahly_pks_managers', label: 'MANAGERS', icon: 'MG' },
-                        { id: 'alahly_pks_h2h', label: 'H2H', icon: 'H' },
-                    ].map(tab => (
-                        <button
-                            key={tab.id}
-                            onClick={() => { setActiveTab(tab.id); setSelectedPksId(null); }}
-                            style={{
-                                background: 'transparent',
-                                border: 'none',
-                                cursor: 'pointer',
-                                padding: '0 20px',
-                                height: '54px',
-                                color: activeTab === tab.id ? '#c9a84c' : 'rgba(255,255,255,0.45)',
-                                display: 'flex',
-                                alignItems: 'center',
-                                gap: '8px',
-                                fontSize: '13px',
-                                transition: '0.3s',
-                                borderBottom: activeTab === tab.id ? '2px solid #c9a84c' : '2px solid transparent',
-                                fontFamily: "'Bebas Neue', sans-serif",
-                                letterSpacing: '1px'
-                            }}
-                        >
-                            <span style={{ fontSize: '12px', opacity: 0.7 }}>[{tab.icon}]</span>
-                            {tab.label}
-                        </button>
-                    ))}
-                </div>
-            </nav>
+            </aside>
 
-            <main style={{ padding: '0', maxWidth: (activeTab === 'alahly_pks_h2h' || activeTab === 'alahly_pks_champions' || activeTab === 'alahly_pks_managers' || activeTab === 'alahly_pks_editor') ? '100%' : '1200px', margin: '0 auto' }}>
-                {renderAppContent()}
-            </main>
+            {/* Main content area */}
+            <div className="alahly-main-content">
+                {/* Mobile Top Bar */}
+                <header className="alahly-mobile-top-bar">
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                        <button 
+                            className="alahly-menu-toggle-btn" 
+                            onClick={() => setIsSidebarMobileOpen(true)}
+                            title="OPEN MENU"
+                        >
+                            <Menu size={22} />
+                        </button>
+                        <Link href="/" className="alahly-mobile-brand">
+                            <div className="alahly-mobile-brand-name">
+                                AL AHLY <span>PKS</span>
+                            </div>
+                        </Link>
+                    </div>
+                    <div className="alahly-mobile-actions">
+                        <button 
+                            onClick={() => window.dispatchEvent(new CustomEvent('alahly-export-excel'))} 
+                            className="alahly-mobile-action-icon"
+                            title="DOWNLOAD CURRENT VIEW AS EXCEL"
+                        >
+                            <Download size={16} />
+                        </button>
+                        <button 
+                            onClick={() => setIsFilterOpen(true)} 
+                            className="alahly-mobile-action-icon"
+                            title="OPEN DATABASE FILTERS"
+                        >
+                            <SlidersHorizontal size={16} />
+                        </button>
+                    </div>
+                </header>
+
+                <main className="alahly-content-viewport" style={{ padding: '0', maxWidth: (activeTab === 'alahly_pks_h2h' || activeTab === 'alahly_pks_champions' || activeTab === 'alahly_pks_managers' || activeTab === 'alahly_pks_editor') ? '100%' : '1200px', margin: '0 auto', width: '100%' }}>
+                    {renderAppContent()}
+                </main>
+            </div>
 
             <AlAhlyPKsFilter
                 data={pksData}

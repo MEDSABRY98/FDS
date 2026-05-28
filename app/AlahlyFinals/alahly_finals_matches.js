@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo, useState, useEffect } from "react";
-import { AlAhlyFinalsService } from "../Alahly/alahly_finals_service";
+import { AlAhlyFinalsService } from "./alahly_finals_service";
 import NoData_db from "../lib/NoData_db";
 import SearchBar_db from "../lib/SearchBar_db";
 import "./alahly_finals_matches.css";

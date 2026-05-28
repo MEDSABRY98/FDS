@@ -1,8 +1,10 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Download, Filter } from "lucide-react";
-import { AlAhlyFinalsService } from "../Alahly/alahly_finals_service";
+import Link from "next/link";
+import { LayoutDashboard, Trophy, Edit, Award, Users, UserCheck, Download, Filter, ArrowLeft, X, Menu } from "lucide-react";
+import "../lib/AlahlySidebar.css";
+import { AlAhlyFinalsService } from "./alahly_finals_service";
 import AlAhlyFinalsDashboard from "./alahly_finals_dashboard";
 import AlAhlyFinalsMatches from "./alahly_finals_matches";
 import AlAhlyFinalsPlayers from "./alahly_finals_players";
@@ -16,6 +18,8 @@ import Loading_db from "../lib/Loading_db";
 
 export default function AlAhlyFinalsDatabase() {
     const [activeTab, setActiveTab] = useState("finals_dashboard");
+    const [isSidebarMobileOpen, setIsSidebarMobileOpen] = useState(false);
+    const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
     const [matchesData, setMatchesData] = useState([]);
     const [lineupsData, setLineupsData] = useState([]);
     const [playersData, setPlayersData] = useState([]);
@@ -104,104 +108,125 @@ export default function AlAhlyFinalsDatabase() {
 
 
     return (
-        <div style={{ backgroundColor: '#ffffff', minHeight: '100vh', paddingBottom: '100px', color: '#0a0a0a' }}>
-            <nav style={{
-                position: 'sticky',
-                top: 0,
-                zIndex: 9999,
-                background: '#0a0a0a',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                width: '100%',
-                minHeight: '74px',
-                padding: '10px 0',
-                borderBottom: '1px solid rgba(255, 255, 255, 0.08)'
-            }}>
-                <div style={{ position: 'absolute', left: '25px', display: 'flex', gap: '10px' }}>
+        <div className={`alahly-container ${isSidebarCollapsed ? 'sidebar-collapsed' : ''}`} style={{ backgroundColor: '#ffffff', minHeight: '100vh', color: '#0a0a0a' }}>
+            {/* Backdrop for mobile drawer */}
+            <div
+                className={`alahly-sidebar-backdrop ${isSidebarMobileOpen ? 'active' : ''}`}
+                onClick={() => setIsSidebarMobileOpen(false)}
+            />
+
+            {/* Sidebar navigation */}
+            <aside className={`alahly-sidebar ${isSidebarMobileOpen ? 'mobile-open' : ''}`}>
+                <div className="alahly-sidebar-header">
+                    <Link href="/" className="alahly-sidebar-brand">
+                        <div className="alahly-sidebar-logo-hex">
+                            <span className="alahly-sidebar-logo-text">A</span>
+                        </div>
+                        <div className="alahly-sidebar-brand-name">
+                            AHLY <span>FINALS</span>
+                        </div>
+                    </Link>
                     <button
-                        onClick={() => window.dispatchEvent(new CustomEvent('alahly-export-excel'))}
-                        title="DOWNLOAD AS EXCEL"
-                        style={{
-                            background: 'rgba(201, 168, 76, 0.1)',
-                            color: '#c9a84c',
-                            border: '1px solid rgba(201, 168, 76, 0.25)',
-                            width: '36px',
-                            height: '36px',
-                            borderRadius: '10px',
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                            cursor: 'pointer',
-                            transition: 'all 0.4s cubic-bezier(0.4, 0, 0.2, 1)',
-                            backdropFilter: 'blur(5px)',
-                            zIndex: 10000
-                        }}
+                        className="alahly-sidebar-close-btn"
+                        onClick={() => setIsSidebarMobileOpen(false)}
+                        title="CLOSE MENU"
                     >
-                        <Download size={16} strokeWidth={3} />
-                    </button>
-                    <button
-                        onClick={() => setIsFilterOpen(true)}
-                        title="OPEN FILTERS"
-                        style={{
-                            background: 'rgba(201, 168, 76, 0.1)',
-                            color: '#c9a84c',
-                            border: '1px solid rgba(201, 168, 76, 0.25)',
-                            width: '36px',
-                            height: '36px',
-                            borderRadius: '10px',
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                            cursor: 'pointer',
-                            transition: 'all 0.4s cubic-bezier(0.4, 0, 0.2, 1)',
-                            backdropFilter: 'blur(5px)',
-                            zIndex: 10000
-                        }}
-                    >
-                        <Filter size={16} strokeWidth={3} />
+                        <X size={20} />
                     </button>
                 </div>
 
-                <div style={{ display: 'flex', gap: '5px' }}>
+                <div className="alahly-sidebar-menu">
                     {[
-                        { id: 'finals_dashboard', label: 'DASHBOARD', icon: 'D' },
-                        { id: 'finals_matches', label: 'MATCHES', icon: 'M' },
-                        { id: 'finals_editor', label: 'EDITOR', icon: 'E' },
-                        { id: 'finals_champions', label: 'CHAMPIONS', icon: 'C' },
-                        { id: 'finals_players', label: 'PLAYERS', icon: 'P' },
-                        { id: 'finals_managers', label: 'MANAGERS', icon: 'M' },
+                        { id: 'finals_dashboard', label: 'DASHBOARD', icon: <LayoutDashboard size={16} className="alahly-sidebar-item-icon" /> },
+                        { id: 'finals_matches', label: 'MATCHES', icon: <Trophy size={16} className="alahly-sidebar-item-icon" /> },
+                        { id: 'finals_editor', label: 'EDITOR', icon: <Edit size={16} className="alahly-sidebar-item-icon" /> },
+                        { id: 'finals_champions', label: 'CHAMPIONS', icon: <Award size={16} className="alahly-sidebar-item-icon" /> },
+                        { id: 'finals_players', label: 'PLAYERS', icon: <Users size={16} className="alahly-sidebar-item-icon" /> },
+                        { id: 'finals_managers', label: 'MANAGERS', icon: <UserCheck size={16} className="alahly-sidebar-item-icon" /> },
                     ].map(tab => (
                         <button
                             key={tab.id}
-                            onClick={() => { setActiveTab(tab.id); setSelectedMatchId(null); }}
-                            style={{
-                                background: 'transparent',
-                                border: 'none',
-                                cursor: 'pointer',
-                                padding: '0 20px',
-                                height: '54px',
-                                color: activeTab === tab.id ? '#c9a84c' : 'rgba(255,255,255,0.45)',
-                                display: 'flex',
-                                alignItems: 'center',
-                                gap: '8px',
-                                fontSize: '13px',
-                                transition: '0.3s',
-                                borderBottom: activeTab === tab.id ? '2px solid #c9a84c' : '2px solid transparent',
-                                fontFamily: "'Bebas Neue', sans-serif",
-                                letterSpacing: '1px'
+                            className={`alahly-sidebar-item ${activeTab === tab.id ? 'active' : ''}`}
+                            onClick={() => {
+                                setActiveTab(tab.id);
+                                setSelectedMatchId(null);
+                                setIsSidebarMobileOpen(false);
                             }}
                         >
-                            <span style={{ fontSize: '12px', opacity: 0.7 }}>[{tab.icon}]</span>
-                            {tab.label}
+                            {tab.icon}
+                            <span>{tab.label}</span>
                         </button>
                     ))}
                 </div>
-            </nav>
 
-            <main style={{ padding: '30px 0', maxWidth: (activeTab === 'finals_editor') ? '100%' : '1400px', margin: '0 auto' }}>
-                {renderAppContent()}
-            </main>
+                <div className="alahly-sidebar-actions">
+                    <button
+                        className="alahly-sidebar-collapse-toggle-btn"
+                        onClick={() => setIsSidebarCollapsed(!isSidebarCollapsed)}
+                        title={isSidebarCollapsed ? "EXPAND MENU" : "COLLAPSE MENU"}
+                    >
+                        <ArrowLeft size={14} style={{ transform: isSidebarCollapsed ? 'rotate(180deg)' : 'none', transition: 'transform 0.3s' }} />
+                        <span>COLLAPSE MENU</span>
+                    </button>
+                    <button
+                        className="alahly-sidebar-action-btn filter-btn"
+                        onClick={() => setIsSidebarOpen(true)}
+                        title="OPEN FILTERS"
+                    >
+                        <Filter size={14} />
+                        <span>FILTERS</span>
+                    </button>
+                    <button
+                        className="alahly-sidebar-action-btn export-btn"
+                        onClick={() => window.dispatchEvent(new CustomEvent('alahly-export-excel'))}
+                        title="DOWNLOAD AS EXCEL"
+                    >
+                        <Download size={14} />
+                        <span>EXPORT TO EXCEL</span>
+                    </button>
+                </div>
+            </aside>
+
+            <div className="alahly-main-content">
+                {/* Mobile Top Bar */}
+                <header className="alahly-mobile-top-bar">
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                        <button
+                            className="alahly-menu-toggle-btn"
+                            onClick={() => setIsSidebarMobileOpen(true)}
+                            title="OPEN MENU"
+                        >
+                            <Menu size={22} />
+                        </button>
+                        <Link href="/" className="alahly-mobile-brand">
+                            <div className="alahly-mobile-brand-name">
+                                AHLY <span>FINALS</span>
+                            </div>
+                        </Link>
+                    </div>
+                    <div className="alahly-mobile-actions">
+                        <button
+                            onClick={() => setIsSidebarOpen(true)}
+                            className="alahly-mobile-action-icon"
+                            title="OPEN FILTERS"
+                            style={{ marginRight: '8px' }}
+                        >
+                            <Filter size={16} />
+                        </button>
+                        <button
+                            onClick={() => window.dispatchEvent(new CustomEvent('alahly-export-excel'))}
+                            className="alahly-mobile-action-icon"
+                            title="DOWNLOAD AS EXCEL"
+                        >
+                            <Download size={16} />
+                        </button>
+                    </div>
+                </header>
+
+                <main style={{ padding: '30px 24px', maxWidth: '100%', margin: '0' }}>
+                    {renderAppContent()}
+                </main>
+            </div>
 
             <AlAhlyFinalsFilter
                 data={matchesData}

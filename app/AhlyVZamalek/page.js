@@ -1,19 +1,32 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Download, Filter } from "lucide-react";
+import { 
+    Download, 
+    SlidersHorizontal, 
+    X, 
+    LayoutDashboard, 
+    Trophy, 
+    Users, 
+    User, 
+    Menu, 
+    ArrowLeft 
+} from "lucide-react";
+import Link from "next/link";
 import { AhlyVZamalekService } from "./ahly_v_zamalek_service";
 import AhlyVZamalekDashboard from "./ahly_v_zamalek_dashboard";
 import AhlyVZamalekMatches from "./ahly_v_zamalek_matches";
 import AhlyVZamalekPlayers from "./ahly_v_zamalek_players";
 import AhlyVZamalekManagers from "./ahly_v_zamalek_managers";
 import AhlyVZamalekFilters from "./ahly_v_zamalek_filters";
-
 import Login_db from "../lib/Login_db";
 import Loading_db from "../lib/Loading_db";
+import "../lib/AlahlySidebar.css";
 
 export default function AhlyVZamalekDatabase() {
     const [activeTab, setActiveTab] = useState("avz_dashboard");
+    const [isSidebarMobileOpen, setIsSidebarMobileOpen] = useState(false);
+    const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
     const [matchesData, setMatchesData] = useState([]);
     const [lineupsData, setLineupsData] = useState([]);
     const [playersData, setPlayersData] = useState([]);
@@ -22,6 +35,13 @@ export default function AhlyVZamalekDatabase() {
     const [loading, setLoading] = useState(true);
     const [selectedMatchId, setSelectedMatchId] = useState(null);
     const [isFilterOpen, setIsFilterOpen] = useState(false);
+
+    const tabs = [
+        { id: 'avz_dashboard', label: 'Dashboard', icon: LayoutDashboard },
+        { id: 'avz_matches', label: 'Matches', icon: Trophy },
+        { id: 'avz_players', label: 'Players', icon: Users },
+        { id: 'avz_managers', label: 'Managers', icon: User }
+    ];
 
     useEffect(() => {
         fetchAvZData();
@@ -87,49 +107,121 @@ export default function AhlyVZamalekDatabase() {
     }
 
     return (
-        <div className="avz-main-container" style={{ backgroundColor: '#ffffff', minHeight: '100vh', paddingBottom: '100px', color: '#0a0a0a' }}>
-            <nav className="avz-nav">
-                <div className="avz-nav-actions">
+        <div id="main-app" className={`alahly-container ${isSidebarCollapsed ? 'sidebar-collapsed' : ''}`}>
+            {/* Backdrop for mobile drawer */}
+            <div 
+                className={`alahly-sidebar-backdrop ${isSidebarMobileOpen ? 'active' : ''}`} 
+                onClick={() => setIsSidebarMobileOpen(false)}
+            />
+
+            {/* Sidebar navigation */}
+            <aside className={`alahly-sidebar ${isSidebarMobileOpen ? 'mobile-open' : ''}`}>
+                <div className="alahly-sidebar-header">
+                    <Link href="/" className="alahly-sidebar-brand">
+                        <div className="alahly-sidebar-logo-hex" style={{ background: '#da1b22' }}>
+                            <span className="alahly-sidebar-logo-text" style={{ color: '#fff' }}>V</span>
+                        </div>
+                        <div className="alahly-sidebar-brand-name">
+                            AHLY <span>VS</span> ZAMALEK
+                        </div>
+                    </Link>
+                    <button 
+                        className="alahly-sidebar-close-btn" 
+                        onClick={() => setIsSidebarMobileOpen(false)}
+                        title="CLOSE MENU"
+                    >
+                        <X size={20} />
+                    </button>
+                </div>
+
+                <div className="alahly-sidebar-menu">
+                    {tabs.map(tab => {
+                        const Icon = tab.icon;
+                        return (
+                            <button
+                                key={tab.id}
+                                className={`alahly-sidebar-item ${activeTab === tab.id ? 'active' : ''}`}
+                                onClick={() => {
+                                    setActiveTab(tab.id);
+                                    setSelectedMatchId(null);
+                                    setIsSidebarMobileOpen(false);
+                                }}
+                            >
+                                <Icon size={16} className="alahly-sidebar-item-icon" />
+                                <span>{tab.label}</span>
+                            </button>
+                        );
+                    })}
+                </div>
+
+                <div className="alahly-sidebar-actions">
                     <button
+                        className="alahly-sidebar-collapse-toggle-btn"
+                        onClick={() => setIsSidebarCollapsed(!isSidebarCollapsed)}
+                        title={isSidebarCollapsed ? "EXPAND MENU" : "COLLAPSE MENU"}
+                    >
+                        <ArrowLeft size={14} style={{ transform: isSidebarCollapsed ? 'rotate(180deg)' : 'none', transition: 'transform 0.3s' }} />
+                        <span>COLLAPSE MENU</span>
+                    </button>
+                    <button 
+                        className="alahly-sidebar-action-btn export-btn" 
                         onClick={() => window.dispatchEvent(new CustomEvent('avz-export-excel'))}
-                        title="DOWNLOAD AS EXCEL"
-                        className="avz-icon-btn"
+                        title="DOWNLOAD CURRENT VIEW AS EXCEL"
                     >
-                        <Download size={16} strokeWidth={3} />
+                        <Download size={14} />
+                        <span>EXPORT TO EXCEL</span>
                     </button>
-                    <button
+                    <button 
+                        className="alahly-sidebar-action-btn filter-btn" 
                         onClick={() => setIsFilterOpen(true)}
-                        title="OPEN FILTERS"
-                        className="avz-icon-btn"
+                        title="OPEN DATABASE FILTERS"
                     >
-                        <Filter size={16} strokeWidth={3} />
+                        <SlidersHorizontal size={14} />
+                        <span>FILTERS</span>
                     </button>
                 </div>
+            </aside>
 
-                <div className="avz-tabs-container">
-                    {[
-                        { id: 'avz_dashboard', label: 'DASHBOARD', icon: 'D' },
-                        { id: 'avz_matches', label: 'MATCHES', icon: 'M' },
-                        { id: 'avz_players', label: 'PLAYERS', icon: 'P' },
-                        { id: 'avz_managers', label: 'MANAGERS', icon: 'M' },
-
-                    ].map(tab => (
-                        <button
-                            key={tab.id}
-                            onClick={() => { setActiveTab(tab.id); setSelectedMatchId(null); }}
-                            className={`avz-tab-btn ${activeTab === tab.id ? 'active' : ''}`}
+            {/* Main content area */}
+            <div className="alahly-main-content">
+                {/* Mobile Top Bar */}
+                <header className="alahly-mobile-top-bar" style={{ borderBottom: '1px solid rgba(255, 255, 255, 0.08)' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                        <button 
+                            className="alahly-menu-toggle-btn" 
+                            onClick={() => setIsSidebarMobileOpen(true)}
+                            title="OPEN MENU"
                         >
-                            <span className="avz-tab-icon">[{tab.icon}]</span>
-                            {tab.label}
+                            <Menu size={22} />
                         </button>
-                    ))}
-                </div>
-            </nav>
+                        <Link href="/" className="alahly-mobile-brand">
+                            <div className="alahly-mobile-brand-name">
+                                AHLY <span>VS</span> ZAMALEK
+                            </div>
+                        </Link>
+                    </div>
+                    <div className="alahly-mobile-actions">
+                        <button 
+                            onClick={() => window.dispatchEvent(new CustomEvent('avz-export-excel'))} 
+                            className="alahly-mobile-action-icon"
+                            title="DOWNLOAD CURRENT VIEW AS EXCEL"
+                        >
+                            <Download size={16} />
+                        </button>
+                        <button 
+                            onClick={() => setIsFilterOpen(true)} 
+                            className="alahly-mobile-action-icon"
+                            title="OPEN DATABASE FILTERS"
+                        >
+                            <SlidersHorizontal size={16} />
+                        </button>
+                    </div>
+                </header>
 
-            <main className="avz-content" style={{ padding: '30px 0', maxWidth: '1400px', margin: '0 auto' }}>
-
-                {renderAppContent()}
-            </main>
+                <main className="alahly-content-viewport" style={{ padding: '0', maxWidth: '1400px', margin: '0 auto', width: '100%' }}>
+                    {renderAppContent()}
+                </main>
+            </div>
 
             <AhlyVZamalekFilters
                 data={matchesData}
@@ -137,68 +229,6 @@ export default function AhlyVZamalekDatabase() {
                 isOpen={isFilterOpen}
                 onClose={() => setIsFilterOpen(false)}
             />
-
-            <style jsx>{`
-                .avz-nav {
-                    position: sticky;
-                    top: 0;
-                    z-index: 9999;
-                    background: #111;
-                    display: flex;
-                    align-items: center;
-                    justify-content: center;
-                    width: 100%;
-                    min-height: 74px;
-                    padding: 10px 0;
-                    border-bottom: 2px solid #da1b22; /* Ahly Red */
-                }
-                .avz-nav-actions {
-                    position: absolute; left: 25px; display: flex; gap: 10px;
-                }
-                .avz-icon-btn {
-                    background: rgba(218, 27, 34, 0.1);
-                    color: #da1b22;
-                    border: 1px solid rgba(218, 27, 34, 0.3);
-                    width: 36px;
-                    height: 36px;
-                    border-radius: 10px;
-                    display: flex;
-                    align-items: center;
-                    justify-content: center;
-                    cursor: pointer;
-                    transition: all 0.4s ease;
-                }
-                .avz-icon-btn:hover {
-                    background: rgba(218, 27, 34, 0.2);
-                    color: #fff;
-                }
-                .avz-tabs-container {
-                    display: flex; gap: 5px;
-                }
-                .avz-tab-btn {
-                    background: transparent;
-                    border: none;
-                    cursor: pointer;
-                    padding: 0 20px;
-                    height: 54px;
-                    color: rgba(255,255,255,0.45);
-                    display: flex;
-                    align-items: center;
-                    gap: 8px;
-                    font-size: 13px;
-                    transition: 0.3s;
-                    border-bottom: 2px solid transparent;
-                    font-family: 'Bebas Neue', sans-serif;
-                    letter-spacing: 1px;
-                }
-                .avz-tab-btn.active {
-                    color: #fff;
-                    border-bottom: 2px solid #da1b22;
-                }
-                .avz-tab-icon {
-                    font-size: 12px; opacity: 0.7;
-                }
-            `}</style>
         </div>
     );
 }
