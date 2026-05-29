@@ -168,9 +168,9 @@ export default function AlAhlyFinalsPlayers({ playersData, matchesData, lineupsD
 
     return (
         <div className="finals-players-container fade-in">
-            <div className="players-header">
-                <h1 className="players-title">AL AHLY FINALS <span className="gold-text">PLAYERS</span></h1>
-                <div className="players-search-wrapper">
+            <div className="finals-players-header">
+                <h1 className="finals-players-title">AL AHLY FINALS <span className="gold-text">PLAYERS</span></h1>
+                <div className="finals-players-search-wrapper">
                     <SearchBar_db
                         value={searchTerm}
                         onChange={setSearchTerm}

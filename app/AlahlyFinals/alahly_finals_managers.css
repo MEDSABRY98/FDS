@@ -58,7 +58,7 @@
 
 .stats-table-header {
     display: grid;
-    grid-template-columns: 60px 1fr 80px 80px 80px 100px 80px 70px 70px 70px 70px 70px 85px;
+    grid-template-columns: 60px 3fr 1.1fr 1.1fr 1.1fr 1.3fr 1.1fr 1fr 1fr 1fr 1fr 1fr 1.2fr;
     background: #0a0a0a;
     padding: 18px 10px;
     border-bottom: 2px solid #c9a84c;
@@ -96,7 +96,7 @@
 
 .manager-stats-row {
     display: grid;
-    grid-template-columns: 60px 1fr 80px 80px 80px 100px 80px 70px 70px 70px 70px 70px 85px;
+    grid-template-columns: 60px 3fr 1.1fr 1.1fr 1.1fr 1.3fr 1.1fr 1fr 1fr 1fr 1fr 1fr 1.2fr;
     padding: 12px 10px;
     border-bottom: 1px solid #f2f2f2;
     transition: 0.3s cubic-bezier(0.4, 0, 0.2, 1);
