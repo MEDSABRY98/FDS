@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo, useState, useEffect } from "react";
-import { AlAhlyService } from "../Alahly/alahly_db_service";
+import { AlAhlyService } from "../alahly/alahly_db_service";
 import AlAhlyPKsPlayerDetails from "./alahly_pks_player_details";
 import NoData_db from "../lib/NoData_db";
 import SearchBar_db from "../lib/SearchBar_db";
