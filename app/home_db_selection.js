@@ -12,14 +12,14 @@ export default function HomeDbSelection() {
             <div className="home-sys-sub">SELECT A SECTION TO CONTINUE</div>
 
             <div className="section-cards">
-                <Link href="/alahlydbmanagement" className="section-card">
+                <Link href="/AlahlydbManagement" className="section-card">
                     <div className="card-icon-wrap">
                         <span className="card-emoji" style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: "36px" }}>DB</span>
                     </div>
                     <div className="card-name">AL AHLY DB MANAGEMENT</div>
                 </Link>
 
-                <Link href="/alahly" className="section-card">
+                <Link href="/Alahly" className="section-card">
                     <div className="card-icon-wrap">
                         <span className="card-emoji" style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: "36px" }}>A</span>
                     </div>

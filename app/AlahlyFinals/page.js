@@ -170,7 +170,7 @@ export default function AlAhlyFinalsDatabase() {
                     </button>
                     <button
                         className="alahly-sidebar-action-btn filter-btn"
-                        onClick={() => setIsSidebarOpen(true)}
+                        onClick={() => setIsFilterOpen(true)}
                         title="OPEN FILTERS"
                     >
                         <Filter size={14} />
@@ -206,7 +206,7 @@ export default function AlAhlyFinalsDatabase() {
                     </div>
                     <div className="alahly-mobile-actions">
                         <button
-                            onClick={() => setIsSidebarOpen(true)}
+                            onClick={() => setIsFilterOpen(true)}
                             className="alahly-mobile-action-icon"
                             title="OPEN FILTERS"
                             style={{ marginRight: '8px' }}
