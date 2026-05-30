@@ -19,6 +19,7 @@ import AhlyVZamalekMatches from "./ahly_v_zamalek_matches";
 import AhlyVZamalekPlayers from "./ahly_v_zamalek_players";
 import AhlyVZamalekManagers from "./ahly_v_zamalek_managers";
 import AhlyVZamalekFilters from "./ahly_v_zamalek_filters";
+import AhlyVZamalekMatchDetails from "./ahly_v_zamalek_match_details";
 import Login_db from "../lib/Login_db";
 import Loading_db from "../lib/Loading_db";
 import "../lib/AlahlySidebar.css";
@@ -74,16 +75,13 @@ export default function AhlyVZamalekDatabase() {
     const renderAppContent = () => {
         if (selectedMatchId) {
             return (
-                <div style={{ padding: '40px', color: '#0a0a0a', textAlign: 'center' }}>
-                    <h2 style={{ color: '#c9a84c' }}>MATCH DETAILS [ID: {selectedMatchId}]</h2>
-                    <p style={{ opacity: 0.7 }}>Coming soon... Drilling down into specific derby details.</p>
-                    <button
-                        onClick={() => setSelectedMatchId(null)}
-                        style={{ background: '#c9a84c', color: '#000', border: 'none', padding: '10px 20px', borderRadius: '5px', marginTop: '20px', cursor: 'pointer' }}
-                    >
-                        BACK TO LIST
-                    </button>
-                </div>
+                <AhlyVZamalekMatchDetails
+                    matchId={selectedMatchId}
+                    matches={matchesData}
+                    playerDetails={playersData}
+                    lineupDetails={lineupsData}
+                    onBack={() => setSelectedMatchId(null)}
+                />
             );
         }
 

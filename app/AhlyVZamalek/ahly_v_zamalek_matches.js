@@ -61,7 +61,11 @@ export default function AhlyVZamalekMatches({ derbyData, onSelectMatch }) {
             <div className="avz-matches-list">
                 {displayedMatches.length > 0 ? (
                     displayedMatches.map((match, idx) => (
-                        <div key={match.ROW_ID || idx} className="avz-match-card no-click">
+                        <div 
+                            key={match.ROW_ID || idx} 
+                            className="avz-match-card clickable"
+                            onClick={() => onSelectMatch && onSelectMatch(match.MATCH_ID)}
+                        >
                             <div className="avz-match-teams">
                                 <span className={`avz-team ${match["W-D-L"] === "W" ? "winner" : ""}`}>
                                     {match.AHLY || "الأهلي"} <span className="avz-score">{match.GF}</span>

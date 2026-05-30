@@ -64,8 +64,14 @@
     transition: all 0.3s ease;
 }
 
-.avz-match-card.no-click {
-    cursor: default;
+.avz-match-card.clickable {
+    cursor: pointer;
+}
+
+.avz-match-card.clickable:hover {
+    border-color: #da1b22;
+    transform: translateY(-2px);
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.08);
 }
 
 .avz-match-card:hover {
