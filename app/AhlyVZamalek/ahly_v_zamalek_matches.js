@@ -10,7 +10,7 @@ import SearchBar_db from "../lib/SearchBar_db";
 
 export default function AhlyVZamalekMatches({ derbyData, onSelectMatch }) {
     const [searchTerm, setSearchTerm] = useState("");
-    
+
 
 
     const displayedMatches = derbyData.filter(m => {
@@ -47,10 +47,10 @@ export default function AhlyVZamalekMatches({ derbyData, onSelectMatch }) {
         <div className="avz-matches-container fade-in">
             <div className="avz-matches-header">
                 <h1 className="avz-matches-title">DERBY <span className="avz-gold-text">MATCHES</span></h1>
-                
+
                 <div className="avz-search-box">
-                    <SearchBar_db 
-                        placeholder="Search matches, champions, stadiums..." 
+                    <SearchBar_db
+                        placeholder="Search matches, champions, stadiums..."
                         value={searchTerm}
                         onChange={setSearchTerm}
                     />
@@ -61,11 +61,7 @@ export default function AhlyVZamalekMatches({ derbyData, onSelectMatch }) {
             <div className="avz-matches-list">
                 {displayedMatches.length > 0 ? (
                     displayedMatches.map((match, idx) => (
-                        <div 
-                            key={match.ROW_ID || idx} 
-                            className="avz-match-card clickable"
-                            onClick={() => onSelectMatch && onSelectMatch(match.MATCH_ID)}
-                        >
+                        <div key={match.ROW_ID || idx} className="avz-match-card" onClick={() => onSelectMatch && onSelectMatch(match)}>
                             <div className="avz-match-teams">
                                 <span className={`avz-team ${match["W-D-L"] === "W" ? "winner" : ""}`}>
                                     {match.AHLY || "الأهلي"} <span className="avz-score">{match.GF}</span>
@@ -78,7 +74,7 @@ export default function AhlyVZamalekMatches({ derbyData, onSelectMatch }) {
 
                             <div className="avz-match-meta">
                                 <span className="avz-meta-date">{match.DATE || match.YEAR}</span>
-                                
+
                                 {match.CHAMPION && (
                                     <>
                                         <span className="avz-divider">•</span>

@@ -273,7 +273,16 @@ export default function AhlyVZamalekMatchDetails({
                                                 <div key={i} className="player-card sub-card">
                                                     <span className="player-num sub-num">S</span>
                                                     <div className="sub-main">
-                                                        <span className="player-name">{p["PLAYER NAME"]}</span>
+                                                        <span className="player-name">
+                                                            {p["PLAYER NAME"]}
+                                                            <span className="player-badges-inline" style={{ marginLeft: '8px', display: 'inline-flex', gap: '4px', verticalAlign: 'middle' }}>
+                                                                {events.ahly.filter(e => e["PLAYER NAME"] === p["PLAYER NAME"] && String(e.TYPE).trim() !== 'تغيير').map((e, idx) => (
+                                                                    <span key={idx} title={e.TYPE} className="event-mini-icon">
+                                                                        {getEventIcon(e.TYPE)}
+                                                                    </span>
+                                                                ))}
+                                                            </span>
+                                                        </span>
                                                         {subInfo && (
                                                             <div className="sub-details-row">
                                                                 <span className="sub-in-label">🔄 {subInfo.minute}'</span>
@@ -282,13 +291,6 @@ export default function AhlyVZamalekMatchDetails({
                                                                 )}
                                                             </div>
                                                         )}
-                                                    </div>
-                                                    <div className="player-badges">
-                                                        {events.ahly.filter(e => e["PLAYER NAME"] === p["PLAYER NAME"] && String(e.TYPE).trim() !== 'تغيير').map((e, idx) => (
-                                                            <span key={idx} title={e.TYPE} className="event-mini-icon">
-                                                                {getEventIcon(e.TYPE)}
-                                                            </span>
-                                                        ))}
                                                     </div>
                                                 </div>
                                             );
@@ -340,24 +342,26 @@ export default function AhlyVZamalekMatchDetails({
                                                 <div key={i} className="player-card sub-card rev">
                                                     <span className="player-num sub-num">S</span>
                                                     <div className="sub-main tr">
-                                                        <span className="player-name">{p["PLAYER NAME"]}</span>
+                                                        <span className="player-name">
+                                                            <span className="player-badges-inline-rev" style={{ marginRight: '8px', display: 'inline-flex', gap: '4px', verticalAlign: 'middle' }}>
+                                                                {events.zamalek.filter(e => e["PLAYER NAME"] === p["PLAYER NAME"] && String(e.TYPE).trim() !== 'تغيير').map((e, idx) => (
+                                                                    <span key={idx} title={e.TYPE} className="event-mini-icon">
+                                                                        {getEventIcon(e.TYPE)}
+                                                                    </span>
+                                                                ))}
+                                                            </span>
+                                                            {p["PLAYER NAME"]}
+                                                        </span>
                                                         {subInfo && (
                                                             <div className="sub-details-row rev">
-                                                                <span className="sub-in-label">🔄 {subInfo.minute}'</span>
-                                                                {subInfo.playerOut && (
-                                                                    <span className="sub-out-label">↙ {subInfo.playerOut}</span>
-                                                                )}
-                                                            </div>
-                                                        )}
-                                                    </div>
-                                                    <div className="player-badges">
-                                                        {events.zamalek.filter(e => e["PLAYER NAME"] === p["PLAYER NAME"] && String(e.TYPE).trim() !== 'تغيير').map((e, idx) => (
-                                                            <span key={idx} title={e.TYPE} className="event-mini-icon">
-                                                                {getEventIcon(e.TYPE)}
-                                                            </span>
-                                                        ))}
-                                                    </div>
-                                                </div>
+                                                                 <span className="sub-in-label">🔄 {subInfo.minute}'</span>
+                                                                 {subInfo.playerOut && (
+                                                                     <span className="sub-out-label">↙ {subInfo.playerOut}</span>
+                                                                 )}
+                                                             </div>
+                                                         )}
+                                                     </div>
+                                                 </div>
                                             );
                                         })}
                                     </>

@@ -1,16 +1,16 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { 
-    Download, 
-    SlidersHorizontal, 
-    X, 
-    LayoutDashboard, 
-    Trophy, 
-    Users, 
-    User, 
-    Menu, 
-    ArrowLeft 
+import {
+    Download,
+    SlidersHorizontal,
+    X,
+    LayoutDashboard,
+    Trophy,
+    Users,
+    User,
+    Menu,
+    ArrowLeft
 } from "lucide-react";
 import Link from "next/link";
 import { AhlyVZamalekService } from "./ahly_v_zamalek_service";
@@ -76,7 +76,7 @@ export default function AhlyVZamalekDatabase() {
         if (selectedMatchId) {
             return (
                 <AhlyVZamalekMatchDetails
-                    matchId={selectedMatchId}
+                    matchId={selectedMatchId.MATCH_ID}
                     matches={matchesData}
                     playerDetails={playersData}
                     lineupDetails={lineupsData}
@@ -107,8 +107,8 @@ export default function AhlyVZamalekDatabase() {
     return (
         <div id="main-app" className={`alahly-container ${isSidebarCollapsed ? 'sidebar-collapsed' : ''}`}>
             {/* Backdrop for mobile drawer */}
-            <div 
-                className={`alahly-sidebar-backdrop ${isSidebarMobileOpen ? 'active' : ''}`} 
+            <div
+                className={`alahly-sidebar-backdrop ${isSidebarMobileOpen ? 'active' : ''}`}
                 onClick={() => setIsSidebarMobileOpen(false)}
             />
 
@@ -123,8 +123,8 @@ export default function AhlyVZamalekDatabase() {
                             AHLY <span>VS</span> ZAMALEK
                         </div>
                     </Link>
-                    <button 
-                        className="alahly-sidebar-close-btn" 
+                    <button
+                        className="alahly-sidebar-close-btn"
                         onClick={() => setIsSidebarMobileOpen(false)}
                         title="CLOSE MENU"
                     >
@@ -161,16 +161,16 @@ export default function AhlyVZamalekDatabase() {
                         <ArrowLeft size={14} style={{ transform: isSidebarCollapsed ? 'rotate(180deg)' : 'none', transition: 'transform 0.3s' }} />
                         <span>COLLAPSE MENU</span>
                     </button>
-                    <button 
-                        className="alahly-sidebar-action-btn export-btn" 
+                    <button
+                        className="alahly-sidebar-action-btn export-btn"
                         onClick={() => window.dispatchEvent(new CustomEvent('avz-export-excel'))}
                         title="DOWNLOAD CURRENT VIEW AS EXCEL"
                     >
                         <Download size={14} />
                         <span>EXPORT TO EXCEL</span>
                     </button>
-                    <button 
-                        className="alahly-sidebar-action-btn filter-btn" 
+                    <button
+                        className="alahly-sidebar-action-btn filter-btn"
                         onClick={() => setIsFilterOpen(true)}
                         title="OPEN DATABASE FILTERS"
                     >
@@ -185,8 +185,8 @@ export default function AhlyVZamalekDatabase() {
                 {/* Mobile Top Bar */}
                 <header className="alahly-mobile-top-bar" style={{ borderBottom: '1px solid rgba(255, 255, 255, 0.08)' }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                        <button 
-                            className="alahly-menu-toggle-btn" 
+                        <button
+                            className="alahly-menu-toggle-btn"
                             onClick={() => setIsSidebarMobileOpen(true)}
                             title="OPEN MENU"
                         >
@@ -199,15 +199,15 @@ export default function AhlyVZamalekDatabase() {
                         </Link>
                     </div>
                     <div className="alahly-mobile-actions">
-                        <button 
-                            onClick={() => window.dispatchEvent(new CustomEvent('avz-export-excel'))} 
+                        <button
+                            onClick={() => window.dispatchEvent(new CustomEvent('avz-export-excel'))}
                             className="alahly-mobile-action-icon"
                             title="DOWNLOAD CURRENT VIEW AS EXCEL"
                         >
                             <Download size={16} />
                         </button>
-                        <button 
-                            onClick={() => setIsFilterOpen(true)} 
+                        <button
+                            onClick={() => setIsFilterOpen(true)}
                             className="alahly-mobile-action-icon"
                             title="OPEN DATABASE FILTERS"
                         >
