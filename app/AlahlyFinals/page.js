@@ -13,6 +13,7 @@ import AlAhlyFinalsManagers from "./alahly_finals_managers";
 import AlAhlyFinalsEditor from "./alahly_finals_editor";
 import AlAhlyFinalsFilter from "./alahly_finals_filters";
 import Loading_db from "../lib/Loading_db";
+import AlAhlyFinalsMatchDetails from "./alahly_finals_match_details";
 
 
 export default function AlAhlyFinalsDatabase() {
@@ -59,19 +60,14 @@ export default function AlAhlyFinalsDatabase() {
     const renderAppContent = () => {
         // Handle Match Details drill-down if needed
         if (selectedMatchId) {
-            // Placeholder: Could create AlAhlyFinalsMatchDetails if required
-            const matchInfo = matchesData.find(m => m.MATCH_ID === selectedMatchId || m.FINAL_ID === selectedMatchId);
             return (
-                <div style={{ padding: '40px', color: '#0a0a0a', textAlign: 'center' }}>
-                    <h2 style={{ color: '#c9a84c' }}>MATCH DETAILS [ID: {selectedMatchId}]</h2>
-                    <p style={{ opacity: 0.7 }}>Coming soon... Drilling down into specific finals details.</p>
-                    <button
-                        onClick={() => setSelectedMatchId(null)}
-                        style={{ background: '#c9a84c', color: '#000', border: 'none', padding: '10px 20px', borderRadius: '5px', marginTop: '20px', cursor: 'pointer' }}
-                    >
-                        BACK TO LIST
-                    </button>
-                </div>
+                <AlAhlyFinalsMatchDetails
+                    matchId={selectedMatchId}
+                    matches={matchesData}
+                    playerDetails={playersData}
+                    lineupDetails={lineupsData}
+                    onBack={() => setSelectedMatchId(null)}
+                />
             );
         }
 
