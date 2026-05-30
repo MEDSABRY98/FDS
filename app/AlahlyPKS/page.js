@@ -35,7 +35,7 @@ import "../lib/AlahlySidebar.css";
 export default function AlAhlyPKsDatabase() {
     const [activeTab, setActiveTab] = useState("alahly_pks_dashboard");
     const [isSidebarMobileOpen, setIsSidebarMobileOpen] = useState(false);
-    const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
+    const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(true);
     const [pksData, setPksData] = useState([]);
     const [filteredData, setFilteredData] = useState([]);
     const [loading, setLoading] = useState(true);

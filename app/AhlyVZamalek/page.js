@@ -26,7 +26,7 @@ import "../lib/AlahlySidebar.css";
 export default function AhlyVZamalekDatabase() {
     const [activeTab, setActiveTab] = useState("avz_dashboard");
     const [isSidebarMobileOpen, setIsSidebarMobileOpen] = useState(false);
-    const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
+    const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(true);
     const [matchesData, setMatchesData] = useState([]);
     const [lineupsData, setLineupsData] = useState([]);
     const [playersData, setPlayersData] = useState([]);

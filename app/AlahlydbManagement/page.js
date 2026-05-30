@@ -18,7 +18,7 @@ export default function DatabaseManagement() {
     const router = useRouter();
     const [availableTables, setAvailableTables] = useState([]);
     const [isSidebarMobileOpen, setIsSidebarMobileOpen] = useState(false);
-    const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
+    const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(true);
     const [selectedTable, setSelectedTable] = useState("");
     const [tableData, setTableData] = useState([]);
     const [columns, setColumns] = useState([]);

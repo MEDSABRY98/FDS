@@ -17,7 +17,7 @@ export default function AlahlySidebar({
     mobileActions = [], // Array of { icon, onClick, title }
 }) {
     const [isSidebarMobileOpen, setIsSidebarMobileOpen] = useState(false);
-    const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
+    const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(true);
 
     return (
         <div className={`alahly-container ${isSidebarCollapsed ? 'sidebar-collapsed' : ''}`}>

@@ -19,7 +19,7 @@ import AlAhlyFinalsMatchDetails from "./alahly_finals_match_details";
 export default function AlAhlyFinalsDatabase() {
     const [activeTab, setActiveTab] = useState("finals_dashboard");
     const [isSidebarMobileOpen, setIsSidebarMobileOpen] = useState(false);
-    const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
+    const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(true);
     const [matchesData, setMatchesData] = useState([]);
     const [lineupsData, setLineupsData] = useState([]);
     const [playersData, setPlayersData] = useState([]);

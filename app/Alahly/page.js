@@ -42,7 +42,7 @@ import "../lib/AlahlySidebar.css";
 export default function AlAhlyDatabase() {
     const [activeTab, setActiveTab] = useState("dashboard");
     const [isSidebarMobileOpen, setIsSidebarMobileOpen] = useState(false);
-    const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
+    const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(true);
     const [matches, setMatches] = useState([]);
     const [playerDetails, setPlayerDetails] = useState([]);
     const [lineupDetails, setLineupDetails] = useState([]);
