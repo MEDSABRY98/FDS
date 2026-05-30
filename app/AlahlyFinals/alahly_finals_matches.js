@@ -118,7 +118,11 @@ export default function AlAhlyFinalsMatches({ finalsData, onSelectMatch }) {
                                 const isLoss = outcome.includes("L") || outcome === "RUNNER-UP";
 
                                 return (
-                                    <div key={index} className="f-row fade-in">
+                                    <div 
+                                        key={index} 
+                                        className="f-row fade-in"
+                                        onClick={() => onSelectMatch && onSelectMatch(match.FINAL_ID)}
+                                    >
                                         <div className="f-col-index">
                                             <span className="idx-badge">{(currentPage - 1) * pageSize + index + 1}</span>
                                         </div>
