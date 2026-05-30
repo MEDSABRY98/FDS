@@ -5,21 +5,47 @@
 }
 
 .editor-header {
-    text-align: center;
-    margin-bottom: 40px;
+    background: #0a0a0a;
+    border-radius: 16px;
+    padding: 16px 24px;
+    margin-bottom: 30px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.15);
 }
 
 .editor-title {
     font-family: 'Bebas Neue', sans-serif;
-    font-size: 42px;
-    letter-spacing: 6px;
-    margin-bottom: 30px;
+    font-size: 26px;
+    letter-spacing: 3px;
+    color: #fff;
+    line-height: 1;
+    margin: 0;
 }
 
-.editor-tabs {
+.editor-title .accent, .editor-title .gold-text {
+    color: #c9a84c;
+}
+
+.mode-toggle-btn {
+    border: none;
+    border-radius: 12px;
+    width: 44px;
+    height: 44px;
+    cursor: pointer;
+    font-size: 20px;
     display: flex;
+    align-items: center;
     justify-content: center;
-    gap: 20px;
+    transition: all 0.2s;
+    background: rgba(255, 255, 255, 0.08);
+    color: #fff;
+}
+
+.mode-toggle-btn.active {
+    background: #c9a84c;
+    color: #0a0a0a;
 }
 
 .editor-tab-btn {
@@ -63,6 +89,62 @@
 .search-section {
     max-width: 1100px;
     margin: 0 auto;
+}
+
+.portal-container {
+    background: #fff;
+    border-radius: 20px;
+    border: 1px solid #f0f0f0;
+    padding: 100px 48px;
+    text-align: center;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.05);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    min-height: 420px;
+}
+
+.portal-icon {
+    font-size: 56px;
+    margin-bottom: 20px;
+    line-height: 1;
+}
+
+.portal-title {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 32px;
+    letter-spacing: 4px;
+    margin-bottom: 10px;
+    color: #0a0a0a;
+}
+
+.portal-subtitle {
+    color: #aaa;
+    font-size: 13px;
+    margin-bottom: 40px;
+    font-family: 'Outfit', sans-serif;
+    letter-spacing: 0.5px;
+}
+
+.load-btn {
+    background: #0a0a0a;
+    color: #c9a84c;
+    border: none;
+    border-radius: 14px;
+    padding: 16px 32px;
+    cursor: pointer;
+    font-weight: 800;
+    font-size: 14px;
+    font-family: 'Outfit', sans-serif;
+    transition: all 0.2s;
+    white-space: nowrap;
+    letter-spacing: 1px;
+}
+
+.load-btn:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
 }
 
 

@@ -10,8 +10,8 @@
 /* ── Top Navigation ── */
 .editor-top-nav {
     background: #0a0a0a;
-    border-radius: 24px;
-    padding: 36px 48px;
+    border-radius: 16px;
+    padding: 16px 24px;
     margin-bottom: 30px;
     display: flex;
     align-items: center;
@@ -64,7 +64,7 @@
     padding: 20px 0;
 }
 
-.search-portal-card {
+.portal-container {
     background: #fff;
     border-radius: 20px;
     border: 1px solid #f0f0f0;
@@ -97,7 +97,7 @@
     color: #aaa;
     font-size: 13px;
     margin-bottom: 40px;
-    letter-spacing: 0.5s;
+    letter-spacing: 0.5px;
 }
 
 .portal-search-group {
@@ -108,7 +108,7 @@
     max-width: 520px;
 }
 
-.portal-execute-btn {
+.load-btn {
     background: #0a0a0a;
     color: #c9a84c;
     border: none;

@@ -275,11 +275,22 @@ export default function AlAhlyPKsEditor({ pksData }) {
             <datalist id="list-ahly-status">{suggestions.ahlyStatus.map(v => <option key={v} value={v} />)}</datalist>
             <datalist id="list-pks-wl">{suggestions.pksWL.map(v => <option key={v} value={v} />)}</datalist>
 
-            <div className="editor-header">
-                <h1 className="editor-title">AL AHLY <span className="gold-text">PKS EDITOR</span></h1>
-                <div className="editor-tabs">
-                    <button className={`editor-tab-btn ${mode === "SEARCH" && !editingKick ? "active" : ""}`} onClick={() => { setMode("SEARCH"); setEditingKick(null); setFoundKicks([]); setMessage({text:"", type:""}); }}>SEARCH</button>
-                    <button className={`editor-tab-btn ${mode === "CREATE" || (mode === "SEARCH" && editingKick) ? "active" : ""}`} onClick={() => { setMode("CREATE"); setEditingKick(null); setCommonData(initialCommonData); setKickRows([initialKickRow]); setMessage({text:"", type:""}); }}>CREATE & EDIT</button>
+            {/* ── Header ── */}
+            <div className="editor-header" style={{ justifyContent: 'flex-end' }}>
+                <div style={{ display: 'flex', gap: 10 }}>
+                    <button
+                        onClick={() => { setMode('SEARCH'); setEditingKick(null); setFoundKicks([]); setMessage({text:"", type:""}); }}
+                        title="Search & Edit"
+                        className={`mode-toggle-btn ${(mode === 'SEARCH' || editingKick) ? 'active' : ''}`}>
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                            <circle cx="11" cy="11" r="7" />
+                            <line x1="17" y1="17" x2="22" y2="22" />
+                        </svg>
+                    </button>
+                    <button
+                        onClick={() => { setMode('CREATE'); setEditingKick(null); setCommonData(initialCommonData); setKickRows([initialKickRow]); setMessage({text:"", type:""}); }}
+                        title="Add New Shootout"
+                        className={`mode-toggle-btn ${mode === 'CREATE' && !editingKick ? 'active' : ''}`}>➕</button>
                 </div>
             </div>
 
@@ -290,33 +301,29 @@ export default function AlAhlyPKsEditor({ pksData }) {
             {mode === "SEARCH" && (
                 <div className="search-section">
                     {!editingKick && (
-                        <div className="search-input-group" style={{ display: 'flex', gap: '15px', alignItems: 'center', width: '100%', maxWidth: '600px', margin: '0 auto' }}>
-                            <div style={{ flex: 1 }}>
+                        <div className="portal-container">
+                            <div className="portal-icon">🔎</div>
+                            <div className="portal-title">
+                                ENTER PKS ID
+                            </div>
+                            <div className="portal-subtitle">
+                                Type the Shootout PKS ID to load all linked records for editing
+                            </div>
+                            <div style={{ display: 'flex', gap: 12, justifyContent: 'center', width: '100%', maxWidth: 520 }}>
                                 <SearchBar_db
                                     value={searchId}
                                     onChange={setSearchId}
-                                    placeholder="Enter PKS ID..."
+                                    onKeyDown={e => e.key === 'Enter' && handleSearch()}
+                                    placeholder="PKS ID..."
+                                    style={{ flex: 1 }}
                                 />
+                                <button
+                                    onClick={handleSearch}
+                                    disabled={loading}
+                                    className="load-btn">
+                                    {loading ? 'Loading...' : 'LOAD →'}
+                                </button>
                             </div>
-                            <button 
-                                onClick={handleSearch} 
-                                disabled={loading}
-                                style={{
-                                    height: '52px',
-                                    padding: '0 30px',
-                                    background: 'var(--gold)',
-                                    color: '#000',
-                                    border: 'none',
-                                    borderRadius: '12px',
-                                    fontFamily: 'Bebas Neue',
-                                    fontSize: '20px',
-                                    letterSpacing: '2px',
-                                    cursor: 'pointer',
-                                    transition: '0.3s'
-                                }}
-                            >
-                                SEARCH
-                            </button>
                         </div>
                     )}
 

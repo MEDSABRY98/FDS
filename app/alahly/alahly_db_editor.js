@@ -15,7 +15,7 @@ const EMPTY_MATCH = {
     "MATCH_ID": "", "CHAMPION SYSTEM": "", "DATE": "", "CHAMPION": "", "SEASON - NAME": "",
     "SEASON - NUMBER": "", "AHLY MANAGER": "", "OPPONENT MANAGER": "", "REFREE": "", "ROUND": "",
     "H-A-N": "", "STAD": "", "AHLY TEAM": "", "GF": "", "GA": "", "ET": "",
-    "PEN": "", "OPPONENT TEAM": "", "W-D-L": "", "CLEAN SHEET": "", "NOTE": ""
+    "PEN": "", "OPPONENT TEAM": "", "NOTE": ""
 };
 const EMPTY_LINEUP = { "MATCH_ID": "", "MATCH MINUTE": "", "TEAM": "", "PLAYER NAME": "", "STATU": "", "PLAYER NAME OUT": "", "OUT MINUTE": "", "TOTAL MINUTE": "" };
 const EMPTY_PLAYER = { "MATCH_ID": "", "EVENT_ID": "", "PARENT_EVENT_ID": "", "PLAYER NAME": "", "TEAM": "", "TYPE": "", "TYPE_SUB": "", "MINUTE": "" };
@@ -368,7 +368,7 @@ export default function AlAhlyEditor() {
     // Fields that use autocomplete (not date/number/auto)
     const AUTOCOMPLETE_FIELDS = [
         'CHAMPION SYSTEM', 'CHAMPION', 'SEASON - NAME', 'SEASON - NUMBER', 'AHLY MANAGER', 'OPPONENT MANAGER',
-        'REFREE', 'ROUND', 'H-A-N', 'STAD', 'AHLY TEAM', 'ET', 'PEN', 'OPPONENT TEAM', 'W-D-L', 'CLEAN SHEET', 'NOTE'
+        'REFREE', 'ROUND', 'H-A-N', 'STAD', 'AHLY TEAM', 'ET', 'PEN', 'OPPONENT TEAM', 'NOTE'
     ];
 
     // Fetch all players globally using pagination to bypass the 1000 limits
@@ -660,8 +660,9 @@ export default function AlAhlyEditor() {
         setIsSaving(true);
         try {
 
-            // 1. Save main match details
-            const { error: matchErr } = await supabase.from('alahly_MATCHDETAILS').upsert(matchData);
+            // 1. Save main match details (exclude W-D-L and CLEAN SHEET from database payload)
+            const { "W-D-L": wdl, "CLEAN SHEET": cs, ...cleanMatchData } = matchData;
+            const { error: matchErr } = await supabase.from('alahly_MATCHDETAILS').upsert(cleanMatchData);
             if (matchErr) throw matchErr;
 
             // 2. Helper to save pending changes in linked tables
@@ -743,8 +744,9 @@ export default function AlAhlyEditor() {
         setIsSaving(true);
         const mid = newMatchData.MATCH_ID;
         try {
-            // 1. Insert main match record
-            const { error: matchErr } = await supabase.from('alahly_MATCHDETAILS').insert(newMatchData);
+            // 1. Insert main match record (exclude W-D-L and CLEAN SHEET from database payload)
+            const { "W-D-L": wdl, "CLEAN SHEET": cs, ...cleanNewMatchData } = newMatchData;
+            const { error: matchErr } = await supabase.from('alahly_MATCHDETAILS').insert(cleanNewMatchData);
             if (matchErr) {
                 console.error("Match Insert Error:", matchErr);
                 throw new Error(`Match Details: ${matchErr.message}`);

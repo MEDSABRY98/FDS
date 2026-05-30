@@ -354,7 +354,7 @@ export default function AlAhlyFinalsEditor({ matchesData, lineupsData, playersDa
         setLineupRows(relatedLineups.map((l, i) => ({ ...l, _key: i })));
         setEventRows(relatedEvents.map((e, i) => ({
             ...e,
-            "FINAL_ID": e["FINAL ID"] || e.FINAL_ID,
+            // Preserve "FINAL ID" (with space) as-is from DB — do NOT rename to FINAL_ID
             _key: i
         })));
         setMode("EDIT");
@@ -374,7 +374,9 @@ export default function AlAhlyFinalsEditor({ matchesData, lineupsData, playersDa
                 return { ...clean, FINAL_ID: finalId, DATE: dbDate };
             });
             const updatedEvents = eventRows.map(e => {
-                const { _isNew, _isDirty, _key, ...clean } = e;
+                // Remove all private + duplicate ID fields before sending to DB
+                const { _isNew, _isDirty, _key, FINAL_ID, FINAL_ID: _fid, ...clean } = e;
+                // DB column is "FINAL ID" (with space) — not FINAL_ID
                 return { ...clean, "FINAL ID": finalId, DATE: dbDate };
             });
 
@@ -383,12 +385,11 @@ export default function AlAhlyFinalsEditor({ matchesData, lineupsData, playersDa
             await AlAhlyFinalsService.updateMatchEvents(finalId, dbDate, updatedEvents);
 
             addToast("Match and all linked records saved successfully!");
-
-
             setMode("SEARCH");
             setSelectedMatch(null);
         } catch (err) {
             console.error("Sync Error:", err);
+            addToast("Save failed: " + (err.message || "Unknown error"), "error");
         } finally {
             setIsSaving(false);
         }
@@ -427,7 +428,7 @@ export default function AlAhlyFinalsEditor({ matchesData, lineupsData, playersDa
             })));
             setEventRows(prev => prev.map(r => ({
                 ...r,
-                "FINAL ID": matchForm.FINAL_ID || '',
+                "FINAL ID": matchForm.FINAL_ID || '',  // DB column name uses space
                 DATE: matchForm.DATE || ''
             })));
         }
@@ -435,7 +436,7 @@ export default function AlAhlyFinalsEditor({ matchesData, lineupsData, playersDa
 
     const renderSearchPortal = () => (
         <div className="search-portal-wrap fade-in">
-            <div className="search-portal-card">
+            <div className="portal-container">
                 <div className="portal-icon">🔎</div>
                 <div className="portal-text-zone">
                     <h1 className="portal-title">ENTER MATCH ID</h1>
@@ -444,7 +445,7 @@ export default function AlAhlyFinalsEditor({ matchesData, lineupsData, playersDa
 
                 <div className="portal-search-group">
                     <SearchBar_db value={searchId} onChange={setSearchId} onKeyDown={e => e.key === 'Enter' && handleSearch()} placeholder="Match ID..." />
-                    <button className="portal-execute-btn" onClick={handleSearch} disabled={loading}>
+                    <button className="load-btn" onClick={handleSearch} disabled={loading}>
                         {loading ? 'Loading...' : 'LOAD →'}
                     </button>
                 </div>
@@ -582,11 +583,11 @@ export default function AlAhlyFinalsEditor({ matchesData, lineupsData, playersDa
                             rows={eventRows}
                             setRows={setEventRows}
                             parentId={matchForm.FINAL_ID}
-                            columns={["FINAL_ID", "EVENT_ID", "PARENT_EVENT_ID", "PLAYER NAME", "TEAM", "TYPE", "TYPE_SUB", "MINUTE"]}
-                            emptyRow={{ "FINAL_ID": "", "EVENT_ID": "", "PARENT_EVENT_ID": "", "PLAYER NAME": "", TEAM: "الأهلي", TYPE: "GOAL", TYPE_SUB: "", MINUTE: "" }}
+                            columns={["FINAL ID", "EVENT_ID", "PARENT_EVENT_ID", "PLAYER NAME", "TEAM", "TYPE", "TYPE_SUB", "MINUTE"]}
+                            emptyRow={{ "FINAL ID": "", "EVENT_ID": "", "PARENT_EVENT_ID": "", "PLAYER NAME": "", TEAM: "الأهلي", TYPE: "GOAL", TYPE_SUB: "", MINUTE: "" }}
                             autoFields={{
                                 "EVENT_ID": (id, rows) => `${id}-${rows.length + 1}`,
-                                "FINAL_ID": (id) => id
+                                "FINAL ID": (id) => id
                             }}
                             columnOptions={{
                                 "PLAYER NAME": suggestions.players,
@@ -603,10 +604,7 @@ export default function AlAhlyFinalsEditor({ matchesData, lineupsData, playersDa
     return (
         <Login_db title="EDITOR ACCESS" subtitle="AUTHORIZATION REQUIRED">
             <div className="alahly-editor-sync-page">
-                <div className="editor-top-nav">
-                    <div className="nav-brand">
-                        <h1 className="main-title">MATCH <span className="gold">EDITOR</span></h1>
-                    </div>
+                <div className="editor-top-nav" style={{ justifyContent: 'flex-end' }}>
                     <div className="nav-mode-toggles">
                         <button className={`mode-btn ${mode === "SEARCH" || mode === "EDIT" ? "active" : ""}`} onClick={() => { setMode("SEARCH"); setSelectedMatch(null); }}>
                             <Search size={20} />

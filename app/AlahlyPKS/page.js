@@ -45,7 +45,7 @@ export default function AlAhlyPKsDatabase() {
     const tabs = [
         { id: 'alahly_pks_dashboard', label: 'Dashboard', icon: LayoutDashboard },
         { id: 'alahly_pks_matches', label: 'Matches', icon: Trophy },
-        { id: 'alahly_pks_editor', label: 'Editors', icon: FileText },
+        { id: 'alahly_pks_editor', label: 'Editor', icon: FileText },
         { id: 'alahly_pks_champions', label: 'Champions', icon: Trophy },
         { id: 'alahly_pks_players', label: 'Players', icon: Users },
         { id: 'alahly_pks_gks', label: 'GKs', icon: Shield },

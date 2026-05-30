@@ -218,7 +218,7 @@ export default function AhlyVZamalekDatabase() {
                     </div>
                 </header>
 
-                <main className="alahly-content-viewport" style={{ padding: '0', maxWidth: '1400px', margin: '0 auto', width: '100%' }}>
+                <main className="alahly-content-viewport" style={{ padding: '40px 24px 24px 24px', maxWidth: '1400px', margin: '0 auto', width: '100%' }}>
                     {renderAppContent()}
                 </main>
             </div>

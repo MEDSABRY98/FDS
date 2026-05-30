@@ -12,7 +12,6 @@ import AlAhlyFinalsChampions from "./alahly_finals_champions";
 import AlAhlyFinalsManagers from "./alahly_finals_managers";
 import AlAhlyFinalsEditor from "./alahly_finals_editor";
 import AlAhlyFinalsFilter from "./alahly_finals_filters";
-import Login_db from "../lib/Login_db";
 import Loading_db from "../lib/Loading_db";
 
 
@@ -89,13 +88,11 @@ export default function AlAhlyFinalsDatabase() {
                 return <AlAhlyFinalsManagers finalsData={filteredData} />;
             case "finals_editor":
                 return (
-                    <Login_db title="EDITOR ACCESS" subtitle="AUTHORIZATION REQUIRED">
-                        <AlAhlyFinalsEditor
-                            matchesData={matchesData}
-                            lineupsData={lineupsData}
-                            playersData={playersData}
-                        />
-                    </Login_db>
+                    <AlAhlyFinalsEditor
+                        matchesData={matchesData}
+                        lineupsData={lineupsData}
+                        playersData={playersData}
+                    />
                 );
             default:
                 return null;

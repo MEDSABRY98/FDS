@@ -30,7 +30,43 @@ export const AlAhlyService = {
                     finished = true;
                 }
             }
-            return allData;
+
+            // Map and calculate W-D-L and CLEAN SHEET dynamically
+            return allData.map(match => {
+                const gf = match.GF !== null && match.GF !== undefined ? parseInt(match.GF, 10) : null;
+                const ga = match.GA !== null && match.GA !== undefined ? parseInt(match.GA, 10) : null;
+
+                let wdl = match["W-D-L"];
+                let cleanSheet = match["CLEAN SHEET"];
+
+                if (gf !== null && ga !== null && !isNaN(gf) && !isNaN(ga)) {
+                    // Compute W-D-L
+                    if (gf > ga) {
+                        wdl = "W";
+                    } else if (gf < ga) {
+                        wdl = "L";
+                    } else {
+                        wdl = gf === 0 ? "D." : "D";
+                    }
+
+                    // Compute CLEAN SHEET
+                    if (gf === 0 && ga === 0) {
+                        cleanSheet = "BOTH";
+                    } else if (ga === 0) {
+                        cleanSheet = "F";
+                    } else if (gf === 0) {
+                        cleanSheet = "A";
+                    } else {
+                        cleanSheet = "-";
+                    }
+                }
+
+                return {
+                    ...match,
+                    "W-D-L": wdl,
+                    "CLEAN SHEET": cleanSheet
+                };
+            });
         } catch (error) {
             console.error("Error in AlAhlyService.getAllMatches:", error.message);
             return [];
@@ -302,81 +338,6 @@ export const AlAhlyService = {
     },
 
     /**
-     * Fetch ALL entries from the unique player database.
-     */
-    async getPlayerDatabase() {
-        try {
-            const { data, error } = await supabase
-                .from('alahly_PLAYERDATABASE')
-                .select('*')
-                .order('PLAYER NAME', { ascending: true });
-
-            if (error) throw error;
-            return data || [];
-        } catch (error) {
-            console.error("Error fetching PlayerDatabase:", error.message);
-            return [];
-        }
-    },
-
-    /**
-     * Rebuild/Sync the player database by scanning lineups and events.
-     * This creates a unique list of players with their associated teams and positions.
-     */
-    async syncPlayerDatabase() {
-        try {
-            console.log("Syncing Player Database...");
-            const lineups = await this.getAllLineupDetails();
-            const details = await this.getAllPlayerDetails();
-            const gks = await this.getAllGKDetails();
-
-            const playersMap = new Map();
-
-            const processPlayer = (name, position = "") => {
-                if (!name || name.toLowerCase() === "unknown") return;
-                const pName = String(name).trim();
-                const pPos = String(position).trim();
-
-                const key = pName;
-
-                if (!playersMap.has(key)) {
-                    playersMap.set(key, {
-                        "PLAYER NAME": pName,
-                        POSITION: pPos,
-                        NATIONALLY: "" // Initialize registry-specific field
-                    });
-                } else if (pPos && !playersMap.get(key).POSITION) {
-                    playersMap.get(key).POSITION = pPos;
-                }
-            };
-
-            // 1. Scan Lineups (Contains Position)
-            lineups.forEach(l => processPlayer(l["PLAYER NAME"], l.POSITION));
-
-            // 2. Scan Player Details (Events)
-            details.forEach(p => processPlayer(p["PLAYER NAME"]));
-
-            // 3. Scan GK Details (Set position to GK if empty)
-            gks.forEach(g => processPlayer(g["PLAYER NAME"], "GK"));
-
-            const uniquePlayers = Array.from(playersMap.values());
-            if (uniquePlayers.length === 0) return 0;
-
-            // 4. Upsert into Supabase (Requires unique constraint on PLAYER NAME in DB)
-            const { error } = await supabase
-                .from('alahly_PLAYERDATABASE')
-                .upsert(uniquePlayers, { onConflict: '"PLAYER NAME"' });
-
-            if (error) throw error;
-            console.log(`Successfully synced ${uniquePlayers.length} players.`);
-            return uniquePlayers.length;
-        } catch (error) {
-            console.error("Sync Failed:", error.message);
-            throw error;
-        }
-    },
-
-    /**
      * Merge multiple player names into one throughout the database.
      * This updates all occurrences in match events, lineups, and goalkeeper records.
      */
@@ -396,10 +357,7 @@ export const AlAhlyService = {
                 // Event Changes
                 supabase.from('alahly_PLAYERDETAILS').update({ "PLAYER NAME": targetName }).in('PLAYER NAME', sources),
                 // GK Changes
-                supabase.from('alahly_GKSDETAILS').update({ "PLAYER NAME": targetName }).in('PLAYER NAME', sources),
-                // Registry Changes: This is trickier due to Unique Constraint (Name, Team)
-                // We'll delete the sources first, as the target presumably already represents the player
-                supabase.from('alahly_PLAYERDATABASE').delete().in('PLAYER NAME', sources)
+                supabase.from('alahly_GKSDETAILS').update({ "PLAYER NAME": targetName }).in('PLAYER NAME', sources)
             ]);
 
             // Check for errors in any result
