@@ -10,7 +10,7 @@ import DropDownList_db from "../lib/DropDownList_db";
 
 
 
-export default function AhlyVZamalekManagers({ derbyData }) {
+export default function AhlyVZamalekManagers({ derbyData, lineupDetails, playerDetails, onSelectManager }) {
     const [searchQuery, setSearchQuery] = useState("");
     const [teamFilter, setTeamFilter] = useState("All");
     const [sortConfig, setSortConfig] = useState({ key: "matches", direction: "desc" });
@@ -234,7 +234,7 @@ export default function AhlyVZamalekManagers({ derbyData }) {
                     <tbody>
                         {displayedManagers.length > 0 ? (
                             displayedManagers.map((m, idx) => (
-                                <tr key={idx}>
+                                <tr key={idx} onClick={() => onSelectManager && onSelectManager(m.name, m.team)} style={{ cursor: 'pointer' }}>
                                     <td>{idx + 1}</td>
                                     <td className="avz-text-bold">{m.name}</td>
 

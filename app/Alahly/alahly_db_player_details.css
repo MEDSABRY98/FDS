@@ -287,11 +287,10 @@
 }
 
 .player-tab-item {
-    flex: 1;
-    /* Equal width tabs as requested */
+    container-type: inline-size;
     background: #fff;
     border: 1px solid #eee;
-    padding: 18px;
+    padding: 18px 8px;
     border-radius: 16px;
     cursor: pointer;
     text-align: center;
@@ -320,6 +319,7 @@
     text-transform: uppercase;
     margin-bottom: 4px;
     opacity: 0.6;
+    white-space: nowrap;
 }
 
 .player-tab-item.active .tab-label {
@@ -328,8 +328,10 @@
 
 .tab-title {
     font-family: 'Bebas Neue', sans-serif;
-    font-size: 24px;
-    letter-spacing: 2px;
+    font-size: clamp(10px, 11.5cqw, 24px);
+    letter-spacing: 1px;
+    white-space: nowrap;
+    overflow: hidden;
 }
 
 /* Dashboard Section (Simple Bars) */

@@ -116,6 +116,14 @@
     color: #111 !important;
 }
 
+.clickable-player-name {
+    transition: color 0.2s ease-in-out;
+}
+
+.avz-data-table tr:hover .clickable-player-name {
+    color: #c9a84c !important;
+}
+
 .avz-team-badge {
     padding: 2px 8px;
     border-radius: 4px;

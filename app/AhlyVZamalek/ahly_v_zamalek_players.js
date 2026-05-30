@@ -10,7 +10,7 @@ import DropDownList_db from "../lib/DropDownList_db";
 
 
 
-export default function AhlyVZamalekPlayers({ playersData, matchesData, lineupsData }) {
+export default function AhlyVZamalekPlayers({ playersData, matchesData, lineupsData, onSelectPlayer }) {
     const [searchQuery, setSearchQuery] = useState("");
     const [teamFilter, setTeamFilter] = useState("All");
     const [sortConfig, setSortConfig] = useState({ key: "gPlusA", direction: "desc" });
@@ -280,9 +280,9 @@ export default function AhlyVZamalekPlayers({ playersData, matchesData, lineupsD
                     <tbody>
                         {displayedPlayers.length > 0 ? (
                             displayedPlayers.map((p, idx) => (
-                                <tr key={idx}>
+                                <tr key={idx} onClick={() => onSelectPlayer && onSelectPlayer(p.name)} style={{ cursor: 'pointer' }}>
                                     <td>{idx + 1}</td>
-                                    <td className="avz-text-bold">{p.name}</td>
+                                    <td className="avz-text-bold clickable-player-name">{p.name}</td>
                                     <td className="avz-highlight-stat">{p.matchesCount > 0 ? p.matchesCount : "-"}</td>
                                     <td>{p.totalMinutes > 0 ? p.totalMinutes : "-"}</td>
                                     <td className="avz-highlight-stat" style={{ color: '#c9a84c' }}>{p.gPlusA > 0 ? p.gPlusA : "-"}</td>

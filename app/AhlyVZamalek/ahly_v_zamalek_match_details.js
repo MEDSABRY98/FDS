@@ -9,11 +9,8 @@ export default function AhlyVZamalekMatchDetails({
     matches,
     playerDetails,
     lineupDetails,
-    gkDetails,
-    howPenMissed,
     onBack
 }) {
-
     const [activeTab, setActiveTab] = useState('lineup'); // 'lineup' or 'events'
 
     useEffect(() => {
@@ -22,53 +19,65 @@ export default function AhlyVZamalekMatchDetails({
 
     // Core data extraction
     const matchInfo = useMemo(() => (matches || []).find(m => String(m.MATCH_ID) === String(matchId)), [matchId, matches]);
-    const opponentName = matchInfo?.["OPPONENT TEAM"] || "";
 
     const checkIfAhly = (teamName) => {
         if (!teamName) return true;
-        const name = String(teamName).trim();
-        const opp = String(opponentName).trim();
-
-        // 1. If it's exactly the opponent name, it's NOT Ahly
-        if (name === opp) return false;
-
-        // 2. If it is exactly "الأهلي", it IS Ahly
-        if (name === "الأهلي") return true;
-
-        // 3. If it contains "أهلي" and the opponent's name doesn't, it's likely Ahly
-        if (name.includes("أهلي") && !opp.includes("أهلي")) return true;
-
-        return false;
+        const name = String(teamName).trim().toUpperCase();
+        return name === 'AHLY' || name === 'الأهلي';
     };
 
     const squads = useMemo(() => {
         const ahlyLineup = (lineupDetails || []).filter(l => String(l.MATCH_ID) === String(matchId) && checkIfAhly(l.TEAM));
-        const oppLineup = (lineupDetails || []).filter(l => String(l.MATCH_ID) === String(matchId) && !checkIfAhly(l.TEAM));
+        const zamalekLineup = (lineupDetails || []).filter(l => String(l.MATCH_ID) === String(matchId) && !checkIfAhly(l.TEAM));
+
+        const sortLineup = (a, b) => {
+            const numA = parseInt(String(a.ROW_ID || '').replace(/[^0-9]/g, '')) || 0;
+            const numB = parseInt(String(b.ROW_ID || '').replace(/[^0-9]/g, '')) || 0;
+            return numA - numB;
+        };
+
+        const ahlySorted = [...ahlyLineup].sort(sortLineup);
+        const zamalekSorted = [...zamalekLineup].sort(sortLineup);
 
         return {
             ahly: {
-                starters: ahlyLineup.filter(p => p.STATU === 'اساسي'),
-                subs: ahlyLineup.filter(p => p.STATU !== 'اساسي')
+                starters: ahlySorted.filter(p => p.STATU === 'اساسي' || p.STATU === 'أساسي'),
+                subs: ahlySorted.filter(p => p.STATU !== 'اساسي' && p.STATU !== 'أساسي')
             },
-            opp: {
-                starters: oppLineup.filter(p => p.STATU === 'اساسي'),
-                subs: oppLineup.filter(p => p.STATU !== 'اساسي')
+            zamalek: {
+                starters: zamalekSorted.filter(p => p.STATU === 'اساسي' || p.STATU === 'أساسي'),
+                subs: zamalekSorted.filter(p => p.STATU !== 'اساسي' && p.STATU !== 'أساسي')
             }
         };
-    }, [matchId, lineupDetails, opponentName]);
+    }, [matchId, lineupDetails]);
 
     const events = useMemo(() => {
-        const allEvents = [
-            ...(playerDetails || []).filter(p => String(p.MATCH_ID) === String(matchId)).map(e => ({ ...e, eventType: 'player' })),
-            ...(howPenMissed || []).filter(h => String(h.MATCH_ID) === String(matchId)).map(e => ({ ...e, eventType: 'penMiss', TYPE: 'PEN MISS' }))
-        ].sort((a, b) => parseInt(a.MINUTE || 0) - parseInt(b.MINUTE || 0));
+        const allEvents = (playerDetails || [])
+            .filter(p => String(p.MATCH_ID) === String(matchId))
+            .map(e => ({ ...e, eventType: 'player' }))
+            .sort((a, b) => {
+                const minA = parseInt(String(a.MINUTE || '0').replace(/[^0-9]/g, '')) || 0;
+                const minB = parseInt(String(b.MINUTE || '0').replace(/[^0-9]/g, '')) || 0;
+                return minA - minB;
+            });
 
         return {
             ahly: allEvents.filter(e => checkIfAhly(e.TEAM)),
-            opp: allEvents.filter(e => !checkIfAhly(e.TEAM)),
+            zamalek: allEvents.filter(e => !checkIfAhly(e.TEAM)),
             chronological: allEvents
         };
-    }, [matchId, playerDetails, howPenMissed, opponentName]);
+    }, [matchId, playerDetails]);
+
+    // Goalkeepers are the first starter in lineups. Conceded goals are dynamic.
+    const gks = useMemo(() => {
+        if (!matchInfo) return { ahly: [], zamalek: [] };
+        const ahlyGK = squads.ahly.starters[0];
+        const zamalekGK = squads.zamalek.starters[0];
+        return {
+            ahly: ahlyGK ? [{ "PLAYER NAME": ahlyGK["PLAYER NAME"], "GOALS CONCEDED": matchInfo.GA }] : [],
+            zamalek: zamalekGK ? [{ "PLAYER NAME": zamalekGK["PLAYER NAME"], "GOALS CONCEDED": matchInfo.GF }] : []
+        };
+    }, [squads, matchInfo]);
 
     // Optimized logic directly from lineupDetails as confirmed
     const getSubInfo = (subPlayer) => {
@@ -84,32 +93,32 @@ export default function AhlyVZamalekMatchDetails({
         return null;
     };
 
-    const gks = useMemo(() => ({
-        ahly: (gkDetails || []).filter(g => String(g.MATCH_ID) === String(matchId) && checkIfAhly(g.TEAM)),
-        opp: (gkDetails || []).filter(g => String(g.MATCH_ID) === String(matchId) && !checkIfAhly(g.TEAM))
-    }), [matchId, gkDetails, opponentName]);
-
     if (!matchInfo) return <div className="error-state">Match record not located.</div>;
 
     const formatDate = (dateStr) => {
         if (!dateStr) return "N/A";
         const d = new Date(dateStr);
+        if (isNaN(d.getTime())) return dateStr;
         return d.toLocaleDateString('en-GB', { day: '2-digit', month: 'long', year: 'numeric' });
     };
 
     const getEventIcon = (type) => {
         const t = String(type || "").trim().toLowerCase();
-        if (t.includes('هدف') || t.includes('goal')) return '⚽';
-        if (t.includes('اسيست') || t.includes('assist') || t.includes('صنع')) return 'A';
+        if (t.includes('هدف') || t.includes('goal') || t.includes('penmakegoal')) return '⚽';
+        if (t.includes('اسيست') || t.includes('assist') || t.includes('صنع') || t.includes('penassistgoal')) return 'A';
 
         switch (t) {
             case 'انذار':
+            case 'yellow card':
             case 'yellow': return '🟨';
             case 'طرد':
+            case 'red card':
             case 'red': return '🟥';
             case 'تغيير':
             case 'sub': return '🔄';
-            case 'pen miss': return '❌';
+            case 'pen miss':
+            case 'penmissed':
+            case 'penassistmissed': return '❌';
             default: return '⚽';
         }
     };
@@ -120,7 +129,7 @@ export default function AhlyVZamalekMatchDetails({
             <div className="match-nav">
                 <button className="btn-back" onClick={onBack}>
                     <span className="icon">←</span>
-                    <span className="text">All Matche's</span>
+                    <span className="text">All Derby Matches</span>
                 </button>
                 <div className="match-id-badge">{matchId}</div>
             </div>
@@ -135,7 +144,7 @@ export default function AhlyVZamalekMatchDetails({
                         </div>
                         <div className="team-meta">
                             <h1 className="team-name">الأهلي</h1>
-                            <span className="manager-tag">COACH: {matchInfo["AHLY MANAGER"]}</span>
+                            <span className="manager-tag">COACH: {matchInfo["AHLY MANAGER"] || "?"}</span>
                         </div>
                     </div>
 
@@ -146,15 +155,22 @@ export default function AhlyVZamalekMatchDetails({
                             <span className="score-digit">{matchInfo.GA}</span>
                         </div>
                         {matchInfo.PEN && <div className="pen-result">{matchInfo.PEN}</div>}
+                        {matchInfo["W-D-L"] && (
+                            <div className={`match-status-pill ${
+                                matchInfo["W-D-L"] === 'W' ? 'win' : matchInfo["W-D-L"] === 'L' ? 'lose' : 'draw'
+                            }`}>
+                                {matchInfo["W-D-L"] === 'W' ? 'WIN' : matchInfo["W-D-L"] === 'L' ? 'LOSS' : 'DRAW'}
+                            </div>
+                        )}
                     </div>
 
                     <div className="team-display opponent">
                         <div className="team-meta tr">
-                            <h1 className="team-name" dir="auto">{matchInfo["OPPONENT TEAM"]}</h1>
-                            <span className="manager-tag">COACH: {matchInfo["OPPONENT MANAGER"]}</span>
+                            <h1 className="team-name">الزمالك</h1>
+                            <span className="manager-tag">COACH: {matchInfo["ZAMALEK MANAGER"] || "?"}</span>
                         </div>
                         <div className="team-logo-container">
-                            <div className="logo-placeholder opp-logo">🛡️</div>
+                            <div className="logo-placeholder zamalek-logo">🏹</div>
                         </div>
                     </div>
                 </div>
@@ -172,17 +188,17 @@ export default function AhlyVZamalekMatchDetails({
                     <div className="info-divider"></div>
                     <div className="info-item">
                         <span className="label">ROUND</span>
-                        <span className="value">{matchInfo.ROUND}</span>
+                        <span className="value">{matchInfo.ROUND || "N/A"}</span>
                     </div>
                     <div className="info-divider"></div>
                     <div className="info-item">
                         <span className="label">STADIUM</span>
-                        <span className="value">{matchInfo.STAD}</span>
+                        <span className="value">{matchInfo.STAD || "N/A"}</span>
                     </div>
                     <div className="info-divider"></div>
                     <div className="info-item">
                         <span className="label">REFEREE</span>
-                        <span className="value">{matchInfo.REFREE}</span>
+                        <span className="value">{matchInfo.REFEREE || "N/A"}</span>
                     </div>
                 </div>
             </section>
@@ -251,7 +267,7 @@ export default function AhlyVZamalekMatchDetails({
                                         <>
                                             <h3 className="list-title subs-title">SUBSTITUTES</h3>
                                             {squads.ahly.subs.map((p, i) => {
-                                                const subInfo = getSubInfo(p, true);
+                                                const subInfo = getSubInfo(p);
                                                 return (
                                                     <div key={i} className="player-card sub-card">
                                                         <span className="player-num sub-num">S</span>
@@ -283,15 +299,15 @@ export default function AhlyVZamalekMatchDetails({
                                 </div>
                             </div>
 
-                            {/* Opponent Column */}
-                            <div className="team-column opp-theme">
+                            {/* Zamalek Column */}
+                            <div className="team-column zamalek-theme">
                                 <div className="column-header">
-                                    <span className="team-label">{matchInfo["OPPONENT TEAM"]}</span>
-                                    <span className="starter-count">{squads.opp.starters.length} STARTERS</span>
+                                    <span className="team-label">الزمالك</span>
+                                    <span className="starter-count">{squads.zamalek.starters.length} STARTERS</span>
                                 </div>
                                 <div className="players-list">
                                     <h3 className="list-title">STARTERS</h3>
-                                    {squads.opp.starters.length === 0 ? (
+                                    {squads.zamalek.starters.length === 0 ? (
                                         Array(11).fill(0).map((_, i) => (
                                             <div key={i} className="player-card placeholder-card rev">
                                                 <span className="player-num">{i + 1}</span>
@@ -299,12 +315,12 @@ export default function AhlyVZamalekMatchDetails({
                                             </div>
                                         ))
                                     ) : (
-                                        squads.opp.starters.map((p, i) => {
+                                        squads.zamalek.starters.map((p, i) => {
                                             const wasSubbed = p["OUT MINUTE"] || p["MINUTE OUT"];
                                             return (
                                                 <div key={i} className="player-card rev">
                                                     <div className="player-badges">
-                                                        {events.opp.filter(e => e["PLAYER NAME"] === p["PLAYER NAME"]).map((e, idx) => (
+                                                        {events.zamalek.filter(e => e["PLAYER NAME"] === p["PLAYER NAME"]).map((e, idx) => (
                                                             <span key={idx} title={e.TYPE} className="event-mini-icon">
                                                                 {getEventIcon(e.TYPE)}
                                                             </span>
@@ -316,18 +332,18 @@ export default function AhlyVZamalekMatchDetails({
                                             );
                                         })
                                     )}
-                                    {squads.opp.subs.length > 0 && (
+                                    {squads.zamalek.subs.length > 0 && (
                                         <>
                                             <h3 className="list-title subs-title">SUBSTITUTES</h3>
-                                            {squads.opp.subs.map((p, i) => {
-                                                const subInfo = getSubInfo(p, false);
+                                            {squads.zamalek.subs.map((p, i) => {
+                                                const subInfo = getSubInfo(p);
                                                 return (
                                                     <div key={i} className="player-card sub-card rev">
                                                         <span className="player-num sub-num">S</span>
                                                         <div className="sub-main tr">
                                                             <span className="player-name">
                                                                 <span className="player-badges-inline-rev" style={{ marginRight: '8px', display: 'inline-flex', gap: '4px', verticalAlign: 'middle' }}>
-                                                                    {events.opp.filter(e => e["PLAYER NAME"] === p["PLAYER NAME"] && String(e.TYPE).trim() !== 'تغيير').map((e, idx) => (
+                                                                    {events.zamalek.filter(e => e["PLAYER NAME"] === p["PLAYER NAME"] && String(e.TYPE).trim() !== 'تغيير').map((e, idx) => (
                                                                         <span key={idx} title={e.TYPE} className="event-mini-icon">
                                                                             {getEventIcon(e.TYPE)}
                                                                         </span>
@@ -379,10 +395,10 @@ export default function AhlyVZamalekMatchDetails({
                                     )}
                                 </div>
                             </div>
-                            <div className="team-column opp-theme">
+                            <div className="team-column zamalek-theme">
                                 <div className="gk-section">
                                     <h3 className="list-title">GOALKEEPER</h3>
-                                    {gks.opp.length === 0 ? (
+                                    {gks.zamalek.length === 0 ? (
                                         <div className="gk-card highlighting placeholder-card rev op-mask">
                                             <div className="gk-info tr">
                                                 <span className="gk-name">Main Keeper</span>
@@ -391,7 +407,7 @@ export default function AhlyVZamalekMatchDetails({
                                             <span className="gk-icon">🧤</span>
                                         </div>
                                     ) : (
-                                        gks.opp.map((g, i) => (
+                                        gks.zamalek.map((g, i) => (
                                             <div key={i} className="gk-card highlighting rev">
                                                 <div className="gk-info tr">
                                                     <span className="gk-name">{g["PLAYER NAME"]}</span>
@@ -424,14 +440,10 @@ export default function AhlyVZamalekMatchDetails({
                                                         <span className="entry-icon">{getEventIcon(e.TYPE)}</span>
                                                         <div className="entry-text">
                                                             <span className="entry-player">{e["PLAYER NAME"]}</span>
-                                                            {!e["HOW MISSED?"] ? (
-                                                                <span className="entry-type">
-                                                                    {e.TYPE}
-                                                                    {e.TYPE_SUB && <span style={{ color: '#ff5252', fontStyle: 'normal' }}> / {e.TYPE_SUB}</span>}
-                                                                </span>
-                                                            ) : (
-                                                                <span className="entry-note">HOW MISSED: {e["HOW MISSED?"]}</span>
-                                                            )}
+                                                            <span className="entry-type">
+                                                                {e.TYPE}
+                                                                {e.TYPE_SUB && <span style={{ color: '#ff5252', fontStyle: 'normal' }}> / {e.TYPE_SUB}</span>}
+                                                            </span>
                                                         </div>
                                                     </div>
                                                 </div>
@@ -444,13 +456,14 @@ export default function AhlyVZamalekMatchDetails({
                         </div>
                     </div>
                 )}
+
                 {activeTab === 'subs' && (
                     <div className="timeline-view subs-timeline">
                         <div className="timeline-container">
                             {(() => {
                                 const subEvents = [
                                     ...squads.ahly.subs.map(s => ({ ...s, isAhly: true })),
-                                    ...squads.opp.subs.map(s => ({ ...s, isAhly: false }))
+                                    ...squads.zamalek.subs.map(s => ({ ...s, isAhly: false }))
                                 ].map(s => {
                                     const rawMin = s["IN MINUTE"] || s["MINUTE IN"] || s["OUT MINUTE"] || s["MINUTE OUT"] || "0";
                                     const minute = parseInt(String(rawMin).replace(/[^0-9]/g, '')) || 0;
@@ -505,7 +518,6 @@ export default function AhlyVZamalekMatchDetails({
                     </div>
                 )}
             </div>
-
         </div>
     );
 }

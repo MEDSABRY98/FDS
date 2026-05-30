@@ -16,7 +16,8 @@ import {
     GitCompare, 
     Tv, 
     Menu, 
-    ArrowLeft 
+    ArrowLeft,
+    Award
 } from "lucide-react";
 import Link from "next/link";
 
@@ -33,6 +34,7 @@ import AlAhlyFilters from "./alahly_db_filters";
 
 import AlAhlyMatchDetails from "./alahly_db_match_details";
 import AlAhlyEditor from "./alahly_db_editor";
+import AlAhlyChampions from "./alahly_db_champions";
 import AlAhlyReferees from "./alahly_db_referees";
 import AlAhlyH2H from "./alahly_db_h2h";
 import AlAhlyMediaTracker from "./alahly_db_media_tracker";
@@ -196,14 +198,15 @@ export default function AlAhlyDatabase() {
         { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
         { id: 'matches', label: 'Matches', icon: Trophy },
         { id: 'editor', label: 'Editor', icon: FileText },
+        { id: 'champions', label: 'Champions', icon: Award },
         { id: 'seasons', label: 'Seasons - Name', icon: Calendar },
         { id: 'seasons_n', label: 'Seasons - Number', icon: CalendarDays },
         { id: 'years', label: 'Years', icon: Calendar },
         { id: 'players', label: 'Players', icon: Users },
-        { id: 'gks', label: 'GKs', icon: Shield },
+        { id: 'gks', label: 'Gks', icon: Shield },
         { id: 'managers', label: 'Managers', icon: User },
         { id: 'referees', label: 'Referees', icon: Shield },
-        { id: 'h2h', label: 'H2H', icon: GitCompare },
+        { id: 'h2h', label: 'H2h', icon: GitCompare },
         { id: 'media-tracker', label: 'Media Tracker', icon: Tv }
     ];
 
@@ -345,6 +348,7 @@ export default function AlAhlyDatabase() {
                     {activeTab === 'referees' && <AlAhlyReferees matches={filteredMatches} playerDetails={playerDetails} howPenMissed={howPenMissed} />}
                     {activeTab === 'media-tracker' && <AlAhlyMediaTracker matches={filteredMatches} mediaTrackerData={mediaTrackerData} onDataChange={fetchMatchData} />}
                     {activeTab === 'editor' && <AlAhlyEditor />}
+                    {activeTab === 'champions' && <AlAhlyChampions matchesData={filteredMatches} />}
                 </main>
             </div>
 

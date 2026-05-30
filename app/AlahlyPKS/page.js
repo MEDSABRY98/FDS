@@ -48,9 +48,9 @@ export default function AlAhlyPKsDatabase() {
         { id: 'alahly_pks_editor', label: 'Editor', icon: FileText },
         { id: 'alahly_pks_champions', label: 'Champions', icon: Trophy },
         { id: 'alahly_pks_players', label: 'Players', icon: Users },
-        { id: 'alahly_pks_gks', label: 'GKs', icon: Shield },
+        { id: 'alahly_pks_gks', label: 'Gks', icon: Shield },
         { id: 'alahly_pks_managers', label: 'Managers', icon: User },
-        { id: 'alahly_pks_h2h', label: 'H2H', icon: GitCompare }
+        { id: 'alahly_pks_h2h', label: 'H2h', icon: GitCompare }
     ];
 
     useEffect(() => {

@@ -482,7 +482,7 @@ export default function DatabaseManagement() {
                                 }}
                             >
                                 <Database size={16} className="alahly-sidebar-item-icon" />
-                                <span>{t.label.toUpperCase()}</span>
+                                <span>{t.label.split(' ').map(w => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase()).join(' ')}</span>
                             </button>
                         ))}
                     </div>

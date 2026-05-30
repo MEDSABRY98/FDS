@@ -130,12 +130,12 @@ export default function AlAhlyFinalsDatabase() {
 
                 <div className="alahly-sidebar-menu">
                     {[
-                        { id: 'finals_dashboard', label: 'DASHBOARD', icon: <LayoutDashboard size={16} className="alahly-sidebar-item-icon" /> },
-                        { id: 'finals_matches', label: 'MATCHES', icon: <Trophy size={16} className="alahly-sidebar-item-icon" /> },
-                        { id: 'finals_editor', label: 'EDITOR', icon: <Edit size={16} className="alahly-sidebar-item-icon" /> },
-                        { id: 'finals_champions', label: 'CHAMPIONS', icon: <Award size={16} className="alahly-sidebar-item-icon" /> },
-                        { id: 'finals_players', label: 'PLAYERS', icon: <Users size={16} className="alahly-sidebar-item-icon" /> },
-                        { id: 'finals_managers', label: 'MANAGERS', icon: <UserCheck size={16} className="alahly-sidebar-item-icon" /> },
+                        { id: 'finals_dashboard', label: 'Dashboard', icon: <LayoutDashboard size={16} className="alahly-sidebar-item-icon" /> },
+                        { id: 'finals_matches', label: 'Matches', icon: <Trophy size={16} className="alahly-sidebar-item-icon" /> },
+                        { id: 'finals_editor', label: 'Editor', icon: <Edit size={16} className="alahly-sidebar-item-icon" /> },
+                        { id: 'finals_champions', label: 'Champions', icon: <Award size={16} className="alahly-sidebar-item-icon" /> },
+                        { id: 'finals_players', label: 'Players', icon: <Users size={16} className="alahly-sidebar-item-icon" /> },
+                        { id: 'finals_managers', label: 'Managers', icon: <UserCheck size={16} className="alahly-sidebar-item-icon" /> },
                     ].map(tab => (
                         <button
                             key={tab.id}

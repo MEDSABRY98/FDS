@@ -10,16 +10,20 @@ import {
     Users,
     User,
     Menu,
-    ArrowLeft
+    ArrowLeft,
+    Award
 } from "lucide-react";
 import Link from "next/link";
 import { AhlyVZamalekService } from "./ahly_v_zamalek_service";
 import AhlyVZamalekDashboard from "./ahly_v_zamalek_dashboard";
 import AhlyVZamalekMatches from "./ahly_v_zamalek_matches";
+import AhlyVZamalekChampions from "./ahly_v_zamalek_champions";
 import AhlyVZamalekPlayers from "./ahly_v_zamalek_players";
 import AhlyVZamalekManagers from "./ahly_v_zamalek_managers";
 import AhlyVZamalekFilters from "./ahly_v_zamalek_filters";
 import AhlyVZamalekMatchDetails from "./ahly_v_zamalek_match_details";
+import AhlyVZamalekPlayerDetails from "./ahly_v_zamalek_player_details";
+import AhlyVZamalekManagerDetails from "./ahly_v_zamalek_manager_details";
 import Login_db from "../lib/Login_db";
 import Loading_db from "../lib/Loading_db";
 import "../lib/AlahlySidebar.css";
@@ -35,11 +39,15 @@ export default function AhlyVZamalekDatabase() {
     const [filteredData, setFilteredData] = useState([]);
     const [loading, setLoading] = useState(true);
     const [selectedMatchId, setSelectedMatchId] = useState(null);
+    const [selectedPlayerName, setSelectedPlayerName] = useState(null);
+    const [selectedManagerName, setSelectedManagerName] = useState(null);
+    const [selectedManagerStatus, setSelectedManagerStatus] = useState("alahly");
     const [isFilterOpen, setIsFilterOpen] = useState(false);
 
     const tabs = [
         { id: 'avz_dashboard', label: 'Dashboard', icon: LayoutDashboard },
         { id: 'avz_matches', label: 'Matches', icon: Trophy },
+        { id: 'avz_champions', label: 'Champions', icon: Award },
         { id: 'avz_players', label: 'Players', icon: Users },
         { id: 'avz_managers', label: 'Managers', icon: User }
     ];
@@ -50,7 +58,7 @@ export default function AhlyVZamalekDatabase() {
 
     useEffect(() => {
         window.scrollTo(0, 0);
-    }, [selectedMatchId, activeTab]);
+    }, [selectedMatchId, selectedPlayerName, selectedManagerName, activeTab]);
 
     async function fetchAvZData() {
         setLoading(true);
@@ -76,11 +84,36 @@ export default function AhlyVZamalekDatabase() {
         if (selectedMatchId) {
             return (
                 <AhlyVZamalekMatchDetails
-                    matchId={selectedMatchId.MATCH_ID}
+                    matchId={selectedMatchId}
                     matches={matchesData}
                     playerDetails={playersData}
                     lineupDetails={lineupsData}
                     onBack={() => setSelectedMatchId(null)}
+                />
+            );
+        }
+
+        if (selectedPlayerName) {
+            return (
+                <AhlyVZamalekPlayerDetails
+                    playerName={selectedPlayerName}
+                    playerDetails={playersData}
+                    lineupDetails={lineupsData}
+                    masterMatches={matchesData}
+                    onBack={() => setSelectedPlayerName(null)}
+                />
+            );
+        }
+
+        if (selectedManagerName) {
+            return (
+                <AhlyVZamalekManagerDetails
+                    managerName={selectedManagerName}
+                    managerStatus={selectedManagerStatus}
+                    masterMatches={matchesData}
+                    onBack={() => setSelectedManagerName(null)}
+                    playerDetails={playersData}
+                    lineupDetails={lineupsData}
                 />
             );
         }
@@ -90,10 +123,29 @@ export default function AhlyVZamalekDatabase() {
                 return <AhlyVZamalekDashboard derbyData={filteredData} />;
             case "avz_matches":
                 return <AhlyVZamalekMatches derbyData={filteredData} onSelectMatch={(id) => setSelectedMatchId(id)} />;
+            case "avz_champions":
+                return <AhlyVZamalekChampions derbyData={filteredData} />;
             case "avz_players":
-                return <AhlyVZamalekPlayers playersData={playersData} matchesData={matchesData} lineupsData={lineupsData} />;
+                return (
+                    <AhlyVZamalekPlayers
+                        playersData={playersData}
+                        matchesData={matchesData}
+                        lineupsData={lineupsData}
+                        onSelectPlayer={(name) => setSelectedPlayerName(name)}
+                    />
+                );
             case "avz_managers":
-                return <AhlyVZamalekManagers derbyData={filteredData} />;
+                return (
+                    <AhlyVZamalekManagers
+                        derbyData={filteredData}
+                        lineupDetails={lineupsData}
+                        playerDetails={playersData}
+                        onSelectManager={(name, team) => {
+                            setSelectedManagerName(name);
+                            setSelectedManagerStatus(team === "الأهلي" ? "alahly" : "opponent");
+                        }}
+                    />
+                );
 
             default:
                 return null;
@@ -142,6 +194,7 @@ export default function AhlyVZamalekDatabase() {
                                 onClick={() => {
                                     setActiveTab(tab.id);
                                     setSelectedMatchId(null);
+                                    setSelectedPlayerName(null);
                                     setIsSidebarMobileOpen(false);
                                 }}
                             >

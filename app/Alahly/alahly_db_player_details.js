@@ -1027,7 +1027,8 @@ export default function PlayerDetails({ playerName, playerData, playerDetails, l
             )}
             {activeTab === 'assist_impact' && (
                 <PlayerAssistImpactTable
-                    stats={stats}
+                    playerName={playerName}
+                    filteredMatches={stats.matchHistory}
                 />
             )}
             {activeTab === 'timing' && (
