@@ -742,3 +742,41 @@
 .left .sub-dot-premium {
     border-color: #000;
 }
+
+/* Substitutes Sub-card Detailed Row (White background pill row) */
+.sub-details-row {
+    background: #ffffff;
+    border: 1px solid rgba(0, 0, 0, 0.08);
+    border-radius: 6px;
+    padding: 8px 15px;
+    margin-top: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    align-self: stretch;
+    box-sizing: border-box;
+    font-size: 12px;
+    color: #475569;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.02);
+}
+
+.sub-details-row.rev {
+    flex-direction: row-reverse;
+}
+
+.sub-in-label {
+    color: #16a34a;
+    font-weight: 700;
+    font-family: 'Space Mono', monospace;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.sub-out-label {
+    color: #dc2626;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}

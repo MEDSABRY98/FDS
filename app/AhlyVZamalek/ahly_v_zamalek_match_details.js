@@ -275,12 +275,12 @@ export default function AhlyVZamalekMatchDetails({
                                                     <div className="sub-main">
                                                         <span className="player-name">{p["PLAYER NAME"]}</span>
                                                         {subInfo && (
-                                                            <span className="sub-info-badge">
-                                                                 <span className="sub-min">🔄 {subInfo.minute}'</span>
-                                                                 {subInfo.playerOut && (
-                                                                     <span className="sub-out"><span className="red-arrow-sub">↙</span> {subInfo.playerOut}</span>
-                                                                 )}
-                                                            </span>
+                                                            <div className="sub-details-row">
+                                                                <span className="sub-in-label">🔄 {subInfo.minute}'</span>
+                                                                {subInfo.playerOut && (
+                                                                    <span className="sub-out-label">↙ {subInfo.playerOut}</span>
+                                                                )}
+                                                            </div>
                                                         )}
                                                     </div>
                                                     <div className="player-badges">
@@ -342,12 +342,12 @@ export default function AhlyVZamalekMatchDetails({
                                                     <div className="sub-main tr">
                                                         <span className="player-name">{p["PLAYER NAME"]}</span>
                                                         {subInfo && (
-                                                            <span className="sub-info-badge">
+                                                            <div className="sub-details-row rev">
+                                                                <span className="sub-in-label">🔄 {subInfo.minute}'</span>
                                                                 {subInfo.playerOut && (
-                                                                    <span className="sub-out">{subInfo.playerOut} <span className="red-arrow-sub">↙</span></span>
+                                                                    <span className="sub-out-label">↙ {subInfo.playerOut}</span>
                                                                 )}
-                                                                <span className="sub-min">{subInfo.minute}' 🔄</span>
-                                                            </span>
+                                                            </div>
                                                         )}
                                                     </div>
                                                     <div className="player-badges">
