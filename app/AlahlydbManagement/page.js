@@ -4,7 +4,7 @@ import { useState, useEffect } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { supabase } from "../lib/supabase";
-import { AlAhlyService } from "../alahly/alahly_db_service";
+import { AlAhlyService } from "../Alahly/alahly_db_service";
 import * as XLSX from "xlsx";
 import { Download, Database, ArrowLeft, X, Menu } from "lucide-react";
 import Login_db from "../lib/Login_db";

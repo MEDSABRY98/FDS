@@ -16,7 +16,7 @@ import {
     ArrowLeft 
 } from "lucide-react";
 import Link from "next/link";
-import { AlAhlyService } from "../alahly/alahly_db_service";
+import { AlAhlyService } from "../Alahly/alahly_db_service";
 import AlAhlyPKsMatches from "./alahly_pks_matches";
 import AlAhlyPKsMatchDetails from "./alahly_pks_match_details";
 import AlAhlyPKsPlayers from "./alahly_pks_players";
