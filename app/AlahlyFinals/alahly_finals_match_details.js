@@ -57,14 +57,23 @@ export default function AlAhlyFinalsMatchDetails({
             !checkIfAhly(l.TEAM)
         );
 
+        const sortLineup = (a, b) => {
+            const numA = parseInt(String(a.ROW_ID || '').replace(/[^0-9]/g, '')) || 0;
+            const numB = parseInt(String(b.ROW_ID || '').replace(/[^0-9]/g, '')) || 0;
+            return numA - numB;
+        };
+
+        const ahlySorted = [...ahlyLineup].sort(sortLineup);
+        const oppSorted = [...oppLineup].sort(sortLineup);
+
         return {
             ahly: {
-                starters: ahlyLineup.filter(p => p.STATU === 'اساسي' || p.STATU === 'أساسي'),
-                subs: ahlyLineup.filter(p => p.STATU !== 'اساسي' && p.STATU !== 'أساسي')
+                starters: ahlySorted.filter(p => p.STATU === 'اساسي' || p.STATU === 'أساسي'),
+                subs: ahlySorted.filter(p => p.STATU !== 'اساسي' && p.STATU !== 'أساسي')
             },
             opp: {
-                starters: oppLineup.filter(p => p.STATU === 'اساسي' || p.STATU === 'أساسي'),
-                subs: oppLineup.filter(p => p.STATU !== 'اساسي' && p.STATU !== 'أساسي')
+                starters: oppSorted.filter(p => p.STATU === 'اساسي' || p.STATU === 'أساسي'),
+                subs: oppSorted.filter(p => p.STATU !== 'اساسي' && p.STATU !== 'أساسي')
             }
         };
     }, [matchInfo, lineupDetails, opponentName]);
