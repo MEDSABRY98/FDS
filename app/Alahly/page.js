@@ -190,9 +190,6 @@ export default function AlAhlyDatabase() {
         });
     }, [matches, dbFilters, startDate, endDate]);
 
-    if (loading) {
-        return <Loading_db message="SYNCING DATA" />;
-    }
 
     const tabs = [
         { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
@@ -270,6 +267,8 @@ export default function AlAhlyDatabase() {
                         className="alahly-sidebar-action-btn export-btn" 
                         onClick={() => window.dispatchEvent(new CustomEvent('alahly-export-excel'))}
                         title="DOWNLOAD CURRENT VIEW AS EXCEL"
+                        disabled={loading}
+                        style={loading ? { opacity: 0.5, cursor: 'not-allowed' } : {}}
                     >
                         <Download size={14} />
                         <span>EXPORT TO EXCEL</span>
@@ -278,6 +277,8 @@ export default function AlAhlyDatabase() {
                         className="alahly-sidebar-action-btn filter-btn" 
                         onClick={() => setIsFilterOpen(true)}
                         title="OPEN DATABASE FILTERS"
+                        disabled={loading}
+                        style={loading ? { opacity: 0.5, cursor: 'not-allowed' } : {}}
                     >
                         <SlidersHorizontal size={14} />
                         <span>FILTERS</span>
@@ -308,6 +309,8 @@ export default function AlAhlyDatabase() {
                             onClick={() => window.dispatchEvent(new CustomEvent('alahly-export-excel'))} 
                             className="alahly-mobile-action-icon"
                             title="DOWNLOAD CURRENT VIEW AS EXCEL"
+                            disabled={loading}
+                            style={loading ? { opacity: 0.5, cursor: 'not-allowed' } : {}}
                         >
                             <Download size={16} />
                         </button>
@@ -315,6 +318,8 @@ export default function AlAhlyDatabase() {
                             onClick={() => setIsFilterOpen(true)} 
                             className="alahly-mobile-action-icon"
                             title="OPEN DATABASE FILTERS"
+                            disabled={loading}
+                            style={loading ? { opacity: 0.5, cursor: 'not-allowed' } : {}}
                         >
                             <SlidersHorizontal size={16} />
                         </button>
@@ -322,33 +327,39 @@ export default function AlAhlyDatabase() {
                 </header>
 
                 <main className="alahly-content-viewport">
-                    {activeTab === 'dashboard' && <AlAhlyDashboard matches={filteredMatches} season={dbFilters.season} />}
-                    {activeTab === 'matches' && (
-                        !selectedMatchId ? (
-                            <AlAhlyMatches matches={filteredMatches} onMatchClick={(id) => { setSelectedMatchId(id); }} />
-                        ) : (
-                            <AlAhlyMatchDetails
-                                matchId={selectedMatchId}
-                                matches={matches}
-                                playerDetails={playerDetails}
-                                lineupDetails={lineupDetails}
-                                gkDetails={gkDetails}
-                                howPenMissed={howPenMissed}
-                                onBack={() => setSelectedMatchId(null)}
-                            />
-                        )
+                    {loading ? (
+                        <Loading_db message="SYNCING DATA" inline={true} />
+                    ) : (
+                        <>
+                            {activeTab === 'dashboard' && <AlAhlyDashboard matches={filteredMatches} season={dbFilters.season} />}
+                            {activeTab === 'matches' && (
+                                !selectedMatchId ? (
+                                    <AlAhlyMatches matches={filteredMatches} onMatchClick={(id) => { setSelectedMatchId(id); }} />
+                                ) : (
+                                    <AlAhlyMatchDetails
+                                        matchId={selectedMatchId}
+                                        matches={matches}
+                                        playerDetails={playerDetails}
+                                        lineupDetails={lineupDetails}
+                                        gkDetails={gkDetails}
+                                        howPenMissed={howPenMissed}
+                                        onBack={() => setSelectedMatchId(null)}
+                                    />
+                                )
+                            )}
+                            {activeTab === 'seasons' && <AlAhlySeasons matches={filteredMatches} />}
+                            {activeTab === 'seasons_n' && <AlAhlySeasonsN matches={filteredMatches} />}
+                            {activeTab === 'years' && <AlAhlyYears matches={filteredMatches} />}
+                            {activeTab === 'players' && <AlAhlyPlayers playerDetails={playerDetails} lineupDetails={lineupDetails} filteredMatches={filteredMatches} gkDetails={gkDetails} howPenMissed={howPenMissed} />}
+                            {activeTab === 'gks' && <AlAhlyGKs gkDetails={gkDetails} howPenMissed={howPenMissed} filteredMatches={filteredMatches} playerDetails={playerDetails} />}
+                            {activeTab === 'managers' && <AlAhlyManagers matches={filteredMatches} playerDetails={playerDetails} lineupDetails={lineupDetails} />}
+                            {activeTab === 'h2h' && <AlAhlyH2H matches={filteredMatches} />}
+                            {activeTab === 'referees' && <AlAhlyReferees matches={filteredMatches} playerDetails={playerDetails} howPenMissed={howPenMissed} />}
+                            {activeTab === 'media-tracker' && <AlAhlyMediaTracker matches={filteredMatches} mediaTrackerData={mediaTrackerData} onDataChange={fetchMatchData} />}
+                            {activeTab === 'editor' && <AlAhlyEditor />}
+                            {activeTab === 'champions' && <AlAhlyChampions matchesData={filteredMatches} />}
+                        </>
                     )}
-                    {activeTab === 'seasons' && <AlAhlySeasons matches={filteredMatches} />}
-                    {activeTab === 'seasons_n' && <AlAhlySeasonsN matches={filteredMatches} />}
-                    {activeTab === 'years' && <AlAhlyYears matches={filteredMatches} />}
-                    {activeTab === 'players' && <AlAhlyPlayers playerDetails={playerDetails} lineupDetails={lineupDetails} filteredMatches={filteredMatches} gkDetails={gkDetails} howPenMissed={howPenMissed} />}
-                    {activeTab === 'gks' && <AlAhlyGKs gkDetails={gkDetails} howPenMissed={howPenMissed} filteredMatches={filteredMatches} playerDetails={playerDetails} />}
-                    {activeTab === 'managers' && <AlAhlyManagers matches={filteredMatches} playerDetails={playerDetails} lineupDetails={lineupDetails} />}
-                    {activeTab === 'h2h' && <AlAhlyH2H matches={filteredMatches} />}
-                    {activeTab === 'referees' && <AlAhlyReferees matches={filteredMatches} playerDetails={playerDetails} howPenMissed={howPenMissed} />}
-                    {activeTab === 'media-tracker' && <AlAhlyMediaTracker matches={filteredMatches} mediaTrackerData={mediaTrackerData} onDataChange={fetchMatchData} />}
-                    {activeTab === 'editor' && <AlAhlyEditor />}
-                    {activeTab === 'champions' && <AlAhlyChampions matchesData={filteredMatches} />}
                 </main>
             </div>
 

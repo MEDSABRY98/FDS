@@ -6,7 +6,7 @@ import { useRouter } from "next/navigation";
 import { supabase } from "../lib/supabase";
 import { AlAhlyService } from "../Alahly/alahly_db_service";
 import * as XLSX from "xlsx";
-import { Download, Database, ArrowLeft, X, Menu } from "lucide-react";
+import { Download, Database, ArrowLeft, X, Menu, Edit, Trash2 } from "lucide-react";
 import Login_db from "../lib/Login_db";
 import "../lib/AlahlySidebar.css";
 
@@ -577,9 +577,15 @@ export default function DatabaseManagement() {
                                     <thead>
                                         <tr style={{ height: '54px' }}>
                                             {selectedTable === "alahly_PLAYERDATABASE" && (
-                                                <th style={{ width: '80px', minWidth: '80px' }}>SELECT</th>
+                                                <th className="select-header" style={{ width: '60px', minWidth: '60px', position: 'sticky', left: 0, zIndex: 15 }}>SELECT</th>
                                             )}
-                                            <th style={{ width: '150px', minWidth: '150px' }}>ACTIONS</th>
+                                            <th className="actions-header" style={{
+                                                width: '110px',
+                                                minWidth: '110px',
+                                                position: 'sticky',
+                                                left: selectedTable === "alahly_PLAYERDATABASE" ? '60px' : '0',
+                                                zIndex: 15
+                                            }}>ACTIONS</th>
                                             {columns.map(col => {
                                                 const isNarrow = ['GF', 'GA', 'ET', 'W-D-L', 'SEASON - NUMBER', 'ROUND', 'H-A-N', 'PEN'].includes(col);
                                                 return (
@@ -623,7 +629,7 @@ export default function DatabaseManagement() {
                                                 return (
                                                     <tr key={idx} className={isSelected ? 'selected-row' : ''}>
                                                         {selectedTable === "alahly_PLAYERDATABASE" && (
-                                                            <td style={{ textAlign: 'center' }}>
+                                                            <td className="select-cell" style={{ textAlign: 'center', position: 'sticky', left: 0 }}>
                                                                 <input
                                                                     type="checkbox"
                                                                     checked={isSelected}
@@ -632,10 +638,17 @@ export default function DatabaseManagement() {
                                                                 />
                                                             </td>
                                                         )}
-                                                        <td className="actions-cell">
+                                                        <td className="actions-cell" style={{
+                                                            position: 'sticky',
+                                                            left: selectedTable === "alahly_PLAYERDATABASE" ? '60px' : '0'
+                                                        }}>
                                                             <div className="actions-flex">
-                                                                <button className="edit-row-btn" onClick={() => handleEditClick(row)}>Edit</button>
-                                                                <button className="delete-row-btn" onClick={() => handleDelete(row)}>Delete</button>
+                                                                <button className="edit-row-btn" onClick={() => handleEditClick(row)} title="Edit">
+                                                                    <Edit size={16} />
+                                                                </button>
+                                                                <button className="delete-row-btn" onClick={() => handleDelete(row)} title="Delete">
+                                                                    <Trash2 size={16} />
+                                                                </button>
                                                             </div>
                                                         </td>
                                                         {columns.map(col => (
@@ -872,9 +885,31 @@ export default function DatabaseManagement() {
                     text-overflow: ellipsis;
                 }
 
+                .select-cell, .actions-cell {
+                    position: sticky;
+                    z-index: 5;
+                    background: #fff;
+                    box-shadow: 2px 0 5px rgba(0,0,0,0.02);
+                }
+
+                .select-header, .actions-header {
+                    position: sticky;
+                    z-index: 15 !important;
+                    background: #0a0a0a !important;
+                }
+
+                .db-table tr:hover td.select-cell,
+                .db-table tr:hover td.actions-cell {
+                    background: #fdfaf0 !important;
+                }
+
+                .db-table tr.selected-row td.select-cell,
+                .db-table tr.selected-row td.actions-cell {
+                    background: #fdf6e7 !important;
+                }
+
                 .actions-cell {
-                    min-width: 160px;
-                    background: inherit;
+                    min-width: 110px;
                 }
                 
                 .actions-flex {
@@ -885,15 +920,15 @@ export default function DatabaseManagement() {
                 }
 
                 .edit-row-btn, .delete-row-btn {
-                    padding: 8px 16px;
-                    font-size: 11px;
-                    font-weight: 800;
-                    text-transform: uppercase;
-                    border-radius: 8px;
+                    width: 36px;
+                    height: 36px;
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    border-radius: 10px;
                     cursor: pointer;
                     border: none;
                     transition: all 0.2s;
-                    letter-spacing: 1px;
                 }
 
                 .edit-row-btn {
