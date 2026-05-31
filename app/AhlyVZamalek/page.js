@@ -11,7 +11,8 @@ import {
     User,
     Menu,
     ArrowLeft,
-    Award
+    Award,
+    FileText
 } from "lucide-react";
 import Link from "next/link";
 import { AhlyVZamalekService } from "./ahly_v_zamalek_service";
@@ -24,6 +25,7 @@ import AhlyVZamalekFilters from "./ahly_v_zamalek_filters";
 import AhlyVZamalekMatchDetails from "./ahly_v_zamalek_match_details";
 import AhlyVZamalekPlayerDetails from "./ahly_v_zamalek_player_details";
 import AhlyVZamalekManagerDetails from "./ahly_v_zamalek_manager_details";
+import AhlyVZamalekEditor from "./ahly_v_zamalek_editor";
 import Login_db from "../lib/Login_db";
 import Loading_db from "../lib/Loading_db";
 import "../lib/AlahlySidebar.css";
@@ -47,6 +49,7 @@ export default function AhlyVZamalekDatabase() {
     const tabs = [
         { id: 'avz_dashboard', label: 'Dashboard', icon: LayoutDashboard },
         { id: 'avz_matches', label: 'Matches', icon: Trophy },
+        { id: 'avz_editor', label: 'Editor', icon: FileText },
         { id: 'avz_champions', label: 'Champions', icon: Award },
         { id: 'avz_players', label: 'Players', icon: Users },
         { id: 'avz_managers', label: 'Managers', icon: User }
@@ -146,6 +149,8 @@ export default function AhlyVZamalekDatabase() {
                         }}
                     />
                 );
+            case "avz_editor":
+                return <AhlyVZamalekEditor />;
 
             default:
                 return null;
@@ -195,6 +200,7 @@ export default function AhlyVZamalekDatabase() {
                                     setActiveTab(tab.id);
                                     setSelectedMatchId(null);
                                     setSelectedPlayerName(null);
+                                    setSelectedManagerName(null);
                                     setIsSidebarMobileOpen(false);
                                 }}
                             >
