@@ -72,9 +72,9 @@ export default function Referee_Matches_Module({ stats }) {
 
             {totalPages > 1 && (
                 <div className="p-pagination" style={{ marginTop: '20px', justifyContent: 'center', display: 'flex', gap: '12px', alignItems: 'center' }}>
-                    <button disabled={currentPage === 1} onClick={() => { setCurrentPage(p => p - 1); window.scrollTo({ top: 300, behavior: 'smooth' }); }} style={{ background: 'rgba(201, 168, 76, 0.15)', border: '1px solid rgba(201, 168, 76, 0.3)', color: 'var(--player-gold)', padding: '8px 18px', borderRadius: '10px', fontFamily: 'Space Mono', fontWeight: '700', fontSize: '11px', cursor: 'pointer' }}>PREV</button>
+                    <button disabled={currentPage === 1} onClick={() => { setCurrentPage(p => p - 1); window.scrollTo({ top: 300, behavior: 'smooth' }); }} style={{ background: 'rgba(201, 168, 76, 0.15)', border: '1px solid rgba(201, 168, 76, 0.3)', color: 'var(--player-gold)', padding: '8px 18px', borderRadius: '10px', fontFamily: 'Space Mono', fontWeight: '700', fontSize: '11px', cursor: 'pointer' }}>←</button>
                     <span style={{ fontFamily: 'Space Mono', fontSize: '13px', color: 'var(--player-gold)', letterSpacing: '2px', fontWeight: '800' }}>PAGE {currentPage} OF {totalPages}</span>
-                    <button disabled={currentPage === totalPages} onClick={() => { setCurrentPage(p => p + 1); window.scrollTo({ top: 300, behavior: 'smooth' }); }} style={{ background: 'rgba(201, 168, 76, 0.15)', border: '1px solid rgba(201, 168, 76, 0.3)', color: 'var(--player-gold)', padding: '8px 18px', borderRadius: '10px', fontFamily: 'Space Mono', fontWeight: '700', fontSize: '11px', cursor: 'pointer' }}>NEXT</button>
+                    <button disabled={currentPage === totalPages} onClick={() => { setCurrentPage(p => p + 1); window.scrollTo({ top: 300, behavior: 'smooth' }); }} style={{ background: 'rgba(201, 168, 76, 0.15)', border: '1px solid rgba(201, 168, 76, 0.3)', color: 'var(--player-gold)', padding: '8px 18px', borderRadius: '10px', fontFamily: 'Space Mono', fontWeight: '700', fontSize: '11px', cursor: 'pointer' }}>→</button>
                 </div>
             )}
         </div>

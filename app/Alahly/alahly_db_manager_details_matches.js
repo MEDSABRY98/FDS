@@ -68,9 +68,9 @@ export default function Manager_Matches_Module({ stats }) {
 
             {totalPages > 1 && (
                 <div className="p-pagination" style={{ marginTop: '20px', justifyContent: 'center', display: 'flex', gap: '12px', alignItems: 'center' }}>
-                    <button disabled={currentPage === 1} onClick={() => { setCurrentPage(p => p - 1); window.scrollTo({ top: 300, behavior: 'smooth' }); }}>PREV</button>
+                    <button disabled={currentPage === 1} onClick={() => { setCurrentPage(p => p - 1); window.scrollTo({ top: 300, behavior: 'smooth' }); }}>←</button>
                     <span>PAGE {currentPage} OF {totalPages}</span>
-                    <button disabled={currentPage === totalPages} onClick={() => { setCurrentPage(p => p + 1); window.scrollTo({ top: 300, behavior: 'smooth' }); }}>NEXT</button>
+                    <button disabled={currentPage === totalPages} onClick={() => { setCurrentPage(p => p + 1); window.scrollTo({ top: 300, behavior: 'smooth' }); }}>→</button>
                 </div>
             )}
 

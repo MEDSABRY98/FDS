@@ -9,6 +9,7 @@ import PlayerSeasonsTable from "./ahly_v_zamalek_player_details_seasons";
 import PlayerVsTeamsTable from "./ahly_v_zamalek_player_details_vs_teams";
 import PlayerChampionshipsTable from "./ahly_v_zamalek_player_details_championships";
 import PlayerWithPlayerTable from "./ahly_v_zamalek_player_details_player_with_player";
+import PlayerWithAgainstTable from "./ahly_v_zamalek_player_details_with_against_player";
 import PlayerGoalImpactTable from "./ahly_v_zamalek_player_details_goal_impact";
 import PlayerAssistImpactTable from "./ahly_v_zamalek_player_details_assist_impact";
 import PlayerPresenceTable from "./ahly_v_zamalek_player_details_squad_influence";
@@ -56,6 +57,8 @@ export default function AhlyVZamalekPlayerDetails({ playerName, playerDetails, l
             statsBySY: {},
             statsByOpponent: {},
             playerWithPlayerStats: { assistsFrom: {}, assistsTo: {} },
+            withPlayer: [],
+            againstPlayer: [],
             impactStats: {
                 presence: { matches: 0, wins: 0, draws: 0, losses: 0, gf: 0, ga: 0, cleanSheets: 0, failedToScore: 0 },
                 absence: { matches: 0, wins: 0, draws: 0, losses: 0, gf: 0, ga: 0, cleanSheets: 0, failedToScore: 0 },
@@ -449,6 +452,57 @@ export default function AhlyVZamalekPlayerDetails({ playerName, playerDetails, l
             }
         });
 
+        // --- Calculate Teammate (With Player) & Opponent (Against Player) statistics ---
+        const withPlayerMap = {};
+        const againstPlayerMap = {};
+
+        appearances.forEach(app => {
+            const mId = String(app.MATCH_ID);
+            const playerTeam = String(app.TEAM || "").trim();
+            const ctx = matchContextMap[mId];
+            if (!ctx) return;
+
+            // Determine outcome from our player's perspective
+            let outcome = 'D';
+            const isAhlySide = isAhly(playerTeam);
+            if (ctx.gf > ctx.ga) {
+                outcome = isAhlySide ? 'W' : 'L';
+            } else if (ctx.gf < ctx.ga) {
+                outcome = isAhlySide ? 'L' : 'W';
+            }
+
+            // Find all lineup players in this match
+            const matchLineup = (lineupDetails || []).filter(l => String(l.MATCH_ID) === mId);
+            matchLineup.forEach(l => {
+                const otherName = String(l["PLAYER NAME"] || "").trim();
+                if (!otherName || otherName === playerName) return;
+
+                const otherTeam = String(l.TEAM || "").trim();
+                const isSameTeam = (isAhly(playerTeam) && isAhly(otherTeam)) || (!isAhly(playerTeam) && !isAhly(otherTeam));
+
+                if (isSameTeam) {
+                    if (!withPlayerMap[otherName]) {
+                        withPlayerMap[otherName] = { name: otherName, matches: 0, wins: 0, draws: 0, losses: 0 };
+                    }
+                    withPlayerMap[otherName].matches += 1;
+                    if (outcome === 'W') withPlayerMap[otherName].wins += 1;
+                    else if (outcome === 'D') withPlayerMap[otherName].draws += 1;
+                    else if (outcome === 'L') withPlayerMap[otherName].losses += 1;
+                } else {
+                    if (!againstPlayerMap[otherName]) {
+                        againstPlayerMap[otherName] = { name: otherName, matches: 0, wins: 0, draws: 0, losses: 0 };
+                    }
+                    againstPlayerMap[otherName].matches += 1;
+                    if (outcome === 'W') againstPlayerMap[otherName].wins += 1;
+                    else if (outcome === 'D') againstPlayerMap[otherName].draws += 1;
+                    else if (outcome === 'L') againstPlayerMap[otherName].losses += 1;
+                }
+            });
+        });
+
+        summary.withPlayer = Object.values(withPlayerMap);
+        summary.againstPlayer = Object.values(againstPlayerMap);
+
         // --- Absence Impact (Team Performance within Career Range) ---
         const careerDates = allAppearances.map(l => {
             const ctx = matchContextMap[String(l.MATCH_ID)];
@@ -588,11 +642,33 @@ export default function AhlyVZamalekPlayerDetails({ playerName, playerDetails, l
                     return { "#": i + 1, "OPPONENT": opp, "APPS": s.apps, "G": s.goals, "A": s.assists, "P-G": s.penGoals, "P-M": s.penMissed };
                 });
                 break;
-            case 'player_with_player':
+             case 'player_with_player':
                 const allPartners = Array.from(new Set([...Object.keys(stats.playerWithPlayerStats.assistsFrom), ...Object.keys(stats.playerWithPlayerStats.assistsTo)]));
                 exportData = allPartners.map((p, i) => ({
                     "#": i + 1, "PARTNER NAME": p, "ASSISTS FROM": stats.playerWithPlayerStats.assistsFrom[p] || 0, "ASSISTS TO": stats.playerWithPlayerStats.assistsTo[p] || 0, "TOTAL": (stats.playerWithPlayerStats.assistsFrom[p] || 0) + (stats.playerWithPlayerStats.assistsTo[p] || 0)
                 })).sort((a, b) => b.TOTAL - a.TOTAL);
+                break;
+            case 'with_player':
+                exportData = stats.withPlayer.map((p, i) => ({
+                    "#": i + 1,
+                    "PLAYER NAME": p.name,
+                    "MATCHES": p.matches,
+                    "WINS": p.wins,
+                    "DRAWS": p.draws,
+                    "LOSSES": p.losses,
+                    "WIN RATE (%)": p.matches > 0 ? ((p.wins / p.matches) * 100).toFixed(1) : 0
+                })).sort((a, b) => b.MATCHES - a.MATCHES);
+                break;
+            case 'against_player':
+                exportData = stats.againstPlayer.map((p, i) => ({
+                    "#": i + 1,
+                    "PLAYER NAME": p.name,
+                    "MATCHES": p.matches,
+                    "WINS": p.wins,
+                    "DRAWS": p.draws,
+                    "LOSSES": p.losses,
+                    "WIN RATE (%)": p.matches > 0 ? ((p.wins / p.matches) * 100).toFixed(1) : 0
+                })).sort((a, b) => b.MATCHES - a.MATCHES);
                 break;
             case 'goal_impact':
                 const gImpact = await AhlyVZamalekService.getPlayerGoalImpact(playerName);
@@ -813,7 +889,13 @@ export default function AhlyVZamalekPlayerDetails({ playerName, playerDetails, l
                     <span className="tab-title">VS TEAMS</span>
                 </div>
                 <div className={`player-tab-item ${activeTab === 'player_with_player' ? 'active' : ''}`} onClick={() => setActiveTab('player_with_player')}>
-                    <span className="tab-title">P W P</span>
+                    <span className="tab-title">P W P ASSISTS</span>
+                </div>
+                <div className={`player-tab-item ${activeTab === 'with_player' ? 'active' : ''}`} onClick={() => setActiveTab('with_player')}>
+                    <span className="tab-title">WITH PLAYER</span>
+                </div>
+                <div className={`player-tab-item ${activeTab === 'against_player' ? 'active' : ''}`} onClick={() => setActiveTab('against_player')}>
+                    <span className="tab-title">AGAINST PLAYER</span>
                 </div>
             </div>
 
@@ -861,6 +943,22 @@ export default function AhlyVZamalekPlayerDetails({ playerName, playerDetails, l
             {activeTab === 'player_with_player' && (
                 <PlayerWithPlayerTable
                     stats={stats}
+                />
+            )}
+
+            {activeTab === 'with_player' && (
+                <PlayerWithAgainstTable
+                    data={stats.withPlayer}
+                    title="PLAYED ALONGSIDE (WITH PLAYER)"
+                    isAgainst={false}
+                />
+            )}
+
+            {activeTab === 'against_player' && (
+                <PlayerWithAgainstTable
+                    data={stats.againstPlayer}
+                    title="PLAYED AGAINST (AGAINST PLAYER)"
+                    isAgainst={true}
                 />
             )}
 

@@ -5,9 +5,9 @@
 .players-premium-wrap { margin: 0 auto; padding: 0 40px 100px; }
 .header-tabs-container { display: flex; align-items: center; gap: 30px; margin-bottom: 5px; }
 .player-controls { margin-bottom: 30px; display: flex; justify-content: center; gap: 20px; align-items: center; flex-wrap: nowrap; }
-.search-wrap-premium { width: 280px; flex: none; }
+.search-wrap-premium { width: 260px; flex: none; }
 .p-search-input { background: #fff; border: 2px solid #eee; padding: 15px 30px; width: 100%; border-radius: 50px; text-align: center; box-shadow: 0 5px 15px rgba(0,0,0,0.03); transition: all 0.3s; }
-.custom-dropdown-wrap { position: relative; width: 220px; user-select: none; }
+.custom-dropdown-wrap { position: relative; width: 260px; user-select: none; }
 .dropdown-trigger { background: #fff; border: 2px solid #eee; padding: 15px 25px; border-radius: 50px; cursor: pointer; display: flex; align-items: center; justify-content: space-between; font-weight: 700; color: #000; transition: 0.3s; }
 .dropdown-trigger:hover, .dropdown-trigger.active { border-color: var(--gold); box-shadow: 0 8px 25px rgba(201,168,76,0.12); }
 .dropdown-arrow { width: 0; height: 0; border-left: 5px solid transparent; border-right: 5px solid transparent; border-top: 5px solid #000; }

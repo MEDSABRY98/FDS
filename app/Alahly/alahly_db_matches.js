@@ -186,7 +186,7 @@ export default function AlAhlyMatches({ matches, onMatchClick }) {
                             onClick={() => { setCurrentPage(p => Math.max(1, p - 1)); window.scrollTo({ top: 0, behavior: 'smooth' }); }} 
                             disabled={currentPage === 1}
                         >
-                            PREV
+                            ←
                         </button>
                         <div className="page-info">
                             PAGE <span className="p-num">{currentPage}</span> OF <span className="p-num">{totalPages}</span>
@@ -196,7 +196,7 @@ export default function AlAhlyMatches({ matches, onMatchClick }) {
                             onClick={() => { setCurrentPage(p => Math.min(totalPages, p + 1)); window.scrollTo({ top: 0, behavior: 'smooth' }); }} 
                             disabled={currentPage === totalPages}
                         >
-                            NEXT
+                            →
                         </button>
                     </div>
                 )}

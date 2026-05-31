@@ -234,9 +234,9 @@ export default function AlAhlyReferees({ matches, playerDetails, howPenMissed })
 
                 {totalPages > 1 && (
                     <div className="pagination-referee">
-                        <button className="page-btn prev-btn" onClick={() => setCurrentPage(p => Math.max(1, p - 1))} disabled={currentPage === 1}>PREV</button>
+                        <button className="page-btn prev-btn" onClick={() => setCurrentPage(p => Math.max(1, p - 1))} disabled={currentPage === 1}>←</button>
                         <div className="page-info">PAGE <span className="p-num">{currentPage}</span> OF <span className="p-num">{totalPages}</span></div>
-                        <button className="page-btn next-btn" onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))} disabled={currentPage === totalPages}>NEXT</button>
+                        <button className="page-btn next-btn" onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))} disabled={currentPage === totalPages}>→</button>
                     </div>
                 )}
             </div>

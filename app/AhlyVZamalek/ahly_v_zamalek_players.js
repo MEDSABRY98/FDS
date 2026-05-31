@@ -14,6 +14,12 @@ export default function AhlyVZamalekPlayers({ playersData, matchesData, lineupsD
     const [searchQuery, setSearchQuery] = useState("");
     const [teamFilter, setTeamFilter] = useState("All");
     const [sortConfig, setSortConfig] = useState({ key: "gPlusA", direction: "desc" });
+    const [currentPage, setCurrentPage] = useState(1);
+    const pageSize = 50;
+
+    useEffect(() => {
+        setCurrentPage(1);
+    }, [searchQuery, teamFilter]);
     
 
 
@@ -191,6 +197,13 @@ export default function AhlyVZamalekPlayers({ playersData, matchesData, lineupsD
         return filtered;
     }, [playerStats, searchQuery, teamFilter, sortConfig]);
 
+    const paginatedPlayers = useMemo(() => {
+        const start = (currentPage - 1) * pageSize;
+        return displayedPlayers.slice(start, start + pageSize);
+    }, [displayedPlayers, currentPage]);
+
+    const totalPages = Math.ceil(displayedPlayers.length / pageSize);
+
     useEffect(() => {
         const handleExport = () => {
             if (displayedPlayers.length > 0) {
@@ -278,10 +291,10 @@ export default function AhlyVZamalekPlayers({ playersData, matchesData, lineupsD
 
 
                     <tbody>
-                        {displayedPlayers.length > 0 ? (
-                            displayedPlayers.map((p, idx) => (
+                        {paginatedPlayers.length > 0 ? (
+                            paginatedPlayers.map((p, idx) => (
                                 <tr key={idx} onClick={() => onSelectPlayer && onSelectPlayer(p.name)} style={{ cursor: 'pointer' }}>
-                                    <td>{idx + 1}</td>
+                                    <td>{(currentPage - 1) * pageSize + idx + 1}</td>
                                     <td className="avz-text-bold clickable-player-name">{p.name}</td>
                                     <td className="avz-highlight-stat">{p.matchesCount > 0 ? p.matchesCount : "-"}</td>
                                     <td>{p.totalMinutes > 0 ? p.totalMinutes : "-"}</td>
@@ -290,19 +303,36 @@ export default function AhlyVZamalekPlayers({ playersData, matchesData, lineupsD
                                     <td>{p.penGoals > 0 ? p.penGoals : "-"}</td>
                                     <td>{p.assists > 0 ? p.assists : "-"}</td>
                                 </tr>
-
-
                             ))
                         ) : (
                             <NoData_db message="NO PLAYERS LOGGED FOR THIS FILTER" isTable={true} colSpan={8} />
-
-
-
                         )}
                     </tbody>
 
                 </table>
             </div>
+
+            {totalPages > 1 && (
+                <div className="avz-pagination">
+                    <button 
+                        className="avz-page-btn" 
+                        onClick={() => { setCurrentPage(p => Math.max(1, p - 1)); window.scrollTo({ top: 0, behavior: 'smooth' }); }} 
+                        disabled={currentPage === 1}
+                    >
+                        ←
+                    </button>
+                    <div className="avz-page-info">
+                        PAGE <span className="avz-p-num">{currentPage}</span> OF <span className="avz-p-num">{totalPages}</span>
+                    </div>
+                    <button 
+                        className="avz-page-btn" 
+                        onClick={() => { setCurrentPage(p => Math.min(totalPages, p + 1)); window.scrollTo({ top: 0, behavior: 'smooth' }); }} 
+                        disabled={currentPage === totalPages}
+                    >
+                        →
+                    </button>
+                </div>
+            )}
         </div>
     );
 }

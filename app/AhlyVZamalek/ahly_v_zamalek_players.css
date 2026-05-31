@@ -161,3 +161,51 @@
     padding: 40px !important;
     font-family: 'Space Mono', monospace;
 }
+
+/* Pagination Styles */
+.avz-pagination {
+    margin-top: 25px;
+    margin-bottom: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 20px;
+}
+
+.avz-page-btn {
+    background: #111;
+    color: #fff;
+    border: 1px solid #222;
+    padding: 10px 24px;
+    border-radius: 6px;
+    font-family: 'Space Mono', monospace;
+    font-weight: 700;
+    font-size: 0.85rem;
+    cursor: pointer;
+    transition: 0.3s;
+}
+
+.avz-page-btn:hover:not(:disabled) {
+    background: #c9a84c;
+    color: #000;
+    border-color: #c9a84c;
+    box-shadow: 0 4px 12px rgba(201, 168, 76, 0.2);
+}
+
+.avz-page-btn:disabled {
+    opacity: 0.3;
+    cursor: not-allowed;
+}
+
+.avz-page-info {
+    font-family: 'Space Mono', monospace;
+    font-weight: 600;
+    color: #666;
+    font-size: 0.9rem;
+}
+
+.avz-p-num {
+    color: #111;
+    font-weight: 800;
+    margin: 0 4px;
+}

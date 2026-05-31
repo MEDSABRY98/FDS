@@ -274,7 +274,7 @@ export default function AlAhlyGKs({ gkDetails, howPenMissed, filteredMatches, pl
                                 onClick={() => { setCurrentPage(p => Math.max(1, p - 1)); window.scrollTo({ top: 0, behavior: 'smooth' }); }} 
                                 disabled={currentPage === 1}
                             >
-                                PREV
+                                ←
                             </button>
                             <div className="page-info">
                                 PAGE {currentPage} OF {totalPages}
@@ -284,7 +284,7 @@ export default function AlAhlyGKs({ gkDetails, howPenMissed, filteredMatches, pl
                                 onClick={() => { setCurrentPage(p => Math.min(totalPages, p + 1)); window.scrollTo({ top: 0, behavior: 'smooth' }); }} 
                                 disabled={currentPage === totalPages}
                             >
-                                NEXT
+                                →
                             </button>
                         </div>
                     )}

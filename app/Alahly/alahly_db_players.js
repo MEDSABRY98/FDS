@@ -8,6 +8,13 @@ import "./alahly_db_players.css";
 import PlayerDetails from "./alahly_db_player_details";
 import { AlAhlyService } from "./alahly_db_service";
 
+import AlAhlyPlayersStats from "./alahly_db_players_stats";
+import AlAhlyPlayersPenalties from "./alahly_db_players_penalties";
+import AlAhlyPlayersMultiples from "./alahly_db_players_multiples";
+import AlAhlyPlayersImpact from "./alahly_db_players_impact";
+import AlAhlyPlayersGoalsTiming from "./alahly_db_players_goals_timing";
+import AlAhlyPlayersAssistsTiming from "./alahly_db_players_assists_timing";
+
 export default function AlAhlyPlayers({ playerDetails, lineupDetails, filteredMatches, gkDetails, howPenMissed }) {
     const [searchTerm, setSearchTerm] = useState("");
     const [teamFilter, setTeamFilter] = useState("all");
@@ -282,9 +289,12 @@ export default function AlAhlyPlayers({ playerDetails, lineupDetails, filteredMa
                         <div style={{ display: 'flex', alignItems: 'center', gap: '30px' }}>
                             <div className="section-title">AL AHLY <span className="accent">PLAYERS</span></div>
                             <div className="sub-tabs-selection">
-                                {[1, 2, 3, 4, 5, 6].map(num => (
-                                    <div key={num} className={`sub-tab-box ${activeSubTab === num ? 'active' : ''}`} onClick={() => setActiveSubTab(num)}>{num}</div>
-                                ))}
+                                {["Stats", "Penalties", "Multiples", "Impact", "Goals Timing", "Assists Timing"].map((label, index) => {
+                                    const num = index + 1;
+                                    return (
+                                        <div key={num} className={`sub-tab-box ${activeSubTab === num ? 'active' : ''}`} onClick={() => setActiveSubTab(num)}>{label}</div>
+                                    );
+                                })}
                             </div>
                         </div>
                     </div>
@@ -296,164 +306,64 @@ export default function AlAhlyPlayers({ playerDetails, lineupDetails, filteredMa
                     </div>
                     <div className="player-table-container">
                         {activeSubTab === 1 && (
-                            <table className="modern-player-table fade-in" style={{ tableLayout: 'fixed' }}>
-                                <colgroup>
-                                    <col style={{ width: '60px' }} />
-                                    <col style={{ width: '300px' }} />
-                                    <col style={{ width: '120px' }} />
-                                    <col style={{ width: '120px' }} />
-                                    <col style={{ width: '100px' }} />
-                                    <col style={{ width: '100px' }} />
-                                    <col style={{ width: '100px' }} />
-                                    <col style={{ width: '100px' }} />
-                                </colgroup>
-                                <thead>
-                                    <tr>
-                                        <th>#</th>
-                                        <th onClick={() => handleSort('name')} className="sortable">PLAYER NAME {renderSortIcon('name')}</th>
-                                        <th onClick={() => handleSort('caps')} className="sortable">MATCHES {renderSortIcon('caps')}</th>
-                                        <th onClick={() => handleSort('mins')} className="sortable">MINUTES {renderSortIcon('mins')}</th>
-                                        <th onClick={() => handleSort('ga')} className="sortable">G + A {renderSortIcon('ga')}</th>
-                                        <th onClick={() => handleSort('goals')} className="sortable">GOALS {renderSortIcon('goals')}</th>
-                                        <th onClick={() => handleSort('assists')} className="sortable">ASSISTS {renderSortIcon('assists')}</th>
-                                        <th onClick={() => handleSort('penalties')} className="sortable">PENALTIES {renderSortIcon('penalties')}</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    {paginatedRows.map((r, i) => (
-                                        <tr key={r.name}><td><span className="rank-badge-premium">{ (currentPage - 1) * pageSize + i + 1 }</span></td><td className="p-name" onClick={() => setSelectedPlayer(r.name)}>{r.name}</td><td style={{ color: 'var(--gold)' }}>{r.caps}</td><td>{r.mins}</td><td><div className="ga-pill">{r.ga}</div></td><td className="g-val">{r.goals}</td><td className="a-val">{r.assists}</td><td className="p-val">{r.penalties}</td></tr>
-                                    ))}
-                                </tbody>
-                            </table>
+                            <AlAhlyPlayersStats 
+                                paginatedRows={paginatedRows} 
+                                currentPage={currentPage} 
+                                pageSize={pageSize} 
+                                handleSort={handleSort} 
+                                renderSortIcon={renderSortIcon} 
+                                setSelectedPlayer={setSelectedPlayer} 
+                            />
                         )}
                         {activeSubTab === 2 && (
-                            <table className="modern-player-table fade-in" style={{ tableLayout: 'fixed' }}>
-                                <colgroup>
-                                    <col style={{ width: '60px' }} />
-                                    <col style={{ width: '250px' }} />
-                                    <col style={{ width: '120px' }} />
-                                    <col style={{ width: '100px' }} />
-                                    <col style={{ width: '100px' }} />
-                                    <col style={{ width: '100px' }} />
-                                    <col style={{ width: '100px' }} />
-                                    <col style={{ width: '100px' }} />
-                                    <col style={{ width: '100px' }} />
-                                </colgroup>
-                                <thead>
-                                    <tr>
-                                        <th>#</th><th onClick={() => handleSort('name')} className="sortable">PLAYER NAME {renderSortIcon('name')}</th>
-                                        <th onClick={() => handleSort('total')} className="sortable">TOTAL SHOT {renderSortIcon('total')}</th>
-                                        <th onClick={() => handleSort('goal')} className="sortable">SCORE {renderSortIcon('goal')}</th>
-                                        <th onClick={() => handleSort('miss')} className="sortable">MISS {renderSortIcon('miss')}</th>
-                                        <th onClick={() => handleSort('wonGoal')} className="sortable">WON (G) {renderSortIcon('wonGoal')}</th>
-                                        <th onClick={() => handleSort('wonMiss')} className="sortable">WON (M) {renderSortIcon('wonMiss')}</th>
-                                        <th onClick={() => handleSort('makeGoal')} className="sortable">MAKE (G) {renderSortIcon('makeGoal')}</th>
-                                        <th onClick={() => handleSort('makeMiss')} className="sortable">MAKE (M) {renderSortIcon('makeMiss')}</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    {paginatedRows.map((r, i) => (
-                                        <tr key={r.name}><td><span className="rank-badge-premium">{(currentPage - 1) * pageSize + i + 1}</span></td><td className="p-name" onClick={() => setSelectedPlayer(r.name)}>{r.name}</td><td style={{ fontWeight: 800 }}>{r.total}</td><td className="g-val">{r.goal}</td><td className="p-val">{r.miss}</td><td>{r.wonGoal}</td><td>{r.wonMiss}</td><td>{r.makeGoal}</td><td>{r.makeMiss}</td></tr>
-                                    ))}
-                                </tbody>
-                            </table>
+                            <AlAhlyPlayersPenalties 
+                                paginatedRows={paginatedRows} 
+                                currentPage={currentPage} 
+                                pageSize={pageSize} 
+                                handleSort={handleSort} 
+                                renderSortIcon={renderSortIcon} 
+                                setSelectedPlayer={setSelectedPlayer} 
+                            />
                         )}
                         {activeSubTab === 3 && (
-                            <table className="modern-player-table fade-in" style={{ tableLayout: 'fixed' }}>
-                                <colgroup>
-                                    <col style={{ width: '60px' }} />
-                                    <col style={{ width: '300px' }} />
-                                    <col style={{ width: '120px' }} />
-                                    <col style={{ width: '120px' }} />
-                                    <col style={{ width: '120px' }} />
-                                    <col style={{ width: '120px' }} />
-                                    <col style={{ width: '120px' }} />
-                                    <col style={{ width: '120px' }} />
-                                </colgroup>
-                                <thead>
-                                    <tr><th rowSpan="2">#</th><th className="name-th" rowSpan="2" onClick={() => handleSort('name')}>PLAYER NAME {renderSortIcon('name')}</th><th colSpan="3" style={{ background: '#27ae60', color: '#fff' }}>GOALS MULTIPLES</th><th colSpan="3" style={{ background: '#2980b9', color: '#fff' }}>ASSISTS MULTIPLES</th></tr>
-                                    <tr style={{ fontSize: '10px' }}>
-                                        <th onClick={() => handleSort('braceG')} className="sortable">BRACE(2) {renderSortIcon('braceG')}</th>
-                                        <th onClick={() => handleSort('hatG')} className="sortable">HAT-TRICK(3) {renderSortIcon('hatG')}</th>
-                                        <th onClick={() => handleSort('superG')} className="sortable">SUPER(4+) {renderSortIcon('superG')}</th>
-                                        <th onClick={() => handleSort('braceA')} className="sortable">BRACE(2) {renderSortIcon('braceA')}</th>
-                                        <th onClick={() => handleSort('hatA')} className="sortable">HAT-TRICK(3) {renderSortIcon('hatA')}</th>
-                                        <th onClick={() => handleSort('superA')} className="sortable">SUPER(4+) {renderSortIcon('superA')}</th>
-                                    </tr>
-                                </thead>
-                                <tbody>{paginatedRows.map((r, i) => (<tr key={r.name}><td><span className="rank-badge-premium">{(currentPage - 1) * pageSize + i + 1}</span></td><td className="p-name" onClick={() => setSelectedPlayer(r.name)}>{r.name}</td><td className="g-val">{r.braceG}</td><td className="g-val">{r.hatG}</td><td className="g-val">{r.superG}</td><td className="a-val">{r.braceA}</td><td className="a-val">{r.hatA}</td><td className="a-val">{r.superA}</td></tr>))}</tbody>
-                            </table>
+                            <AlAhlyPlayersMultiples 
+                                paginatedRows={paginatedRows} 
+                                currentPage={currentPage} 
+                                pageSize={pageSize} 
+                                handleSort={handleSort} 
+                                renderSortIcon={renderSortIcon} 
+                                setSelectedPlayer={setSelectedPlayer} 
+                            />
                         )}
                         {activeSubTab === 4 && (
-                            <table className="modern-player-table fade-in" style={{ tableLayout: 'fixed' }}>
-                                <colgroup>
-                                    <col style={{ width: '60px' }} />
-                                    <col style={{ width: '300px' }} />
-                                    <col style={{ width: '150px' }} />
-                                    <col style={{ width: '150px' }} />
-                                    <col style={{ width: '150px' }} />
-                                    <col style={{ width: '150px' }} />
-                                    <col style={{ width: '120px' }} />
-                                </colgroup>
-                                <thead>
-                                    <tr><th rowSpan="2">#</th><th className="name-th" rowSpan="2" onClick={() => handleSort('name')}>PLAYER NAME {renderSortIcon('name')}</th><th colSpan="2" style={{ background: '#27ae60', color: '#fff' }}>GOAL IMPACT</th><th colSpan="2" style={{ background: '#2980b9', color: '#fff' }}>ASSIST IMPACT</th><th rowSpan="2" style={{ background: '#000', color: 'var(--gold)' }}>TOTAL</th></tr>
-                                    <tr style={{ fontSize: '10px' }}>
-                                        <th onClick={() => handleSort('goalWinImpact')} className="sortable">WIN {renderSortIcon('goalWinImpact')}</th>
-                                        <th onClick={() => handleSort('goalDrawImpact')} className="sortable">DRAW {renderSortIcon('goalDrawImpact')}</th>
-                                        <th onClick={() => handleSort('assistWinImpact')} className="sortable">WIN {renderSortIcon('assistWinImpact')}</th>
-                                        <th onClick={() => handleSort('assistDrawImpact')} className="sortable">DRAW {renderSortIcon('assistDrawImpact')}</th>
-                                    </tr>
-                                </thead>
-                                <tbody>{paginatedRows.map((r, i) => (<tr key={r.name}><td><span className="rank-badge-premium">{(currentPage - 1) * pageSize + i + 1}</span></td><td className="p-name" onClick={() => setSelectedPlayer(r.name)}>{r.name}</td><td className="g-val">{r.goalWinImpact}</td><td style={{ color: '#e67e22' }}>{r.goalDrawImpact}</td><td className="a-val">{r.assistWinImpact}</td><td style={{ color: '#e67e22' }}>{r.assistDrawImpact}</td><td style={{ fontWeight: 800 }}>{r.goalWinImpact + r.goalDrawImpact + r.assistWinImpact + r.assistDrawImpact}</td></tr>))}</tbody>
-                            </table>
+                            <AlAhlyPlayersImpact 
+                                paginatedRows={paginatedRows} 
+                                currentPage={currentPage} 
+                                pageSize={pageSize} 
+                                handleSort={handleSort} 
+                                renderSortIcon={renderSortIcon} 
+                                setSelectedPlayer={setSelectedPlayer} 
+                            />
                         )}
-                        {(activeSubTab === 5 || activeSubTab === 6) && (
-                            <table className="modern-player-table fade-in" style={{ tableLayout: 'fixed' }}>
-                                <colgroup>
-                                    <col style={{ width: '60px' }} />
-                                    <col style={{ width: '250px' }} />
-                                    <col style={{ width: '100px' }} />
-                                    <col style={{ width: '85px' }} />
-                                    <col style={{ width: '85px' }} />
-                                    <col style={{ width: '85px' }} />
-                                    <col style={{ width: '85px' }} />
-                                    <col style={{ width: '85px' }} />
-                                    <col style={{ width: '85px' }} />
-                                    <col style={{ width: '85px' }} />
-                                    <col style={{ width: '85px' }} />
-                                    <col style={{ width: '85px' }} />
-                                </colgroup>
-                                <thead>
-                                    <tr><th rowSpan="2">#</th><th className="name-th" rowSpan="2" onClick={() => handleSort('name')}>PLAYER NAME {renderSortIcon('name')}</th><th rowSpan="2" style={{ background: activeSubTab === 5 ? '#27ae60' : '#2980b9', color: '#fff' }} onClick={() => handleSort('total')} className="sortable"> TOTAL {renderSortIcon('total')} </th><th colSpan="9" style={{ background: '#000', color: 'var(--gold)' }}>{activeSubTab === 5 ? 'GOALS' : 'ASSISTS'} TIMING DISTRIBUTION</th></tr>
-                                    <tr style={{ fontSize: '11px', background: '#f8f8f8' }}>
-                                        {["1-15", "16-30", "31-45", "45+", "46-60", "61-75", "76-90", "90+", "?"].map(min => (
-                                            <th key={min} onClick={() => handleSort(min)} className="sortable">{min} {renderSortIcon(min)}</th>
-                                        ))}
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    {paginatedRows.map((r, i) => {
-                                        const tim = activeSubTab === 5 ? r.goalsTiming : r.assistsTiming;
-                                        return (
-                                            <tr key={r.name}>
-                                                <td><span className="rank-badge-premium">{(currentPage - 1) * pageSize + i + 1}</span></td>
-                                                <td className="p-name" onClick={() => setSelectedPlayer(r.name)}>{r.name}</td>
-                                                <td style={{ fontWeight: 800, fontSize: '16px', color: '#000' }}>
-                                                    {activeSubTab === 5 ? r.goals : r.assists}
-                                                </td>
-                                                {["1-15", "16-30", "31-45", "45+", "46-60", "61-75", "76-90", "90+", "?"].map(m => (
-                                                    <td key={m} 
-                                                        className={tim[m] > 0 ? (activeSubTab === 5 ? 'g-val' : 'a-val') : ''} 
-                                                        style={{ opacity: tim[m] > 0 ? 1 : 0.3, color: '#000' }}
-                                                    >
-                                                        {tim[m]}
-                                                    </td>
-                                                ))}
-                                            </tr>
-                                        );
-                                    })}
-                                </tbody>
-                            </table>
+                        {activeSubTab === 5 && (
+                            <AlAhlyPlayersGoalsTiming 
+                                paginatedRows={paginatedRows} 
+                                currentPage={currentPage} 
+                                pageSize={pageSize} 
+                                handleSort={handleSort} 
+                                renderSortIcon={renderSortIcon} 
+                                setSelectedPlayer={setSelectedPlayer} 
+                            />
+                        )}
+                        {activeSubTab === 6 && (
+                            <AlAhlyPlayersAssistsTiming 
+                                paginatedRows={paginatedRows} 
+                                currentPage={currentPage} 
+                                pageSize={pageSize} 
+                                handleSort={handleSort} 
+                                renderSortIcon={renderSortIcon} 
+                                setSelectedPlayer={setSelectedPlayer} 
+                            />
                         )}
                     </div>
                 </div>
