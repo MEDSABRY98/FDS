@@ -1,0 +1,487 @@
+"use client";
+
+import { useState, useEffect, useMemo } from "react";
+import { 
+    Download, 
+    SlidersHorizontal, 
+    X, 
+    LayoutDashboard, 
+    Trophy, 
+    Calendar, 
+    CalendarDays, 
+    Users, 
+    Shield, 
+    User, 
+    GitCompare, 
+    Menu, 
+    ArrowLeft,
+    Award
+} from "lucide-react";
+import Link from "next/link";
+
+import { EgyptNTService } from "./egypt_nt_db_service";
+import EgyptNTDashboard from "./egypt_nt_db_dashboard";
+import EgyptNTMatches from "./egypt_nt_db_matches";
+import EgyptNTSeasons from "./egypt_nt_db_seasons";
+import EgyptNTYears from "./egypt_nt_db_years";
+import EgyptNTPlayers from "./egypt_nt_db_players";
+import EgyptNTGKs from "./egypt_nt_db_gks";
+import EgyptNTManagers from "./egypt_nt_db_managers";
+import EgyptNTFilters from "./egypt_nt_db_filters";
+import EgyptNTSquad from "./egypt_nt_db_squad";
+
+import EgyptNTMatchDetails from "./egypt_nt_db_match_details";
+import EgyptNTChampions from "./egypt_nt_db_champions";
+import EgyptNTReferees from "./egypt_nt_db_referees";
+import EgyptNTH2H from "./egypt_nt_db_h2h";
+import Loading_db from "../lib/Loading_db";
+import "./egypt_nt_sidebar.css";
+
+export default function EgyptNTDatabase() {
+    const [activeTab, setActiveTab] = useState("dashboard");
+    const [isSidebarMobileOpen, setIsSidebarMobileOpen] = useState(false);
+    const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(true);
+    const [matches, setMatches] = useState([]);
+    const [playerDetails, setPlayerDetails] = useState([]);
+    const [lineupDetails, setLineupDetails] = useState([]);
+    const [gkDetails, setGkDetails] = useState([]);
+    const [howPenMissed, setHowPenMissed] = useState([]);
+    const [squadData, setSquadData] = useState([]);
+    const [loading, setLoading] = useState(true);
+    const [selectedMatchId, setSelectedMatchId] = useState(null);
+    const [isFilterOpen, setIsFilterOpen] = useState(false);
+
+    // Date Range State
+    const [startDate, setStartDate] = useState("");
+    const [endDate, setEndDate] = useState("");
+
+    const [dbFilters, setDbFilters] = useState({
+        match_id: 'All',
+        age: 'All',
+        champion_system: 'All',
+        system_kind: 'All',
+        year: 'All',
+        champion: 'All',
+        season: 'All',
+        egypt_manager: 'All',
+        opponent_manager: 'All',
+        referee: 'All',
+        round: 'All',
+        han: 'All',
+        stad: 'All',
+        place: 'All',
+        egypt_team: 'All',
+        gf: 'All',
+        ga: 'All',
+        et: 'All',
+        pen: 'All',
+        opponent_team: 'All',
+        wdl: 'All',
+        clean_sheet: 'All',
+        wl_q_f: 'All',
+        note: 'All'
+    });
+
+    useEffect(() => {
+        fetchMatchData();
+    }, []);
+
+    async function fetchMatchData(silent = false) {
+        if (!silent) setLoading(true);
+        const data = await EgyptNTService.getAllMatches();
+        const pData = await EgyptNTService.getAllPlayerDetails();
+        const lData = await EgyptNTService.getAllLineupDetails();
+        const gData = await EgyptNTService.getAllGKDetails();
+        const hData = await EgyptNTService.getAllHowPenMissed();
+        const sqData = await EgyptNTService.getAllSquad();
+
+        setMatches(data);
+        setPlayerDetails(pData);
+        setLineupDetails(lData);
+        setGkDetails(gData);
+        setHowPenMissed(hData);
+        setSquadData(sqData);
+        if (!silent) setLoading(false);
+    }
+
+    // Dynamic Filter Options for ALL columns
+    const filterOptions = useMemo(() => {
+        return EgyptNTService.getUniqueFilters(matches);
+    }, [matches]);
+
+    const updateFilter = (key, value) => {
+        setDbFilters(prev => ({ ...prev, [key]: value }));
+    };
+
+    const resetFilters = () => {
+        setStartDate("");
+        setEndDate("");
+        setDbFilters({
+            match_id: 'All',
+            age: 'All',
+            champion_system: 'All',
+            system_kind: 'All',
+            year: 'All',
+            champion: 'All',
+            season: 'All',
+            egypt_manager: 'All',
+            opponent_manager: 'All',
+            referee: 'All',
+            round: 'All',
+            han: 'All',
+            stad: 'All',
+            place: 'All',
+            egypt_team: 'All',
+            gf: 'All',
+            ga: 'All',
+            et: 'All',
+            pen: 'All',
+            opponent_team: 'All',
+            wdl: 'All',
+            clean_sheet: 'All',
+            wl_q_f: 'All',
+            note: 'All'
+        });
+    };
+
+    // Filter matches
+    const filteredMatches = useMemo(() => {
+        return matches.filter(m => {
+            const check = (key, col) => dbFilters[key] === 'All' || String(m[col]) === String(dbFilters[key]);
+
+            const matchDateStr = m.DATE ? m.DATE : null;
+            let withinRange = true;
+            if (matchDateStr) {
+                const mDate = new Date(matchDateStr);
+                const mYear = mDate.getFullYear().toString();
+
+                if (dbFilters.year !== 'All' && mYear !== dbFilters.year) withinRange = false;
+                if (startDate && mDate < new Date(startDate)) withinRange = false;
+                if (endDate && mDate > new Date(endDate)) withinRange = false;
+            } else if (startDate || endDate || dbFilters.year !== 'All') {
+                withinRange = false;
+            }
+
+            return (
+                withinRange &&
+                check('match_id', 'MATCH_ID') &&
+                check('age', 'AGE') &&
+                check('champion_system', 'CHAMPION_SYSTEM') &&
+                check('system_kind', 'SYSTEM_KIND') &&
+                check('champion', 'CHAMPION') &&
+                check('season', 'SEASON') &&
+                check('egypt_manager', 'EGYPT MANAGER') &&
+                check('opponent_manager', 'OPPONENT MANAGER') &&
+                check('referee', 'REFREE') &&
+                check('round', 'ROUND') &&
+                check('han', 'H-A-N') &&
+                check('stad', 'STAD') &&
+                check('place', 'PLACE') &&
+                check('egypt_team', 'Egypt TEAM') &&
+                check('gf', 'GF') &&
+                check('ga', 'GA') &&
+                check('et', 'ET') &&
+                check('pen', 'PEN') &&
+                check('opponent_team', 'OPPONENT TEAM') &&
+                check('wdl', 'W-D-L') &&
+                check('clean_sheet', 'CLEAN SHEET') &&
+                check('wl_q_f', 'W-L Q & F') &&
+                check('note', 'NOTE')
+            );
+        });
+    }, [matches, dbFilters, startDate, endDate]);
+
+    const tabs = [
+        { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
+        { id: 'matches', label: 'Matches', icon: Trophy },
+        { id: 'squad', label: 'Squad List', icon: Users },
+        { id: 'champions', label: 'Champions', icon: Award },
+        { id: 'seasons', label: 'Seasons', icon: Calendar },
+        { id: 'years', label: 'Years', icon: Calendar },
+        { id: 'players', label: 'Players', icon: Users },
+        { id: 'gks', label: 'Gks', icon: Shield },
+        { id: 'managers', label: 'Managers', icon: User },
+        { id: 'referees', label: 'Referees', icon: Shield },
+        { id: 'h2h', label: 'H2h', icon: GitCompare }
+    ];
+
+    return (
+        <div id="main-app" className={`egypt-container ${isSidebarCollapsed ? 'sidebar-collapsed' : ''}`}>
+            {/* Backdrop for mobile drawer */}
+            <div 
+                className={`egypt-sidebar-backdrop ${isSidebarMobileOpen ? 'active' : ''}`} 
+                onClick={() => setIsSidebarMobileOpen(false)}
+            />
+
+            {/* Sidebar navigation */}
+            <aside className={`egypt-sidebar ${isSidebarMobileOpen ? 'mobile-open' : ''}`}>
+                <div className="egypt-sidebar-header">
+                    <Link href="/" className="egypt-sidebar-brand">
+                        <div className="egypt-sidebar-logo-hex">
+                            <span className="egypt-sidebar-logo-text">EG</span>
+                        </div>
+                        <div className="egypt-sidebar-brand-name">
+                            EGYPT <span>NT</span>
+                        </div>
+                    </Link>
+                    <button 
+                        className="egypt-sidebar-close-btn" 
+                        onClick={() => setIsSidebarMobileOpen(false)}
+                        title="CLOSE MENU"
+                    >
+                        <X size={20} />
+                    </button>
+                </div>
+
+                <div className="egypt-sidebar-menu">
+                    {tabs.map(tab => {
+                        const Icon = tab.icon;
+                        return (
+                            <button
+                                key={tab.id}
+                                className={`egypt-sidebar-item ${activeTab === tab.id ? 'active' : ''}`}
+                                onClick={() => {
+                                    setActiveTab(tab.id);
+                                    setIsSidebarMobileOpen(false);
+                                }}
+                            >
+                                <Icon size={16} className="egypt-sidebar-item-icon" />
+                                <span>{tab.label}</span>
+                            </button>
+                        );
+                    })}
+                </div>
+
+                <div className="egypt-sidebar-actions">
+                    <button
+                        className="egypt-sidebar-collapse-toggle-btn"
+                        onClick={() => setIsSidebarCollapsed(!isSidebarCollapsed)}
+                        title={isSidebarCollapsed ? "EXPAND MENU" : "COLLAPSE MENU"}
+                    >
+                        <ArrowLeft size={14} style={{ transform: isSidebarCollapsed ? 'rotate(180deg)' : 'none', transition: 'transform 0.3s' }} />
+                        <span>COLLAPSE MENU</span>
+                    </button>
+                    <button 
+                        className="egypt-sidebar-action-btn export-btn" 
+                        onClick={() => window.dispatchEvent(new CustomEvent('egyptnt-export-excel'))}
+                        title="DOWNLOAD CURRENT VIEW AS EXCEL"
+                        disabled={loading}
+                        style={loading ? { opacity: 0.5, cursor: 'not-allowed' } : {}}
+                    >
+                        <Download size={14} />
+                        <span>EXPORT TO EXCEL</span>
+                    </button>
+                    <button 
+                        className="egypt-sidebar-action-btn filter-btn" 
+                        onClick={() => setIsFilterOpen(true)}
+                        title="OPEN DATABASE FILTERS"
+                        disabled={loading}
+                        style={loading ? { opacity: 0.5, cursor: 'not-allowed' } : {}}
+                    >
+                        <SlidersHorizontal size={14} />
+                        <span>FILTERS</span>
+                    </button>
+                </div>
+            </aside>
+
+            {/* Main content area */}
+            <div className="egypt-main-content">
+                {/* Mobile Top Bar */}
+                <header className="egypt-mobile-top-bar">
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                        <button 
+                            className="egypt-menu-toggle-btn" 
+                            onClick={() => setIsSidebarMobileOpen(true)}
+                            title="OPEN MENU"
+                        >
+                            <Menu size={22} />
+                        </button>
+                        <Link href="/" className="egypt-mobile-brand">
+                            <div className="egypt-mobile-brand-name">
+                                EGYPT <span>NT</span>
+                            </div>
+                        </Link>
+                    </div>
+                    <div className="egypt-mobile-actions">
+                        <button 
+                            onClick={() => window.dispatchEvent(new CustomEvent('egyptnt-export-excel'))} 
+                            className="egypt-mobile-action-icon"
+                            title="DOWNLOAD CURRENT VIEW AS EXCEL"
+                            disabled={loading}
+                            style={loading ? { opacity: 0.5, cursor: 'not-allowed' } : {}}
+                        >
+                            <Download size={16} />
+                        </button>
+                        <button 
+                            onClick={() => setIsFilterOpen(true)} 
+                            className="egypt-mobile-action-icon"
+                            title="OPEN DATABASE FILTERS"
+                            disabled={loading}
+                            style={loading ? { opacity: 0.5, cursor: 'not-allowed' } : {}}
+                        >
+                            <SlidersHorizontal size={16} />
+                        </button>
+                    </div>
+                </header>
+
+                <main className="egypt-content-viewport">
+                    {loading ? (
+                        <Loading_db title="EGYPT NT" subtitle="DATABASE" message="SYNCING DATA" inline={true} />
+                    ) : (
+                        <>
+                            {activeTab === 'dashboard' && <EgyptNTDashboard matches={filteredMatches} season={dbFilters.season} />}
+                            {activeTab === 'matches' && (
+                                !selectedMatchId ? (
+                                    <EgyptNTMatches matches={filteredMatches} onMatchClick={(id) => { setSelectedMatchId(id); }} />
+                                ) : (
+                                    <EgyptNTMatchDetails
+                                        matchId={selectedMatchId}
+                                        matches={matches}
+                                        playerDetails={playerDetails}
+                                        lineupDetails={lineupDetails}
+                                        gkDetails={gkDetails}
+                                        howPenMissed={howPenMissed}
+                                        onBack={() => setSelectedMatchId(null)}
+                                    />
+                                )
+                            )}
+                            {activeTab === 'squad' && <EgyptNTSquad squadData={squadData} />}
+                            {activeTab === 'seasons' && <EgyptNTSeasons matches={filteredMatches} />}
+                            {activeTab === 'years' && <EgyptNTYears matches={filteredMatches} />}
+                            {activeTab === 'players' && <EgyptNTPlayers playerDetails={playerDetails} lineupDetails={lineupDetails} filteredMatches={filteredMatches} gkDetails={gkDetails} howPenMissed={howPenMissed} />}
+                            {activeTab === 'gks' && <EgyptNTGKs gkDetails={gkDetails} howPenMissed={howPenMissed} filteredMatches={filteredMatches} playerDetails={playerDetails} />}
+                            {activeTab === 'managers' && <EgyptNTManagers matches={filteredMatches} playerDetails={playerDetails} lineupDetails={lineupDetails} />}
+                            {activeTab === 'h2h' && <EgyptNTH2H matches={filteredMatches} />}
+                            {activeTab === 'referees' && <EgyptNTReferees matches={filteredMatches} playerDetails={playerDetails} howPenMissed={howPenMissed} />}
+                            {activeTab === 'champions' && <EgyptNTChampions matchesData={filteredMatches} />}
+                        </>
+                    )}
+                </main>
+            </div>
+
+            {/* FILTER POPUP MODAL */}
+            {isFilterOpen && (
+                <div style={{
+                    position: 'fixed',
+                    top: 0, left: 0, right: 0, bottom: 0,
+                    zIndex: 100000,
+                    background: 'transparent',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    padding: '20px'
+                }}>
+                    <div style={{
+                        background: '#fff',
+                        width: '100%',
+                        maxWidth: '1200px',
+                        maxHeight: '90vh',
+                        borderRadius: '0',
+                        position: 'relative',
+                        display: 'flex',
+                        flexDirection: 'column',
+                        border: '5px solid #C8102E',
+                        boxShadow: 'none'
+                    }}>
+                        <div style={{
+                            padding: '20px 30px',
+                            background: '#0a0a0a',
+                            color: '#fff',
+                            display: 'flex',
+                            justifyContent: 'space-between',
+                            alignItems: 'center',
+                            borderBottom: '1px solid rgba(255,255,255,0.1)'
+                        }}>
+                            <div style={{ fontFamily: 'Bebas Neue', fontSize: '24px', letterSpacing: '2px' }}>
+                                DATABASE <span style={{ color: '#C8102E' }}>FILTERS</span>
+                            </div>
+                            <button
+                                onClick={() => setIsFilterOpen(false)}
+                                style={{
+                                    background: 'transparent',
+                                    border: 'none',
+                                    color: '#fff',
+                                    cursor: 'pointer',
+                                    padding: '5px',
+                                    transition: '0.3s'
+                                }}
+                                onMouseOver={(e) => e.currentTarget.style.color = '#C8102E'}
+                                onMouseOut={(e) => e.currentTarget.style.color = '#fff'}
+                            >
+                                <X size={24} />
+                            </button>
+                        </div>
+
+                        <div style={{ flex: 1, overflowY: 'auto' }}>
+                            <EgyptNTFilters
+                                dbFilters={dbFilters}
+                                updateFilter={updateFilter}
+                                resetFilters={resetFilters}
+                                filterOptions={filterOptions}
+                                startDate={startDate} setStartDate={setStartDate}
+                                endDate={endDate} setEndDate={setEndDate}
+                            />
+                        </div>
+
+                        <div style={{
+                            padding: '20px 40px',
+                            background: '#f9f9f9',
+                            display: 'flex',
+                            justifyContent: 'center',
+                            alignItems: 'center',
+                            gap: '20px',
+                            borderTop: '1px solid #eee'
+                        }}>
+                            <button
+                                onClick={resetFilters}
+                                style={{
+                                    background: 'transparent',
+                                    border: '1px solid #ddd',
+                                    color: '#888',
+                                    padding: '0 30px',
+                                    height: '50px',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    justifyContent: 'center',
+                                    fontFamily: "'Space Mono', monospace",
+                                    fontSize: '11px',
+                                    letterSpacing: '2px',
+                                    cursor: 'pointer',
+                                    transition: '0.2s',
+                                    textTransform: 'uppercase',
+                                    borderRadius: '2px'
+                                }}
+                                onMouseOver={(e) => { e.currentTarget.style.color = '#C8102E'; e.currentTarget.style.borderColor = '#C8102E'; e.currentTarget.style.background = 'rgba(200,16,46,0.05)'; }}
+                                onMouseOut={(e) => { e.currentTarget.style.color = '#888'; e.currentTarget.style.borderColor = '#ddd'; e.currentTarget.style.background = 'transparent'; }}
+                            >
+                                RESET ALL FILTERS
+                            </button>
+                            <button
+                                onClick={() => setIsFilterOpen(false)}
+                                style={{
+                                    background: '#0a0a0a',
+                                    color: '#fff',
+                                    border: '1px solid #C8102E',
+                                    padding: '0 40px',
+                                    height: '50px',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    justifyContent: 'center',
+                                    fontFamily: 'Bebas Neue',
+                                    fontSize: '18px',
+                                    letterSpacing: '1px',
+                                    cursor: 'pointer',
+                                    transition: '0.3s'
+                                }}
+                                onMouseOver={(e) => { e.currentTarget.style.background = '#C8102E'; }}
+                                onMouseOut={(e) => { e.currentTarget.style.background = '#0a0a0a'; }}
+                            >
+                                APPLY FILTERS & CLOSE
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+        </div>
+    );
+}

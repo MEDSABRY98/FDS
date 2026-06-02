@@ -1,0 +1,91 @@
+.champ-title-bar {
+    background: #0a0a0a;
+    color: #C8102E;
+    padding: 14px 24px;
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 22px;
+    letter-spacing: 1.5px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    border-radius: 2px 2px 0 0;
+    border-left: 4px solid #C8102E;
+}
+.champ-icon {
+    font-size: 18px;
+    filter: grayscale(1) invert(1);
+    opacity: 0.8;
+}
+.table-responsive {
+    overflow-x: auto;
+    background: #fff;
+    border: 1px solid #eee;
+}
+.seasons-data-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-family: 'DM Sans', sans-serif;
+}
+.seasons-data-table th { 
+    background: rgba(0,0,0,0.05); 
+    padding: 16px 12px; 
+    font-size: 12px; 
+    font-family: 'Space Mono', monospace; 
+    color: #000; 
+    border-bottom: 3px solid #C8102E; 
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}
+.seasons-data-table td {
+    padding: 14px 12px;
+    text-align: center;
+    font-size: 16px;
+    border-bottom: 1px solid #eee;
+    font-weight: 500;
+}
+.season-cell {
+    color: #000;
+    font-weight: 600;
+}
+.w-cell {
+    color: #2ecc71;
+}
+.l-cell {
+    color: #e74c3c;
+}
+.cs-cell {
+    color: #C8102E;
+    font-weight: 700;
+}
+
+.seasons-data-table tbody tr:nth-child(odd) {
+    background: #ffffff;
+}
+.seasons-data-table tbody tr:nth-child(even) {
+    background: rgba(0,0,0,0.03);
+}
+.seasons-data-table tbody tr:hover td {
+    background: rgba(200,16,46,0.05);
+}
+
+.grand-total-row {
+    background: #000 !important;
+    color: #fff;
+}
+.grand-total-row td {
+    border-bottom: none;
+    font-weight: 700;
+    font-size: 17px;
+    padding: 18px 12px;
+}
+.total-label {
+    color: #C8102E !important;
+    font-family: 'Bebas Neue', sans-serif;
+    letter-spacing: 1px;
+}
+.grand-total-row .w-cell {
+    color: #5ef193;
+}
+.grand-total-row .l-cell {
+    color: #ff6b6b;
+}

@@ -1,0 +1,63 @@
+.table-responsive {
+    overflow-x: auto;
+    background: #fff;
+    border: 1px solid #eee;
+}
+.seasons-data-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-family: 'DM Sans', sans-serif;
+}
+.seasons-data-table th { 
+    background: rgba(0,0,0,0.05); 
+    padding: 16px 12px; 
+    font-size: 12px; 
+    font-family: 'Space Mono', monospace; 
+    color: #000; 
+    border-bottom: 3px solid #c9a84c; 
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}
+.seasons-data-table td {
+    padding: 14px 12px;
+    text-align: center;
+    font-size: 16px;
+    border-bottom: 1px solid #eee;
+    font-weight: 500;
+}
+.season-cell {
+    color: #000;
+    font-weight: 600;
+}
+.w-cell {
+    color: #2ecc71;
+}
+.l-cell {
+    color: #e74c3c;
+}
+.cs-cell {
+    color: #c9a84c;
+    font-weight: 700;
+}
+
+.seasons-data-table tbody tr:nth-child(odd) {
+    background: #ffffff;
+}
+.seasons-data-table tbody tr:nth-child(even) {
+    background: rgba(0,0,0,0.03);
+}
+.seasons-data-table tbody tr:hover td {
+    background: rgba(201,168,76,0.05);
+}
+
+.grand-total-row td {
+    border-bottom: none;
+    font-weight: 700;
+    font-size: 17px;
+    padding: 18px 12px;
+}
+.total-label {
+    color: #c9a84c !important;
+    font-family: 'Bebas Neue', sans-serif;
+    letter-spacing: 1px;
+}

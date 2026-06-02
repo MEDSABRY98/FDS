@@ -1,0 +1,507 @@
+/* App Layout container */
+.egypt-container {
+    display: flex;
+    min-height: 100vh;
+    background: var(--bg, #ffffff);
+    color: var(--black, #0a0a0a);
+}
+
+/* Fixed left sidebar */
+.egypt-sidebar {
+    width: 280px;
+    background: #0d0d0d;
+    border-right: 1px solid rgba(255, 255, 255, 0.08);
+    display: flex;
+    flex-direction: column;
+    position: fixed;
+    top: 0;
+    bottom: 0;
+    left: 0;
+    z-index: 10000;
+    transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1), width 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.egypt-sidebar-header {
+    height: 74px;
+    padding: 0 20px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+    transition: all 0.3s ease;
+}
+
+.egypt-sidebar-brand {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    text-decoration: none;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.egypt-sidebar-logo-hex {
+    width: 32px;
+    height: 32px;
+    background: #C8102E; /* Egyptian Red */
+    clip-path: polygon(50% 0%, 100% 25%, 100% 75%, 50% 100%, 0% 75%, 0% 25%);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+
+.egypt-sidebar-logo-text {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 14px;
+    color: #ffffff;
+    font-weight: bold;
+}
+
+.egypt-sidebar-brand-name {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 20px;
+    letter-spacing: 2px;
+    color: #ffffff;
+    transition: opacity 0.2s ease, width 0.2s ease;
+}
+
+.egypt-sidebar-brand-name span {
+    color: var(--gold, #c9a84c);
+}
+
+.egypt-sidebar-close-btn {
+    display: none;
+    background: transparent;
+    border: none;
+    color: #ffffff;
+    cursor: pointer;
+    padding: 6px;
+    border-radius: 50%;
+    transition: background 0.2s;
+}
+
+.egypt-sidebar-close-btn:hover {
+    background: rgba(255, 255, 255, 0.1);
+    color: #C8102E;
+}
+
+.egypt-sidebar-collapse-toggle-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    height: 40px;
+    border-radius: 6px;
+    font-family: 'Space Mono', monospace;
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 1px;
+    cursor: pointer;
+    transition: all 0.25s ease;
+    width: 100%;
+    background: transparent;
+    color: rgba(255, 255, 255, 0.6);
+    border: 1px dashed rgba(255, 255, 255, 0.2);
+}
+
+.egypt-sidebar-collapse-toggle-btn:hover {
+    color: #C8102E;
+    border-color: #C8102E;
+    background: rgba(200, 16, 46, 0.04);
+}
+
+/* Sidebar Navigation menu */
+.egypt-sidebar-menu {
+    flex: 1;
+    overflow-y: auto;
+    padding: 20px 14px;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    transition: padding 0.3s ease;
+}
+
+/* Hide scrollbar for navigation list */
+.egypt-sidebar-menu::-webkit-scrollbar {
+    display: none;
+}
+
+.egypt-sidebar-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 10px 14px;
+    background: transparent;
+    border: none;
+    border-radius: 8px;
+    color: rgba(255, 255, 255, 0.55);
+    font-family: 'DM Sans', sans-serif;
+    font-size: 13px;
+    font-weight: 500;
+    text-align: left;
+    cursor: pointer;
+    transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+    width: 100%;
+    border-left: 2px solid transparent;
+}
+
+.egypt-sidebar-item:hover {
+    color: #ffffff;
+    background: rgba(255, 255, 255, 0.04);
+    padding-left: 16px;
+}
+
+.egypt-sidebar-item.active {
+    color: #ffffff;
+    background: rgba(200, 16, 46, 0.15);
+    font-weight: 600;
+    border-left: 2px solid #C8102E;
+    padding-left: 16px;
+}
+
+.egypt-sidebar-item-icon {
+    flex-shrink: 0;
+    opacity: 0.7;
+    transition: opacity 0.2s;
+}
+
+.egypt-sidebar-item:hover .egypt-sidebar-item-icon,
+.egypt-sidebar-item.active .egypt-sidebar-item-icon {
+    opacity: 1;
+}
+
+/* Action button area at the bottom */
+.egypt-sidebar-actions {
+    padding: 16px 14px;
+    border-top: 1px solid rgba(255, 255, 255, 0.08);
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    background: #0a0a0a;
+    transition: all 0.3s ease;
+}
+
+.egypt-sidebar-action-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    height: 40px;
+    border-radius: 6px;
+    font-family: 'Space Mono', monospace;
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 1px;
+    cursor: pointer;
+    transition: all 0.25s ease;
+    width: 100%;
+}
+
+.egypt-sidebar-action-btn.export-btn {
+    background: rgba(200, 16, 46, 0.15);
+    color: #ff4d6d;
+    border: 1px solid rgba(200, 16, 46, 0.3);
+}
+
+.egypt-sidebar-action-btn.export-btn:hover {
+    background: #C8102E;
+    color: #ffffff;
+    box-shadow: 0 4px 12px rgba(200, 16, 46, 0.3);
+}
+
+.egypt-sidebar-action-btn.filter-btn {
+    background: transparent;
+    color: rgba(255, 255, 255, 0.8);
+    border: 1px solid rgba(255, 255, 255, 0.15);
+}
+
+.egypt-sidebar-action-btn.filter-btn:hover {
+    border-color: #C8102E;
+    color: #ffffff;
+    background: rgba(200, 16, 46, 0.08);
+}
+
+/* Main Content wrapper */
+.egypt-main-content {
+    flex: 1;
+    margin-left: 280px;
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+    transition: margin-left 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Mobile top bar layout */
+.egypt-mobile-top-bar {
+    display: none;
+    height: 64px;
+    background: #0d0d0d;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+    padding: 0 16px;
+    align-items: center;
+    justify-content: space-between;
+    position: sticky;
+    top: 0;
+    z-index: 9999;
+}
+
+.egypt-mobile-brand {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    text-decoration: none;
+}
+
+.egypt-mobile-brand-name {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 18px;
+    letter-spacing: 1.5px;
+    color: #ffffff;
+}
+
+.egypt-mobile-brand-name span {
+    color: var(--gold, #c9a84c);
+}
+
+.egypt-menu-toggle-btn {
+    background: transparent;
+    border: none;
+    color: #ffffff;
+    cursor: pointer;
+    padding: 6px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 6px;
+    transition: background 0.2s;
+}
+
+.egypt-menu-toggle-btn:hover {
+    background: rgba(255, 255, 255, 0.08);
+}
+
+.egypt-mobile-actions {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.egypt-mobile-action-icon {
+    background: transparent;
+    border: none;
+    color: rgba(255, 255, 255, 0.8);
+    cursor: pointer;
+    padding: 6px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 6px;
+    transition: all 0.2s;
+}
+
+.egypt-mobile-action-icon:hover {
+    color: #C8102E;
+    background: rgba(255, 255, 255, 0.08);
+}
+
+.egypt-content-viewport {
+    flex: 1;
+    padding: 24px;
+}
+
+/* Collapsed Sidebar desktop layout rules */
+@media (min-width: 1025px) {
+    .egypt-container.sidebar-collapsed .egypt-sidebar {
+        width: 72px;
+    }
+    
+    .egypt-container.sidebar-collapsed .egypt-main-content {
+        margin-left: 72px;
+    }
+    
+    .egypt-container.sidebar-collapsed .egypt-sidebar-brand-name {
+        display: none;
+    }
+    
+    .egypt-container.sidebar-collapsed .egypt-sidebar-header {
+        justify-content: center;
+        padding: 0;
+    }
+    
+    .egypt-container.sidebar-collapsed .egypt-sidebar-brand {
+        gap: 0;
+    }
+
+    .egypt-container.sidebar-collapsed .egypt-sidebar-menu {
+        padding: 20px 8px;
+        overflow: visible;
+    }
+    
+    .egypt-container.sidebar-collapsed .egypt-sidebar-item {
+        justify-content: center;
+        padding: 10px 0;
+        border-left: 3px solid transparent;
+        position: relative;
+    }
+    
+    .egypt-container.sidebar-collapsed .egypt-sidebar-item:hover,
+    .egypt-container.sidebar-collapsed .egypt-sidebar-item.active {
+        padding-left: 0;
+    }
+    
+    .egypt-container.sidebar-collapsed .egypt-sidebar-item.active {
+        border-left: 3px solid #C8102E;
+    }
+    
+    .egypt-container.sidebar-collapsed .egypt-sidebar-item span {
+        display: block;
+        position: absolute;
+        left: 76px;
+        top: 50%;
+        transform: translateY(-50%) translateX(-8px);
+        background: #111111;
+        color: #ffffff;
+        padding: 8px 14px;
+        border-radius: 6px;
+        font-family: 'Space Mono', monospace;
+        font-size: 11px;
+        font-weight: 700;
+        letter-spacing: 1px;
+        white-space: nowrap;
+        opacity: 0;
+        pointer-events: none;
+        transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+        z-index: 999999;
+    }
+    
+    .egypt-container.sidebar-collapsed .egypt-sidebar-item span::before {
+        content: '';
+        position: absolute;
+        right: 100%;
+        top: 50%;
+        transform: translateY(-50%);
+        border-width: 5px;
+        border-style: solid;
+        border-color: transparent #111111 transparent transparent;
+    }
+    
+    .egypt-container.sidebar-collapsed .egypt-sidebar-item:hover span {
+        opacity: 1;
+        transform: translateY(-50%) translateX(0);
+    }
+    
+    .egypt-container.sidebar-collapsed .egypt-sidebar-item.active span {
+        border-color: #C8102E;
+    }
+    
+    .egypt-container.sidebar-collapsed .egypt-sidebar-actions {
+        padding: 16px 8px;
+        align-items: center;
+    }
+    
+    .egypt-container.sidebar-collapsed .egypt-sidebar-action-btn,
+    .egypt-container.sidebar-collapsed .egypt-sidebar-collapse-toggle-btn {
+        width: 40px;
+        height: 40px;
+        padding: 0;
+        border-radius: 50%;
+        position: relative;
+    }
+    
+    .egypt-container.sidebar-collapsed .egypt-sidebar-action-btn span,
+    .egypt-container.sidebar-collapsed .egypt-sidebar-collapse-toggle-btn span {
+        display: block;
+        position: absolute;
+        left: 52px;
+        top: 50%;
+        transform: translateY(-50%) translateX(-8px);
+        background: #111111;
+        color: #ffffff;
+        padding: 8px 14px;
+        border-radius: 6px;
+        font-family: 'Space Mono', monospace;
+        font-size: 10px;
+        font-weight: 700;
+        letter-spacing: 1px;
+        white-space: nowrap;
+        opacity: 0;
+        pointer-events: none;
+        transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+        z-index: 999999;
+    }
+    
+    .egypt-container.sidebar-collapsed .egypt-sidebar-action-btn span::before,
+    .egypt-container.sidebar-collapsed .egypt-sidebar-collapse-toggle-btn span::before {
+        content: '';
+        position: absolute;
+        right: 100%;
+        top: 50%;
+        transform: translateY(-50%);
+        border-width: 5px;
+        border-style: solid;
+        border-color: transparent #111111 transparent transparent;
+    }
+    
+    .egypt-container.sidebar-collapsed .egypt-sidebar-action-btn:hover span,
+    .egypt-container.sidebar-collapsed .egypt-sidebar-collapse-toggle-btn:hover span {
+        opacity: 1;
+        transform: translateY(-50%) translateX(0);
+    }
+}
+
+/* Responsive Rules for Mobile/Tablet */
+@media (max-width: 1024px) {
+    .egypt-sidebar {
+        transform: translateX(-100%);
+        box-shadow: 0 0 30px rgba(0, 0, 0, 0.6);
+    }
+    
+    .egypt-sidebar.mobile-open {
+        transform: translateX(0);
+    }
+    
+    .egypt-sidebar-close-btn {
+        display: flex;
+    }
+    
+    .egypt-sidebar-collapse-toggle-btn {
+        display: none;
+    }
+
+    .egypt-main-content {
+        margin-left: 0;
+    }
+
+    .egypt-mobile-top-bar {
+        display: flex;
+    }
+    
+    .egypt-content-viewport {
+        padding: 16px;
+    }
+}
+
+/* Backdrop drawer background */
+.egypt-sidebar-backdrop {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.6);
+    backdrop-filter: blur(3px);
+    z-index: 9998;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.3s ease;
+}
+
+.egypt-sidebar-backdrop.active {
+    opacity: 1;
+    pointer-events: auto;
+}

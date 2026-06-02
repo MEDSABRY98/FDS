@@ -17,6 +17,10 @@ export default function HomeDbSelection() {
         ],
         derby: [
             { href: "/AhlyVZamalek", label: "CAIRO DERBY", initial: "D" }
+        ],
+        egypt_nt: [
+            { href: "/EgyptNTdbManagement", label: "EGYPT NT DB MANAGEMENT", initial: "DB" },
+            { href: "/EgyptNT", label: "EGYPT NT", initial: "EG" }
         ]
     };
 
@@ -40,6 +44,12 @@ export default function HomeDbSelection() {
                     onClick={() => setActiveTab('derby')}
                 >
                     DERBY
+                </button>
+                <button 
+                    className={`home-tab-btn ${activeTab === 'egypt_nt' ? 'active' : ''}`} 
+                    onClick={() => setActiveTab('egypt_nt')}
+                >
+                    EGYPT NT
                 </button>
             </div>
 

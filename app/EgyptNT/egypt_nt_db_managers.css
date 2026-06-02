@@ -1,0 +1,96 @@
+.mgr-premium-wrap {
+    width: 95%;
+    max-width: 1400px;
+    margin: 0 auto;
+    padding: 0 40px 100px;
+}
+.mgr-header-tabs {
+    display: flex;
+    align-items: center;
+    justify-content: flex-start;
+    gap: 30px;
+    margin-bottom: 5px;
+}
+.mgr-controls {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    margin-bottom: 35px;
+    gap: 30px;
+}
+.mgr-table-container {
+    background: #fff;
+    border-radius: 20px;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.04);
+    overflow: hidden;
+    border: 1px solid #eee;
+}
+.mgr-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-family: 'Outfit', sans-serif;
+}
+.mgr-table th,
+.mgr-table td {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+.mgr-table th {
+    background: #0a0a0a;
+    color: rgba(255, 255, 255, 0.85);
+    font-size: 15px;
+    padding: 25px 15px;
+    text-align: center;
+    font-family: 'Space Mono', monospace;
+    text-transform: uppercase;
+    letter-spacing: 1.5px;
+}
+.mgr-table td {
+    padding: 20px 15px;
+    border-bottom: 1px solid #f2f2f2;
+    text-align: center;
+    font-size: 18px;
+    font-weight: 700;
+    color: #333;
+    transition: 0.2s;
+}
+.mgr-table tr:hover td {
+    background: #fafafa;
+}
+.mgr-table td.p-name {
+    color: #000;
+    font-weight: 800;
+    text-align: center;
+}
+.mgr-table td.w-cell {
+    color: #27ae60;
+    background: rgba(39, 174, 96, 0.05);
+}
+.mgr-table td.l-cell {
+    color: #e74c3c;
+    background: rgba(231, 76, 60, 0.05);
+}
+.mgr-table td.cs-cell {
+    color: var(--gold);
+}
+.rank-badge-premium {
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    background: #f0f0f0;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 14px;
+    font-family: 'Space Mono', monospace;
+    font-weight: 800;
+    color: #000;
+    border: 1px solid rgba(0, 0, 0, 0.05);
+    margin: 0 auto;
+}
+.rank-gold {
+    background: #c9a84c;
+    color: #000;
+    box-shadow: 0 4px 10px rgba(201, 168, 76, 0.3);
+}
