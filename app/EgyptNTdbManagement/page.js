@@ -10,6 +10,105 @@ import { Download, Database, ArrowLeft, X, Menu, Edit, Trash2 } from "lucide-rea
 import Login_db from "../lib/Login_db";
 import "../EgyptNT/egypt_nt_sidebar.css";
 
+const COLUMN_ORDER = {
+    egy_NT_MATCHDETAILS: [
+        "ROW_ID",
+        "MATCH_ID",
+        "DATE",
+        "CHAMPION",
+        "SEASON",
+        "EGYPT MANAGER",
+        "OPPONENT MANAGER",
+        "REFREE",
+        "ROUND",
+        "H-A-N",
+        "PLACE",
+        "Egypt TEAM",
+        "GF",
+        "GA",
+        "ET",
+        "PEN",
+        "OPPONENT TEAM",
+        "NOTE",
+        "CHAMPION_SYSTEM",
+        "AGE",
+        "SYSTEM_KIND",
+        "W-L Q & F"
+    ],
+    egy_NT_PKS: [
+        "ROW_ID",
+        "MATCH_ID",
+        "DATE",
+        "PKS System",
+        "CHAMPION System",
+        "Egypt TEAM",
+        "Egypt PLAYER",
+        "Egypt STATUS",
+        "EGYPT HOW MISS",
+        "EGYPT GK",
+        "OPPONENT TEAM",
+        "OPPONENT PLAYER",
+        "OPPONENT STATUS",
+        "OPPONENT HOW MISS",
+        "OPPONENT GK",
+        "G-OPPONENT",
+        "G-EGYPT",
+        "PKS W-L"
+    ],
+    egy_NT_LINEUPDETAILS: [
+        "ROW_ID",
+        "MATCH_ID",
+        "MATCH MINUTE",
+        "TEAM",
+        "PLAYER NAME",
+        "CLUB",
+        "STATU",
+        "PLAYER NAME OUT",
+        "OUT MINUTE",
+        "TOTAL MINUTE"
+    ],
+    egy_NT_PLAYERDETAILS: [
+        "ROW_ID",
+        "MATCH_ID",
+        "EVENT_ID",
+        "PARENT_EVENT_ID",
+        "PLAYER NAME",
+        "TEAM",
+        "CLUB",
+        "TYPE",
+        "TYPE_SUB",
+        "MINUTE"
+    ],
+    egy_NT_GKSDETAILS: [
+        "ROW_ID",
+        "MATCH_ID",
+        "TEAM",
+        "PLAYER NAME",
+        "CLUB",
+        "STATU",
+        "OUT MINUTE",
+        "GOALS CONCEDED",
+        "EVENT_ID"
+    ],
+    egy_NT_HOWPENMISSED: [
+        "ROW_ID",
+        "MATCH_ID",
+        "HOW MISSED?",
+        "TEAM",
+        "CLUB",
+        "MINUTE",
+        "EVENT_ID"
+    ],
+    egy_NT_SQUAD: [
+        "ROW_ID",
+        "PLAYERNAME",
+        "POSITION",
+        "CLUB",
+        "SEASON",
+        "CHAMPION"
+    ]
+};
+
 export default function EgyptDatabaseManagement() {
     const router = useRouter();
     const [availableTables, setAvailableTables] = useState([]);
@@ -164,7 +263,7 @@ export default function EgyptDatabaseManagement() {
 
                 // Deterministic ordering based on table type
                 if (selectedTable === "egy_NT_SQUAD") {
-                    query = query.order("PLAYERNAME", { ascending: true });
+                    query = query.order("ROW_ID", { ascending: true });
                 } else if (selectedTable === "egy_NT_MATCHDETAILS") {
                     query = query.order("DATE", { ascending: false });
                 } else if (selectedTable.includes("DETAILS") || selectedTable.includes("MISSED")) {
@@ -185,12 +284,26 @@ export default function EgyptDatabaseManagement() {
 
             if (allData.length > 0) {
                 let cols = Object.keys(allData[0]);
-                // Force ROW_ID to the front (case-insensitive check)
-                const rowIdIdx = cols.findIndex(c => c.toUpperCase() === "ROW_ID");
-                if (rowIdIdx > -1) {
-                    const rowIdKey = cols[rowIdIdx];
-                    cols.splice(rowIdIdx, 1);
-                    cols.unshift(rowIdKey);
+                
+                // Reorder columns based on COLUMN_ORDER mapping to match Al Ahly tables
+                const preferredOrder = COLUMN_ORDER[selectedTable];
+                if (preferredOrder) {
+                    cols.sort((a, b) => {
+                        const idxA = preferredOrder.indexOf(a);
+                        const idxB = preferredOrder.indexOf(b);
+                        if (idxA > -1 && idxB > -1) return idxA - idxB;
+                        if (idxA > -1) return -1;
+                        if (idxB > -1) return 1;
+                        return a.localeCompare(b);
+                    });
+                } else {
+                    // Force ROW_ID to the front (case-insensitive check)
+                    const rowIdIdx = cols.findIndex(c => c.toUpperCase() === "ROW_ID");
+                    if (rowIdIdx > -1) {
+                        const rowIdKey = cols[rowIdIdx];
+                        cols.splice(rowIdIdx, 1);
+                        cols.unshift(rowIdKey);
+                    }
                 }
                 setColumns(cols);
 
@@ -212,7 +325,7 @@ export default function EgyptDatabaseManagement() {
                 }
 
                 // Deterministic secondary sorting logic
-                const tablesToSortByRowId = ['egy_NT_GKSDETAILS', 'egy_NT_HOWPENMISSED', 'egy_NT_LINEUPDETAILS'];
+                const tablesToSortByRowId = ['egy_NT_GKSDETAILS', 'egy_NT_HOWPENMISSED', 'egy_NT_LINEUPDETAILS', 'egy_NT_PKS', 'egy_NT_SQUAD'];
                 const ridKey = cols.find(c => c.toUpperCase() === "ROW_ID");
 
                 if (selectedTable === 'egy_NT_MATCHDETAILS' && cols.includes('DATE')) {

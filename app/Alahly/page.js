@@ -15,8 +15,6 @@ import {
     User, 
     GitCompare, 
     Tv, 
-    Menu, 
-    ArrowLeft,
     Award
 } from "lucide-react";
 import Link from "next/link";
@@ -39,12 +37,10 @@ import AlAhlyReferees from "./alahly_db_referees";
 import AlAhlyH2H from "./alahly_db_h2h";
 import AlAhlyMediaTracker from "./alahly_db_media_tracker";
 import Loading_db from "../lib/Loading_db";
-import "../lib/AlahlySidebar.css";
+import SideBar_db from "../lib/SideBar_db";
 
 export default function AlAhlyDatabase() {
     const [activeTab, setActiveTab] = useState("dashboard");
-    const [isSidebarMobileOpen, setIsSidebarMobileOpen] = useState(false);
-    const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(true);
     const [matches, setMatches] = useState([]);
     const [playerDetails, setPlayerDetails] = useState([]);
     const [lineupDetails, setLineupDetails] = useState([]);
@@ -208,160 +204,81 @@ export default function AlAhlyDatabase() {
     ];
 
     return (
-        <div id="main-app" className={`alahly-container ${isSidebarCollapsed ? 'sidebar-collapsed' : ''}`}>
-            {/* Backdrop for mobile drawer */}
-            <div 
-                className={`alahly-sidebar-backdrop ${isSidebarMobileOpen ? 'active' : ''}`} 
-                onClick={() => setIsSidebarMobileOpen(false)}
-            />
-
-            {/* Sidebar navigation */}
-            <aside className={`alahly-sidebar ${isSidebarMobileOpen ? 'mobile-open' : ''}`}>
-                <div className="alahly-sidebar-header">
-                    <Link href="/" className="alahly-sidebar-brand">
-                        <div className="alahly-sidebar-logo-hex">
-                            <span className="alahly-sidebar-logo-text">A</span>
-                        </div>
-                        <div className="alahly-sidebar-brand-name">
-                            AL AHLY <span>SC</span>
-                        </div>
-                    </Link>
-                    <button 
-                        className="alahly-sidebar-close-btn" 
-                        onClick={() => setIsSidebarMobileOpen(false)}
-                        title="CLOSE MENU"
-                    >
-                        <X size={20} />
-                    </button>
-                </div>
-
-                <div className="alahly-sidebar-menu">
-                    {tabs.map(tab => {
-                        const Icon = tab.icon;
-                        return (
-                            <button
-                                key={tab.id}
-                                className={`alahly-sidebar-item ${activeTab === tab.id ? 'active' : ''}`}
-                                onClick={() => {
-                                    setActiveTab(tab.id);
-                                    setIsSidebarMobileOpen(false);
-                                }}
-                            >
-                                <Icon size={16} className="alahly-sidebar-item-icon" />
-                                <span>{tab.label}</span>
-                            </button>
-                        );
-                    })}
-                </div>
-
-                <div className="alahly-sidebar-actions">
-                    <button
-                        className="alahly-sidebar-collapse-toggle-btn"
-                        onClick={() => setIsSidebarCollapsed(!isSidebarCollapsed)}
-                        title={isSidebarCollapsed ? "EXPAND MENU" : "COLLAPSE MENU"}
-                    >
-                        <ArrowLeft size={14} style={{ transform: isSidebarCollapsed ? 'rotate(180deg)' : 'none', transition: 'transform 0.3s' }} />
-                        <span>COLLAPSE MENU</span>
-                    </button>
-                    <button 
-                        className="alahly-sidebar-action-btn export-btn" 
-                        onClick={() => window.dispatchEvent(new CustomEvent('alahly-export-excel'))}
-                        title="DOWNLOAD CURRENT VIEW AS EXCEL"
-                        disabled={loading}
-                        style={loading ? { opacity: 0.5, cursor: 'not-allowed' } : {}}
-                    >
-                        <Download size={14} />
-                        <span>EXPORT TO EXCEL</span>
-                    </button>
-                    <button 
-                        className="alahly-sidebar-action-btn filter-btn" 
-                        onClick={() => setIsFilterOpen(true)}
-                        title="OPEN DATABASE FILTERS"
-                        disabled={loading}
-                        style={loading ? { opacity: 0.5, cursor: 'not-allowed' } : {}}
-                    >
-                        <SlidersHorizontal size={14} />
-                        <span>FILTERS</span>
-                    </button>
-                </div>
-            </aside>
-
-            {/* Main content area */}
-            <div className="alahly-main-content">
-                {/* Mobile Top Bar */}
-                <header className="alahly-mobile-top-bar">
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                        <button 
-                            className="alahly-menu-toggle-btn" 
-                            onClick={() => setIsSidebarMobileOpen(true)}
-                            title="OPEN MENU"
-                        >
-                            <Menu size={22} />
-                        </button>
-                        <Link href="/" className="alahly-mobile-brand">
-                            <div className="alahly-mobile-brand-name">
-                                AL AHLY <span>SC</span>
-                            </div>
-                        </Link>
-                    </div>
-                    <div className="alahly-mobile-actions">
-                        <button 
-                            onClick={() => window.dispatchEvent(new CustomEvent('alahly-export-excel'))} 
-                            className="alahly-mobile-action-icon"
-                            title="DOWNLOAD CURRENT VIEW AS EXCEL"
-                            disabled={loading}
-                            style={loading ? { opacity: 0.5, cursor: 'not-allowed' } : {}}
-                        >
-                            <Download size={16} />
-                        </button>
-                        <button 
-                            onClick={() => setIsFilterOpen(true)} 
-                            className="alahly-mobile-action-icon"
-                            title="OPEN DATABASE FILTERS"
-                            disabled={loading}
-                            style={loading ? { opacity: 0.5, cursor: 'not-allowed' } : {}}
-                        >
-                            <SlidersHorizontal size={16} />
-                        </button>
-                    </div>
-                </header>
-
-                <main className="alahly-content-viewport">
-                    {loading ? (
-                        <Loading_db message="SYNCING DATA" inline={true} />
-                    ) : (
-                        <>
-                            {activeTab === 'dashboard' && <AlAhlyDashboard matches={filteredMatches} season={dbFilters.season} />}
-                            {activeTab === 'matches' && (
-                                !selectedMatchId ? (
-                                    <AlAhlyMatches matches={filteredMatches} onMatchClick={(id) => { setSelectedMatchId(id); }} />
-                                ) : (
-                                    <AlAhlyMatchDetails
-                                        matchId={selectedMatchId}
-                                        matches={matches}
-                                        playerDetails={playerDetails}
-                                        lineupDetails={lineupDetails}
-                                        gkDetails={gkDetails}
-                                        howPenMissed={howPenMissed}
-                                        onBack={() => setSelectedMatchId(null)}
-                                    />
-                                )
-                            )}
-                            {activeTab === 'seasons' && <AlAhlySeasons matches={filteredMatches} />}
-                            {activeTab === 'seasons_n' && <AlAhlySeasonsN matches={filteredMatches} />}
-                            {activeTab === 'years' && <AlAhlyYears matches={filteredMatches} />}
-                            {activeTab === 'players' && <AlAhlyPlayers playerDetails={playerDetails} lineupDetails={lineupDetails} filteredMatches={filteredMatches} gkDetails={gkDetails} howPenMissed={howPenMissed} />}
-                            {activeTab === 'gks' && <AlAhlyGKs gkDetails={gkDetails} howPenMissed={howPenMissed} filteredMatches={filteredMatches} playerDetails={playerDetails} />}
-                            {activeTab === 'managers' && <AlAhlyManagers matches={filteredMatches} playerDetails={playerDetails} lineupDetails={lineupDetails} />}
-                            {activeTab === 'h2h' && <AlAhlyH2H matches={filteredMatches} />}
-                            {activeTab === 'referees' && <AlAhlyReferees matches={filteredMatches} playerDetails={playerDetails} howPenMissed={howPenMissed} />}
-                            {activeTab === 'media-tracker' && <AlAhlyMediaTracker matches={filteredMatches} mediaTrackerData={mediaTrackerData} onDataChange={fetchMatchData} />}
-                            {activeTab === 'editor' && <AlAhlyEditor />}
-                            {activeTab === 'champions' && <AlAhlyChampions matchesData={filteredMatches} />}
-                        </>
-                    )}
-                </main>
-            </div>
+        <SideBar_db
+            brandTitle="AL AHLY"
+            brandSubtitle="SC"
+            logoText="A"
+            menuItems={tabs}
+            activeTab={activeTab}
+            setActiveTab={(tabId) => {
+                setActiveTab(tabId);
+                setSelectedMatchId(null);
+            }}
+            actions={[
+                {
+                    label: "EXPORT TO EXCEL",
+                    icon: Download,
+                    onClick: () => window.dispatchEvent(new CustomEvent('alahly-export-excel')),
+                    className: "export-btn",
+                    title: "DOWNLOAD CURRENT VIEW AS EXCEL"
+                },
+                {
+                    label: "FILTERS",
+                    icon: SlidersHorizontal,
+                    onClick: () => setIsFilterOpen(true),
+                    className: "filter-btn",
+                    title: "OPEN ADVANCED FILTERS"
+                }
+            ]}
+            mobileBrandName="AL AHLY SC"
+            mobileActions={[
+                {
+                    icon: Download,
+                    onClick: () => window.dispatchEvent(new CustomEvent('alahly-export-excel')),
+                    title: "DOWNLOAD CURRENT VIEW AS EXCEL"
+                },
+                {
+                    icon: SlidersHorizontal,
+                    onClick: () => setIsFilterOpen(true),
+                    title: "OPEN DATABASE FILTERS"
+                }
+            ]}
+        >
+            <main className="alahly-content-viewport">
+                {loading ? (
+                    <Loading_db message="SYNCING DATA" inline={true} />
+                ) : (
+                    <>
+                        {activeTab === 'dashboard' && <AlAhlyDashboard matches={filteredMatches} season={dbFilters.season} />}
+                        {activeTab === 'matches' && (
+                            !selectedMatchId ? (
+                                <AlAhlyMatches matches={filteredMatches} onMatchClick={(id) => { setSelectedMatchId(id); }} />
+                            ) : (
+                                <AlAhlyMatchDetails
+                                    matchId={selectedMatchId}
+                                    matches={matches}
+                                    playerDetails={playerDetails}
+                                    lineupDetails={lineupDetails}
+                                    gkDetails={gkDetails}
+                                    howPenMissed={howPenMissed}
+                                    onBack={() => setSelectedMatchId(null)}
+                                />
+                            )
+                        )}
+                        {activeTab === 'seasons' && <AlAhlySeasons matches={filteredMatches} />}
+                        {activeTab === 'seasons_n' && <AlAhlySeasonsN matches={filteredMatches} />}
+                        {activeTab === 'years' && <AlAhlyYears matches={filteredMatches} />}
+                        {activeTab === 'players' && <AlAhlyPlayers playerDetails={playerDetails} lineupDetails={lineupDetails} filteredMatches={filteredMatches} gkDetails={gkDetails} howPenMissed={howPenMissed} />}
+                        {activeTab === 'gks' && <AlAhlyGKs gkDetails={gkDetails} howPenMissed={howPenMissed} filteredMatches={filteredMatches} playerDetails={playerDetails} />}
+                        {activeTab === 'managers' && <AlAhlyManagers matches={filteredMatches} playerDetails={playerDetails} lineupDetails={lineupDetails} />}
+                        {activeTab === 'h2h' && <AlAhlyH2H matches={filteredMatches} />}
+                        {activeTab === 'referees' && <AlAhlyReferees matches={filteredMatches} playerDetails={playerDetails} howPenMissed={howPenMissed} />}
+                        {activeTab === 'media-tracker' && <AlAhlyMediaTracker matches={filteredMatches} mediaTrackerData={mediaTrackerData} onDataChange={fetchMatchData} />}
+                        {activeTab === 'editor' && <AlAhlyEditor />}
+                        {activeTab === 'champions' && <AlAhlyChampions matchesData={filteredMatches} />}
+                    </>
+                )}
+            </main>
 
             {/* FILTER POPUP MODAL */}
             {isFilterOpen && (
@@ -484,6 +401,6 @@ export default function AlAhlyDatabase() {
                     </div>
                 </div>
             )}
-        </div>
+        </SideBar_db>
     );
 }

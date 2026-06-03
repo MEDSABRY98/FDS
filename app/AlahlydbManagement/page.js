@@ -6,9 +6,9 @@ import { useRouter } from "next/navigation";
 import { supabase } from "../lib/supabase";
 import { AlAhlyService } from "../Alahly/alahly_db_service";
 import * as XLSX from "xlsx";
-import { Download, Database, ArrowLeft, X, Menu, Edit, Trash2 } from "lucide-react";
+import { Download, Database, X, Edit, Trash2 } from "lucide-react";
 import Login_db from "../lib/Login_db";
-import "../lib/AlahlySidebar.css";
+import SideBar_db from "../lib/SideBar_db";
 
 
 // Dynamic Table Loading logic added inside component
@@ -17,8 +17,6 @@ import "../lib/AlahlySidebar.css";
 export default function DatabaseManagement() {
     const router = useRouter();
     const [availableTables, setAvailableTables] = useState([]);
-    const [isSidebarMobileOpen, setIsSidebarMobileOpen] = useState(false);
-    const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(true);
     const [selectedTable, setSelectedTable] = useState("");
     const [tableData, setTableData] = useState([]);
     const [columns, setColumns] = useState([]);
@@ -444,98 +442,36 @@ export default function DatabaseManagement() {
 
     return (
         <Login_db title="EDITOR ACCESS" subtitle="AUTHORIZATION REQUIRED">
-            <div id="db-management-page" className={`alahly-container ${isSidebarCollapsed ? 'sidebar-collapsed' : ''}`}>
-                {/* Backdrop for mobile drawer */}
-                <div 
-                    className={`alahly-sidebar-backdrop ${isSidebarMobileOpen ? 'active' : ''}`} 
-                    onClick={() => setIsSidebarMobileOpen(false)}
-                />
-
-                {/* Sidebar navigation */}
-                <aside className={`alahly-sidebar ${isSidebarMobileOpen ? 'mobile-open' : ''}`}>
-                    <div className="alahly-sidebar-header">
-                        <Link href="/" className="alahly-sidebar-brand">
-                            <div className="alahly-sidebar-logo-hex">
-                                <span className="alahly-sidebar-logo-text">A</span>
-                            </div>
-                            <div className="alahly-sidebar-brand-name">
-                                AHLY <span>DB MGMT</span>
-                            </div>
-                        </Link>
-                        <button 
-                            className="alahly-sidebar-close-btn" 
-                            onClick={() => setIsSidebarMobileOpen(false)}
-                            title="CLOSE MENU"
-                        >
-                            <X size={20} />
-                        </button>
-                    </div>
-
-                    <div className="alahly-sidebar-menu">
-                        {availableTables.map(t => (
-                            <button
-                                key={t.name}
-                                className={`alahly-sidebar-item ${selectedTable === t.name ? 'active' : ''}`}
-                                onClick={() => {
-                                    setSelectedTable(t.name);
-                                    setIsSidebarMobileOpen(false);
-                                }}
-                            >
-                                <Database size={16} className="alahly-sidebar-item-icon" />
-                                <span>{t.label.split(' ').map(w => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase()).join(' ')}</span>
-                            </button>
-                        ))}
-                    </div>
-
-                    <div className="alahly-sidebar-actions">
-                        <button
-                            className="alahly-sidebar-collapse-toggle-btn"
-                            onClick={() => setIsSidebarCollapsed(!isSidebarCollapsed)}
-                            title={isSidebarCollapsed ? "EXPAND MENU" : "COLLAPSE MENU"}
-                        >
-                            <ArrowLeft size={14} style={{ transform: isSidebarCollapsed ? 'rotate(180deg)' : 'none', transition: 'transform 0.3s' }} />
-                            <span>COLLAPSE MENU</span>
-                        </button>
-                        <button 
-                            className="alahly-sidebar-action-btn export-btn" 
-                            onClick={handleDownloadExcel}
-                            title="DOWNLOAD CURRENT VIEW AS EXCEL"
-                        >
-                            <Download size={14} />
-                            <span>EXPORT TO EXCEL</span>
-                        </button>
-                    </div>
-                </aside>
-
-                <div className="alahly-main-content">
-                    {/* Mobile Top Bar */}
-                    <header className="alahly-mobile-top-bar">
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                            <button 
-                                className="alahly-menu-toggle-btn" 
-                                onClick={() => setIsSidebarMobileOpen(true)}
-                                title="OPEN MENU"
-                            >
-                                <Menu size={22} />
-                            </button>
-                            <Link href="/" className="alahly-mobile-brand">
-                                <div className="alahly-mobile-brand-name">
-                                    AHLY <span>DB MGMT</span>
-                                </div>
-                            </Link>
-                        </div>
-                        <div className="alahly-mobile-actions">
-                            <button 
-                                onClick={handleDownloadExcel} 
-                                className="alahly-mobile-action-icon"
-                                title="DOWNLOAD CURRENT VIEW AS EXCEL"
-                            >
-                                <Download size={16} />
-                            </button>
-                        </div>
-                    </header>
-
-                    <main className="db-content">
+            <SideBar_db
+                brandTitle="AHLY"
+                brandSubtitle="DB MGMT"
+                logoText="A"
+                menuItems={availableTables.map(t => ({
+                    id: t.name,
+                    label: t.label.split(' ').map(w => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase()).join(' '),
+                    icon: Database
+                }))}
+                activeTab={selectedTable}
+                setActiveTab={setSelectedTable}
+                actions={[
+                    {
+                        label: "EXPORT TO EXCEL",
+                        icon: Download,
+                        onClick: handleDownloadExcel,
+                        className: "export-btn",
+                        title: "DOWNLOAD CURRENT VIEW AS EXCEL"
+                    }
+                ]}
+                mobileBrandName="AHLY DB MGMT"
+                mobileActions={[
+                    {
+                        icon: Download,
+                        onClick: handleDownloadExcel,
+                        title: "DOWNLOAD CURRENT VIEW AS EXCEL"
+                    }
+                ]}
+            >
+                <main className="db-content">
                     <div className="data-toolbar">
                         <div className="search-wrap">
                             <input
@@ -771,7 +707,6 @@ export default function DatabaseManagement() {
                         </div>
                     </div>
                 )}
-                </div> {/* closing alahly-main-content */}
 
                 <style jsx>{`
                 #db-management-page {
@@ -1168,7 +1103,7 @@ export default function DatabaseManagement() {
                     gap: 8px;
                 }
             `}</style>
-            </div>
+            </SideBar_db>
         </Login_db>
     );
 }

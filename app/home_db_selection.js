@@ -20,7 +20,8 @@ export default function HomeDbSelection() {
         ],
         egypt_nt: [
             { href: "/EgyptNTdbManagement", label: "EGYPT NT DB MANAGEMENT", initial: "DB" },
-            { href: "/EgyptNT", label: "EGYPT NT", initial: "EG" }
+            { href: "/EgyptNT", label: "EGYPT NT", initial: "EG" },
+            { href: "/EgyptNTPKS", label: "EGYPT NT PKs", initial: "PK" }
         ]
     };
 
@@ -33,20 +34,20 @@ export default function HomeDbSelection() {
             <div className="home-sys-sub">SELECT A SECTION TO CONTINUE</div>
 
             <div className="home-tabs-container">
-                <button 
-                    className={`home-tab-btn ${activeTab === 'alahly' ? 'active' : ''}`} 
+                <button
+                    className={`home-tab-btn ${activeTab === 'alahly' ? 'active' : ''}`}
                     onClick={() => setActiveTab('alahly')}
                 >
                     AL AHLY
                 </button>
-                <button 
-                    className={`home-tab-btn ${activeTab === 'derby' ? 'active' : ''}`} 
+                <button
+                    className={`home-tab-btn ${activeTab === 'derby' ? 'active' : ''}`}
                     onClick={() => setActiveTab('derby')}
                 >
                     DERBY
                 </button>
-                <button 
-                    className={`home-tab-btn ${activeTab === 'egypt_nt' ? 'active' : ''}`} 
+                <button
+                    className={`home-tab-btn ${activeTab === 'egypt_nt' ? 'active' : ''}`}
                     onClick={() => setActiveTab('egypt_nt')}
                 >
                     EGYPT NT

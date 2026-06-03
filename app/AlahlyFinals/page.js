@@ -2,8 +2,8 @@
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
-import { LayoutDashboard, Trophy, Edit, Award, Users, UserCheck, Download, Filter, ArrowLeft, X, Menu } from "lucide-react";
-import "../lib/AlahlySidebar.css";
+import { LayoutDashboard, Trophy, Edit, Award, Users, UserCheck, Download, Filter } from "lucide-react";
+import SideBar_db from "../lib/SideBar_db";
 import { AlAhlyFinalsService } from "./alahly_finals_service";
 import AlAhlyFinalsDashboard from "./alahly_finals_dashboard";
 import AlAhlyFinalsMatches from "./alahly_finals_matches";
@@ -18,8 +18,6 @@ import AlAhlyFinalsMatchDetails from "./alahly_finals_match_details";
 
 export default function AlAhlyFinalsDatabase() {
     const [activeTab, setActiveTab] = useState("finals_dashboard");
-    const [isSidebarMobileOpen, setIsSidebarMobileOpen] = useState(false);
-    const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(true);
     const [matchesData, setMatchesData] = useState([]);
     const [lineupsData, setLineupsData] = useState([]);
     const [playersData, setPlayersData] = useState([]);
@@ -100,126 +98,59 @@ export default function AlAhlyFinalsDatabase() {
     }
 
 
+    const handleTabChange = (tabId) => {
+        setActiveTab(tabId);
+        setSelectedMatchId(null);
+    };
+
     return (
-        <div className={`alahly-container ${isSidebarCollapsed ? 'sidebar-collapsed' : ''}`} style={{ backgroundColor: '#ffffff', minHeight: '100vh', color: '#0a0a0a' }}>
-            {/* Backdrop for mobile drawer */}
-            <div
-                className={`alahly-sidebar-backdrop ${isSidebarMobileOpen ? 'active' : ''}`}
-                onClick={() => setIsSidebarMobileOpen(false)}
-            />
-
-            {/* Sidebar navigation */}
-            <aside className={`alahly-sidebar ${isSidebarMobileOpen ? 'mobile-open' : ''}`}>
-                <div className="alahly-sidebar-header">
-                    <Link href="/" className="alahly-sidebar-brand">
-                        <div className="alahly-sidebar-logo-hex">
-                            <span className="alahly-sidebar-logo-text">A</span>
-                        </div>
-                        <div className="alahly-sidebar-brand-name">
-                            AHLY <span>FINALS</span>
-                        </div>
-                    </Link>
-                    <button
-                        className="alahly-sidebar-close-btn"
-                        onClick={() => setIsSidebarMobileOpen(false)}
-                        title="CLOSE MENU"
-                    >
-                        <X size={20} />
-                    </button>
-                </div>
-
-                <div className="alahly-sidebar-menu">
-                    {[
-                        { id: 'finals_dashboard', label: 'Dashboard', icon: <LayoutDashboard size={16} className="alahly-sidebar-item-icon" /> },
-                        { id: 'finals_matches', label: 'Matches', icon: <Trophy size={16} className="alahly-sidebar-item-icon" /> },
-                        { id: 'finals_editor', label: 'Editor', icon: <Edit size={16} className="alahly-sidebar-item-icon" /> },
-                        { id: 'finals_champions', label: 'Champions', icon: <Award size={16} className="alahly-sidebar-item-icon" /> },
-                        { id: 'finals_players', label: 'Players', icon: <Users size={16} className="alahly-sidebar-item-icon" /> },
-                        { id: 'finals_managers', label: 'Managers', icon: <UserCheck size={16} className="alahly-sidebar-item-icon" /> },
-                    ].map(tab => (
-                        <button
-                            key={tab.id}
-                            className={`alahly-sidebar-item ${activeTab === tab.id ? 'active' : ''}`}
-                            onClick={() => {
-                                setActiveTab(tab.id);
-                                setSelectedMatchId(null);
-                                setIsSidebarMobileOpen(false);
-                            }}
-                        >
-                            {tab.icon}
-                            <span>{tab.label}</span>
-                        </button>
-                    ))}
-                </div>
-
-                <div className="alahly-sidebar-actions">
-                    <button
-                        className="alahly-sidebar-collapse-toggle-btn"
-                        onClick={() => setIsSidebarCollapsed(!isSidebarCollapsed)}
-                        title={isSidebarCollapsed ? "EXPAND MENU" : "COLLAPSE MENU"}
-                    >
-                        <ArrowLeft size={14} style={{ transform: isSidebarCollapsed ? 'rotate(180deg)' : 'none', transition: 'transform 0.3s' }} />
-                        <span>COLLAPSE MENU</span>
-                    </button>
-                    <button
-                        className="alahly-sidebar-action-btn filter-btn"
-                        onClick={() => setIsFilterOpen(true)}
-                        title="OPEN FILTERS"
-                    >
-                        <Filter size={14} />
-                        <span>FILTERS</span>
-                    </button>
-                    <button
-                        className="alahly-sidebar-action-btn export-btn"
-                        onClick={() => window.dispatchEvent(new CustomEvent('alahly-export-excel'))}
-                        title="DOWNLOAD AS EXCEL"
-                    >
-                        <Download size={14} />
-                        <span>EXPORT TO EXCEL</span>
-                    </button>
-                </div>
-            </aside>
-
-            <div className="alahly-main-content">
-                {/* Mobile Top Bar */}
-                <header className="alahly-mobile-top-bar">
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                        <button
-                            className="alahly-menu-toggle-btn"
-                            onClick={() => setIsSidebarMobileOpen(true)}
-                            title="OPEN MENU"
-                        >
-                            <Menu size={22} />
-                        </button>
-                        <Link href="/" className="alahly-mobile-brand">
-                            <div className="alahly-mobile-brand-name">
-                                AHLY <span>FINALS</span>
-                            </div>
-                        </Link>
-                    </div>
-                    <div className="alahly-mobile-actions">
-                        <button
-                            onClick={() => setIsFilterOpen(true)}
-                            className="alahly-mobile-action-icon"
-                            title="OPEN FILTERS"
-                            style={{ marginRight: '8px' }}
-                        >
-                            <Filter size={16} />
-                        </button>
-                        <button
-                            onClick={() => window.dispatchEvent(new CustomEvent('alahly-export-excel'))}
-                            className="alahly-mobile-action-icon"
-                            title="DOWNLOAD AS EXCEL"
-                        >
-                            <Download size={16} />
-                        </button>
-                    </div>
-                </header>
-
-                <main style={{ padding: '30px 24px', maxWidth: '100%', margin: '0' }}>
-                    {renderAppContent()}
-                </main>
-            </div>
+        <SideBar_db
+            brandTitle="AHLY"
+            brandSubtitle="FINALS"
+            logoText="A"
+            menuItems={[
+                { id: 'finals_dashboard', label: 'Dashboard', icon: LayoutDashboard },
+                { id: 'finals_matches', label: 'Matches', icon: Trophy },
+                { id: 'finals_editor', label: 'Editor', icon: Edit },
+                { id: 'finals_champions', label: 'Champions', icon: Award },
+                { id: 'finals_players', label: 'Players', icon: Users },
+                { id: 'finals_managers', label: 'Managers', icon: UserCheck }
+            ]}
+            activeTab={activeTab}
+            setActiveTab={handleTabChange}
+            actions={[
+                {
+                    label: "FILTERS",
+                    icon: Filter,
+                    onClick: () => setIsFilterOpen(true),
+                    className: "filter-btn",
+                    title: "OPEN FILTERS"
+                },
+                {
+                    label: "EXPORT TO EXCEL",
+                    icon: Download,
+                    onClick: () => window.dispatchEvent(new CustomEvent('alahly-export-excel')),
+                    className: "export-btn",
+                    title: "DOWNLOAD AS EXCEL"
+                }
+            ]}
+            mobileBrandName="AHLY FINALS"
+            mobileActions={[
+                {
+                    icon: Filter,
+                    onClick: () => setIsFilterOpen(true),
+                    title: "OPEN FILTERS"
+                },
+                {
+                    icon: Download,
+                    onClick: () => window.dispatchEvent(new CustomEvent('alahly-export-excel')),
+                    title: "DOWNLOAD AS EXCEL"
+                }
+            ]}
+        >
+            <main style={{ padding: '30px 24px', maxWidth: '100%', margin: '0' }}>
+                {renderAppContent()}
+            </main>
 
             <AlAhlyFinalsFilter
                 data={matchesData}
@@ -227,6 +158,6 @@ export default function AlAhlyFinalsDatabase() {
                 isOpen={isFilterOpen}
                 onClose={() => setIsFilterOpen(false)}
             />
-        </div>
+        </SideBar_db>
     );
 }
