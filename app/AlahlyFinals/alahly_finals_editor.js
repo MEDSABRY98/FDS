@@ -6,6 +6,7 @@ import { AlAhlyFinalsService } from "./alahly_finals_service";
 import SearchBar_db from "../lib/SearchBar_db";
 import NoData_db from "../lib/NoData_db";
 import Login_db from "../lib/Login_db";
+import { useNotification } from "../lib/Notification_db";
 import "./alahly_finals_editor.css";
 
 // ── Components ───────────────────────────────────────────────────────────────
@@ -75,24 +76,6 @@ function AutocompleteInput({ value, onChange, options = [], placeholder, style, 
     );
 }
 
-function Toast({ toasts }) {
-    return (
-        <div className="toast-container">
-            {toasts.map(t => (
-                <div key={t.id} className={`toast-card ${t.type}`}>
-                    <div className="toast-icon">
-                        {t.type === 'error' ? <AlertCircle size={20} /> : <CheckCircle size={20} />}
-                    </div>
-                    <div className="toast-content">
-                        <div className="toast-title">{t.type === 'error' ? 'SYSTEM ERROR' : 'SUCCESS'}</div>
-                        <div className="toast-msg">{t.msg}</div>
-                    </div>
-                    <div className="toast-progress" />
-                </div>
-            ))}
-        </div>
-    );
-}
 
 function DateSelectionModal({ matches, onSelect, onClose }) {
     if (!matches || matches.length === 0) return null;
@@ -216,7 +199,7 @@ export default function AlAhlyFinalsEditor({ matchesData, lineupsData, playersDa
     const [selectedMatch, setSelectedMatch] = useState(null);
     const [loading, setLoading] = useState(false);
     const [isSaving, setIsSaving] = useState(false);
-    const [toasts, setToasts] = useState([]);
+    const { addNotification } = useNotification();
     const [activeTab, setActiveTab] = useState("lineup");
 
     const [matchForm, setMatchForm] = useState({});
@@ -224,9 +207,7 @@ export default function AlAhlyFinalsEditor({ matchesData, lineupsData, playersDa
     const [eventRows, setEventRows] = useState([]);
 
     const addToast = (msg, type = 'success') => {
-        const id = Date.now();
-        setToasts(prev => [...prev, { id, msg, type }]);
-        setTimeout(() => setToasts(prev => prev.filter(t => t.id !== id)), 3500);
+        addNotification(msg, type);
     };
 
     const suggestions = useMemo(() => ({
@@ -455,7 +436,6 @@ export default function AlAhlyFinalsEditor({ matchesData, lineupsData, playersDa
 
     const renderEditor = () => (
         <div className="editor-stacked-layout fade-in">
-            <Toast toasts={toasts} />
 
             {/* ── Match Details Card ── */}
             <div className="editor-card main-form-card">
@@ -634,8 +614,6 @@ export default function AlAhlyFinalsEditor({ matchesData, lineupsData, playersDa
             </div>
             <style jsx>{`
                 @keyframes slideIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
-                @keyframes toastSlideIn { from { opacity: 0; transform: translateX(50px) scale(0.9); } to { opacity: 1; transform: translateX(0) scale(1); } }
-                @keyframes toastProgress { from { width: 100%; } to { width: 0%; } }
                 .fade-in { animation: slideIn 0.4s ease-out; }
             `}</style>
         </Login_db>

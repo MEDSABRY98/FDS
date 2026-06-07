@@ -6,6 +6,7 @@ import { supabase } from "../lib/supabase";
 import Login_db from "../lib/Login_db";
 import NoData_db from "../lib/NoData_db";
 import SearchBar_db from "../lib/SearchBar_db";
+import { useNotification } from "../lib/Notification_db";
 
 // ── Helper ──────────────────────────────────────────────────────────────────
 const EMPTY_MATCH = {
@@ -116,7 +117,6 @@ function AutocompleteInput({ value, onChange, options = [], placeholder, style, 
                                 dir="auto"
                             >
                                 <div style={{ flex: 1, transition: 'color 0.2s' }}>{opt}</div>
-                                <div style={{ width: 6, height: 6, borderRadius: '50%', background: '#da1b22', opacity: 0.5, transition: 'transform 0.2s' }} />
                             </div>
                         ))}
                     </div>
@@ -126,80 +126,6 @@ function AutocompleteInput({ value, onChange, options = [], placeholder, style, 
     );
 }
 
-function Toast({ toasts }) {
-    return (
-        <div style={{
-            position: 'fixed', bottom: 40, right: 40,
-            display: 'flex', flexDirection: 'column-reverse', gap: 14,
-            zIndex: 9999999, pointerEvents: 'none'
-        }}>
-            {toasts.map(t => {
-                const isError = t.type === 'error';
-                const isWarn = t.type === 'warn';
-                const mainColor = isError ? '#ef4444' : (isWarn ? '#f59e0b' : '#da1b22');
-                const glowColor = isError ? 'rgba(239, 68, 68, 0.2)' : (isWarn ? 'rgba(245, 158, 11, 0.2)' : 'rgba(218, 27, 34, 0.2)');
-
-                return (
-                    <div key={t.id} style={{
-                        pointerEvents: 'auto',
-                        background: 'rgba(10, 10, 10, 0.85)',
-                        backdropFilter: 'blur(16px)', WebkitBackdropFilter: 'blur(16px)',
-                        border: '1px solid rgba(255, 255, 255, 0.08)',
-                        borderLeft: `4px solid ${mainColor}`,
-                        borderRadius: '16px',
-                        padding: '16px 20px',
-                        minWidth: 320, maxWidth: 450,
-                        display: 'flex', alignItems: 'center', gap: 15,
-                        boxShadow: `0 20px 40px rgba(0,0,0,0.3), 0 0 20px ${glowColor}`,
-                        animation: 'toastSlideIn 0.5s cubic-bezier(0.16, 1, 0.3, 1)',
-                        position: 'relative', overflow: 'hidden'
-                    }}>
-                        <div style={{
-                            width: 38, height: 38, borderRadius: 12,
-                            background: `${mainColor}20`,
-                            display: 'flex', alignItems: 'center', justifyContent: 'center',
-                            flexShrink: 0
-                        }}>
-                            {isError && <span style={{ fontSize: 20 }}>❗</span>}
-                            {isWarn && <span style={{ fontSize: 20 }}>⚠️</span>}
-                            {!isError && !isWarn && <span style={{ fontSize: 20, color: '#da1b22' }}>✓</span>}
-                        </div>
-
-                        <div style={{ flex: 1 }}>
-                            <div style={{
-                                fontFamily: "'Bebas Neue', sans-serif", fontSize: 13,
-                                letterSpacing: 1.5, color: mainColor, marginBottom: 2,
-                                textTransform: 'uppercase'
-                            }}>
-                                {isError ? 'SYSTEM ERROR' : (isWarn ? 'NOTIFICATION' : 'SUCCESS')}
-                            </div>
-                            <div style={{
-                                fontFamily: "'Outfit', sans-serif", fontWeight: 600,
-                                fontSize: 14, color: '#fff', lineHeight: 1.4,
-                                letterSpacing: 0.3
-                            }}>
-                                {t.msg}
-                            </div>
-                        </div>
-
-                        <button
-                            onClick={(e) => { e.currentTarget.parentElement.style.opacity = '0'; }}
-                            style={{
-                                background: 'transparent', border: 'none', color: 'rgba(255,255,255,0.2)',
-                                cursor: 'pointer', fontSize: 18, alignSelf: 'flex-start', padding: 0
-                            }}>✕</button>
-
-                        <div style={{
-                            position: 'absolute', bottom: 0, left: 0, height: 3,
-                            background: mainColor, animation: 'toastProgress 3.5s linear forwards',
-                            width: '100%'
-                        }} />
-                    </div>
-                );
-            })}
-        </div>
-    );
-}
 
 // ── Editable Table ───────────────────────────────────────────────────────────
 function EditableTable({ title, color, rows, setRows, columns, matchId, emptyRow, tableName, onSave, onDelete, isSaving, autoFields = {}, columnOptions = {} }) {
@@ -343,7 +269,7 @@ export default function AhlyVZamalekEditor() {
     const [loading, setLoading] = useState(false);
     const [isSaving, setIsSaving] = useState(false);
     const [mode, setMode] = useState('search'); // 'search' | 'edit' | 'new'
-    const [toasts, setToasts] = useState([]);
+    const { addNotification } = useNotification();
     const [newMatchData, setNewMatchData] = useState({ ...EMPTY_MATCH });
     const [activeLinkedTab, setActiveLinkedTab] = useState('ahly_lineup');
     // Staged linked rows
@@ -510,9 +436,7 @@ export default function AhlyVZamalekEditor() {
     }, [newMatchData.MATCH_ID, mode]);
 
     const addToast = (msg, type = 'success') => {
-        const id = Date.now();
-        setToasts(prev => [...prev, { id, msg, type }]);
-        setTimeout(() => setToasts(prev => prev.filter(t => t.id !== id)), 3500);
+        addNotification(msg, type);
     };
 
     // ── Search Match ────────────────────────────────────────────────────────
@@ -588,7 +512,7 @@ export default function AhlyVZamalekEditor() {
             }
 
             if (result.error) {
-                alert(`Supabase Error (${tableName}):\n${result.error.message}\n${result.error.hint || ''}`);
+                addNotification(`Supabase Error (${tableName}):\n${result.error.message}\n${result.error.hint || ''}`, "error");
                 throw result.error;
             }
 
@@ -700,7 +624,7 @@ export default function AhlyVZamalekEditor() {
             addToast('Match and all pending records saved ✓');
         } catch (e) {
             console.error("Global Save Error:", e);
-            alert(`Global Save Failed:\n${e.message}`);
+            addNotification(`Global Save Failed:\n${e.message}`, "error");
             addToast('Save Failed: ' + e.message, 'error');
         } finally {
             setIsSaving(false);
@@ -750,7 +674,7 @@ export default function AhlyVZamalekEditor() {
 
         } catch (e) {
             console.error("Create Match Error:", e);
-            alert(`Failed to create match:\n${e.message}`);
+            addNotification(`Failed to create match:\n${e.message}`, "error");
             addToast('Error: ' + e.message, 'error');
         } finally {
             setIsSaving(false);
@@ -764,24 +688,28 @@ export default function AhlyVZamalekEditor() {
     return (
         <Login_db title="DERBY EDITOR ACCESS" subtitle="AUTHORIZATION REQUIRED">
             <div className="editor-container">
-                <Toast toasts={toasts} />
-
+    
                 {/* Mode toggle */}
-                <div className="editor-header" style={{ justifyContent: 'flex-end' }}>
-                    <div style={{ display: 'flex', gap: 10 }}>
+                <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 30 }}>
+                    <div style={{ display: 'flex', width: 400, background: '#f8f8f8', borderRadius: 12, padding: 4 }}>
                         <button
                             onClick={() => { setMode('search'); setMatchData(null); }}
-                            title="Search & Edit Match"
-                            className={`mode-toggle-btn ${(mode === 'search' || mode === 'edit') ? 'active' : ''}`}>
-                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                                <circle cx="11" cy="11" r="7" />
-                                <line x1="17" y1="17" x2="22" y2="22" />
-                            </svg>
+                            style={{
+                                flex: 1, padding: '12px 0', border: 'none', background: (mode === 'search' || mode === 'edit') ? '#da1b22' : 'transparent',
+                                color: (mode === 'search' || mode === 'edit') ? '#fff' : '#888', fontWeight: 800, fontFamily: "'Outfit', sans-serif",
+                                cursor: 'pointer', borderRadius: 10, transition: 'all 0.2s', fontSize: 13, letterSpacing: 1
+                            }}>
+                            SEARCH MATCH
                         </button>
                         <button
                             onClick={() => { setMode('new'); setMatchData(null); setNewMatchData({ ...EMPTY_MATCH }); }}
-                            title="Add New Derby Match"
-                            className={`mode-toggle-btn ${mode === 'new' ? 'active' : ''}`}>➕</button>
+                            style={{
+                                flex: 1, padding: '12px 0', border: 'none', background: mode === 'new' ? '#da1b22' : 'transparent',
+                                color: mode === 'new' ? '#fff' : '#888', fontWeight: 800, fontFamily: "'Outfit', sans-serif",
+                                cursor: 'pointer', borderRadius: 10, transition: 'all 0.2s', fontSize: 13, letterSpacing: 1
+                            }}>
+                            ADD MATCH
+                        </button>
                     </div>
                 </div>
 

@@ -9,6 +9,7 @@ import * as XLSX from "xlsx";
 import { Download, Database, X, Edit, Trash2 } from "lucide-react";
 import Login_db from "../lib/Login_db";
 import SideBar_db from "../lib/SideBar_db";
+import { useNotification } from "../lib/Notification_db";
 
 
 // Dynamic Table Loading logic added inside component
@@ -16,6 +17,7 @@ import SideBar_db from "../lib/SideBar_db";
 
 export default function DatabaseManagement() {
     const router = useRouter();
+    const { addNotification } = useNotification();
     const [availableTables, setAvailableTables] = useState([]);
     const [selectedTable, setSelectedTable] = useState("");
     const [tableData, setTableData] = useState([]);
@@ -40,7 +42,7 @@ export default function DatabaseManagement() {
 
     const handleDownloadExcel = () => {
         if (!filteredData || filteredData.length === 0) {
-            alert("No data available to download.");
+            addNotification("No data available to download.", "warn");
             return;
         }
 
@@ -66,7 +68,7 @@ export default function DatabaseManagement() {
             XLSX.writeFile(workbook, fileName);
         } catch (error) {
             console.error("Export Error:", error);
-            alert("An error occurred while generating the Excel file.");
+            addNotification("An error occurred while generating the Excel file.", "error");
         }
     };
 
@@ -118,7 +120,7 @@ export default function DatabaseManagement() {
     const handleMergeTrigger = () => {
         const names = [...new Set(selectedRows.map(r => r["PLAYER NAME"]))];
         if (names.length < 2) {
-            alert("Please select at least two DIFFERENT names to merge.");
+            addNotification("Please select at least two DIFFERENT names to merge.", "warn");
             return;
         }
         setMergeTargetName(names[0]);
@@ -128,7 +130,7 @@ export default function DatabaseManagement() {
     const handleConfirmMerge = async () => {
         const names = [...new Set(selectedRows.map(r => r["PLAYER NAME"]))];
         if (!mergeTargetName.trim()) {
-            alert("Please enter a valid target name.");
+            addNotification("Please enter a valid target name.", "warn");
             return;
         }
 
@@ -145,7 +147,7 @@ export default function DatabaseManagement() {
             setSelectedRows([]);
             fetchTableData();
         } catch (error) {
-            alert("Merge failed: " + error.message);
+            addNotification("Merge failed: " + error.message, "error");
         } finally {
             setIsMerging(false);
         }
@@ -335,7 +337,7 @@ export default function DatabaseManagement() {
             }
         } catch (error) {
             console.error("Error fetching table data:", error.message);
-            alert("Error: " + error.message);
+            addNotification("Error: " + error.message, "error");
         } finally {
             setLoading(false);
         }
@@ -383,7 +385,7 @@ export default function DatabaseManagement() {
             setEditingRow(null);
         } catch (error) {
             console.error("Update error:", error);
-            alert("Update FAILED: " + error.message);
+            addNotification("Update FAILED: " + error.message, "error");
         } finally {
             setSaving(false);
         }
@@ -420,11 +422,11 @@ export default function DatabaseManagement() {
                 if (error) throw error;
             }
 
-            alert("Record deleted successfully.");
+            addNotification("Record deleted successfully.", "success");
             await fetchTableData();
         } catch (error) {
             console.error("Delete error:", error);
-            alert("Delete FAILED: " + error.message);
+            addNotification("Delete FAILED: " + error.message, "error");
         } finally {
             setLoading(false);
         }

@@ -8,6 +8,7 @@ import { EgyptNTService } from "../EgyptNT/egypt_nt_db_service";
 import * as XLSX from "xlsx";
 import { Download, Database, ArrowLeft, X, Menu, Edit, Trash2 } from "lucide-react";
 import Login_db from "../lib/Login_db";
+import { useNotification } from "../lib/Notification_db";
 import "../EgyptNT/egypt_nt_sidebar.css";
 
 const COLUMN_ORDER = {
@@ -135,7 +136,7 @@ export default function EgyptDatabaseManagement() {
 
     const handleDownloadExcel = () => {
         if (!filteredData || filteredData.length === 0) {
-            alert("No data available to download.");
+            addNotification("No data available to download.", "warn");
             return;
         }
 
@@ -159,7 +160,7 @@ export default function EgyptDatabaseManagement() {
             XLSX.writeFile(workbook, fileName);
         } catch (error) {
             console.error("Export Error:", error);
-            alert("An error occurred while generating the Excel file.");
+            addNotification("An error occurred while generating the Excel file.", "error");
         }
     };
 
@@ -217,7 +218,7 @@ export default function EgyptDatabaseManagement() {
     const handleMergeTrigger = () => {
         const names = [...new Set(selectedRows.map(r => selectedTable === "egy_NT_SQUAD" ? r["PLAYERNAME"] : r["PLAYER NAME"]))];
         if (names.length < 2) {
-            alert("Please select at least two DIFFERENT names to merge.");
+            addNotification("Please select at least two DIFFERENT names to merge.", "warn");
             return;
         }
         setMergeTargetName(names[0]);
@@ -227,7 +228,7 @@ export default function EgyptDatabaseManagement() {
     const handleConfirmMerge = async () => {
         const names = [...new Set(selectedRows.map(r => selectedTable === "egy_NT_SQUAD" ? r["PLAYERNAME"] : r["PLAYER NAME"]))];
         if (!mergeTargetName.trim()) {
-            alert("Please enter a valid target name.");
+            addNotification("Please enter a valid target name.", "warn");
             return;
         }
 
@@ -242,9 +243,9 @@ export default function EgyptDatabaseManagement() {
         try {
             await EgyptNTService.mergePlayers(mergeTargetName.trim(), names);
             setSelectedRows([]);
-            fetchTableData();
+            await fetchTableData();
         } catch (error) {
-            alert("Merge failed: " + error.message);
+            addNotification("Merge failed: " + error.message, "error");
         } finally {
             setIsMerging(false);
         }
@@ -396,7 +397,7 @@ export default function EgyptDatabaseManagement() {
             }
         } catch (error) {
             console.error("Error fetching table data:", error.message);
-            alert("Error: " + error.message);
+            addNotification("Error: " + error.message, "error");
         } finally {
             setLoading(false);
         }
@@ -442,7 +443,7 @@ export default function EgyptDatabaseManagement() {
             setEditingRow(null);
         } catch (error) {
             console.error("Update error:", error);
-            alert("Update FAILED: " + error.message);
+            addNotification("Update FAILED: " + error.message, "error");
         } finally {
             setSaving(false);
         }
@@ -479,11 +480,11 @@ export default function EgyptDatabaseManagement() {
                 if (error) throw error;
             }
 
-            alert("Record deleted successfully.");
+            addNotification("Record deleted successfully.", "success");
             await fetchTableData();
         } catch (error) {
             console.error("Delete error:", error);
-            alert("Delete FAILED: " + error.message);
+            addNotification("Delete FAILED: " + error.message, "error");
         } finally {
             setLoading(false);
         }

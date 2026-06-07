@@ -7,10 +7,12 @@ import { Save, Edit2, CheckCircle2 } from "lucide-react";
 import NoData_db from "../lib/NoData_db";
 import SearchBar_db from "../lib/SearchBar_db";
 import DropDownList_db from "../lib/DropDownList_db";
+import { useNotification } from "../lib/Notification_db";
 
 // Custom Premium Searchable Dropdown Component
 
 export default function AlAhlyMediaTracker({ matches, mediaTrackerData, onDataChange }) {
+    const { addNotification } = useNotification();
     const [searchTerm, setSearchTerm] = useState("");
     const [mediaStatusFilter, setMediaStatusFilter] = useState("");
     const [champFilter, setChampFilter] = useState("");
@@ -126,8 +128,9 @@ export default function AlAhlyMediaTracker({ matches, mediaTrackerData, onDataCh
             setEditingId(null);
             setSavedId(rowId);
             setTimeout(() => setSavedId(null), 3000);
+            addNotification("Record saved successfully.", "success");
         } catch (error) {
-            alert("Failed to save record.");
+            addNotification("Failed to save record.", "error");
         }
         setSaving(false);
     };

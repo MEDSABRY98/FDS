@@ -21,7 +21,7 @@ const DropDownList_db = ({ options = [], value, onChange, placeholder = "Select.
 
     const filteredOptions = useMemo(() => {
         if (!searchable || !searchTerm) return options;
-        return options.filter(opt => 
+        return options.filter(opt =>
             String(opt.label || "").toLowerCase().includes(searchTerm.toLowerCase())
         );
     }, [options, searchTerm, searchable]);

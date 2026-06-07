@@ -1,4 +1,5 @@
 import './globals.css'
+import { NotificationProvider } from './lib/Notification_db'
 
 export const metadata = {
     title: 'Football Database',
@@ -13,7 +14,11 @@ export default function RootLayout({ children }) {
                 <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
                 <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@300;400;500;600&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet" />
             </head>
-            <body suppressHydrationWarning>{children}</body>
+            <body suppressHydrationWarning>
+                <NotificationProvider>
+                    {children}
+                </NotificationProvider>
+            </body>
         </html>
     )
 }

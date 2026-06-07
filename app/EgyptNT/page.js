@@ -29,6 +29,7 @@ import EgyptNTGKs from "./egypt_nt_db_gks";
 import EgyptNTManagers from "./egypt_nt_db_managers";
 import EgyptNTFilters from "./egypt_nt_db_filters";
 import EgyptNTSquad from "./egypt_nt_db_squad";
+import EgyptNTSquadEditor from "./egypt_nt_db_squad_editor";
 
 import EgyptNTMatchDetails from "./egypt_nt_db_match_details";
 import EgyptNTChampions from "./egypt_nt_db_champions";
@@ -195,6 +196,7 @@ export default function EgyptNTDatabase() {
         { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
         { id: 'matches', label: 'Matches', icon: Trophy },
         { id: 'squad', label: 'Squad List', icon: Users },
+        { id: 'add_squad', label: 'Add Squad', icon: Users },
         { id: 'champions', label: 'Champions', icon: Award },
         { id: 'seasons', label: 'Seasons', icon: Calendar },
         { id: 'years', label: 'Years', icon: Calendar },
@@ -346,6 +348,7 @@ export default function EgyptNTDatabase() {
                                 )
                             )}
                             {activeTab === 'squad' && <EgyptNTSquad squadData={squadData} />}
+                            {activeTab === 'add_squad' && <EgyptNTSquadEditor />}
                             {activeTab === 'seasons' && <EgyptNTSeasons matches={filteredMatches} />}
                             {activeTab === 'years' && <EgyptNTYears matches={filteredMatches} />}
                             {activeTab === 'players' && <EgyptNTPlayers playerDetails={playerDetails} lineupDetails={lineupDetails} filteredMatches={filteredMatches} gkDetails={gkDetails} howPenMissed={howPenMissed} />}

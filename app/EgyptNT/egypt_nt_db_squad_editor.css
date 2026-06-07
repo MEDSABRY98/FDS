@@ -1,0 +1,215 @@
+/* egypt_nt_db_squad_editor.css */
+.tab-content#tab-add-squad {
+    animation: fadeIn 0.4s ease-out;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(15px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+/* Table Container Wrapper */
+.squad-editor-container {
+    background: #fff;
+    border-radius: 16px;
+    padding: 24px;
+    box-shadow: 0 10px 40px rgba(0,0,0,0.06);
+    border: 1px solid rgba(0,0,0,0.04);
+    overflow-x: auto;
+    margin-top: 10px;
+}
+
+/* Modern Table styling */
+.squad-editor-table {
+    width: 100%;
+    border-collapse: separate;
+    border-spacing: 0;
+    min-width: 900px;
+}
+
+.squad-editor-table thead th {
+    background: #fdfdfd;
+    color: #444;
+    padding: 16px 20px;
+    font-size: 13px;
+    text-transform: uppercase;
+    letter-spacing: 1.5px;
+    font-weight: 700;
+    border-bottom: 2px solid #eaeaea;
+    position: relative;
+}
+
+.squad-editor-table thead th::after {
+    content: '';
+    position: absolute;
+    bottom: -2px;
+    left: 0;
+    height: 2px;
+    width: 0%;
+    background: #C8102E;
+    transition: width 0.3s ease;
+}
+.squad-editor-table thead th:hover::after {
+    width: 100%;
+}
+
+.squad-editor-table tbody tr {
+    transition: all 0.2s ease;
+    background: #fff;
+}
+
+.squad-editor-table tbody tr:hover {
+    background: #fafafa;
+    transform: scale(1.002);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.02);
+    z-index: 10;
+    position: relative;
+}
+
+.squad-editor-table tbody td {
+    padding: 14px 10px;
+    border-bottom: 1px solid #f2f2f2;
+}
+
+/* Inputs styling */
+.squad-editor-input {
+    width: 100%;
+    padding: 12px 16px;
+    border-radius: 10px;
+    border: 1px solid #e0e0e0;
+    font-size: 14px;
+    font-weight: 600;
+    color: #333;
+    background: #fdfdfd;
+    transition: all 0.25s cubic-bezier(0.2, 0.8, 0.2, 1);
+    box-sizing: border-box;
+    font-family: inherit;
+}
+
+.squad-editor-input::placeholder {
+    color: #bbb;
+    font-weight: 500;
+}
+
+.squad-editor-input:hover {
+    border-color: #C8102E;
+    background: #fff;
+}
+
+.squad-editor-input:focus {
+    outline: none;
+    border-color: #C8102E;
+    background: #fff;
+    box-shadow: 0 0 0 4px rgba(200, 16, 46, 0.1);
+    transform: translateY(-1px);
+}
+
+/* Action Buttons */
+.squad-editor-btn-add {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 60px;
+    height: 60px;
+    border-radius: 50%;
+    border: 2px dashed #d0d0d0;
+    background: transparent;
+    color: #666;
+    cursor: pointer;
+    transition: all 0.25s;
+}
+
+.squad-editor-btn-add:hover {
+    background: #f8f8f8;
+    border-color: #C8102E;
+    color: #C8102E;
+    transform: translateY(-2px);
+}
+
+.squad-editor-btn-save {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 60px;
+    height: 60px;
+    border-radius: 50%;
+    border: none;
+    background: #000;
+    color: #fff;
+    cursor: pointer;
+    transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    box-shadow: 0 8px 20px rgba(0,0,0,0.15);
+}
+
+.squad-editor-btn-save:hover:not(:disabled) {
+    background: #C8102E;
+    transform: translateY(-3px);
+    box-shadow: 0 12px 25px rgba(200, 16, 46, 0.35);
+}
+
+.squad-editor-btn-save:active:not(:disabled) {
+    transform: translateY(0);
+    box-shadow: 0 4px 10px rgba(200, 16, 46, 0.3);
+}
+
+.squad-editor-btn-save:disabled {
+    background: #888;
+    cursor: not-allowed;
+    box-shadow: none;
+    opacity: 0.7;
+    transform: none;
+}
+
+/* Remove button */
+.squad-editor-btn-remove {
+    background: #fff;
+    border: 1px solid #ffebeb;
+    color: #ff4d4d;
+    width: 38px;
+    height: 38px;
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.squad-editor-btn-remove:hover {
+    background: #C8102E;
+    color: #fff;
+    border-color: #C8102E;
+    transform: scale(1.1) rotate(5deg);
+    box-shadow: 0 4px 12px rgba(200, 16, 46, 0.2);
+}
+
+/* Alert Message */
+.squad-editor-alert {
+    margin-top: 25px;
+    padding: 16px 20px;
+    border-radius: 12px;
+    font-weight: 700;
+    text-align: center;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    animation: fadeIn 0.3s ease-out;
+    font-size: 15px;
+}
+
+.squad-editor-alert.success {
+    background: #eaffea;
+    color: #1f8a24;
+    border: 1px solid #b5f5b8;
+    box-shadow: 0 4px 15px rgba(31, 138, 36, 0.05);
+}
+
+.squad-editor-alert.error {
+    background: #fff0f2;
+    color: #C8102E;
+    border: 1px solid #ffd1d7;
+    box-shadow: 0 4px 15px rgba(200, 16, 46, 0.05);
+}
+
+.squad-dropdown-item:hover { background: rgba(201, 168, 76, 0.15) !important; color: #c9a84c !important; }
