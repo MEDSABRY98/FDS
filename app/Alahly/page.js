@@ -15,7 +15,8 @@ import {
     User, 
     GitCompare, 
     Tv, 
-    Award
+    Award,
+    History
 } from "lucide-react";
 import Link from "next/link";
 
@@ -36,6 +37,7 @@ import AlAhlyChampions from "./alahly_db_champions";
 import AlAhlyReferees from "./alahly_db_referees";
 import AlAhlyH2H from "./alahly_db_h2h";
 import AlAhlyMediaTracker from "./alahly_db_media_tracker";
+import AlAhlyOTD from "./alahly_db_otd";
 import Loading_db from "../lib/Loading_db";
 import SideBar_db from "../lib/SideBar_db";
 
@@ -190,6 +192,7 @@ export default function AlAhlyDatabase() {
     const tabs = [
         { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
         { id: 'matches', label: 'Matches', icon: Trophy },
+        { id: 'otd', label: 'OTD', icon: History },
         { id: 'editor', label: 'Editor', icon: FileText },
         { id: 'champions', label: 'Champions', icon: Award },
         { id: 'seasons', label: 'Seasons - Name', icon: Calendar },
@@ -276,6 +279,7 @@ export default function AlAhlyDatabase() {
                         {activeTab === 'media-tracker' && <AlAhlyMediaTracker matches={filteredMatches} mediaTrackerData={mediaTrackerData} onDataChange={fetchMatchData} />}
                         {activeTab === 'editor' && <AlAhlyEditor />}
                         {activeTab === 'champions' && <AlAhlyChampions matchesData={filteredMatches} />}
+                        {activeTab === 'otd' && <AlAhlyOTD matches={filteredMatches} />}
                     </>
                 )}
             </main>
