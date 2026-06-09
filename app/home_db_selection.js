@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
+import { Database, Shield, Target, Trophy, Swords, Flag } from "lucide-react";
 import "./home_db_selection.css";
 
 export default function HomeDbSelection() {
@@ -10,18 +11,18 @@ export default function HomeDbSelection() {
     // Tab content data
     const tabContents = {
         alahly: [
-            { href: "/AlahlydbManagement", label: "AL AHLY DB MANAGEMENT", initial: "DB" },
-            { href: "/Alahly", label: "AL AHLY SC", initial: "A" },
-            { href: "/AlahlyPKS", label: "AL AHLY PKs", initial: "PK" },
-            { href: "/AlahlyFinals", label: "AL AHLY FINALS", initial: "F" },
+            { href: "/AlahlydbManagement", label: "AL AHLY DB MANAGEMENT", icon: Database },
+            { href: "/Alahly", label: "AL AHLY SC", icon: Shield },
+            { href: "/AlahlyPKS", label: "AL AHLY PKs", icon: Target },
+            { href: "/AlahlyFinals", label: "AL AHLY FINALS", icon: Trophy },
         ],
         derby: [
-            { href: "/AhlyVZamalek", label: "CAIRO DERBY", initial: "D" }
+            { href: "/AhlyVZamalek", label: "CAIRO DERBY", icon: Swords }
         ],
         egypt_nt: [
-            { href: "/EgyptNTdbManagement", label: "EGYPT NT DB MANAGEMENT", initial: "DB" },
-            { href: "/EgyptNT", label: "EGYPT NT", initial: "EG" },
-            { href: "/EgyptNTPKS", label: "EGYPT NT PKs", initial: "PK" }
+            { href: "/EgyptNTdbManagement", label: "EGYPT NT DB MANAGEMENT", icon: Database },
+            { href: "/EgyptNT", label: "EGYPT NT", icon: Flag },
+            { href: "/EgyptNTPKS", label: "EGYPT NT PKs", icon: Target }
         ]
     };
 
@@ -55,14 +56,17 @@ export default function HomeDbSelection() {
             </div>
 
             <div className="section-cards">
-                {tabContents[activeTab].map((item, idx) => (
-                    <Link key={idx} href={item.href} className="section-card">
-                        <div className="card-icon-wrap">
-                            <span className="card-emoji" style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: "36px" }}>{item.initial}</span>
-                        </div>
-                        <div className="card-name">{item.label}</div>
-                    </Link>
-                ))}
+                {tabContents[activeTab].map((item, idx) => {
+                    const Icon = item.icon;
+                    return (
+                        <Link key={idx} href={item.href} className="section-card">
+                            <div className="card-icon-wrap" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--gold, #c9a84c)' }}>
+                                <Icon size={36} strokeWidth={1.5} />
+                            </div>
+                            <div className="card-name">{item.label}</div>
+                        </Link>
+                    );
+                })}
             </div>
         </div>
     );

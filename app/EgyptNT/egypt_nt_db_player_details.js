@@ -3,6 +3,7 @@
 import { useMemo, useState, useEffect } from "react";
 import "../Alahly/alahly_db_player_details.css"; // Reuse Al Ahly player details css styles
 import { EgyptNTService } from "./egypt_nt_db_service";
+import { EgyptNTExcelExport } from "./egypt_nt_export_excel";
 import NoData_db from "../lib/NoData_db";
 
 // Import clean, modular subcomponents
@@ -693,7 +694,7 @@ export default function EgyptNTPlayerDetails({ playerName, playerDetails, lineup
         }
 
         if (exportData.length > 0) {
-            EgyptNTService.exportToExcel(exportData, filename);
+            EgyptNTExcelExport.exportToExcel(exportData, filename);
         }
     };
 

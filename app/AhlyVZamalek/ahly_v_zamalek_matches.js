@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { AhlyVZamalekService } from "./ahly_v_zamalek_service";
+import { AhlyVZamalekExcelExport } from "./ahly_v_zamalek_export_excel";
 import "./ahly_v_zamalek_matches.css";
 import NoData_db from "../lib/NoData_db";
 import SearchBar_db from "../lib/SearchBar_db";
@@ -35,7 +36,7 @@ export default function AhlyVZamalekMatches({ derbyData, onSelectMatch }) {
                     "ZAMALEK": m.ZAMALEK || "الزمالك",
                     "RESULT": m["W-D-L"] === "W" ? "Ahly Win" : (m["W-D-L"] === "L" ? "Zamalek Win" : "Draw")
                 }));
-                AhlyVZamalekService.exportToExcel(exportData, "Ahly_vs_Zamalek_Matches");
+                AhlyVZamalekExcelExport.exportToExcel(exportData, "Ahly_vs_Zamalek_Matches");
             }
         };
 

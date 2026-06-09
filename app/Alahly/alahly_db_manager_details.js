@@ -11,6 +11,7 @@ import Manager_VsTeams_Module from "./alahly_db_manager_details_vs_teams";
 import Manager_Championships_Module from "./alahly_db_manager_details_championships";
 import Manager_PlayersUsed_Module from "./alahly_db_manager_details_players_used";
 import { AlAhlyService } from "./alahly_db_service";
+import { AlAhlyExcelExport } from "./alahly_export_excel";
 
 export default function Manager_Details_Hub({ managerName, managerStatus, masterMatches, onBack, playerDetails, lineupDetails }) {
     const [activeTab, setActiveTab] = useState('overview');
@@ -271,7 +272,7 @@ export default function Manager_Details_Hub({ managerName, managerStatus, master
                 });
                 break;
         }
-        if (exportData.length > 0) AlAhlyService.exportToExcel(exportData, filename);
+        if (exportData.length > 0) AlAhlyExcelExport.exportToExcel(exportData, filename);
     };
 
     return (

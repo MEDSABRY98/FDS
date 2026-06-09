@@ -1,4 +1,4 @@
-export default function AlAhlyPlayersStats({ paginatedRows, currentPage, pageSize, handleSort, renderSortIcon, setSelectedPlayer }) {
+export default function AlAhlyPlayersStats({ paginatedRows, currentPage, pageSize, handleSort, renderSortIcon, setSelectedPlayer, sortConfig }) {
     return (
         <table className="modern-player-table fade-in" style={{ tableLayout: 'fixed' }}>
             <colgroup>
@@ -14,13 +14,13 @@ export default function AlAhlyPlayersStats({ paginatedRows, currentPage, pageSiz
             <thead>
                 <tr>
                     <th>#</th>
-                    <th onClick={() => handleSort('name')} className="sortable">PLAYER NAME {renderSortIcon('name')}</th>
-                    <th onClick={() => handleSort('caps')} className="sortable">MATCHES {renderSortIcon('caps')}</th>
-                    <th onClick={() => handleSort('mins')} className="sortable">MINUTES {renderSortIcon('mins')}</th>
-                    <th onClick={() => handleSort('ga')} className="sortable">G + A {renderSortIcon('ga')}</th>
-                    <th onClick={() => handleSort('goals')} className="sortable">GOALS {renderSortIcon('goals')}</th>
-                    <th onClick={() => handleSort('assists')} className="sortable">ASSISTS {renderSortIcon('assists')}</th>
-                    <th onClick={() => handleSort('penalties')} className="sortable">PENALTIES {renderSortIcon('penalties')}</th>
+                    <th onClick={() => handleSort('name')} className="sortable" style={{ color: sortConfig?.key === 'name' ? 'var(--gold)' : '' }}>PLAYER NAME</th>
+                    <th onClick={() => handleSort('caps')} className="sortable" style={{ color: sortConfig?.key === 'caps' ? 'var(--gold)' : '' }}>MATCHES</th>
+                    <th onClick={() => handleSort('mins')} className="sortable" style={{ color: sortConfig?.key === 'mins' ? 'var(--gold)' : '' }}>MINUTES</th>
+                    <th onClick={() => handleSort('ga')} className="sortable" style={{ color: sortConfig?.key === 'ga' ? 'var(--gold)' : '' }}>G + A</th>
+                    <th onClick={() => handleSort('goals')} className="sortable" style={{ color: sortConfig?.key === 'goals' ? 'var(--gold)' : '' }}>GOALS</th>
+                    <th onClick={() => handleSort('assists')} className="sortable" style={{ color: sortConfig?.key === 'assists' ? 'var(--gold)' : '' }}>ASSISTS</th>
+                    <th onClick={() => handleSort('penalties')} className="sortable" style={{ color: sortConfig?.key === 'penalties' ? 'var(--gold)' : '' }}>PENALTIES</th>
                 </tr>
             </thead>
             <tbody>

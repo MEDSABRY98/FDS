@@ -15,6 +15,7 @@ import PlayerAssistImpactTable from "./ahly_v_zamalek_player_details_assist_impa
 import PlayerPresenceTable from "./ahly_v_zamalek_player_details_squad_influence";
 import PlayerTimingTable from "./ahly_v_zamalek_player_details_timing";
 import { AhlyVZamalekService } from "./ahly_v_zamalek_service";
+import { AhlyVZamalekExcelExport } from "./ahly_v_zamalek_export_excel";
 
 export default function AhlyVZamalekPlayerDetails({ playerName, playerDetails, lineupDetails, masterMatches, onBack }) {
     const [activeTab, setActiveTab] = useState('overview');
@@ -721,7 +722,7 @@ export default function AhlyVZamalekPlayerDetails({ playerName, playerDetails, l
         }
 
         if (exportData.length > 0) {
-            AhlyVZamalekService.exportToExcel(exportData, filename);
+            AhlyVZamalekExcelExport.exportToExcel(exportData, filename);
         }
     };
 

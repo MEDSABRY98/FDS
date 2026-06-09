@@ -1,4 +1,4 @@
-export default function AlAhlyPlayersGoalsTiming({ paginatedRows, currentPage, pageSize, handleSort, renderSortIcon, setSelectedPlayer }) {
+export default function AlAhlyPlayersGoalsTiming({ paginatedRows, currentPage, pageSize, handleSort, renderSortIcon, setSelectedPlayer, sortConfig }) {
     return (
         <table className="modern-player-table fade-in" style={{ tableLayout: 'fixed' }}>
             <colgroup>
@@ -17,14 +17,11 @@ export default function AlAhlyPlayersGoalsTiming({ paginatedRows, currentPage, p
             </colgroup>
             <thead>
                 <tr>
-                    <th rowSpan="2">#</th>
-                    <th className="name-th" rowSpan="2" onClick={() => handleSort('name')}>PLAYER NAME {renderSortIcon('name')}</th>
-                    <th rowSpan="2" style={{ background: '#27ae60', color: '#fff' }} onClick={() => handleSort('total')} className="sortable"> TOTAL {renderSortIcon('total')} </th>
-                    <th colSpan="9" style={{ background: '#000', color: 'var(--gold)' }}>GOALS TIMING DISTRIBUTION</th>
-                </tr>
-                <tr style={{ fontSize: '11px', background: '#f8f8f8' }}>
+                    <th>#</th>
+                    <th className="name-th" onClick={() => handleSort('name')} style={{ color: sortConfig?.key === 'name' ? 'var(--gold)' : '' }}>PLAYER NAME</th>
+                    <th style={{ background: '#27ae60', color: sortConfig?.key === 'total' ? 'var(--gold)' : '#fff' }} onClick={() => handleSort('total')} className="sortable"> TOTAL </th>
                     {["1-15", "16-30", "31-45", "45+", "46-60", "61-75", "76-90", "90+", "?"].map(min => (
-                        <th key={min} onClick={() => handleSort(min)} className="sortable">{min} {renderSortIcon(min)}</th>
+                        <th key={min} onClick={() => handleSort(min)} className="sortable" style={{ color: sortConfig?.key === min ? 'var(--gold)' : '' }}>{min}</th>
                     ))}
                 </tr>
             </thead>

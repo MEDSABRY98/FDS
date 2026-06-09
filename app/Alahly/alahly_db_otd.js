@@ -1,7 +1,8 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useMemo, useState, useEffect } from "react";
 import { Trophy, CheckCircle, MinusCircle, XCircle, Goal, ShieldAlert, Calendar } from "lucide-react";
+import { AlAhlyExcelExport } from "./alahly_export_excel";
 import "./alahly_db_otd.css";
 
 export default function AlAhlyOTD({ matches }) {
@@ -79,6 +80,23 @@ export default function AlAhlyOTD({ matches }) {
         return Array.from(map.values()).sort((a, b) => b.total - a.total || b.wins - a.wins);
     }, [otdMatches]);
 
+    useEffect(() => {
+        const handleGlobalExport = () => {
+            const exportData = otdMatches.map((m, i) => ({
+                "#": i + 1,
+                "DATE": m.DATE,
+                "SEASON": m["SEASON - NAME"],
+                "STADIUM": m.STAD || "-",
+                "OPPONENT": m["OPPONENT TEAM"],
+                "SCORE": `${m.GF} - ${m.GA}`,
+                "RESULT": m["W-D-L"]
+            }));
+            
+            AlAhlyExcelExport.exportToExcel(exportData, `AlAhly_OTD_${selectedDate}`);
+        };
+        window.addEventListener('alahly-export-excel', handleGlobalExport);
+        return () => window.removeEventListener('alahly-export-excel', handleGlobalExport);
+    }, [otdMatches, selectedDate]);
 
     return (
         <div className="tab-content" id="tab-otd">

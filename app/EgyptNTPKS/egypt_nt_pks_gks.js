@@ -2,6 +2,7 @@
 
 import { useMemo, useState, useEffect } from "react";
 import { EgyptNTPKSService } from "./egypt_nt_pks_service";
+import { EgyptNTPksExcelExport } from "./egypt_nt_pks_export_excel";
 import NoData_db from "../lib/NoData_db";
 import SearchBar_db from "../lib/SearchBar_db";
 import DropDownList_db from "../lib/DropDownList_db";
@@ -135,7 +136,7 @@ export default function EgyptNTPKSGKs({ pksData }) {
             "CONCEDED": g.conceded,
             "SAVE RATE": g.saveRate + "%",
         }));
-        EgyptNTPKSService.exportToExcel(exportData, "Egypt_NT_PKs_GK_Stats");
+        EgyptNTPksExcelExport.exportToExcel(exportData, "Egypt_NT_PKs_GK_Stats");
     };
 
     useEffect(() => {

@@ -17,6 +17,7 @@ import PlayerAssistImpactTable from "./alahly_db_player_details_assist_impact";
 import PlayerPresenceTable from "./alahly_db_player_details_squad_influence";
 import PlayerTimingTable from "./alahly_db_player_details_timing";
 import { AlAhlyService } from "./alahly_db_service";
+import { AlAhlyExcelExport } from "./alahly_export_excel";
 
 export default function PlayerDetails({ playerName, playerData, playerDetails, lineupDetails, masterMatches, gkDetails, howPenMissed, onBack }) {
     const [activeTab, setActiveTab] = useState('overview'); // 'overview' | 'dashboard' | 'matches'
@@ -610,7 +611,7 @@ export default function PlayerDetails({ playerName, playerData, playerDetails, l
         };
         window.addEventListener('alahly-export-excel', handleGlobalExport);
         return () => window.removeEventListener('alahly-export-excel', handleGlobalExport);
-    }, [stats, activeTab]);
+    }, [stats, activeTab, playerName]);
 
     const handleExport = async () => {
         let exportData = [];
@@ -752,7 +753,7 @@ export default function PlayerDetails({ playerName, playerData, playerDetails, l
         }
 
         if (exportData.length > 0) {
-            AlAhlyService.exportToExcel(exportData, filename);
+            AlAhlyExcelExport.exportToExcel(exportData, filename);
         }
     };
 

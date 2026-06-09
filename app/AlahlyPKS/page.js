@@ -1,16 +1,16 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { 
-    Download, 
-    SlidersHorizontal, 
-    LayoutDashboard, 
-    Trophy, 
-    FileText, 
-    Users, 
-    Shield, 
-    User, 
-    GitCompare 
+import {
+    Download,
+    SlidersHorizontal,
+    LayoutDashboard,
+    Trophy,
+    FileText,
+    Users,
+    Shield,
+    User,
+    GitCompare
 } from "lucide-react";
 import { AlAhlyService } from "../Alahly/alahly_db_service";
 import AlAhlyPKsMatches from "./alahly_pks_matches";
@@ -127,11 +127,6 @@ export default function AlAhlyPKsDatabase() {
         }
     };
 
-    if (loading) {
-        return <Loading_db subtitle="PKs DATABASE" message="RETRIEVING PENALTIES" />;
-    }
-
-
     return (
         <SideBar_db
             brandTitle="AL AHLY"
@@ -174,7 +169,11 @@ export default function AlAhlyPKsDatabase() {
             ]}
         >
             <main className="alahly-content-viewport" style={{ padding: '0', maxWidth: (activeTab === 'alahly_pks_h2h' || activeTab === 'alahly_pks_champions' || activeTab === 'alahly_pks_managers' || activeTab === 'alahly_pks_editor') ? '100%' : '1200px', margin: '0 auto', width: '100%' }}>
-                {renderAppContent()}
+                {loading ? (
+                    <Loading_db subtitle="PKs DATABASE" message="SYNCING DATA" inline={true} />
+                ) : (
+                    renderAppContent()
+                )}
             </main>
 
             <AlAhlyPKsFilter

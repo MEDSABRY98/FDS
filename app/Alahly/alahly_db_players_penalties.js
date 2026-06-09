@@ -1,4 +1,4 @@
-export default function AlAhlyPlayersPenalties({ paginatedRows, currentPage, pageSize, handleSort, renderSortIcon, setSelectedPlayer }) {
+export default function AlAhlyPlayersPenalties({ paginatedRows, currentPage, pageSize, handleSort, renderSortIcon, setSelectedPlayer, sortConfig }) {
     return (
         <table className="modern-player-table fade-in" style={{ tableLayout: 'fixed' }}>
             <colgroup>
@@ -15,14 +15,14 @@ export default function AlAhlyPlayersPenalties({ paginatedRows, currentPage, pag
             <thead>
                 <tr>
                     <th>#</th>
-                    <th onClick={() => handleSort('name')} className="sortable">PLAYER NAME {renderSortIcon('name')}</th>
-                    <th onClick={() => handleSort('total')} className="sortable">TOTAL SHOT {renderSortIcon('total')}</th>
-                    <th onClick={() => handleSort('goal')} className="sortable">SCORE {renderSortIcon('goal')}</th>
-                    <th onClick={() => handleSort('miss')} className="sortable">MISS {renderSortIcon('miss')}</th>
-                    <th onClick={() => handleSort('wonGoal')} className="sortable">WON (G) {renderSortIcon('wonGoal')}</th>
-                    <th onClick={() => handleSort('wonMiss')} className="sortable">WON (M) {renderSortIcon('wonMiss')}</th>
-                    <th onClick={() => handleSort('makeGoal')} className="sortable">MAKE (G) {renderSortIcon('makeGoal')}</th>
-                    <th onClick={() => handleSort('makeMiss')} className="sortable">MAKE (M) {renderSortIcon('makeMiss')}</th>
+                    <th onClick={() => handleSort('name')} className="sortable" style={{ color: sortConfig?.key === 'name' ? 'var(--gold)' : '' }}>PLAYER NAME</th>
+                    <th onClick={() => handleSort('total')} className="sortable" style={{ color: sortConfig?.key === 'total' ? 'var(--gold)' : '' }}>TOTAL SHOT</th>
+                    <th onClick={() => handleSort('goal')} className="sortable" style={{ color: sortConfig?.key === 'goal' ? 'var(--gold)' : '' }}>SCORE</th>
+                    <th onClick={() => handleSort('miss')} className="sortable" style={{ color: sortConfig?.key === 'miss' ? 'var(--gold)' : '' }}>MISS</th>
+                    <th onClick={() => handleSort('wonGoal')} className="sortable" style={{ color: sortConfig?.key === 'wonGoal' ? 'var(--gold)' : '' }}>WON (G)</th>
+                    <th onClick={() => handleSort('wonMiss')} className="sortable" style={{ color: sortConfig?.key === 'wonMiss' ? 'var(--gold)' : '' }}>WON (M)</th>
+                    <th onClick={() => handleSort('makeGoal')} className="sortable" style={{ color: sortConfig?.key === 'makeGoal' ? 'var(--gold)' : '' }}>MAKE (G)</th>
+                    <th onClick={() => handleSort('makeMiss')} className="sortable" style={{ color: sortConfig?.key === 'makeMiss' ? 'var(--gold)' : '' }}>MAKE (M)</th>
                 </tr>
             </thead>
             <tbody>

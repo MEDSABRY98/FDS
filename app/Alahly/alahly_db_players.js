@@ -7,6 +7,7 @@ import DropDownList_db from "../lib/DropDownList_db";
 import "./alahly_db_players.css";
 import PlayerDetails from "./alahly_db_player_details";
 import { AlAhlyService } from "./alahly_db_service";
+import { AlAhlyExcelExport } from "./alahly_export_excel";
 
 import AlAhlyPlayersStats from "./alahly_db_players_stats";
 import AlAhlyPlayersPenalties from "./alahly_db_players_penalties";
@@ -276,8 +277,16 @@ export default function AlAhlyPlayers({ playerDetails, lineupDetails, filteredMa
             return r;
         });
         const tabNames = ["Stats", "Penalties", "Multiples", "Impact", "Goals_Timing", "Assists_Timing"];
-        AlAhlyService.exportToExcel(exportData, `AlAhly_Players_${tabNames[activeSubTab - 1]}`);
+        AlAhlyExcelExport.exportToExcel(exportData, `AlAhly_Players_${tabNames[activeSubTab - 1]}`);
     };
+
+    useEffect(() => {
+        const handleGlobalExport = () => {
+            handleExport();
+        };
+        window.addEventListener('alahly-export-excel', handleGlobalExport);
+        return () => window.removeEventListener('alahly-export-excel', handleGlobalExport);
+    }, [filteredRows, activeSubTab]);
 
     return (
         <div className="tab-content" id="tab-players">
@@ -313,6 +322,7 @@ export default function AlAhlyPlayers({ playerDetails, lineupDetails, filteredMa
                                 handleSort={handleSort} 
                                 renderSortIcon={renderSortIcon} 
                                 setSelectedPlayer={setSelectedPlayer} 
+                                sortConfig={sortConfig}
                             />
                         )}
                         {activeSubTab === 2 && (
@@ -323,6 +333,7 @@ export default function AlAhlyPlayers({ playerDetails, lineupDetails, filteredMa
                                 handleSort={handleSort} 
                                 renderSortIcon={renderSortIcon} 
                                 setSelectedPlayer={setSelectedPlayer} 
+                                sortConfig={sortConfig}
                             />
                         )}
                         {activeSubTab === 3 && (
@@ -333,6 +344,7 @@ export default function AlAhlyPlayers({ playerDetails, lineupDetails, filteredMa
                                 handleSort={handleSort} 
                                 renderSortIcon={renderSortIcon} 
                                 setSelectedPlayer={setSelectedPlayer} 
+                                sortConfig={sortConfig}
                             />
                         )}
                         {activeSubTab === 4 && (
@@ -343,6 +355,7 @@ export default function AlAhlyPlayers({ playerDetails, lineupDetails, filteredMa
                                 handleSort={handleSort} 
                                 renderSortIcon={renderSortIcon} 
                                 setSelectedPlayer={setSelectedPlayer} 
+                                sortConfig={sortConfig}
                             />
                         )}
                         {activeSubTab === 5 && (
@@ -353,6 +366,7 @@ export default function AlAhlyPlayers({ playerDetails, lineupDetails, filteredMa
                                 handleSort={handleSort} 
                                 renderSortIcon={renderSortIcon} 
                                 setSelectedPlayer={setSelectedPlayer} 
+                                sortConfig={sortConfig}
                             />
                         )}
                         {activeSubTab === 6 && (
@@ -363,6 +377,7 @@ export default function AlAhlyPlayers({ playerDetails, lineupDetails, filteredMa
                                 handleSort={handleSort} 
                                 renderSortIcon={renderSortIcon} 
                                 setSelectedPlayer={setSelectedPlayer} 
+                                sortConfig={sortConfig}
                             />
                         )}
                     </div>

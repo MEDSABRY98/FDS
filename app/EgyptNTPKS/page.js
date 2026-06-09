@@ -89,11 +89,6 @@ export default function EgyptNTPKSDatabase() {
         }
     };
 
-    if (loading) {
-        return <Loading_db title="EGYPT NT" subtitle="PKs DATABASE" message="RETRIEVING PENALTIES" />;
-    }
-
-
     return (
         <SideBar_db
             brandTitle="EGYPT NT"
@@ -136,7 +131,11 @@ export default function EgyptNTPKSDatabase() {
             ]}
         >
             <main className="egy-pks-content-viewport" style={{ padding: '0', maxWidth: (activeTab === 'egy_pks_h2h' || activeTab === 'egy_pks_champions' || activeTab === 'egy_pks_managers') ? '100%' : '1380px', margin: '0 auto', width: '100%' }}>
-                {renderAppContent()}
+                {loading ? (
+                    <Loading_db title="EGYPT NT" subtitle="PKs DATABASE" message="SYNCING DATA" inline={true} />
+                ) : (
+                    renderAppContent()
+                )}
             </main>
 
             <EgyptNTPKSFilters

@@ -2,6 +2,7 @@
 
 import { useMemo, useEffect } from "react";
 import { AhlyVZamalekService } from "./ahly_v_zamalek_service";
+import { AhlyVZamalekExcelExport } from "./ahly_v_zamalek_export_excel";
 import "./ahly_v_zamalek_dashboard.css";
 
 export default function AhlyVZamalekDashboard({ derbyData }) {
@@ -131,7 +132,7 @@ export default function AhlyVZamalekDashboard({ derbyData }) {
                     { "METRIC": "ZAMALEK MAX WIN STREAK", "VALUE": stats.maxZamalekWinStreak },
                     { "METRIC": "MAX DRAW STREAK", "VALUE": stats.maxDrawStreak }
                 ];
-                AhlyVZamalekService.exportToExcel(summaryData, "Ahly_vs_Zamalek_Dashboard_Summary");
+                AhlyVZamalekExcelExport.exportToExcel(summaryData, "Ahly_vs_Zamalek_Dashboard_Summary");
             }
         };
 

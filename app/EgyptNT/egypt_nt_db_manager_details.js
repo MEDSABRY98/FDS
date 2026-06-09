@@ -3,6 +3,7 @@
 import { useMemo, useState, useEffect } from "react";
 import NoData_db from "../lib/NoData_db";
 import { EgyptNTService } from "./egypt_nt_db_service";
+import { EgyptNTExcelExport } from "./egypt_nt_export_excel";
 
 function Manager_Overview_Module({ stats }) {
     return (
@@ -444,7 +445,7 @@ export default function EgyptNTManagerDetails({ managerName, managerStatus, mast
                 });
                 break;
         }
-        if (exportData.length > 0) EgyptNTService.exportToExcel(exportData, filename);
+        if (exportData.length > 0) EgyptNTExcelExport.exportToExcel(exportData, filename);
     };
 
     return (

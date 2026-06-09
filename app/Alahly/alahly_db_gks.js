@@ -4,6 +4,7 @@ import { useMemo, useState, useEffect, useRef } from "react";
 import "./alahly_db_gks.css";
 import GK_Details_Hub from "./alahly_db_gk_details";
 import { AlAhlyService } from "./alahly_db_service";
+import { AlAhlyExcelExport } from "./alahly_export_excel";
 import NoData_db from "../lib/NoData_db";
 import SearchBar_db from "../lib/SearchBar_db";
 import DropDownList_db from "../lib/DropDownList_db";
@@ -167,7 +168,7 @@ export default function AlAhlyGKs({ gkDetails, howPenMissed, filteredMatches, pl
             "PENALTIES RECEIVED": g.penaltiesReceived,
             "PENALTIES SAVED": g.penaltiesSaved
         }));
-        AlAhlyService.exportToExcel(exportData, "AlAhly_Goalkeepers_Main");
+        AlAhlyExcelExport.exportToExcel(exportData, "AlAhly_Goalkeepers_Main");
     };
 
     return (

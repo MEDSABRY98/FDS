@@ -5,7 +5,7 @@
     --sidebar-gold-dim: var(--gold-dim, rgba(201, 168, 76, 0.1));
     --sidebar-bg: var(--bg, #ffffff);
     --sidebar-black: var(--black, #0a0a0a);
-    
+
     display: flex;
     min-height: 100vh;
     background: var(--sidebar-bg);
@@ -49,8 +49,7 @@
 .db-sidebar-logo-hex {
     width: 32px;
     height: 32px;
-    background: var(--sidebar-gold);
-    clip-path: polygon(50% 0%, 100% 25%, 100% 75%, 50% 100%, 0% 75%, 0% 25%);
+    background: transparent;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -59,9 +58,13 @@
 
 .db-sidebar-logo-text {
     font-family: 'Bebas Neue', sans-serif;
-    font-size: 14px;
-    color: #0d0d0d;
-    font-weight: bold;
+    font-size: 38px;
+    color: rgba(255, 255, 255, 0.25);
+    font-weight: 900;
+    line-height: 1;
+    text-transform: uppercase;
+    text-shadow: 2px 2px 8px rgba(0,0,0,0.5);
+    letter-spacing: -1px;
 }
 
 .db-sidebar-brand-name {
@@ -321,20 +324,20 @@
     .db-sidebar-container.sidebar-collapsed .db-sidebar {
         width: 72px;
     }
-    
+
     .db-sidebar-container.sidebar-collapsed .db-main-content {
         margin-left: 72px;
     }
-    
+
     .db-sidebar-container.sidebar-collapsed .db-sidebar-brand-name {
         display: none;
     }
-    
+
     .db-sidebar-container.sidebar-collapsed .db-sidebar-header {
         justify-content: center;
         padding: 0;
     }
-    
+
     .db-sidebar-container.sidebar-collapsed .db-sidebar-brand {
         gap: 0;
     }
@@ -343,23 +346,23 @@
         padding: 20px 8px;
         overflow: visible;
     }
-    
+
     .db-sidebar-container.sidebar-collapsed .db-sidebar-item {
         justify-content: center;
         padding: 10px 0;
         border-left: 3px solid transparent;
         position: relative;
     }
-    
+
     .db-sidebar-container.sidebar-collapsed .db-sidebar-item:hover,
     .db-sidebar-container.sidebar-collapsed .db-sidebar-item.active {
         padding-left: 0;
     }
-    
+
     .db-sidebar-container.sidebar-collapsed .db-sidebar-item.active {
         border-left: 3px solid var(--sidebar-gold);
     }
-    
+
     .db-sidebar-container.sidebar-collapsed .db-sidebar-item span {
         display: block;
         position: absolute;
@@ -382,7 +385,7 @@
         box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
         z-index: 999999;
     }
-    
+
     .db-sidebar-container.sidebar-collapsed .db-sidebar-item span::before {
         content: '';
         position: absolute;
@@ -393,21 +396,21 @@
         border-style: solid;
         border-color: transparent #111111 transparent transparent;
     }
-    
+
     .db-sidebar-container.sidebar-collapsed .db-sidebar-item:hover span {
         opacity: 1;
         transform: translateY(-50%) translateX(0);
     }
-    
+
     .db-sidebar-container.sidebar-collapsed .db-sidebar-item.active span {
         border-color: var(--sidebar-gold);
     }
-    
+
     .db-sidebar-container.sidebar-collapsed .db-sidebar-actions {
         padding: 16px 8px;
         align-items: center;
     }
-    
+
     .db-sidebar-container.sidebar-collapsed .db-sidebar-action-btn,
     .db-sidebar-container.sidebar-collapsed .db-sidebar-collapse-toggle-btn {
         width: 40px;
@@ -416,7 +419,7 @@
         border-radius: 50%;
         position: relative;
     }
-    
+
     .db-sidebar-container.sidebar-collapsed .db-sidebar-action-btn span,
     .db-sidebar-container.sidebar-collapsed .db-sidebar-collapse-toggle-btn span {
         display: block;
@@ -440,7 +443,7 @@
         box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
         z-index: 999999;
     }
-    
+
     .db-sidebar-container.sidebar-collapsed .db-sidebar-action-btn span::before,
     .db-sidebar-container.sidebar-collapsed .db-sidebar-collapse-toggle-btn span::before {
         content: '';
@@ -452,7 +455,7 @@
         border-style: solid;
         border-color: transparent #111111 transparent transparent;
     }
-    
+
     .db-sidebar-container.sidebar-collapsed .db-sidebar-action-btn:hover span,
     .db-sidebar-container.sidebar-collapsed .db-sidebar-collapse-toggle-btn:hover span {
         opacity: 1;
@@ -466,15 +469,15 @@
         transform: translateX(-100%);
         box-shadow: 0 0 30px rgba(0, 0, 0, 0.6);
     }
-    
+
     .db-sidebar.mobile-open {
         transform: translateX(0);
     }
-    
+
     .db-sidebar-close-btn {
         display: flex;
     }
-    
+
     .db-sidebar-collapse-toggle-btn {
         display: none;
     }
@@ -486,7 +489,7 @@
     .db-mobile-top-bar {
         display: flex;
     }
-    
+
     .db-content-viewport {
         padding: 16px;
     }

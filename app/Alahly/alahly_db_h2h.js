@@ -3,6 +3,7 @@
 import { useMemo, useState, useEffect } from "react";
 import "./alahly_db_h2h.css";
 import { AlAhlyService } from "./alahly_db_service";
+import { AlAhlyExcelExport } from "./alahly_export_excel";
 import NoData_db from "../lib/NoData_db";
 import SearchBar_db from "../lib/SearchBar_db";
 
@@ -158,7 +159,7 @@ export default function AlAhlyH2H({ matches }) {
             "CS AGAINST": s.csAgainst,
             "PPG": s.ppg.toFixed(2)
         }));
-        AlAhlyService.exportToExcel(exportData, "AlAhly_H2H_Summary");
+        AlAhlyExcelExport.exportToExcel(exportData, "AlAhly_H2H_Summary");
     };
 
     return (

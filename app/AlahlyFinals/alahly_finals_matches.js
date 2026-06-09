@@ -2,6 +2,7 @@
 
 import { useMemo, useState, useEffect } from "react";
 import { AlAhlyFinalsService } from "./alahly_finals_service";
+import { AlAhlyFinalsExcelExport } from "./alahly_finals_export_excel";
 import NoData_db from "../lib/NoData_db";
 import SearchBar_db from "../lib/SearchBar_db";
 import "./alahly_finals_matches.css";
@@ -62,7 +63,7 @@ export default function AlAhlyFinalsMatches({ finalsData, onSelectMatch }) {
             "OUTCOME": f["W-D-L FINAL"],
             "MANAGER": f["AHLY MANAGER"]
         }));
-        AlAhlyFinalsService.exportToExcel(exportData, "AlAhly_Finals_Record");
+        AlAhlyFinalsExcelExport.exportToExcel(exportData, "AlAhly_Finals_Record");
     };
 
     useEffect(() => {

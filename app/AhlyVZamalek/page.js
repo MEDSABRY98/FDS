@@ -152,10 +152,6 @@ export default function AhlyVZamalekDatabase() {
         }
     };
 
-    if (loading) {
-        return <Loading_db title="AHLY VS ZAMALEK" subtitle="DERBY DATABASE" />;
-    }
-
     const handleTabChange = (tabId) => {
         setActiveTab(tabId);
         setSelectedMatchId(null);
@@ -202,7 +198,11 @@ export default function AhlyVZamalekDatabase() {
             ]}
         >
             <main className="alahly-content-viewport" style={{ padding: '40px 24px 24px 24px', maxWidth: '1400px', margin: '0 auto', width: '100%' }}>
-                {renderAppContent()}
+                {loading ? (
+                    <Loading_db title="AHLY VS ZAMALEK" subtitle="DERBY DATABASE" message="SYNCING DATA" inline={true} />
+                ) : (
+                    renderAppContent()
+                )}
             </main>
 
             <AhlyVZamalekFilters

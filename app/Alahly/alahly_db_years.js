@@ -3,6 +3,7 @@
 import { useMemo, useEffect } from "react";
 import "./alahly_db_years.css";
 import { AlAhlyService } from "./alahly_db_service";
+import { AlAhlyExcelExport } from "./alahly_export_excel";
 import NoData_db from "../lib/NoData_db";
 
 export default function AlAhlyYears({ matches }) {
@@ -112,7 +113,7 @@ export default function AlAhlyYears({ matches }) {
                 "CS(A)": s.CSA
             };
         });
-        AlAhlyService.exportToExcel(exportData, "AlAhly_Stats_By_Year");
+        AlAhlyExcelExport.exportToExcel(exportData, "AlAhly_Stats_By_Year");
     };
 
     return (

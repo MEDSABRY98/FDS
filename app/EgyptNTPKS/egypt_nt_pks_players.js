@@ -2,6 +2,7 @@
 
 import { useMemo, useState, useEffect } from "react";
 import { EgyptNTPKSService } from "./egypt_nt_pks_service";
+import { EgyptNTPksExcelExport } from "./egypt_nt_pks_export_excel";
 import EgyptNTPKSPlayerDetails from "./egypt_nt_pks_player_details";
 import NoData_db from "../lib/NoData_db";
 import SearchBar_db from "../lib/SearchBar_db";
@@ -105,7 +106,7 @@ export default function EgyptNTPKSPlayers({ pksData }) {
             "MISSES": p.misses,
             "SUCCESS RATE": p.total > 0 ? ((p.goals / p.total) * 100).toFixed(1) + "%" : "0%"
         }));
-        EgyptNTPKSService.exportToExcel(exportData, "Egypt_NT_PKs_Player_Stats");
+        EgyptNTPksExcelExport.exportToExcel(exportData, "Egypt_NT_PKs_Player_Stats");
     };
 
     useEffect(() => {

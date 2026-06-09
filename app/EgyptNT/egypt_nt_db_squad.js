@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useMemo } from "react";
 import { EgyptNTService } from "./egypt_nt_db_service";
+import { EgyptNTExcelExport } from "./egypt_nt_export_excel";
 import EgyptNTSquadPlayers from "./egypt_nt_db_squad_players";
 import EgyptNTSquadClubs from "./egypt_nt_db_squad_clubs";
 import { Filter, X } from "lucide-react";
@@ -111,7 +112,7 @@ export default function EgyptNTSquad({ squadData }) {
                     "Clubs Summary": Object.entries(p.clubs).map(([c, count]) => `${c} (${count} times)`).join(", "),
                     "Tournaments Summary": Object.entries(p.champions).map(([c, count]) => `${c} (${count} times)`).join(", ")
                 }));
-                EgyptNTService.exportToExcel(exportData, "EgyptNT_Squad_Players_List");
+                EgyptNTExcelExport.exportToExcel(exportData, "EgyptNT_Squad_Players_List");
             } else {
                 const stats = {};
                 (filteredSquadData || []).forEach(item => {
@@ -149,7 +150,7 @@ export default function EgyptNTSquad({ squadData }) {
                     "Number of Players": c.playerCount,
                     "Number of Tournaments": c.championCount
                 }));
-                EgyptNTService.exportToExcel(exportData, "EgyptNT_Squad_Clubs_List");
+                EgyptNTExcelExport.exportToExcel(exportData, "EgyptNT_Squad_Clubs_List");
             }
         };
 

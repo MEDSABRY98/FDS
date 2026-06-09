@@ -2,6 +2,7 @@
 
 import { useMemo, useState, useEffect } from "react";
 import { AlAhlyService } from "./alahly_db_service";
+import { AlAhlyExcelExport } from "./alahly_export_excel";
 import "./alahly_db_matches.css";
 import NoData_db from "../lib/NoData_db";
 import SearchBar_db from "../lib/SearchBar_db";
@@ -71,7 +72,7 @@ export default function AlAhlyMatches({ matches, onMatchClick }) {
             "GA": m.GA,
             "TEAM B": m["OPPONENT TEAM"]
         }));
-        AlAhlyService.exportToExcel(exportData, "AlAhly_Matches_History");
+        AlAhlyExcelExport.exportToExcel(exportData, "AlAhly_Matches_History");
     };
 
     useEffect(() => {

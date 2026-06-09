@@ -382,18 +382,4 @@ export const AhlyVZamalekService = {
         }
     },
 
-    /**
-     * Export data to Excel file using XLSX library.
-     */
-    async exportToExcel(data, fileName = "Ahly_vs_Zamalek_Data") {
-        try {
-            const XLSX = await import("xlsx");
-            const worksheet = XLSX.utils.json_to_sheet(data);
-            const workbook = XLSX.utils.book_new();
-            XLSX.utils.book_append_sheet(workbook, worksheet, "Data");
-            XLSX.writeFile(workbook, `${fileName}.xlsx`);
-        } catch (error) {
-            console.error("Export Error:", error.message);
-        }
-    }
 };

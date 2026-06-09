@@ -136,20 +136,7 @@ export const AlAhlyFinalsService = {
         };
     },
 
-    /**
-     * Export finals data to Excel.
-     */
-    async exportToExcel(data, fileName = "AlAhly_Finals_Data") {
-        try {
-            const XLSX = await import("xlsx");
-            const worksheet = XLSX.utils.json_to_sheet(data);
-            const workbook = XLSX.utils.book_new();
-            XLSX.utils.book_append_sheet(workbook, worksheet, "Finals Data");
-            XLSX.writeFile(workbook, `${fileName}.xlsx`);
-        } catch (error) {
-            console.error("Export Error:", error.message);
-        }
-    },
+
 
     /**
      * CRUD: Upsert Match Details record

@@ -2,6 +2,7 @@
 
 import { useMemo, useState, useEffect } from "react";
 import { EgyptNTService } from "./egypt_nt_db_service";
+import { EgyptNTExcelExport } from "./egypt_nt_export_excel";
 import NoData_db from "../lib/NoData_db";
 import SearchBar_db from "../lib/SearchBar_db";
 
@@ -72,7 +73,7 @@ export default function EgyptNTMatches({ matches, onMatchClick }) {
             "GA": m.GA,
             "TEAM B": m["OPPONENT TEAM"]
         }));
-        EgyptNTService.exportToExcel(exportData, "Egypt_NT_Matches_History");
+        EgyptNTExcelExport.exportToExcel(exportData, "Egypt_NT_Matches_History");
     };
 
     useEffect(() => {

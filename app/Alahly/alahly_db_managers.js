@@ -2,6 +2,7 @@
 
 import { useState, useMemo, useEffect, useRef } from "react";
 import { AlAhlyService } from "./alahly_db_service";
+import { AlAhlyExcelExport } from "./alahly_export_excel";
 import "./alahly_db_managers.css";
 import Manager_Details_Hub from "./alahly_db_manager_details.js";
 import NoData_db from "../lib/NoData_db";
@@ -93,7 +94,7 @@ export default function AlAhlyManagers({ matches, playerDetails, lineupDetails }
             "CS(+)": s.csFor,
             "CS(-)": s.csAgainst
         }));
-        AlAhlyService.exportToExcel(exportData, `AlAhly_Managers_${managerStatus}`);
+        AlAhlyExcelExport.exportToExcel(exportData, `AlAhly_Managers_${managerStatus}`);
     };
 
     const grandTotals = useMemo(() => {

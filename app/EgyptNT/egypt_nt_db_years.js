@@ -2,6 +2,7 @@
 
 import { useMemo, useEffect } from "react";
 import { EgyptNTService } from "./egypt_nt_db_service";
+import { EgyptNTExcelExport } from "./egypt_nt_export_excel";
 import NoData_db from "../lib/NoData_db";
 import "./egypt_nt_db_years.css";
 
@@ -93,7 +94,7 @@ export default function EgyptNTYears({ matches }) {
                 "CS(A)": s.CSA
             };
         });
-        EgyptNTService.exportToExcel(exportData, "EgyptNT_Stats_By_Year");
+        EgyptNTExcelExport.exportToExcel(exportData, "EgyptNT_Stats_By_Year");
     };
 
     return (

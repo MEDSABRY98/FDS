@@ -23,8 +23,8 @@ export default function SideBar_db({
     return (
         <div className={`db-sidebar-container ${isSidebarCollapsed ? 'sidebar-collapsed' : ''}`}>
             {/* Backdrop for mobile drawer */}
-            <div 
-                className={`db-sidebar-backdrop ${isSidebarMobileOpen ? 'active' : ''}`} 
+            <div
+                className={`db-sidebar-backdrop ${isSidebarMobileOpen ? 'active' : ''}`}
                 onClick={() => setIsSidebarMobileOpen(false)}
             />
 
@@ -39,8 +39,8 @@ export default function SideBar_db({
                             {brandTitle} <span>{brandSubtitle}</span>
                         </div>
                     </Link>
-                    <button 
-                        className="db-sidebar-close-btn" 
+                    <button
+                        className="db-sidebar-close-btn"
                         onClick={() => setIsSidebarMobileOpen(false)}
                         title="CLOSE MENU"
                     >
@@ -79,9 +79,9 @@ export default function SideBar_db({
                     {actions.map((act, idx) => {
                         const Icon = act.icon;
                         return (
-                            <button 
+                            <button
                                 key={idx}
-                                className={`db-sidebar-action-btn ${act.className || ''}`} 
+                                className={`db-sidebar-action-btn ${act.className || ''}`}
                                 onClick={act.onClick}
                                 title={act.title}
                             >
@@ -97,8 +97,8 @@ export default function SideBar_db({
                 {/* Mobile Top Bar */}
                 <header className="db-mobile-top-bar">
                     <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                        <button 
-                            className="db-menu-toggle-btn" 
+                        <button
+                            className="db-menu-toggle-btn"
                             onClick={() => setIsSidebarMobileOpen(true)}
                             title="OPEN MENU"
                         >
@@ -114,9 +114,9 @@ export default function SideBar_db({
                         {mobileActions.map((act, idx) => {
                             const Icon = act.icon;
                             return (
-                                <button 
+                                <button
                                     key={idx}
-                                    onClick={act.onClick} 
+                                    onClick={act.onClick}
                                     className="db-mobile-action-icon"
                                     title={act.title}
                                     style={idx < mobileActions.length - 1 ? { marginRight: '8px' } : undefined}

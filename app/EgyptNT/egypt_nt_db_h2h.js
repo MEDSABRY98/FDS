@@ -3,6 +3,7 @@
 import { useMemo, useState, useEffect } from "react";
 import "./egypt_nt_db_h2h.css";
 import { EgyptNTService } from "./egypt_nt_db_service";
+import { EgyptNTExcelExport } from "./egypt_nt_export_excel";
 import NoData_db from "../lib/NoData_db";
 import SearchBar_db from "../lib/SearchBar_db";
 
@@ -154,7 +155,7 @@ export default function EgyptNTH2H({ matches }) {
             "CS AGAINST": s.csAgainst,
             "PPG": s.ppg.toFixed(2)
         }));
-        EgyptNTService.exportToExcel(exportData, "EgyptNT_H2H_Summary");
+        EgyptNTExcelExport.exportToExcel(exportData, "EgyptNT_H2H_Summary");
     };
 
     return (

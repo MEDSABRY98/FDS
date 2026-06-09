@@ -2,6 +2,7 @@
 
 import { useMemo, useState, useEffect } from "react";
 import { AlAhlyService } from "../Alahly/alahly_db_service";
+import { AlAhlyPksExcelExport } from "./alahly_pks_export_excel";
 import NoData_db from "../lib/NoData_db";
 import SearchBar_db from "../lib/SearchBar_db";
 import DropDownList_db from "../lib/DropDownList_db";
@@ -138,7 +139,7 @@ export default function AlAhlyPKsGKs({ pksData }) {
             "CONCEDED": g.conceded,
             "SAVE RATE": g.saveRate + "%",
         }));
-        AlAhlyService.exportToExcel(exportData, "AlAhly_PKs_GK_Stats");
+        AlAhlyPksExcelExport.exportToExcel(exportData, "AlAhly_PKs_GK_Stats");
     };
 
     useEffect(() => {

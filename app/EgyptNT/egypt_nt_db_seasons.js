@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo } from "react";
 import { EgyptNTService } from "./egypt_nt_db_service";
+import { EgyptNTExcelExport } from "./egypt_nt_export_excel";
 import NoData_db from "../lib/NoData_db";
 import "./egypt_nt_db_seasons.css";
 
@@ -82,7 +83,7 @@ export default function EgyptNTSeasons({ matches }) {
                 });
             });
         });
-        EgyptNTService.exportToExcel(exportData, "EgyptNT_Seasons");
+        EgyptNTExcelExport.exportToExcel(exportData, "EgyptNT_Seasons");
     };
 
     return (

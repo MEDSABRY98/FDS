@@ -1,4 +1,4 @@
-export default function AlAhlyPlayersMultiples({ paginatedRows, currentPage, pageSize, handleSort, renderSortIcon, setSelectedPlayer }) {
+export default function AlAhlyPlayersMultiples({ paginatedRows, currentPage, pageSize, handleSort, renderSortIcon, setSelectedPlayer, sortConfig }) {
     return (
         <table className="modern-player-table fade-in" style={{ tableLayout: 'fixed' }}>
             <colgroup>
@@ -14,17 +14,17 @@ export default function AlAhlyPlayersMultiples({ paginatedRows, currentPage, pag
             <thead>
                 <tr>
                     <th rowSpan="2">#</th>
-                    <th className="name-th" rowSpan="2" onClick={() => handleSort('name')}>PLAYER NAME {renderSortIcon('name')}</th>
+                    <th className="name-th" rowSpan="2" onClick={() => handleSort('name')} style={{ color: sortConfig?.key === 'name' ? 'var(--gold)' : '' }}>PLAYER NAME</th>
                     <th colSpan="3" style={{ background: '#27ae60', color: '#fff' }}>GOALS MULTIPLES</th>
                     <th colSpan="3" style={{ background: '#2980b9', color: '#fff' }}>ASSISTS MULTIPLES</th>
                 </tr>
                 <tr style={{ fontSize: '10px' }}>
-                    <th onClick={() => handleSort('braceG')} className="sortable">BRACE(2) {renderSortIcon('braceG')}</th>
-                    <th onClick={() => handleSort('hatG')} className="sortable">HAT-TRICK(3) {renderSortIcon('hatG')}</th>
-                    <th onClick={() => handleSort('superG')} className="sortable">SUPER(4+) {renderSortIcon('superG')}</th>
-                    <th onClick={() => handleSort('braceA')} className="sortable">BRACE(2) {renderSortIcon('braceA')}</th>
-                    <th onClick={() => handleSort('hatA')} className="sortable">HAT-TRICK(3) {renderSortIcon('hatA')}</th>
-                    <th onClick={() => handleSort('superA')} className="sortable">SUPER(4+) {renderSortIcon('superA')}</th>
+                    <th onClick={() => handleSort('braceG')} className="sortable" style={{ color: sortConfig?.key === 'braceG' ? 'var(--gold)' : '' }}>BRACE(2)</th>
+                    <th onClick={() => handleSort('hatG')} className="sortable" style={{ color: sortConfig?.key === 'hatG' ? 'var(--gold)' : '' }}>HAT-TRICK(3)</th>
+                    <th onClick={() => handleSort('superG')} className="sortable" style={{ color: sortConfig?.key === 'superG' ? 'var(--gold)' : '' }}>SUPER(4+)</th>
+                    <th onClick={() => handleSort('braceA')} className="sortable" style={{ color: sortConfig?.key === 'braceA' ? 'var(--gold)' : '' }}>BRACE(2)</th>
+                    <th onClick={() => handleSort('hatA')} className="sortable" style={{ color: sortConfig?.key === 'hatA' ? 'var(--gold)' : '' }}>HAT-TRICK(3)</th>
+                    <th onClick={() => handleSort('superA')} className="sortable" style={{ color: sortConfig?.key === 'superA' ? 'var(--gold)' : '' }}>SUPER(4+)</th>
                 </tr>
             </thead>
             <tbody>

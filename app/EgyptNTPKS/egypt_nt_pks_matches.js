@@ -2,6 +2,7 @@
 
 import { useMemo, useState, useEffect } from "react";
 import { EgyptNTPKSService } from "./egypt_nt_pks_service";
+import { EgyptNTPksExcelExport } from "./egypt_nt_pks_export_excel";
 import NoData_db from "../lib/NoData_db";
 import SearchBar_db from "../lib/SearchBar_db";
 import "./egypt_nt_pks_matches.css";
@@ -67,7 +68,7 @@ export default function EgyptNTPKSMatches({ pksData, onSelectMatch }) {
             "OPPONENT": pk["OPPONENT TEAM"],
             "RESULT": pk["PKS W-L"],
         }));
-        EgyptNTPKSService.exportToExcel(exportData, "Egypt_NT_PKs_Matches");
+        EgyptNTPksExcelExport.exportToExcel(exportData, "Egypt_NT_PKs_Matches");
     };
 
     useEffect(() => {

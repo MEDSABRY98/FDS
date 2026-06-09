@@ -7,6 +7,7 @@ import DropDownList_db from "../lib/DropDownList_db";
 import "./egypt_nt_db_players.css";
 import EgyptNTPlayerDetails from "./egypt_nt_db_player_details";
 import { EgyptNTService } from "./egypt_nt_db_service";
+import { EgyptNTExcelExport } from "./egypt_nt_export_excel";
 
 import EgyptNTPlayersStats from "./egypt_nt_db_players_stats";
 import EgyptNTPlayersPenalties from "./egypt_nt_db_players_penalties";
@@ -296,7 +297,7 @@ export default function EgyptNTPlayers({ playerDetails, lineupDetails, filteredM
             return r;
         });
         const tabNames = ["Stats", "Penalties", "Multiples", "Impact", "Goals_Timing", "Assists_Timing"];
-        EgyptNTService.exportToExcel(exportData, `EgyptNT_Players_${tabNames[activeSubTab - 1]}`);
+        EgyptNTExcelExport.exportToExcel(exportData, `EgyptNT_Players_${tabNames[activeSubTab - 1]}`);
     };
 
     return (

@@ -4,6 +4,7 @@ import { useMemo, useState, useEffect } from "react";
 import "./egypt_nt_db_gks.css";
 import EgyptNTGKDetails from "./egypt_nt_db_gk_details";
 import { EgyptNTService } from "./egypt_nt_db_service";
+import { EgyptNTExcelExport } from "./egypt_nt_export_excel";
 import NoData_db from "../lib/NoData_db";
 import SearchBar_db from "../lib/SearchBar_db";
 import DropDownList_db from "../lib/DropDownList_db";
@@ -170,7 +171,7 @@ export default function EgyptNTGKs({ gkDetails, howPenMissed, filteredMatches, p
             "PENALTIES RECEIVED": g.penaltiesReceived,
             "PENALTIES SAVED": g.penaltiesSaved
         }));
-        EgyptNTService.exportToExcel(exportData, "EgyptNT_Goalkeepers_Main");
+        EgyptNTExcelExport.exportToExcel(exportData, "EgyptNT_Goalkeepers_Main");
     };
 
     return (

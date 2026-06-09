@@ -1,4 +1,4 @@
-export default function AlAhlyPlayersImpact({ paginatedRows, currentPage, pageSize, handleSort, renderSortIcon, setSelectedPlayer }) {
+export default function AlAhlyPlayersImpact({ paginatedRows, currentPage, pageSize, handleSort, renderSortIcon, setSelectedPlayer, sortConfig }) {
     return (
         <table className="modern-player-table fade-in" style={{ tableLayout: 'fixed' }}>
             <colgroup>
@@ -13,16 +13,16 @@ export default function AlAhlyPlayersImpact({ paginatedRows, currentPage, pageSi
             <thead>
                 <tr>
                     <th rowSpan="2">#</th>
-                    <th className="name-th" rowSpan="2" onClick={() => handleSort('name')}>PLAYER NAME {renderSortIcon('name')}</th>
+                    <th className="name-th" rowSpan="2" onClick={() => handleSort('name')} style={{ color: sortConfig?.key === 'name' ? 'var(--gold)' : '' }}>PLAYER NAME</th>
                     <th colSpan="2" style={{ background: '#27ae60', color: '#fff' }}>GOAL IMPACT</th>
                     <th colSpan="2" style={{ background: '#2980b9', color: '#fff' }}>ASSIST IMPACT</th>
                     <th rowSpan="2" style={{ background: '#000', color: 'var(--gold)' }}>TOTAL</th>
                 </tr>
                 <tr style={{ fontSize: '10px' }}>
-                    <th onClick={() => handleSort('goalWinImpact')} className="sortable">WIN {renderSortIcon('goalWinImpact')}</th>
-                    <th onClick={() => handleSort('goalDrawImpact')} className="sortable">DRAW {renderSortIcon('goalDrawImpact')}</th>
-                    <th onClick={() => handleSort('assistWinImpact')} className="sortable">WIN {renderSortIcon('assistWinImpact')}</th>
-                    <th onClick={() => handleSort('assistDrawImpact')} className="sortable">DRAW {renderSortIcon('assistDrawImpact')}</th>
+                    <th onClick={() => handleSort('goalWinImpact')} className="sortable" style={{ color: sortConfig?.key === 'goalWinImpact' ? 'var(--gold)' : '' }}>WIN</th>
+                    <th onClick={() => handleSort('goalDrawImpact')} className="sortable" style={{ color: sortConfig?.key === 'goalDrawImpact' ? 'var(--gold)' : '' }}>DRAW</th>
+                    <th onClick={() => handleSort('assistWinImpact')} className="sortable" style={{ color: sortConfig?.key === 'assistWinImpact' ? 'var(--gold)' : '' }}>WIN</th>
+                    <th onClick={() => handleSort('assistDrawImpact')} className="sortable" style={{ color: sortConfig?.key === 'assistDrawImpact' ? 'var(--gold)' : '' }}>DRAW</th>
                 </tr>
             </thead>
             <tbody>

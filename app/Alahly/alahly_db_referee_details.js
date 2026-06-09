@@ -10,6 +10,7 @@ import Referee_SeasonNumber_Module from "./alahly_db_referee_details_season_numb
 import Referee_VsTeams_Module from "./alahly_db_referee_details_vs_teams";
 import Referee_Championships_Module from "./alahly_db_referee_details_championships";
 import { AlAhlyService } from "./alahly_db_service";
+import { AlAhlyExcelExport } from "./alahly_export_excel";
 
 export default function Referee_Details_Hub({ refereeName, masterMatches, playerDetails, onBack }) {
     const [activeTab, setActiveTab] = useState('overview');
@@ -193,7 +194,7 @@ export default function Referee_Details_Hub({ refereeName, masterMatches, player
                 });
                 break;
         }
-        if (exportData.length > 0) AlAhlyService.exportToExcel(exportData, filename);
+        if (exportData.length > 0) AlAhlyExcelExport.exportToExcel(exportData, filename);
     };
 
     return (

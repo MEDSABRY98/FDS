@@ -11,6 +11,7 @@ import GK_Vs_Teams_Module from "./alahly_db_gk_details_vs_teams";
 import GK_Vs_Players_Module from "./alahly_db_gk_details_vs_players";
 import GK_Championships_Module from "./alahly_db_gk_details_championships";
 import { AlAhlyService } from "./alahly_db_service";
+import { AlAhlyExcelExport } from "./alahly_export_excel";
 
 export default function GK_Details_Hub({ gkName, gkDetails, howPenMissed, masterMatches, playerDetails, onBack }) {
     const [activeTab, setActiveTab] = useState('overview');
@@ -329,7 +330,7 @@ export default function GK_Details_Hub({ gkName, gkDetails, howPenMissed, master
                 });
                 break;
         }
-        if (exportData.length > 0) AlAhlyService.exportToExcel(exportData, filename);
+        if (exportData.length > 0) AlAhlyExcelExport.exportToExcel(exportData, filename);
     };
 
     if (!gkName) return null;

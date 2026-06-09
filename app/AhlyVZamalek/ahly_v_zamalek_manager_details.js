@@ -9,6 +9,7 @@ import ManagerVsTeams from "./ahly_v_zamalek_manager_details_vs_teams";
 import ManagerChampionships from "./ahly_v_zamalek_manager_details_championships";
 import ManagerPlayersUsed from "./ahly_v_zamalek_manager_details_players_used";
 import { AhlyVZamalekService } from "./ahly_v_zamalek_service";
+import { AhlyVZamalekExcelExport } from "./ahly_v_zamalek_export_excel";
 
 export default function AhlyVZamalekManagerDetails({ managerName, managerStatus, masterMatches, onBack, playerDetails, lineupDetails }) {
     const [activeTab, setActiveTab] = useState('overview');
@@ -230,7 +231,7 @@ export default function AhlyVZamalekManagerDetails({ managerName, managerStatus,
                 });
                 break;
         }
-        if (exportData.length > 0) AhlyVZamalekService.exportToExcel(exportData, filename);
+        if (exportData.length > 0) AhlyVZamalekExcelExport.exportToExcel(exportData, filename);
     };
 
     return (

@@ -3,6 +3,7 @@
 import { useMemo, useEffect } from "react";
 import "./alahly_db_seasons_number.css";
 import { AlAhlyService } from "./alahly_db_service";
+import { AlAhlyExcelExport } from "./alahly_export_excel";
 import NoData_db from "../lib/NoData_db";
 
 export default function AlAhlySeasonsN({ matches }) {
@@ -105,7 +106,7 @@ export default function AlAhlySeasonsN({ matches }) {
                 "CS(A)": s.CSA
             };
         });
-        AlAhlyService.exportToExcel(exportData, "AlAhly_Seasons_Number");
+        AlAhlyExcelExport.exportToExcel(exportData, "AlAhly_Seasons_Number");
     };
 
     return (

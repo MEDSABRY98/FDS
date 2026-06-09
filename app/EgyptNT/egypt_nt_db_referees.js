@@ -2,6 +2,7 @@
 
 import { useMemo, useState, useEffect } from "react";
 import { EgyptNTService } from "./egypt_nt_db_service";
+import { EgyptNTExcelExport } from "./egypt_nt_export_excel";
 import "./egypt_nt_db_referees.css";
 import EgyptNTRefereeDetails from "./egypt_nt_db_referee_details";
 import NoData_db from "../lib/NoData_db";
@@ -120,7 +121,7 @@ export default function EgyptNTReferees({ matches, playerDetails, howPenMissed }
             "PEN(F)": s.penFor,
             "PEN(A)": s.penAgainst
         }));
-        EgyptNTService.exportToExcel(exportData, "EgyptNT_Referees_Stats");
+        EgyptNTExcelExport.exportToExcel(exportData, "EgyptNT_Referees_Stats");
     };
 
     if (selectedReferee) {

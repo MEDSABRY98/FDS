@@ -2,6 +2,7 @@
 
 import { useMemo, useState, useEffect } from "react";
 import { AlAhlyService } from "../Alahly/alahly_db_service";
+import { AlAhlyPksExcelExport } from "./alahly_pks_export_excel";
 import AlAhlyPKsPlayerDetails from "./alahly_pks_player_details";
 import NoData_db from "../lib/NoData_db";
 import SearchBar_db from "../lib/SearchBar_db";
@@ -108,7 +109,7 @@ export default function AlAhlyPKsPlayers({ pksData }) {
             "MISSES": p.misses,
             "SUCCESS RATE": p.total > 0 ? ((p.goals / p.total) * 100).toFixed(1) + "%" : "0%"
         }));
-        AlAhlyService.exportToExcel(exportData, "AlAhly_PKs_Player_Stats");
+        AlAhlyPksExcelExport.exportToExcel(exportData, "AlAhly_PKs_Player_Stats");
     };
 
     useEffect(() => {

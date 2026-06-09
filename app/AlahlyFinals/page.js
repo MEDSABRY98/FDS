@@ -93,11 +93,6 @@ export default function AlAhlyFinalsDatabase() {
         }
     };
 
-    if (loading) {
-        return <Loading_db subtitle="FINALS DATABASE" message="RETRIEVING CHAMPIONSHIPS" />;
-    }
-
-
     const handleTabChange = (tabId) => {
         setActiveTab(tabId);
         setSelectedMatchId(null);
@@ -149,7 +144,11 @@ export default function AlAhlyFinalsDatabase() {
             ]}
         >
             <main style={{ padding: '30px 24px', maxWidth: '100%', margin: '0' }}>
-                {renderAppContent()}
+                {loading ? (
+                    <Loading_db subtitle="FINALS DATABASE" message="SYNCING DATA" inline={true} />
+                ) : (
+                    renderAppContent()
+                )}
             </main>
 
             <AlAhlyFinalsFilter

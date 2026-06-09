@@ -1,20 +1,20 @@
 "use client";
 
 import { useState, useEffect, useMemo } from "react";
-import { 
-    Download, 
-    SlidersHorizontal, 
-    X, 
-    LayoutDashboard, 
-    Trophy, 
-    FileText, 
-    Calendar, 
-    CalendarDays, 
-    Users, 
-    Shield, 
-    User, 
-    GitCompare, 
-    Tv, 
+import {
+    Download,
+    SlidersHorizontal,
+    X,
+    LayoutDashboard,
+    Trophy,
+    FileText,
+    Calendar,
+    CalendarDays,
+    Users,
+    Shield,
+    User,
+    GitCompare,
+    Tv,
     Award,
     History
 } from "lucide-react";

@@ -1,6 +1,7 @@
 "use client";
 
-import { useMemo } from "react";
+import { useMemo, useEffect } from "react";
+import { AlAhlyExcelExport } from "./alahly_export_excel";
 import "./alahly_db_champions.css";
 
 export default function AlAhlyChampions({ matchesData }) {
@@ -68,6 +69,41 @@ export default function AlAhlyChampions({ matchesData }) {
         });
         return t;
     }, [championStats]);
+
+    useEffect(() => {
+        const handleGlobalExport = () => {
+            const exportData = championStats.map((comp, idx) => ({
+                "#": idx + 1,
+                "COMPETITION": comp.name,
+                "MATCHES PLAYED": comp.mp,
+                "WINS": comp.wins,
+                "DRAWS": comp.draws,
+                "LOSSES": comp.losses,
+                "WIN %": comp.winRate + "%",
+                "GOALS FOR": comp.gf,
+                "GOALS AGAINST": comp.ga,
+                "CLEAN SHEETS": comp.cs
+            }));
+            
+            // Add total row at the end
+            exportData.push({
+                "#": "TOTALS",
+                "COMPETITION": "",
+                "MATCHES PLAYED": grandTotals.mp,
+                "WINS": grandTotals.wins,
+                "DRAWS": grandTotals.draws,
+                "LOSSES": grandTotals.losses,
+                "WIN %": (grandTotals.mp > 0 ? ((grandTotals.wins / grandTotals.mp) * 100).toFixed(1) : "0.0") + "%",
+                "GOALS FOR": grandTotals.gf,
+                "GOALS AGAINST": grandTotals.ga,
+                "CLEAN SHEETS": grandTotals.cs
+            });
+            
+            AlAhlyExcelExport.exportToExcel(exportData, "AlAhly_Competitions_Summary");
+        };
+        window.addEventListener('alahly-export-excel', handleGlobalExport);
+        return () => window.removeEventListener('alahly-export-excel', handleGlobalExport);
+    }, [championStats, grandTotals]);
 
     return (
         <div className="tab-content fade-in" id="tab-alahly-champions">

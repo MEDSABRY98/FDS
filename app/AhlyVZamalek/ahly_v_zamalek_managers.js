@@ -2,6 +2,7 @@
 
 import { useMemo, useState, useEffect } from "react";
 import { AhlyVZamalekService } from "./ahly_v_zamalek_service";
+import { AhlyVZamalekExcelExport } from "./ahly_v_zamalek_export_excel";
 import "./ahly_v_zamalek_managers.css";
 import NoData_db from "../lib/NoData_db";
 import SearchBar_db from "../lib/SearchBar_db";
@@ -156,7 +157,7 @@ export default function AhlyVZamalekManagers({ derbyData, lineupDetails, playerD
                     "CSA": m.csa,
                     "CSF": m.csf
                 }));
-                AhlyVZamalekService.exportToExcel(exportData, `Ahly_vs_Zamalek_Managers_${teamFilter}`);
+                AhlyVZamalekExcelExport.exportToExcel(exportData, `Ahly_vs_Zamalek_Managers_${teamFilter}`);
             }
         };
 

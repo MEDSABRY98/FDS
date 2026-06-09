@@ -2,6 +2,7 @@
 
 import { useMemo, useState, useEffect } from "react";
 import { AlAhlyService } from "../Alahly/alahly_db_service";
+import { AlAhlyPksExcelExport } from "./alahly_pks_export_excel";
 import NoData_db from "../lib/NoData_db";
 import SearchBar_db from "../lib/SearchBar_db";
 import "./alahly_pks_matches.css";
@@ -62,7 +63,7 @@ export default function AlAhlyPKsMatches({ pksData, onSelectMatch }) {
             "OPPONENT": pk["OPPONENT TEAM"],
             "NOTE": pk.NOTE
         }));
-        AlAhlyService.exportToExcel(exportData, "AlAhly_PKs_Record");
+        AlAhlyPksExcelExport.exportToExcel(exportData, "AlAhly_PKs_Record");
     };
 
     useEffect(() => {

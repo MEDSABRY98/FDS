@@ -2,6 +2,7 @@
 
 import { useState, useMemo, useEffect } from "react";
 import { EgyptNTService } from "./egypt_nt_db_service";
+import { EgyptNTExcelExport } from "./egypt_nt_export_excel";
 import "./egypt_nt_db_managers.css";
 import EgyptNTManagerDetails from "./egypt_nt_db_manager_details.js";
 import NoData_db from "../lib/NoData_db";
@@ -106,7 +107,7 @@ export default function EgyptNTManagers({ matches, playerDetails, lineupDetails 
             "CS(+)": s.csFor,
             "CS(-)": s.csAgainst
         }));
-        EgyptNTService.exportToExcel(exportData, `EgyptNT_Managers_${managerStatus}`);
+        EgyptNTExcelExport.exportToExcel(exportData, `EgyptNT_Managers_${managerStatus}`);
     };
 
     const grandTotals = useMemo(() => {

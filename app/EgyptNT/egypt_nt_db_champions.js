@@ -3,6 +3,7 @@
 import { useMemo, useEffect } from "react";
 import "./egypt_nt_db_champions.css";
 import { EgyptNTService } from "./egypt_nt_db_service";
+import { EgyptNTExcelExport } from "./egypt_nt_export_excel";
 import NoData_db from "../lib/NoData_db";
 
 export default function EgyptNTChampions({ matchesData }) {
@@ -90,7 +91,7 @@ export default function EgyptNTChampions({ matchesData }) {
             "GA": comp.ga,
             "CS": comp.cs
         }));
-        EgyptNTService.exportToExcel(exportData, "EgyptNT_Competitions");
+        EgyptNTExcelExport.exportToExcel(exportData, "EgyptNT_Competitions");
     };
 
     return (

@@ -2,6 +2,7 @@
 
 import { useMemo, useState, useRef, useEffect } from "react";
 import { AlAhlyService } from "./alahly_db_service";
+import { AlAhlyExcelExport } from "./alahly_export_excel";
 import "./alahly_db_referees.css";
 import Referee_Details_Hub from "./alahly_db_referee_details";
 import NoData_db from "../lib/NoData_db";
@@ -116,7 +117,7 @@ export default function AlAhlyReferees({ matches, playerDetails, howPenMissed })
             "PEN(F)": s.penFor,
             "PEN(A)": s.penAgainst
         }));
-        AlAhlyService.exportToExcel(exportData, "AlAhly_Referees_Stats");
+        AlAhlyExcelExport.exportToExcel(exportData, "AlAhly_Referees_Stats");
     };
 
     if (selectedReferee) {

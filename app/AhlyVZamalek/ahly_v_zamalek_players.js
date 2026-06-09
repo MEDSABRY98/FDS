@@ -2,6 +2,7 @@
 
 import { useMemo, useState, useEffect } from "react";
 import { AhlyVZamalekService } from "./ahly_v_zamalek_service";
+import { AhlyVZamalekExcelExport } from "./ahly_v_zamalek_export_excel";
 import "./ahly_v_zamalek_players.css";
 import NoData_db from "../lib/NoData_db";
 import SearchBar_db from "../lib/SearchBar_db";
@@ -219,7 +220,7 @@ export default function AhlyVZamalekPlayers({ playersData, matchesData, lineupsD
                     "PENALTIES": p.penGoals,
                     "ASSISTS": p.assists
                 }));
-                AhlyVZamalekService.exportToExcel(exportData, `Ahly_vs_Zamalek_Players_${teamFilter}`);
+                AhlyVZamalekExcelExport.exportToExcel(exportData, `Ahly_vs_Zamalek_Players_${teamFilter}`);
             }
         };
 

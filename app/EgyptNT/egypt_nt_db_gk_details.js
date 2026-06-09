@@ -3,6 +3,7 @@
 import { useMemo, useState, useEffect } from "react";
 import NoData_db from "../lib/NoData_db";
 import { EgyptNTService } from "./egypt_nt_db_service";
+import { EgyptNTExcelExport } from "./egypt_nt_export_excel";
 
 // Inline modules to keep files organized without adding extra file overhead
 function GK_Overview_Module({ stats }) {
@@ -667,7 +668,7 @@ export default function EgyptNTGKDetails({ gkName, gkDetails, howPenMissed, mast
                 });
                 break;
         }
-        if (exportData.length > 0) EgyptNTService.exportToExcel(exportData, filename);
+        if (exportData.length > 0) EgyptNTExcelExport.exportToExcel(exportData, filename);
     };
 
     if (!gkName) return null;
