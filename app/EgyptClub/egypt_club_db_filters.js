@@ -158,33 +158,7 @@ export default function EgyptClubFilters({
                 <div className="filter-grid-layout">
                     {/* ROW 1 */}
                     <SearchableSelect label="MATCH ID" value={dbFilters.match_id} options={filterOptions?.match_ids || []} onChange={(v) => updateFilter('match_id', v)} />
-                    <SearchableSelect label="EGYPT CLUB" value={dbFilters.egypt_team} options={filterOptions?.egy_teams || []} onChange={(v) => updateFilter('egypt_team', v)} />
-                    <SearchableSelect label="OPPONENT CLUB" value={dbFilters.opponent_team} options={filterOptions?.opponent_teams || []} onChange={(v) => updateFilter('opponent_team', v)} />
                     <SearchableSelect label="CHAMPION SYSTEM" value={dbFilters.champion_system} options={filterOptions?.champion_systems || []} onChange={(v) => updateFilter('champion_system', v)} />
-
-                    {/* ROW 2 */}
-                    <SearchableSelect label="COMPETITION" value={dbFilters.champion} options={filterOptions?.champions || []} onChange={(v) => updateFilter('champion', v)} />
-                    <SearchableSelect label="SEASON" value={dbFilters.season} options={filterOptions?.seasons || []} onChange={(v) => updateFilter('season', v)} />
-                    <SearchableSelect label="YEAR" value={dbFilters.year} options={filterOptions?.years || []} onChange={(v) => updateFilter('year', v)} />
-                    <SearchableSelect label="ROUND" value={dbFilters.round} options={filterOptions?.rounds || []} onChange={(v) => updateFilter('round', v)} />
-
-                    {/* ROW 3 */}
-                    <SearchableSelect label="VENUE (H-A-N)" value={dbFilters.han} options={filterOptions?.han || []} onChange={(v) => updateFilter('han', v)} />
-                    <SearchableSelect label="PLACE / STADIUM" value={dbFilters.place} options={filterOptions?.places || []} onChange={(v) => updateFilter('place', v)} />
-                    <SearchableSelect label="GOALS FOR (GF)" value={dbFilters.gf} options={filterOptions?.gf || []} onChange={(v) => updateFilter('gf', v)} />
-                    <SearchableSelect label="GOALS AGST (GA)" value={dbFilters.ga} options={filterOptions?.ga || []} onChange={(v) => updateFilter('ga', v)} />
-
-                    {/* ROW 4 */}
-                    <SearchableSelect label="W-D-L RESULT" value={dbFilters.wdl} options={filterOptions?.wdl || []} onChange={(v) => updateFilter('wdl', v)} />
-                    <SearchableSelect label="CLEAN SHEET" value={dbFilters.clean_sheet} options={filterOptions?.clean_sheets || []} onChange={(v) => updateFilter('clean_sheet', v)} />
-                    <SearchableSelect label="W-L Q & F" value={dbFilters.wl_q_f} options={filterOptions?.wl_q_fs || []} onChange={(v) => updateFilter('wl_q_f', v)} />
-                    <SearchableSelect label="ET (EXTRA TIME)" value={dbFilters.et} options={filterOptions?.et || []} onChange={(v) => updateFilter('et', v)} />
-
-                    {/* ROW 5 */}
-                    <SearchableSelect label="PENALTIES" value={dbFilters.pen} options={filterOptions?.pen || []} onChange={(v) => updateFilter('pen', v)} />
-                    <SearchableSelect label="NOTE" value={dbFilters.note} options={filterOptions?.notes || []} onChange={(v) => updateFilter('note', v)} />
-
-                    {/* DATE FILTERS */}
                     <div className="filter-group">
                         <label className="filter-label">DATE FROM</label>
                         <input 
@@ -203,6 +177,30 @@ export default function EgyptClubFilters({
                             onChange={(e) => setEndDate(e.target.value)} 
                         />
                     </div>
+
+                    {/* ROW 2 */}
+                    <SearchableSelect label="YEAR" value={dbFilters.year} options={filterOptions?.years || []} onChange={(v) => updateFilter('year', v)} />
+                    <SearchableSelect label="COMPETITION" value={dbFilters.champion} options={filterOptions?.champions || []} onChange={(v) => updateFilter('champion', v)} />
+                    <SearchableSelect label="SEASON" value={dbFilters.season} options={filterOptions?.seasons || []} onChange={(v) => updateFilter('season', v)} />
+                    <SearchableSelect label="ROUND" value={dbFilters.round} options={filterOptions?.rounds || []} onChange={(v) => updateFilter('round', v)} />
+
+                    {/* ROW 3 */}
+                    <SearchableSelect label="PLACE / STADIUM" value={dbFilters.place} options={filterOptions?.places || []} onChange={(v) => updateFilter('place', v)} />
+                    <SearchableSelect label="VENUE (H-A-N)" value={dbFilters.han} options={filterOptions?.han || []} onChange={(v) => updateFilter('han', v)} />
+                    <SearchableSelect label="EGYPT CLUB" value={dbFilters.egypt_team} options={filterOptions?.egy_teams || []} onChange={(v) => updateFilter('egypt_team', v)} />
+                    <SearchableSelect label="GOALS FOR (GF)" value={dbFilters.gf} options={filterOptions?.gf || []} onChange={(v) => updateFilter('gf', v)} />
+
+                    {/* ROW 4 */}
+                    <SearchableSelect label="GOALS AGST (GA)" value={dbFilters.ga} options={filterOptions?.ga || []} onChange={(v) => updateFilter('ga', v)} />
+                    <SearchableSelect label="ET (EXTRA TIME)" value={dbFilters.et} options={filterOptions?.et || []} onChange={(v) => updateFilter('et', v)} />
+                    <SearchableSelect label="PENALTIES" value={dbFilters.pen} options={filterOptions?.pen || []} onChange={(v) => updateFilter('pen', v)} />
+                    <SearchableSelect label="OPPONENT CLUB" value={dbFilters.opponent_team} options={filterOptions?.opponent_teams || []} onChange={(v) => updateFilter('opponent_team', v)} />
+
+                    {/* ROW 5 */}
+                    <SearchableSelect label="W-L Q & F" value={dbFilters.wl_q_f} options={filterOptions?.wl_q_fs || []} onChange={(v) => updateFilter('wl_q_f', v)} />
+                    <SearchableSelect label="NOTE" value={dbFilters.note} options={filterOptions?.notes || []} onChange={(v) => updateFilter('note', v)} />
+                    <SearchableSelect label="W-D-L RESULT" value={dbFilters.wdl} options={filterOptions?.wdl || []} onChange={(v) => updateFilter('wdl', v)} />
+                    <SearchableSelect label="CLEAN SHEET" value={dbFilters.clean_sheet} options={filterOptions?.clean_sheets || []} onChange={(v) => updateFilter('clean_sheet', v)} />
                 </div>
             </div>
 
