@@ -136,17 +136,30 @@ export default function EgyptNTSquadEditor() {
     useEffect(() => {
         const fetchSuggestions = async () => {
             try {
-                const { data, error } = await supabase.from('egy_NT_SQUAD').select('PLAYERNAME, POSITION, CLUB, SEASON, CHAMPION');
-                if (error) throw error;
-                if (data) {
-                    setSuggestions({
-                        players: [...new Set(data.map(d => d.PLAYERNAME).filter(Boolean))].sort(),
-                        positions: [...new Set(data.map(d => d.POSITION).filter(Boolean))].sort(),
-                        clubs: [...new Set(data.map(d => d.CLUB).filter(Boolean))].sort(),
-                        seasons: [...new Set(data.map(d => d.SEASON).filter(Boolean))].sort(),
-                        champions: [...new Set(data.map(d => d.CHAMPION).filter(Boolean))].sort()
-                    });
+                // Fetch squad metadata options
+                const { data: squadData, error: sErr } = await supabase.from('egy_NT_SQUAD').select('POSITION, CLUB, SEASON, CHAMPION');
+                if (sErr) throw sErr;
+
+                // Fetch all players from db_PLAYERS using pagination
+                let allPlayers = [];
+                let from = 0;
+                const limit = 1000;
+                while (true) {
+                    const { data: pData, error: pErr } = await supabase.from('db_PLAYERS').select('PLAYER_NAME').range(from, from + limit - 1);
+                    if (pErr) throw pErr;
+                    if (!pData || pData.length === 0) break;
+                    allPlayers.push(...pData.map(d => d.PLAYER_NAME).filter(Boolean));
+                    if (pData.length < limit) break;
+                    from += limit;
                 }
+
+                setSuggestions({
+                    players: [...new Set(allPlayers)].sort(),
+                    positions: [...new Set(squadData.map(d => d.POSITION).filter(Boolean))].sort(),
+                    clubs: [...new Set(squadData.map(d => d.CLUB).filter(Boolean))].sort(),
+                    seasons: [...new Set(squadData.map(d => d.SEASON).filter(Boolean))].sort(),
+                    champions: [...new Set(squadData.map(d => d.CHAMPION).filter(Boolean))].sort()
+                });
             } catch (err) {
                 console.error("Error fetching suggestions:", err);
             }

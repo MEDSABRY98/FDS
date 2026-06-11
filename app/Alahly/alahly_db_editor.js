@@ -297,26 +297,20 @@ export default function AlAhlyEditor() {
         'REFREE', 'ROUND', 'H-A-N', 'STAD', 'AHLY TEAM', 'ET', 'PEN', 'OPPONENT TEAM', 'NOTE'
     ];
 
-    // Fetch all players globally using pagination to bypass the 1000 limits
+    // Fetch all players globally using pagination from the db_PLAYERS catalog table
     useEffect(() => {
         (async () => {
             let allNames = [];
-            const fetchTableNames = async (tableName) => {
-                let from = 0;
-                const limit = 1000;
-                while (true) {
-                    const { data, error } = await supabase.from(tableName).select('"PLAYER NAME"').range(from, from + limit - 1);
-                    if (error) { console.error(tableName, error); break; }
-                    if (!data || data.length === 0) break;
-                    allNames.push(...data.map(d => d['PLAYER NAME']).filter(Boolean));
-                    if (data.length < limit) break;
-                    from += limit;
-                }
-            };
-
-            await fetchTableNames('alahly_LINEUPDETAILS');
-            await fetchTableNames('alahly_PLAYERDETAILS');
-            await fetchTableNames('alahly_GKSDETAILS');
+            let from = 0;
+            const limit = 1000;
+            while (true) {
+                const { data, error } = await supabase.from('db_PLAYERS').select('PLAYER_NAME').range(from, from + limit - 1);
+                if (error) { console.error("Error fetching players for dropdown:", error); break; }
+                if (!data || data.length === 0) break;
+                allNames.push(...data.map(d => d.PLAYER_NAME).filter(Boolean));
+                if (data.length < limit) break;
+                from += limit;
+            }
 
             const uniquePlayers = [...new Set(allNames)];
             uniquePlayers.sort((a, b) => a.localeCompare(b, 'ar'));
@@ -359,10 +353,29 @@ export default function AlAhlyEditor() {
             });
             setNextMatchNum(Math.max(0, ...nums) + 1);
 
+            // Fetch managers, stadiums, and referees directly from catalog tables
+            const [{ data: mData }, { data: sData }, { data: rData }] = await Promise.all([
+                supabase.from('db_MANAGERS').select('MANAGER_NAME'),
+                supabase.from('db_STADIUMS').select('STADIUM_NAME'),
+                supabase.from('db_REFEREES').select('REFEREE_NAME')
+            ]);
+            
+            const managerList = mData ? mData.map(r => r.MANAGER_NAME).filter(Boolean).sort() : [];
+            const stadiumList = sData ? sData.map(r => r.STADIUM_NAME).filter(Boolean).sort() : [];
+            const refereeList = rData ? rData.map(r => r.REFEREE_NAME).filter(Boolean).sort() : [];
+
             // Unique values per column
             const opts = {};
             AUTOCOMPLETE_FIELDS.forEach(col => {
-                opts[col] = [...new Set(data.map(r => r[col]).filter(Boolean))].sort();
+                if (['AHLY MANAGER', 'OPPONENT MANAGER'].includes(col)) {
+                    opts[col] = managerList;
+                } else if (col === 'STAD') {
+                    opts[col] = stadiumList;
+                } else if (col === 'REFREE') {
+                    opts[col] = refereeList;
+                } else {
+                    opts[col] = [...new Set(data.map(r => r[col]).filter(Boolean))].sort();
+                }
             });
             setMatchFieldOptions(opts);
         })();

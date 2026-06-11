@@ -6,10 +6,13 @@ import { Database, Shield, Target, Trophy, Swords, Flag } from "lucide-react";
 import "./home_db_selection.css";
 
 export default function HomeDbSelection() {
-    const [activeTab, setActiveTab] = useState("alahly");
+    const [activeTab, setActiveTab] = useState("db_management");
 
     // Tab content data
     const tabContents = {
+        db_management: [
+            { href: "/DBManagement", label: "GLOBAL DB MANAGEMENT", icon: Database }
+        ],
         alahly: [
             { href: "/AlahlydbManagement", label: "AL AHLY DB MANAGEMENT", icon: Database },
             { href: "/Alahly", label: "AL AHLY SC", icon: Shield },
@@ -39,6 +42,12 @@ export default function HomeDbSelection() {
             <div className="home-sys-sub">SELECT A SECTION TO CONTINUE</div>
 
             <div className="home-tabs-container">
+                <button
+                    className={`home-tab-btn ${activeTab === 'db_management' ? 'active' : ''}`}
+                    onClick={() => setActiveTab('db_management')}
+                >
+                    DB MANAGEMENT
+                </button>
                 <button
                     className={`home-tab-btn ${activeTab === 'alahly' ? 'active' : ''}`}
                     onClick={() => setActiveTab('alahly')}
