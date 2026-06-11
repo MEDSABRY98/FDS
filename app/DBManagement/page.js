@@ -115,7 +115,8 @@ export default function DBManagement() {
                 setSelectedTable={setSelectedTable}
                 handleDownloadExcel={handleDownloadExcel}
             >
-                <main className="db-content">
+                <div className="global-db-page">
+                    <main className="db-content">
                     <div className="data-toolbar">
                         <div className="search-wrap">
                             <input
@@ -231,6 +232,7 @@ export default function DBManagement() {
                     entityTable={selectedTable}
                     entityName={statsEntityName}
                 />
+                </div>
             </DatabaseSidebar>
         </Login_db>
     );

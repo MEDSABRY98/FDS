@@ -138,7 +138,8 @@ export default function DatabaseManagement() {
                 setSelectedTable={setSelectedTable}
                 handleDownloadExcel={handleDownloadExcel}
             >
-                <main className="db-content">
+                <div className="alahly-db-page">
+                    <main className="db-content">
                     <div className="data-toolbar">
                         <div className="search-wrap">
                             <input
@@ -215,6 +216,7 @@ export default function DatabaseManagement() {
                     selectedRows={selectedRows}
                     handleConfirmMerge={handleConfirmMerge}
                 />
+                </div>
             </DatabaseSidebar>
         </Login_db>
     );

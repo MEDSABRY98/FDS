@@ -111,6 +111,8 @@ export function useTableData(addNotification) {
 
     useEffect(() => {
         if (selectedTable) {
+            setTableData([]);
+            setColumns([]);
             fetchTableData();
         }
     }, [selectedTable, fetchTableData]);

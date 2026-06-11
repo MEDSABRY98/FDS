@@ -103,7 +103,7 @@ export default function EgyptDatabaseManagement() {
 
     return (
         <Login_db title="EDITOR ACCESS" subtitle="AUTHORIZATION REQUIRED">
-            <div id="db-management-page" className={`egypt-container ${isSidebarCollapsed ? 'sidebar-collapsed' : ''}`}>
+            <div id="db-management-page" className={`egypt-container egyptnt-db-page ${isSidebarCollapsed ? 'sidebar-collapsed' : ''}`}>
                 {/* Backdrop for mobile drawer */}
                 <div 
                     className={`egypt-sidebar-backdrop ${isSidebarMobileOpen ? 'active' : ''}`} 

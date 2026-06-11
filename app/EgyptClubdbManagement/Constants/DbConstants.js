@@ -18,7 +18,16 @@ export const COLUMN_ORDER = {
         "OPPONENT TEAM",
         "W-L Q & F",
         "NOTE"
+    ],
+    egy_CLUB_TROPHY: [
+        "ROW_ID",
+        "COMPETITION",
+        "SEASON",
+        "CHAMPION",
+        "NOTE"
     ]
 };
 
-export const TABLES_TO_SORT_BY_ROWID = [];
+export const TABLES_TO_SORT_BY_ROWID = [
+    "egy_CLUB_TROPHY"
+];
