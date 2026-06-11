@@ -86,7 +86,7 @@
 
 .egypt-sidebar-close-btn:hover {
     background: rgba(255, 255, 255, 0.1);
-    color: #C8102E;
+    color: var(--gold, #c9a84c);
 }
 
 .egypt-sidebar-collapse-toggle-btn {
@@ -109,9 +109,9 @@
 }
 
 .egypt-sidebar-collapse-toggle-btn:hover {
-    color: #C8102E;
-    border-color: #C8102E;
-    background: rgba(200, 16, 46, 0.04);
+    color: var(--gold, #c9a84c);
+    border-color: var(--gold, #c9a84c);
+    background: rgba(201, 168, 76, 0.04);
 }
 
 /* Sidebar Navigation menu */
@@ -157,9 +157,9 @@
 
 .egypt-sidebar-item.active {
     color: #ffffff;
-    background: rgba(200, 16, 46, 0.15);
+    background: rgba(201, 168, 76, 0.15);
     font-weight: 600;
-    border-left: 2px solid #C8102E;
+    border-left: 2px solid var(--gold, #c9a84c);
     padding-left: 16px;
 }
 
@@ -202,15 +202,15 @@
 }
 
 .egypt-sidebar-action-btn.export-btn {
-    background: rgba(200, 16, 46, 0.15);
-    color: #ff4d6d;
-    border: 1px solid rgba(200, 16, 46, 0.3);
+    background: rgba(201, 168, 76, 0.15);
+    color: var(--gold-light, #e8c97a);
+    border: 1px solid rgba(201, 168, 76, 0.3);
 }
 
 .egypt-sidebar-action-btn.export-btn:hover {
-    background: #C8102E;
-    color: #ffffff;
-    box-shadow: 0 4px 12px rgba(200, 16, 46, 0.3);
+    background: var(--gold, #c9a84c);
+    color: #0d0d0d;
+    box-shadow: 0 4px 12px rgba(201, 168, 76, 0.3);
 }
 
 .egypt-sidebar-action-btn.filter-btn {
@@ -220,9 +220,9 @@
 }
 
 .egypt-sidebar-action-btn.filter-btn:hover {
-    border-color: #C8102E;
+    border-color: var(--gold, #c9a84c);
     color: #ffffff;
-    background: rgba(200, 16, 46, 0.08);
+    background: rgba(201, 168, 76, 0.08);
 }
 
 /* Main Content wrapper */
@@ -304,7 +304,7 @@
 }
 
 .egypt-mobile-action-icon:hover {
-    color: #C8102E;
+    color: var(--gold, #c9a84c);
     background: rgba(255, 255, 255, 0.08);
 }
 
@@ -354,7 +354,7 @@
     }
     
     .egypt-container.sidebar-collapsed .egypt-sidebar-item.active {
-        border-left: 3px solid #C8102E;
+        border-left: 3px solid var(--gold, #c9a84c);
     }
     
     .egypt-container.sidebar-collapsed .egypt-sidebar-item span {
@@ -397,7 +397,7 @@
     }
     
     .egypt-container.sidebar-collapsed .egypt-sidebar-item.active span {
-        border-color: #C8102E;
+        border-color: var(--gold, #c9a84c);
     }
     
     .egypt-container.sidebar-collapsed .egypt-sidebar-actions {

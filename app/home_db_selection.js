@@ -23,6 +23,10 @@ export default function HomeDbSelection() {
             { href: "/EgyptNTdbManagement", label: "EGYPT NT DB MANAGEMENT", icon: Database },
             { href: "/EgyptNT", label: "EGYPT NT", icon: Flag },
             { href: "/EgyptNTPKS", label: "EGYPT NT PKs", icon: Target }
+        ],
+        egypt_clubs: [
+            { href: "/EgyptClubdbManagement", label: "EGYPT CLUB DB MANAGEMENT", icon: Database },
+            { href: "/EgyptClub", label: "EGYPT CLUBS", icon: Trophy }
         ]
     };
 
@@ -52,6 +56,12 @@ export default function HomeDbSelection() {
                     onClick={() => setActiveTab('egypt_nt')}
                 >
                     EGYPT NT
+                </button>
+                <button
+                    className={`home-tab-btn ${activeTab === 'egypt_clubs' ? 'active' : ''}`}
+                    onClick={() => setActiveTab('egypt_clubs')}
+                >
+                    EGYPT CLUBS
                 </button>
             </div>
 
