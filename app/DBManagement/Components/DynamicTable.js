@@ -8,7 +8,8 @@ export default function DynamicTable({
     onToggleSelect,
     onEdit,
     onDelete,
-    getName
+    getName,
+    onNameClick
 }) {
     if (paginatedData.length === 0) {
         return (
@@ -45,11 +46,24 @@ export default function DynamicTable({
                                         style={{ width: '18px', height: '18px', cursor: 'pointer', accentColor: '#c9a84c' }}
                                     />
                                 </td>
-                                {columns.map(col => (
-                                    <td key={col} title={row[col] || ''}>
-                                        {row[col] !== null && row[col] !== undefined ? String(row[col]) : '-'}
-                                    </td>
-                                ))}
+                                {columns.map(col => {
+                                    const val = row[col];
+                                    const isNameCol = col.endsWith('_NAME');
+                                    return (
+                                        <td key={col} title={val || ''}>
+                                            {isNameCol && val ? (
+                                                <span 
+                                                    onClick={() => onNameClick && onNameClick(val)}
+                                                    style={{ cursor: 'pointer' }}
+                                                >
+                                                    {String(val)}
+                                                </span>
+                                            ) : (
+                                                val !== null && val !== undefined ? String(val) : '-'
+                                            )}
+                                        </td>
+                                    );
+                                })}
                                 <td className="actions-cell">
                                     <div className="actions-flex">
                                         <button

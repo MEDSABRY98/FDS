@@ -15,6 +15,7 @@ import DynamicTable from "./Components/DynamicTable";
 import Pagination from "./Components/Pagination";
 import MergeModal from "./Modals/MergeModal";
 import EditModal from "./Modals/EditModal";
+import EntityStatsModal from "./Modals/EntityStatsModal";
 
 import { Plus } from "lucide-react";
 
@@ -69,6 +70,8 @@ export default function DBManagement() {
         handleMergeTrigger,
         handleConfirmMerge
     } = useMergeRecords(selectedTable, fetchTableData, addNotification);
+
+    const [statsEntityName, setStatsEntityName] = useState(null);
 
     // Clear selected rows when changing table
     useEffect(() => {
@@ -183,6 +186,7 @@ export default function DBManagement() {
                                 onEdit={handleEditClick}
                                 onDelete={handleDelete}
                                 getName={getName}
+                                onNameClick={(name) => setStatsEntityName(name)}
                             />
 
                             <Pagination
@@ -220,6 +224,13 @@ export default function DBManagement() {
                         getName={getName}
                     />
                 )}
+
+                <EntityStatsModal
+                    isOpen={!!statsEntityName}
+                    onClose={() => setStatsEntityName(null)}
+                    entityTable={selectedTable}
+                    entityName={statsEntityName}
+                />
             </DatabaseSidebar>
         </Login_db>
     );
