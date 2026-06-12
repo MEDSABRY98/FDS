@@ -17,18 +17,18 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 
-import { EgyptClubService } from "./egypt_club_db_service";
-import EgyptClubDashboard from "./egypt_club_db_dashboard";
-import EgyptClubMatches from "./egypt_club_db_matches";
-import EgyptClubClubs from "./egypt_club_db_egypt_clubs";
-import EgyptClubOpponents from "./egypt_club_db_opponents_club";
-import EgyptClubH2H from "./egypt_club_db_h2h";
-import EgyptClubSeasons from "./egypt_club_db_seasons";
-import EgyptClubYears from "./egypt_club_db_years";
-import EgyptClubFilters from "./egypt_club_db_filters";
-import { exportMatchesToExcel } from "./egypt_club_excel_export";
+import { EgyptClubService } from "./egy_c_service";
+import EgyptClubDashboard from "./egy_c_dashboard";
+import EgyptClubMatches from "./egy_c_matches";
+import EgyptClubClubs from "./egy_c_egypt_clubs";
+import EgyptClubOpponents from "./egy_c_opponents_club";
+import EgyptClubH2H from "./egy_c_h2h";
+import EgyptClubSeasons from "./egy_c_seasons";
+import EgyptClubYears from "./egy_c_years";
+import EgyptClubFilters from "./egy_c_filters";
+import { exportMatchesToExcel } from "./egy_c_excel_export";
 import Loading_db from "../lib/Loading_db";
-import "./egypt_club_sidebar.css";
+import "./egy_c_sidebar.css";
 
 export default function EgyptClubDatabase() {
     const [activeTab, setActiveTab] = useState("dashboard");

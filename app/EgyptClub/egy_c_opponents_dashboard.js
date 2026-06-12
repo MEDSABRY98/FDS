@@ -13,7 +13,7 @@ import {
     TrendingDown, 
     AlertTriangle 
 } from 'lucide-react';
-import { exportMatchesToExcel } from './egypt_club_excel_export';
+import { exportMatchesToExcel } from './egy_c_excel_export';
 
 export default function EgyptClubOpponentsDashboard({ opponentProfile }) {
     useEffect(() => {

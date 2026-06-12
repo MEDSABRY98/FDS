@@ -3,8 +3,8 @@
 import { useMemo, useState, useEffect } from "react";
 import NoData_db from "../lib/NoData_db";
 import SearchBar_db from "../lib/SearchBar_db";
-import { exportMatchesToExcel } from "./egypt_club_excel_export";
-import "./egypt_club_db_matches.css";
+import { exportMatchesToExcel } from "./egy_c_excel_export";
+import "./egy_c_matches.css";
 
 export default function EgyptClubMatches({ matches, onMatchClick }) {
     const [currentPage, setCurrentPage] = useState(1);

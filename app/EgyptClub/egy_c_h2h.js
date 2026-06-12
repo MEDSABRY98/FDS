@@ -4,8 +4,8 @@ import { useMemo, useState, useEffect } from "react";
 import DropDownList_db from "../lib/DropDownList_db";
 import NoData_db from "../lib/NoData_db";
 import { GitCompare, ShieldAlert, Award } from "lucide-react";
-import { exportMatchesToExcel, exportSummaryToExcel } from "./egypt_club_excel_export";
-import "./egypt_club_db_h2h.css";
+import { exportMatchesToExcel, exportSummaryToExcel } from "./egy_c_excel_export";
+import "./egy_c_h2h.css";
 
 export default function EgyptClubH2H({ matches }) {
     const [selectedEgy, setSelectedEgy] = useState("");

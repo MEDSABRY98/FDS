@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo } from "react";
-import "./egypt_club_db_dashboard.css";
+import "./egy_c_dashboard.css";
 import NoData_db from "../lib/NoData_db";
 
 export default function EgyptClubDashboard({ matches }) {

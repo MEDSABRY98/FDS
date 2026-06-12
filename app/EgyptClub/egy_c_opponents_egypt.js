@@ -3,7 +3,7 @@
 import { useState, useEffect, useMemo } from "react";
 import { ShieldAlert } from "lucide-react";
 import NoData_db from "../lib/NoData_db";
-import { exportSummaryToExcel } from "./egypt_club_excel_export";
+import { exportSummaryToExcel } from "./egy_c_excel_export";
 
 export default function EgyptClubOpponentsEgyClubs({ egyptClubs }) {
     useEffect(() => {

@@ -1,77 +1,55 @@
 "use client";
 
-import { useMemo, useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { Trophy } from "lucide-react";
 import NoData_db from "../lib/NoData_db";
-import { exportSummaryToExcel } from "./egypt_club_excel_export";
+import { exportSummaryToExcel } from "./egy_c_excel_export";
 
-export default function EgyptClubOpponentsCompetitions({ matches }) {
-    const [currentPage, setCurrentPage] = useState(1);
-
-    // Reset pagination when matches change
-    useEffect(() => {
-        setCurrentPage(1);
-    }, [matches]);
-
-    const competitionsData = useMemo(() => {
-        const comps = {};
-        matches.forEach(m => {
-            const compName = m.CHAMPION || "Other";
-            if (!comps[compName]) {
-                comps[compName] = { name: compName, played: 0, wins: 0, draws: 0, losses: 0, gf: 0, ga: 0, csf: 0, csa: 0 };
-            }
-            const c = comps[compName];
-            c.played++;
-            if (m["W-D-L"] === "L") c.wins++;
-            else if (m["W-D-L"] === "W") c.losses++;
-            else if (m["W-D-L"] && m["W-D-L"].startsWith("D")) c.draws++;
-            
-            c.gf += (Number(m.GA) || 0); // Opponent goals (match GA)
-            c.ga += (Number(m.GF) || 0); // Opponent conceded (match GF)
-            
-            if (m["CLEAN SHEET"] === "A" || m["CLEAN SHEET"] === "BOTH") c.csf++;
-            if (m["CLEAN SHEET"] === "F" || m["CLEAN SHEET"] === "BOTH") c.csa++;
-        });
-        
-        return Object.values(comps).sort((a, b) => b.played - a.played);
-    }, [matches]);
-
+export default function EgyptClubProfileCompetitions({ competitions }) {
     useEffect(() => {
         const handleGlobalExport = () => {
-            exportSummaryToExcel(competitionsData, "EgyptClubs_OpponentProfile_Competitions", "name", "COMPETITION");
+            exportSummaryToExcel(competitions || [], "EgyptClubs_ClubProfile_Competitions", "name", "COMPETITION");
         };
         window.addEventListener('egypt-club-export-excel', handleGlobalExport);
         return () => window.removeEventListener('egypt-club-export-excel', handleGlobalExport);
-    }, [competitionsData]);
+    }, [competitions]);
+    const [currentPage, setCurrentPage] = useState(1);
+
+    // Reset pagination when competitions change
+    useEffect(() => {
+        setCurrentPage(1);
+    }, [competitions]);
 
     const totals = useMemo(() => {
         const t = { played: 0, wins: 0, draws: 0, losses: 0, gf: 0, ga: 0, csf: 0, csa: 0 };
-        competitionsData.forEach(c => {
-            t.played += c.played;
-            t.wins += c.wins;
-            t.draws += c.draws;
-            t.losses += c.losses;
-            t.gf += c.gf;
-            t.ga += c.ga;
-            t.csf += c.csf;
-            t.csa += c.csa;
-        });
+        if (competitions) {
+            competitions.forEach(c => {
+                t.played += c.played || 0;
+                t.wins += c.wins || 0;
+                t.draws += c.draws || 0;
+                t.losses += c.losses || 0;
+                t.gf += c.gf || 0;
+                t.ga += c.ga || 0;
+                t.csf += c.csf || 0;
+                t.csa += c.csa || 0;
+            });
+        }
         t.winRate = t.played > 0 ? Math.round((t.wins / t.played) * 100) : 0;
         return t;
-    }, [competitionsData]);
+    }, [competitions]);
 
-    if (competitionsData.length === 0) {
-        return <NoData_db message="No competition records available." />;
+    if (!competitions || competitions.length === 0) {
+        return <NoData_db message="No competition stats available." />;
     }
 
     const pageSize = 50;
-    const paginatedCompetitions = competitionsData.slice((currentPage - 1) * pageSize, currentPage * pageSize);
-    const totalPages = Math.ceil(competitionsData.length / pageSize);
+    const paginatedCompetitions = competitions.slice((currentPage - 1) * pageSize, currentPage * pageSize);
+    const totalPages = Math.ceil(competitions.length / pageSize);
 
     return (
         <div className="profile-competitions fade-in" style={{ background: '#fff', border: '1px solid #eef0f2', padding: '24px', borderRadius: '4px' }}>
             <div style={{ fontFamily: 'Bebas Neue', fontSize: '20px', letterSpacing: '1px', marginBottom: '16px', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                <Trophy size={18} style={{ color: 'var(--gold, #c9a84c)' }} /> Competition H2H Breakdown
+                <Trophy size={18} style={{ color: 'var(--gold, #c9a84c)' }} /> Competition Breakdown
             </div>
             <div style={{ overflowX: 'auto' }}>
                 <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '16px', textAlign: 'center', tableLayout: 'fixed' }}>
@@ -109,7 +87,7 @@ export default function EgyptClubOpponentsCompetitions({ matches }) {
                         })}
                         {/* Totals Row */}
                         <tr style={{ background: '#f9f9f9', borderTop: '2px solid #ddd', borderBottom: '2px solid #ddd', fontWeight: 'bold', height: '56px' }}>
-                            <td style={{ fontWeight: 'bold', textAlign: 'center', color: '#000', fontSize: '17px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>TOTAL ({competitionsData.length} Competitions)</td>
+                            <td style={{ fontWeight: 'bold', textAlign: 'center', color: '#000', fontSize: '17px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>TOTAL ({competitions.length} Competitions)</td>
                             <td style={{ textAlign: 'center', fontFamily: 'Space Mono, monospace', fontSize: '16px' }}>{totals.played}</td>
                             <td style={{ textAlign: 'center', color: '#00c853', fontFamily: 'Space Mono, monospace', fontSize: '16px' }}>{totals.wins}</td>
                             <td style={{ textAlign: 'center', fontWeight: 'bold', color: 'var(--gold, #c9a84c)', fontSize: '16px' }}>{totals.winRate}%</td>

@@ -3,8 +3,8 @@
 import { useMemo, useState, useEffect } from "react";
 import NoData_db from "../lib/NoData_db";
 import { ChevronRight, ArrowLeft, Calendar, Trophy, Zap } from "lucide-react";
-import { exportMatchesToExcel, exportSummaryToExcel } from "./egypt_club_excel_export";
-import "./egypt_club_db_seasons.css";
+import { exportMatchesToExcel, exportSummaryToExcel } from "./egy_c_excel_export";
+import "./egy_c_seasons.css";
 
 export default function EgyptClubSeasons({ matches }) {
     const [selectedSeason, setSelectedSeason] = useState(null);

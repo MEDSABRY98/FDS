@@ -6,7 +6,7 @@ import { Download, Menu } from "lucide-react";
 import * as XLSX from "xlsx";
 import Login_db from "../lib/Login_db";
 import { useNotification } from "../lib/Notification_db";
-import "../EgyptClub/egypt_club_sidebar.css";
+import "../EgyptClub/egy_c_sidebar.css";
 import "./EgyptClubdbManagement.css";
 
 // Import Custom Hooks

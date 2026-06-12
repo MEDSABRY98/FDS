@@ -1,11 +1,11 @@
 "use client";
 
 import { useMemo, useState, useEffect } from "react";
-import { Users } from "lucide-react";
+import { Trophy } from "lucide-react";
 import NoData_db from "../lib/NoData_db";
-import { exportSummaryToExcel } from "./egypt_club_excel_export";
+import { exportSummaryToExcel } from "./egy_c_excel_export";
 
-export default function EgyptClubProfileOpponents({ matches }) {
+export default function EgyptClubOpponentsCompetitions({ matches }) {
     const [currentPage, setCurrentPage] = useState(1);
 
     // Reset pagination when matches change
@@ -13,84 +13,71 @@ export default function EgyptClubProfileOpponents({ matches }) {
         setCurrentPage(1);
     }, [matches]);
 
-    const opponentsData = useMemo(() => {
-        const stats = {};
+    const competitionsData = useMemo(() => {
+        const comps = {};
         matches.forEach(m => {
-            const name = m["OPPONENT TEAM"];
-            if (!name) return;
-            
-            if (!stats[name]) {
-                stats[name] = {
-                    name,
-                    played: 0,
-                    wins: 0,
-                    draws: 0,
-                    losses: 0,
-                    gf: 0,
-                    ga: 0,
-                    csf: 0,
-                    csa: 0
-                };
+            const compName = m.CHAMPION || "Other";
+            if (!comps[compName]) {
+                comps[compName] = { name: compName, played: 0, wins: 0, draws: 0, losses: 0, gf: 0, ga: 0, csf: 0, csa: 0 };
             }
+            const c = comps[compName];
+            c.played++;
+            if (m["W-D-L"] === "L") c.wins++;
+            else if (m["W-D-L"] === "W") c.losses++;
+            else if (m["W-D-L"] && m["W-D-L"].startsWith("D")) c.draws++;
             
-            const opp = stats[name];
-            opp.played++;
-            if (m["W-D-L"] === "W") opp.wins++;
-            else if (m["W-D-L"] === "L") opp.losses++;
-            else if (m["W-D-L"] && m["W-D-L"].startsWith("D")) opp.draws++;
+            c.gf += (Number(m.GA) || 0); // Opponent goals (match GA)
+            c.ga += (Number(m.GF) || 0); // Opponent conceded (match GF)
             
-            opp.gf += (Number(m.GF) || 0);
-            opp.ga += (Number(m.GA) || 0);
-            
-            if (m["CLEAN SHEET"] === "F" || m["CLEAN SHEET"] === "BOTH") opp.csf++;
-            if (m["CLEAN SHEET"] === "A" || m["CLEAN SHEET"] === "BOTH") opp.csa++;
+            if (m["CLEAN SHEET"] === "A" || m["CLEAN SHEET"] === "BOTH") c.csf++;
+            if (m["CLEAN SHEET"] === "F" || m["CLEAN SHEET"] === "BOTH") c.csa++;
         });
         
-        return Object.values(stats).sort((a, b) => b.played - a.played || b.wins - a.wins);
+        return Object.values(comps).sort((a, b) => b.played - a.played);
     }, [matches]);
 
     useEffect(() => {
         const handleGlobalExport = () => {
-            exportSummaryToExcel(opponentsData, "EgyptClubs_ClubProfile_Opponents", "name", "OPPONENT TEAM");
+            exportSummaryToExcel(competitionsData, "EgyptClubs_OpponentProfile_Competitions", "name", "COMPETITION");
         };
         window.addEventListener('egypt-club-export-excel', handleGlobalExport);
         return () => window.removeEventListener('egypt-club-export-excel', handleGlobalExport);
-    }, [opponentsData]);
+    }, [competitionsData]);
 
     const totals = useMemo(() => {
         const t = { played: 0, wins: 0, draws: 0, losses: 0, gf: 0, ga: 0, csf: 0, csa: 0 };
-        opponentsData.forEach(opp => {
-            t.played += opp.played;
-            t.wins += opp.wins;
-            t.draws += opp.draws;
-            t.losses += opp.losses;
-            t.gf += opp.gf;
-            t.ga += opp.ga;
-            t.csf += opp.csf;
-            t.csa += opp.csa;
+        competitionsData.forEach(c => {
+            t.played += c.played;
+            t.wins += c.wins;
+            t.draws += c.draws;
+            t.losses += c.losses;
+            t.gf += c.gf;
+            t.ga += c.ga;
+            t.csf += c.csf;
+            t.csa += c.csa;
         });
         t.winRate = t.played > 0 ? Math.round((t.wins / t.played) * 100) : 0;
         return t;
-    }, [opponentsData]);
+    }, [competitionsData]);
 
-    if (opponentsData.length === 0) {
-        return <NoData_db message="No opponent stats available." />;
+    if (competitionsData.length === 0) {
+        return <NoData_db message="No competition records available." />;
     }
 
     const pageSize = 50;
-    const paginatedOpps = opponentsData.slice((currentPage - 1) * pageSize, currentPage * pageSize);
-    const totalPages = Math.ceil(opponentsData.length / pageSize);
+    const paginatedCompetitions = competitionsData.slice((currentPage - 1) * pageSize, currentPage * pageSize);
+    const totalPages = Math.ceil(competitionsData.length / pageSize);
 
     return (
-        <div className="profile-opponents fade-in" style={{ background: '#fff', border: '1px solid #eef0f2', padding: '24px', borderRadius: '4px' }}>
+        <div className="profile-competitions fade-in" style={{ background: '#fff', border: '1px solid #eef0f2', padding: '24px', borderRadius: '4px' }}>
             <div style={{ fontFamily: 'Bebas Neue', fontSize: '20px', letterSpacing: '1px', marginBottom: '16px', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                <Users size={18} style={{ color: 'var(--gold, #c9a84c)' }} /> Opponents Faced Breakdown
+                <Trophy size={18} style={{ color: 'var(--gold, #c9a84c)' }} /> Competition H2H Breakdown
             </div>
             <div style={{ overflowX: 'auto' }}>
                 <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '16px', textAlign: 'center', tableLayout: 'fixed' }}>
                     <thead>
                         <tr style={{ borderBottom: '1px solid #eee', textAlign: 'center', color: '#888', height: '48px' }}>
-                            <th style={{ fontWeight: 'bold', textAlign: 'center', width: '28%', fontSize: '16px' }}>OPPONENT TEAM</th>
+                            <th style={{ fontWeight: 'bold', textAlign: 'center', width: '28%', fontSize: '16px' }}>COMPETITION</th>
                             <th style={{ textAlign: 'center', fontWeight: 'bold', width: '8%', fontSize: '16px' }}>PLAYED</th>
                             <th style={{ textAlign: 'center', fontWeight: 'bold', color: '#00c853', width: '8%', fontSize: '16px' }}>WON</th>
                             <th style={{ textAlign: 'center', fontWeight: 'bold', color: 'var(--gold, #c9a84c)', width: '8%', fontSize: '16px' }}>WIN %</th>
@@ -103,26 +90,26 @@ export default function EgyptClubProfileOpponents({ matches }) {
                         </tr>
                     </thead>
                     <tbody>
-                        {paginatedOpps.map((opp, i) => {
-                            const winRate = opp.played > 0 ? Math.round((opp.wins / opp.played) * 100) : 0;
+                        {paginatedCompetitions.map((c, i) => {
+                            const winRate = c.played > 0 ? Math.round((c.wins / c.played) * 100) : 0;
                             return (
                                 <tr key={i} style={{ borderBottom: '1px solid #f9f9f9', textAlign: 'center', height: '56px' }}>
-                                    <td style={{ fontWeight: '700', fontSize: '17px', color: '#000', textAlign: 'center', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>🛡️ {opp.name}</td>
-                                    <td style={{ textAlign: 'center', fontFamily: 'Space Mono, monospace', fontSize: '16px' }}>{opp.played}</td>
-                                    <td style={{ textAlign: 'center', color: '#00c853', fontWeight: '600', fontFamily: 'Space Mono, monospace', fontSize: '16px' }}>{opp.wins}</td>
+                                    <td style={{ fontWeight: '700', fontSize: '17px', color: '#000', textAlign: 'center', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>🏆 {c.name}</td>
+                                    <td style={{ textAlign: 'center', fontFamily: 'Space Mono, monospace', fontSize: '16px' }}>{c.played}</td>
+                                    <td style={{ textAlign: 'center', color: '#00c853', fontWeight: '600', fontFamily: 'Space Mono, monospace', fontSize: '16px' }}>{c.wins}</td>
                                     <td style={{ textAlign: 'center', fontWeight: 'bold', color: 'var(--gold, #c9a84c)', fontSize: '16px' }}>{winRate}%</td>
-                                    <td style={{ textAlign: 'center', color: 'var(--gold, #c9a84c)', fontFamily: 'Space Mono, monospace', fontSize: '16px' }}>{opp.draws}</td>
-                                    <td style={{ textAlign: 'center', color: '#ff4d4d', fontFamily: 'Space Mono, monospace', fontSize: '16px' }}>{opp.losses}</td>
-                                    <td style={{ textAlign: 'center', fontFamily: 'Space Mono, monospace', fontSize: '16px' }}>{opp.gf}</td>
-                                    <td style={{ textAlign: 'center', fontFamily: 'Space Mono, monospace', fontSize: '16px' }}>{opp.ga}</td>
-                                    <td style={{ textAlign: 'center', fontFamily: 'Space Mono, monospace', fontSize: '16px' }}>{opp.csf}</td>
-                                    <td style={{ textAlign: 'center', fontFamily: 'Space Mono, monospace', fontSize: '16px' }}>{opp.csa}</td>
+                                    <td style={{ textAlign: 'center', color: 'var(--gold, #c9a84c)', fontFamily: 'Space Mono, monospace', fontSize: '16px' }}>{c.draws}</td>
+                                    <td style={{ textAlign: 'center', color: '#ff4d4d', fontFamily: 'Space Mono, monospace', fontSize: '16px' }}>{c.losses}</td>
+                                    <td style={{ textAlign: 'center', fontFamily: 'Space Mono, monospace', fontSize: '16px' }}>{c.gf}</td>
+                                    <td style={{ textAlign: 'center', fontFamily: 'Space Mono, monospace', fontSize: '16px' }}>{c.ga}</td>
+                                    <td style={{ textAlign: 'center', fontFamily: 'Space Mono, monospace', fontSize: '16px' }}>{c.csf || 0}</td>
+                                    <td style={{ textAlign: 'center', fontFamily: 'Space Mono, monospace', fontSize: '16px' }}>{c.csa || 0}</td>
                                 </tr>
                             );
                         })}
                         {/* Totals Row */}
                         <tr style={{ background: '#f9f9f9', borderTop: '2px solid #ddd', borderBottom: '2px solid #ddd', fontWeight: 'bold', height: '56px' }}>
-                            <td style={{ fontWeight: 'bold', textAlign: 'center', color: '#000', fontSize: '17px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>TOTAL ({opponentsData.length} Opponents)</td>
+                            <td style={{ fontWeight: 'bold', textAlign: 'center', color: '#000', fontSize: '17px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>TOTAL ({competitionsData.length} Competitions)</td>
                             <td style={{ textAlign: 'center', fontFamily: 'Space Mono, monospace', fontSize: '16px' }}>{totals.played}</td>
                             <td style={{ textAlign: 'center', color: '#00c853', fontFamily: 'Space Mono, monospace', fontSize: '16px' }}>{totals.wins}</td>
                             <td style={{ textAlign: 'center', fontWeight: 'bold', color: 'var(--gold, #c9a84c)', fontSize: '16px' }}>{totals.winRate}%</td>
