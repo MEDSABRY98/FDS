@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import { supabase } from "../lib/supabase";
 import * as XLSX from "xlsx";
 import Login_db from "../lib/Login_db";
+import Loading_db from "../lib/Loading_db";
 import { useNotification } from "../lib/Notification_db";
 
 import "./AlahlydbManagement.css";
@@ -50,7 +51,16 @@ export default function DatabaseManagement() {
     }, []);
 
     // Custom Hooks
-    const { tableData, columns, loading: tableLoading, fetchTableData } = useTableData(selectedTable, addNotification);
+    const { tableData, columns, loading: tableLoading, fetchTableData, setLoading, setTableData, setColumns } = useTableData(selectedTable, addNotification);
+    
+    const handleTableChange = (newTable) => {
+        if (newTable !== selectedTable) {
+            setLoading(true);
+            setTableData([]);
+            setColumns([]);
+            setSelectedTable(newTable);
+        }
+    };
     
     const { 
         editingRow, setEditingRow, 
@@ -135,47 +145,47 @@ export default function DatabaseManagement() {
             <DatabaseSidebar 
                 availableTables={availableTables}
                 selectedTable={selectedTable}
-                setSelectedTable={setSelectedTable}
+                setSelectedTable={handleTableChange}
                 handleDownloadExcel={handleDownloadExcel}
             >
                 <div className="alahly-db-page">
                     <main className="db-content">
-                    <div className="data-toolbar">
-                        <div className="search-wrap">
-                            <input
-                                type="text"
-                                placeholder="SEARCH IN TABLE..."
-                                value={searchTerm}
-                                onChange={(e) => setSearchTerm(e.target.value)}
-                            />
-                        </div>
-                        <div className="record-count">{filteredData.length} RECORDS FOUND (PAGE {currentPage} OF {totalPages})</div>
-
-                        {selectedTable === "alahly_PLAYERDATABASE" && selectedRows.length > 1 && (
-                            <button
-                                onClick={handleMergeTrigger}
-                                disabled={isMerging}
-                                style={{
-                                    background: '#ff3b30',
-                                    color: '#fff',
-                                    padding: '10px 20px',
-                                    borderRadius: '4px',
-                                    border: 'none',
-                                    fontWeight: 'bold',
-                                    cursor: 'pointer',
-                                    fontSize: '11px',
-                                    marginLeft: '20px'
-                                }}
-                            >
-                                {isMerging ? "MERGING..." : `MERGE ${selectedRows.length} LEGENDS`}
-                            </button>
-                        )}
-                    </div>
-
                     {isLoading ? (
-                        <div className="db-loader">SYNCING REAL-TIME DATA...</div>
+                        <Loading_db title="AL AHLY" subtitle="DATABASE" message="SYNCING REAL-TIME DATA..." inline={true} />
                     ) : (
                         <>
+                            <div className="data-toolbar">
+                                <div className="search-wrap">
+                                    <input
+                                        type="text"
+                                        placeholder="SEARCH IN TABLE..."
+                                        value={searchTerm}
+                                        onChange={(e) => setSearchTerm(e.target.value)}
+                                    />
+                                </div>
+                                <div className="record-count">{filteredData.length} RECORDS FOUND (PAGE {currentPage} OF {totalPages})</div>
+
+                                {selectedTable === "alahly_PLAYERDATABASE" && selectedRows.length > 1 && (
+                                    <button
+                                        onClick={handleMergeTrigger}
+                                        disabled={isMerging}
+                                        style={{
+                                            background: '#ff3b30',
+                                            color: '#fff',
+                                            padding: '10px 20px',
+                                            borderRadius: '4px',
+                                            border: 'none',
+                                            fontWeight: 'bold',
+                                            cursor: 'pointer',
+                                            fontSize: '11px',
+                                            marginLeft: '20px'
+                                        }}
+                                    >
+                                        {isMerging ? "MERGING..." : `MERGE ${selectedRows.length} LEGENDS`}
+                                    </button>
+                                )}
+                            </div>
+
                             <DynamicTable 
                                 selectedTable={selectedTable}
                                 columns={columns}

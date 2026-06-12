@@ -5,6 +5,7 @@ import Link from "next/link";
 import { Download, Menu } from "lucide-react";
 import * as XLSX from "xlsx";
 import Login_db from "../lib/Login_db";
+import Loading_db from "../lib/Loading_db";
 import { useNotification } from "../lib/Notification_db";
 import "../EgyptClub/egy_c_sidebar.css";
 import "./EgyptClubdbManagement.css";
@@ -21,6 +22,7 @@ import { Pagination } from "./Components/Pagination";
 
 // Import Modals
 import { EditRecordModal } from "./Modals/EditRecordModal";
+import { AddRecordModal } from "./Modals/AddRecordModal";
 
 export default function EgyptClubDatabaseManagement() {
     const { addNotification } = useNotification();
@@ -45,14 +47,10 @@ export default function EgyptClubDatabaseManagement() {
     } = useTableData(addNotification);
 
     const {
-        editingRow,
-        setEditingRow,
-        editForm,
-        setEditForm,
-        saving,
-        handleEditClick,
-        handleSaveEdit,
-        handleDelete
+        editingRow, setEditingRow, editForm, setEditForm, saving,
+        isAdding, setIsAdding, addForm, setAddForm,
+        handleOpenAdd, handleSaveAdd,
+        handleEditClick, handleSaveEdit, handleDelete
     } = useEditRecord(selectedTable, columns, fetchTableData, addNotification);
 
     const handleDownloadExcel = () => {
@@ -134,20 +132,21 @@ export default function EgyptClubDatabaseManagement() {
                     </header>
 
                     <main className="db-content">
-                        <DatabaseToolbar 
-                            searchTerm={searchTerm} 
-                            setSearchTerm={setSearchTerm} 
-                            recordCount={filteredData ? filteredData.length : 0} 
-                            loading={loading}
-                        />
-
                         {loading ? (
-                            <div className="db-loader-wrap">
-                                <div className="db-spinner"></div>
-                                <div>SYNCING WITH DATABASE...</div>
-                            </div>
+                            <Loading_db title="EGYPT CLUBS" subtitle="DATABASE" message="SYNCING WITH DATABASE..." inline={true} />
                         ) : (
                             <>
+                                <DatabaseToolbar 
+                                    searchTerm={searchTerm} 
+                                    setSearchTerm={setSearchTerm} 
+                                    recordCount={filteredData ? filteredData.length : 0} 
+                                    loading={loading}
+                                    selectedTable={selectedTable}
+                                    onAdd={handleOpenAdd}
+                                    currentPage={currentPage}
+                                    totalPages={totalPages}
+                                />
+
                                 <DynamicTable 
                                     selectedTable={selectedTable}
                                     columns={columns}
@@ -173,6 +172,17 @@ export default function EgyptClubDatabaseManagement() {
                             saving={saving}
                             setEditingRow={setEditingRow}
                             handleSaveEdit={handleSaveEdit}
+                        />
+                    )}
+                    {isAdding && (
+                        <AddRecordModal
+                            selectedTable={selectedTable}
+                            columns={columns}
+                            addForm={addForm}
+                            setAddForm={setAddForm}
+                            saving={saving}
+                            setIsAdding={setIsAdding}
+                            handleSaveAdd={handleSaveAdd}
                         />
                     )}
                 </div>

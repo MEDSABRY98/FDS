@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import * as XLSX from "xlsx";
 import Login_db from "../lib/Login_db";
+import Loading_db from "../lib/Loading_db";
 import { useNotification } from "../lib/Notification_db";
 
 import "./DBManagement.css";
@@ -117,87 +118,87 @@ export default function DBManagement() {
             >
                 <div className="global-db-page">
                     <main className="db-content">
-                    <div className="data-toolbar">
-                        <div className="search-wrap">
-                            <input
-                                type="text"
-                                placeholder="SEARCH RECORD..."
-                                value={searchTerm}
-                                onChange={(e) => setSearchTerm(e.target.value)}
-                            />
-                        </div>
+                        {isLoading && tableData.length === 0 ? (
+                            <Loading_db title="GLOBAL" subtitle="DATABASE" message="SYNCING REAL-TIME DATA..." inline={true} />
+                        ) : (
+                            <>
+                                <div className="data-toolbar">
+                                    <div className="search-wrap">
+                                        <input
+                                            type="text"
+                                            placeholder="SEARCH RECORD..."
+                                            value={searchTerm}
+                                            onChange={(e) => setSearchTerm(e.target.value)}
+                                        />
+                                    </div>
 
-                        <div className="record-count" style={{ display: 'flex', alignItems: 'center', gap: '15px', justifyContent: 'center', flexWrap: 'wrap' }}>
-                            <span>{filteredData.length} RECORDS FOUND (PAGE {currentPage} OF {totalPages || 1})</span>
-                            
-                            {/* Add New Record Button */}
-                            <button
-                                onClick={handleAddClick}
-                                style={{
-                                    background: '#c9a84c',
-                                    color: '#000',
-                                    padding: '8px 16px',
-                                    borderRadius: '8px',
-                                    border: 'none',
-                                    fontWeight: '800',
-                                    cursor: 'pointer',
-                                    fontSize: '11px',
-                                    display: 'flex',
-                                    alignItems: 'center',
-                                    gap: '6px',
-                                    boxShadow: '0 4px 10px rgba(201,168,76,0.2)'
-                                }}
-                            >
-                                <Plus size={14} />
-                                ADD RECORD
-                            </button>
+                                    <div className="record-count" style={{ display: 'flex', alignItems: 'center', gap: '15px', justifyContent: 'center', flexWrap: 'wrap' }}>
+                                        <span>{filteredData.length} RECORDS FOUND (PAGE {currentPage} OF {totalPages || 1})</span>
+                                        
+                                        {/* Add New Record Button */}
+                                        <button
+                                            onClick={handleAddClick}
+                                            style={{
+                                                background: '#c9a84c',
+                                                color: '#000',
+                                                padding: '8px 16px',
+                                                borderRadius: '8px',
+                                                border: 'none',
+                                                fontWeight: '800',
+                                                cursor: 'pointer',
+                                                fontSize: '11px',
+                                                display: 'flex',
+                                                alignItems: 'center',
+                                                gap: '6px',
+                                                boxShadow: '0 4px 10px rgba(201,168,76,0.2)'
+                                            }}
+                                        >
+                                            <Plus size={14} />
+                                            ADD RECORD
+                                        </button>
 
-                            {/* Merge Buttons */}
-                            {selectedRows.length > 1 && (
-                                <button
-                                    onClick={handleMergeTrigger}
-                                    disabled={isMerging}
-                                    style={{
-                                        background: '#cf1322',
-                                        color: '#fff',
-                                        padding: '8px 16px',
-                                        borderRadius: '8px',
-                                        border: 'none',
-                                        fontWeight: '800',
-                                        cursor: 'pointer',
-                                        fontSize: '11px',
-                                        boxShadow: '0 4px 10px rgba(207,19,34,0.2)'
-                                    }}
-                                >
-                                    {isMerging ? "MERGING..." : `MERGE ${selectedRows.length} RECORDS`}
-                                </button>
-                            )}
-                        </div>
-                    </div>
+                                        {/* Merge Buttons */}
+                                        {selectedRows.length > 1 && (
+                                            <button
+                                                onClick={handleMergeTrigger}
+                                                disabled={isMerging}
+                                                style={{
+                                                    background: '#cf1322',
+                                                    color: '#fff',
+                                                    padding: '8px 16px',
+                                                    borderRadius: '8px',
+                                                    border: 'none',
+                                                    fontWeight: '800',
+                                                    cursor: 'pointer',
+                                                    fontSize: '11px',
+                                                    boxShadow: '0 4px 10px rgba(207,19,34,0.2)'
+                                                }}
+                                            >
+                                                {isMerging ? "MERGING..." : `MERGE ${selectedRows.length} RECORDS`}
+                                            </button>
+                                        )}
+                                    </div>
+                                </div>
 
-                    {isLoading && tableData.length === 0 ? (
-                        <div className="db-loader">SYNCING REAL-TIME DATA...</div>
-                    ) : (
-                        <>
-                            <DynamicTable
-                                columns={columns}
-                                paginatedData={paginatedData}
-                                selectedRows={selectedRows}
-                                onToggleSelect={handleToggleSelect}
-                                onEdit={handleEditClick}
-                                onDelete={handleDelete}
-                                getName={getName}
-                                onNameClick={(name) => setStatsEntityName(name)}
-                            />
+                                <DynamicTable
+                                    columns={columns}
+                                    paginatedData={paginatedData}
+                                    selectedRows={selectedRows}
+                                    onToggleSelect={handleToggleSelect}
+                                    onEdit={handleEditClick}
+                                    onDelete={handleDelete}
+                                    getName={getName}
+                                    onNameClick={(name) => setStatsEntityName(name)}
+                                />
 
-                            <Pagination
-                                currentPage={currentPage}
-                                totalPages={totalPages}
-                                onPageChange={setCurrentPage}
-                            />
-                        </>
-                    )}
-                </main>
+                                <Pagination
+                                    currentPage={currentPage}
+                                    totalPages={totalPages}
+                                    onPageChange={setCurrentPage}
+                                />
+                            </>
+                        )}
+                    </main>
 
                 {/* Modals */}
                 {editingRow && (

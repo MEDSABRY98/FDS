@@ -1,23 +1,47 @@
-import { Search, Info } from "lucide-react";
+import { Search, Plus } from "lucide-react";
 
-export function DatabaseToolbar({ searchTerm, setSearchTerm, recordCount, loading }) {
+export function DatabaseToolbar({ searchTerm, setSearchTerm, recordCount, loading, onAdd, selectedTable, currentPage, totalPages }) {
     return (
         <div className="data-toolbar">
+            {/* Search bar */}
             <div className="search-wrap">
                 <input
                     type="text"
-                    placeholder="Search records..."
+                    placeholder="SEARCH RECORD..."
                     value={searchTerm}
                     onChange={(e) => setSearchTerm(e.target.value)}
                 />
-                <Search size={20} style={{ position: 'absolute', right: '25px', top: '50%', transform: 'translateY(-50%)', color: '#888' }} />
             </div>
-            {!loading && (
-                <div className="record-count">
-                    <Info size={14} style={{ display: 'inline-block', verticalAlign: 'middle', marginRight: '5px' }} />
-                    SHOWING {recordCount} RECORDS
-                </div>
-            )}
+
+            {/* Record count + Add button row */}
+            <div className="record-count" style={{ display: 'flex', alignItems: 'center', gap: '15px', justifyContent: 'center', flexWrap: 'wrap' }}>
+                {!loading && (
+                    <span>{recordCount} RECORDS FOUND (PAGE {currentPage} OF {totalPages || 1})</span>
+                )}
+                {selectedTable && (
+                    <button
+                        onClick={onAdd}
+                        style={{
+                            background: '#c9a84c',
+                            color: '#000',
+                            padding: '8px 16px',
+                            borderRadius: '8px',
+                            border: 'none',
+                            fontWeight: '800',
+                            cursor: 'pointer',
+                            fontSize: '11px',
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '6px',
+                            boxShadow: '0 4px 10px rgba(201,168,76,0.2)',
+                            fontFamily: 'Space Mono, monospace'
+                        }}
+                    >
+                        <Plus size={14} />
+                        ADD RECORD
+                    </button>
+                )}
+            </div>
         </div>
     );
 }

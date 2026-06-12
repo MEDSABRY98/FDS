@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import './Loading_db.css';
 
-const Loading_db = ({ title = "AL AHLY", subtitle = "DATABASE", message = "INITIALIZING SYSTEM", inline = false }) => {
+const Loading_db = ({ inline = false }) => {
     const [progress, setProgress] = useState(0);
 
     useEffect(() => {
@@ -43,7 +43,7 @@ const Loading_db = ({ title = "AL AHLY", subtitle = "DATABASE", message = "INITI
     return (
         <div className={`loading-container ${inline ? 'inline' : ''}`}>
             <div className="loading-logo">
-                {title} <span>{subtitle}</span>
+                DATABASE <span>LOADING...</span>
             </div>
 
             <div className="loading-spinner-container">
@@ -51,8 +51,6 @@ const Loading_db = ({ title = "AL AHLY", subtitle = "DATABASE", message = "INITI
                 <div className="loading-spinner-inner"></div>
                 <div className="loading-percentage">{displayProgress}%</div>
             </div>
-
-            <div className="loading-message">{message}</div>
         </div>
     );
 };

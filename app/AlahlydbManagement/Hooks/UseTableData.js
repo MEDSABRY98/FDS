@@ -5,7 +5,7 @@ import { TABLES_TO_SORT_BY_ROW_ID } from "../Constants/DbConstants";
 export function useTableData(selectedTable, addNotification) {
     const [tableData, setTableData] = useState([]);
     const [columns, setColumns] = useState([]);
-    const [loading, setLoading] = useState(false);
+    const [loading, setLoading] = useState(true);
 
     const fetchTableData = useCallback(async () => {
         if (!selectedTable) return;
@@ -200,5 +200,5 @@ export function useTableData(selectedTable, addNotification) {
         }
     }, [selectedTable, addNotification]);
 
-    return { tableData, columns, loading, fetchTableData };
+    return { tableData, columns, loading, fetchTableData, setLoading, setTableData, setColumns };
 }

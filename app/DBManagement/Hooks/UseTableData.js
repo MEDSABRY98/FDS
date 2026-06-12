@@ -6,7 +6,7 @@ export function useTableData(addNotification) {
     const [selectedTable, setSelectedTable] = useState("");
     const [tableData, setTableData] = useState([]);
     const [columns, setColumns] = useState([]);
-    const [loading, setLoading] = useState(false);
+    const [loading, setLoading] = useState(true);
     
     // Search & Pagination
     const [searchTerm, setSearchTerm] = useState("");
@@ -112,11 +112,18 @@ export function useTableData(addNotification) {
 
     useEffect(() => {
         if (selectedTable) {
-            setTableData([]);
-            setColumns([]);
             fetchTableData();
         }
     }, [selectedTable, fetchTableData]);
+
+    const changeSelectedTable = (newTable) => {
+        if (newTable !== selectedTable) {
+            setLoading(true);
+            setTableData([]);
+            setColumns([]);
+            setSelectedTable(newTable);
+        }
+    };
 
     useEffect(() => {
         setCurrentPage(1);
@@ -136,7 +143,7 @@ export function useTableData(addNotification) {
     return {
         availableTables,
         selectedTable,
-        setSelectedTable,
+        setSelectedTable: changeSelectedTable,
         tableData,
         columns,
         loading,

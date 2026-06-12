@@ -5,6 +5,7 @@ import Link from "next/link";
 import { Download, Menu } from "lucide-react";
 import * as XLSX from "xlsx";
 import Login_db from "../lib/Login_db";
+import Loading_db from "../lib/Loading_db";
 import { useNotification } from "../lib/Notification_db";
 import "../EgyptNT/egypt_nt_sidebar.css";
 import "./EgyptNTdbManagement.css"; // Newly extracted styles
@@ -150,34 +151,42 @@ export default function EgyptDatabaseManagement() {
                     </header>
 
                     <main className="db-content">
-                        <DatabaseToolbar 
-                            searchTerm={searchTerm} 
-                            setSearchTerm={setSearchTerm} 
-                            recordCount={filteredData ? filteredData.length : 0} 
-                            loading={loading}
-                        />
-
-                        {["egy_NT_SQUAD", "egy_NT_PLAYERDETAILS"].includes(selectedTable) && selectedRows.length > 0 && (
-                            <div style={{ background: '#fff', padding: '15px 20px', borderRadius: '12px', marginBottom: '20px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', boxShadow: '0 4px 15px rgba(0,0,0,0.05)', border: '1px solid #eee' }}>
-                                <div>
-                                    <span style={{ fontWeight: 'bold', color: '#C8102E' }}>{selectedRows.length}</span> records selected
-                                </div>
-                                <button
-                                    onClick={handleMergeTrigger}
-                                    style={{ background: '#C8102E', color: '#fff', border: 'none', padding: '10px 20px', borderRadius: '8px', cursor: 'pointer', fontWeight: 'bold', fontSize: '13px', display: 'flex', alignItems: 'center', gap: '8px', transition: 'all 0.2s' }}
-                                >
-                                    {isMerging ? 'MERGING...' : 'MERGE SELECTED INTO ONE PLAYER'}
-                                </button>
-                            </div>
-                        )}
-
                         {loading ? (
-                            <div className="db-loader-wrap">
-                                <div className="db-spinner"></div>
-                                <div>SYNCING WITH DATABASE...</div>
-                            </div>
+                            <Loading_db title="EGYPT NATIONAL TEAM" subtitle="DATABASE" message="SYNCING WITH DATABASE..." inline={true} />
                         ) : (
                             <>
+                                <DatabaseToolbar 
+                                    searchTerm={searchTerm} 
+                                    setSearchTerm={setSearchTerm} 
+                                    recordCount={filteredData ? filteredData.length : 0} 
+                                    loading={loading}
+                                />
+
+                                {["egy_NT_SQUAD", "egy_NT_PLAYERDETAILS"].includes(selectedTable) && selectedRows.length > 0 && (
+                                    <div style={{ background: '#fff', padding: '15px 20px', borderRadius: '12px', marginBottom: '20px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', boxShadow: '0 4px 15px rgba(0,0,0,0.05)', border: '1px solid #eee' }}>
+                                        <div>
+                                            <span style={{ fontWeight: 'bold', color: '#C8102E' }}>{selectedRows.length}</span> records selected
+                                        </div>
+                                        <button
+                                            onClick={handleMergeTrigger}
+                                            disabled={isMerging}
+                                            style={{
+                                                background: '#C8102E',
+                                                color: '#fff',
+                                                padding: '8px 16px',
+                                                borderRadius: '8px',
+                                                border: 'none',
+                                                fontWeight: '800',
+                                                cursor: 'pointer',
+                                                fontSize: '11px',
+                                                boxShadow: '0 4px 10px rgba(200,16,46,0.2)'
+                                            }}
+                                        >
+                                            {isMerging ? "MERGING..." : `MERGE RECORDS`}
+                                        </button>
+                                    </div>
+                                )}
+
                                 <DynamicTable 
                                     selectedTable={selectedTable}
                                     columns={columns}

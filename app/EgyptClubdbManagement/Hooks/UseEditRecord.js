@@ -6,6 +6,38 @@ export function useEditRecord(selectedTable, columns, fetchTableData, addNotific
     const [editForm, setEditForm] = useState({});
     const [saving, setSaving] = useState(false);
 
+    // ── Add Record ───────────────────────────────────────────────────────────
+    const [isAdding, setIsAdding] = useState(false);
+    const [addForm, setAddForm] = useState({});
+
+    const handleOpenAdd = () => {
+        const emptyForm = {};
+        columns.filter(c => c.toUpperCase() !== "ROW_ID").forEach(c => { emptyForm[c] = ""; });
+        setAddForm(emptyForm);
+        setIsAdding(true);
+    };
+
+    const handleSaveAdd = async () => {
+        setSaving(true);
+        try {
+            const payload = {};
+            Object.keys(addForm).forEach(key => {
+                payload[key] = addForm[key] === "" ? null : addForm[key];
+            });
+            const { error } = await supabase.from(selectedTable).insert([payload]);
+            if (error) throw error;
+            if (fetchTableData) await fetchTableData();
+            setIsAdding(false);
+            if (addNotification) addNotification("Record added successfully", "success");
+        } catch (error) {
+            console.error("Insert error:", error);
+            if (addNotification) addNotification("Insert FAILED: " + error.message, "error");
+        } finally {
+            setSaving(false);
+        }
+    };
+
+    // ── Edit Record ──────────────────────────────────────────────────────────
     const handleEditClick = (row) => {
         setEditingRow(row);
         setEditForm({ ...row });
@@ -22,22 +54,16 @@ export function useEditRecord(selectedTable, columns, fetchTableData, addNotific
             const pkValue = pkField ? editingRow[pkField] : null;
 
             if (pkField && pkValue !== null && pkValue !== undefined && pkValue !== "") {
-                const { error } = await supabase
-                    .from(selectedTable)
-                    .update(editForm)
-                    .eq(pkField, pkValue);
+                const { error } = await supabase.from(selectedTable).update(editForm).eq(pkField, pkValue);
                 if (error) throw error;
             } else {
-                // Fallback: Composite Key Matching
                 let query = supabase.from(selectedTable).update(editForm);
-                Object.keys(editForm).filter(key => key !== 'MATCH_ID' && key !== 'EVENT_ID' && key !== 'PARENT_EVENT_ID' && key !== 'ROW_ID').forEach(key => {
-                    const val = editForm[key];
-                    if (val === null || val === undefined) {
-                        query = query.is(key, null);
-                    } else {
-                        query = query.eq(key, val);
-                    }
-                });
+                Object.keys(editForm)
+                    .filter(key => !['MATCH_ID', 'EVENT_ID', 'PARENT_EVENT_ID', 'ROW_ID'].includes(key))
+                    .forEach(key => {
+                        const val = editForm[key];
+                        query = val === null || val === undefined ? query.is(key, null) : query.eq(key, val);
+                    });
                 const { error } = await query;
                 if (error) throw error;
             }
@@ -53,6 +79,7 @@ export function useEditRecord(selectedTable, columns, fetchTableData, addNotific
         }
     };
 
+    // ── Delete Record ────────────────────────────────────────────────────────
     const handleDelete = async (row) => {
         if (!window.confirm("Are you sure you want to delete this record?")) return;
         try {
@@ -63,22 +90,16 @@ export function useEditRecord(selectedTable, columns, fetchTableData, addNotific
             const pkValue = pkField ? row[pkField] : null;
 
             if (pkField && pkValue !== null && pkValue !== undefined && pkValue !== "") {
-                const { error } = await supabase
-                    .from(selectedTable)
-                    .delete()
-                    .eq(pkField, pkValue);
+                const { error } = await supabase.from(selectedTable).delete().eq(pkField, pkValue);
                 if (error) throw error;
             } else {
-                // Fallback: Composite Key Matching
                 let query = supabase.from(selectedTable).delete();
-                Object.keys(row).filter(key => key !== 'MATCH_ID' && key !== 'EVENT_ID' && key !== 'PARENT_EVENT_ID' && key !== 'ROW_ID').forEach(key => {
-                    const val = row[key];
-                    if (val === null || val === undefined) {
-                        query = query.is(key, null);
-                    } else {
-                        query = query.eq(key, val);
-                    }
-                });
+                Object.keys(row)
+                    .filter(key => !['MATCH_ID', 'EVENT_ID', 'PARENT_EVENT_ID', 'ROW_ID'].includes(key))
+                    .forEach(key => {
+                        const val = row[key];
+                        query = val === null || val === undefined ? query.is(key, null) : query.eq(key, val);
+                    });
                 const { error } = await query;
                 if (error) throw error;
             }
@@ -91,13 +112,9 @@ export function useEditRecord(selectedTable, columns, fetchTableData, addNotific
     };
 
     return {
-        editingRow,
-        setEditingRow,
-        editForm,
-        setEditForm,
-        saving,
-        handleEditClick,
-        handleSaveEdit,
-        handleDelete
+        editingRow, setEditingRow, editForm, setEditForm, saving,
+        isAdding, setIsAdding, addForm, setAddForm,
+        handleOpenAdd, handleSaveAdd,
+        handleEditClick, handleSaveEdit, handleDelete
     };
 }
