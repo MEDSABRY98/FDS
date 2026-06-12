@@ -19,6 +19,7 @@ export const EgyptNTService = {
                     .from('egy_NT_MATCHDETAILS')
                     .select('*')
                     .order('DATE', { ascending: false })
+                    .order('ROW_ID', { ascending: true })
                     .range(from, from + step - 1);
 
                 if (error) throw error;
@@ -86,6 +87,7 @@ export const EgyptNTService = {
                 const { data, error } = await supabase
                     .from('egy_NT_PLAYERDETAILS')
                     .select('*')
+                    .order('ROW_ID', { ascending: true })
                     .range(from, from + step - 1);
 
                 if (error) throw error;
@@ -118,6 +120,7 @@ export const EgyptNTService = {
                 const { data, error } = await supabase
                     .from('egy_NT_LINEUPDETAILS')
                     .select('*')
+                    .order('ROW_ID', { ascending: true })
                     .range(from, from + step - 1);
 
                 if (error) throw error;
@@ -150,6 +153,7 @@ export const EgyptNTService = {
                 const { data, error } = await supabase
                     .from('egy_NT_GKSDETAILS')
                     .select('*')
+                    .order('ROW_ID', { ascending: true })
                     .range(from, from + step - 1);
 
                 if (error) throw error;
@@ -182,6 +186,7 @@ export const EgyptNTService = {
                 const { data, error } = await supabase
                     .from('egy_NT_HOWPENMISSED')
                     .select('*')
+                    .order('ROW_ID', { ascending: true })
                     .range(from, from + step - 1);
 
                 if (error) throw error;
@@ -214,6 +219,7 @@ export const EgyptNTService = {
                 const { data, error } = await supabase
                     .from('egy_NT_SQUAD')
                     .select('*')
+                    .order('ROW_ID', { ascending: true })
                     .range(from, from + step - 1);
 
                 if (error) throw error;

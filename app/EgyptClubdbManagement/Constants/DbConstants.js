@@ -22,8 +22,12 @@ export const COLUMN_ORDER = {
     egy_CLUB_TROPHY: [
         "ROW_ID",
         "COMPETITION",
+        "PLACE",
         "SEASON",
         "CHAMPION",
+        "RESULT",
+        "PEN",
+        "RUNNER-UP",
         "NOTE"
     ]
 };

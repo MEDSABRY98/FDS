@@ -19,6 +19,7 @@ export const EgyptClubService = {
                     .from('egy_CLUB_MATCHDETAILS')
                     .select('*')
                     .order('DATE', { ascending: false })
+                    .order('ROW_ID', { ascending: true })
                     .range(from, from + step - 1);
 
                 if (error) throw error;

@@ -1,0 +1,459 @@
+/* ==========================================================================
+   EGYPT CLUBS TROPHIES - DASHBOARD & GENERAL TAB STYLES
+   ========================================================================== */
+
+/* Main Containers */
+.dashboard-wrap {
+    max-width: 1848px;
+    width: 98%;
+    margin: 0 auto;
+}
+
+.detail-wrap {
+    padding: 0 20px 40px;
+    max-width: 1848px;
+    margin: 0 auto;
+}
+
+/* Section Header Styling */
+.section-header {
+    margin-bottom: 5px;
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+}
+
+.section-title {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 42px;
+    letter-spacing: 2px;
+    line-height: 1;
+    color: #000;
+}
+
+.section-title .accent {
+    color: var(--gold, #c9a84c);
+}
+
+/* KPI Grid & Cards (Light theme - matching EgyptClub / Alahly Dashboard style) */
+.kpi-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 20px;
+    margin-bottom: 32px;
+}
+
+.kpi-card {
+    background: #fff;
+    border-radius: 4px;
+    padding: 24px;
+    position: relative;
+    overflow: hidden;
+    border: 1px solid #eef0f2;
+    transition: transform 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.04);
+}
+
+.kpi-card:hover {
+    transform: translateY(-2px);
+    border-color: rgba(201, 168, 76, 0.35);
+    box-shadow: 0 4px 16px rgba(201, 168, 76, 0.1);
+}
+
+.kpi-card::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 3px;
+    background: linear-gradient(90deg, var(--gold, #c9a84c), transparent);
+}
+
+.kpi-label {
+    font-family: 'Space Mono', monospace;
+    font-size: 11px;
+    letter-spacing: 2px;
+    color: var(--gold, #c9a84c);
+    margin-bottom: 12px;
+    display: block;
+    font-weight: 600;
+}
+
+.kpi-value {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 48px;
+    color: #0d0d0d;
+    line-height: 1;
+    margin-bottom: 4px;
+}
+
+.kpi-icon {
+    position: absolute;
+    right: 24px;
+    top: 50%;
+    transform: translateY(-50%);
+    opacity: 0.07;
+    color: #000;
+}
+
+/* Podium Styling (Clean surface theme) */
+.trophy-podium-container {
+    background: var(--surface, #f5f5f3);
+    border: 1px solid var(--border, rgba(10, 10, 10, 0.08));
+    border-radius: 4px;
+    padding: 30px;
+    margin-bottom: 40px;
+}
+
+.podium-section-title {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 20px;
+    letter-spacing: 1px;
+    margin-bottom: 20px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    color: #000;
+}
+
+.podium-section-title::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: var(--border, rgba(10, 10, 10, 0.08));
+}
+
+.trophy-podium {
+    display: flex;
+    justify-content: center;
+    align-items: flex-end;
+    gap: 20px;
+    height: 240px;
+    max-width: 600px;
+    margin: 0 auto;
+}
+
+.podium-step {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    width: 140px;
+    transition: transform 0.2s ease;
+}
+
+.podium-step:hover {
+    transform: translateY(-5px);
+}
+
+.podium-avatar {
+    font-size: 26px;
+    margin-bottom: 10px;
+    width: 48px;
+    height: 48px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: #fff;
+    border: 1px solid #ddd;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
+}
+
+.podium-avatar.highlight {
+    border-color: var(--gold, #c9a84c);
+    background: rgba(201, 168, 76, 0.05);
+    box-shadow: 0 4px 10px rgba(201, 168, 76, 0.15);
+}
+
+.podium-name {
+    font-weight: 700;
+    font-size: 14px;
+    color: #000;
+    margin-bottom: 2px;
+    text-align: center;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    width: 100%;
+}
+
+.podium-count {
+    font-size: 12px;
+    color: var(--gold, #c9a84c);
+    font-weight: 700;
+    margin-bottom: 10px;
+}
+
+.podium-bar {
+    width: 100%;
+    border-radius: 4px 4px 0 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 800;
+}
+
+.step-1 .podium-bar {
+    height: 100px;
+    background: linear-gradient(to top, rgba(201, 168, 76, 0.02), rgba(201, 168, 76, 0.2));
+    border: 1px solid rgba(201, 168, 76, 0.4);
+    border-bottom: none;
+}
+
+.step-2 .podium-bar {
+    height: 75px;
+    background: linear-gradient(to top, rgba(100, 100, 100, 0.02), rgba(100, 100, 100, 0.1));
+    border: 1px solid rgba(100, 100, 100, 0.2);
+    border-bottom: none;
+}
+
+.step-3 .podium-bar {
+    height: 50px;
+    background: linear-gradient(to top, rgba(205, 127, 50, 0.02), rgba(205, 127, 50, 0.1));
+    border: 1px solid rgba(205, 127, 50, 0.2);
+    border-bottom: none;
+}
+
+.podium-number {
+    font-size: 20px;
+    font-family: 'Space Mono', monospace;
+    color: #888;
+}
+
+.step-1 .podium-number {
+    color: var(--gold, #c9a84c);
+}
+
+/* Toolbar search / stats row */
+.trophy-search-bar-row {
+    margin-bottom: 24px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 20px;
+    flex-wrap: wrap;
+}
+
+.trophy-stat-pill {
+    background: rgba(201, 168, 76, 0.06);
+    border: 1px solid rgba(201, 168, 76, 0.15);
+    border-radius: 4px;
+    padding: 8px 16px;
+    font-size: 13px;
+    font-weight: 600;
+    color: #333;
+}
+
+.trophy-stat-pill span {
+    color: var(--gold, #c9a84c);
+    font-weight: 800;
+}
+
+/* Table Container & Seasons Table Styles (Perfect Match) */
+.table-container {
+    background: #fff;
+    border: 1px solid #eef0f2;
+    border-radius: 4px;
+    padding: 10px;
+    overflow-x: auto;
+}
+
+.seasons-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 16px;
+    text-align: center;
+    table-layout: fixed;
+}
+
+.seasons-table th {
+    font-weight: bold;
+    text-align: center;
+    font-size: 16px;
+    border-bottom: 2px solid #ddd;
+    color: #555;
+    height: 48px;
+    background: transparent;
+}
+
+.seasons-table td {
+    text-align: center;
+    font-size: 16px;
+    height: 56px;
+    border-bottom: 1px solid #eee;
+    color: #333;
+}
+
+.season-table-row {
+    border-bottom: 1px solid #eee;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.season-table-row:hover td {
+    background: rgba(201, 168, 76, 0.04) !important;
+}
+
+/* Action Button */
+.trophy-action-btn {
+    background: rgba(201, 168, 76, 0.1);
+    border: 1px solid rgba(201, 168, 76, 0.2);
+    padding: 6px 15px;
+    border-radius: 4px;
+    font-size: 11px;
+    font-weight: 800;
+    cursor: pointer;
+    color: var(--gold, #c9a84c);
+    font-family: 'Space Mono', monospace;
+    transition: all 0.2s ease;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}
+
+.trophy-action-btn:hover {
+    background: var(--gold, #c9a84c);
+    color: #000;
+    border-color: var(--gold, #c9a84c);
+}
+
+/* Rank Badge Styles */
+.rank-cell {
+    font-family: 'Space Mono', monospace;
+    font-weight: 700;
+    text-align: center;
+}
+
+.rank-badge {
+    padding: 4px 10px;
+    border-radius: 4px;
+    font-size: 12px;
+    font-weight: 800;
+    background: rgba(0, 0, 0, 0.03);
+    border: 1px solid rgba(0, 0, 0, 0.05);
+    color: #666;
+}
+
+.rank-badge.rank-1 {
+    background: rgba(201, 168, 76, 0.15);
+    border-color: var(--gold, #c9a84c);
+    color: var(--gold, #c9a84c);
+}
+
+.rank-badge.rank-2 {
+    background: rgba(0, 0, 0, 0.05);
+    border-color: rgba(0, 0, 0, 0.15);
+    color: #111;
+}
+
+.rank-badge.rank-3 {
+    background: rgba(205, 127, 50, 0.1);
+    border-color: rgba(205, 127, 50, 0.2);
+    color: #cd7f32;
+}
+
+/* Detail View Back Header */
+.detail-back-header {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    margin-bottom: 25px;
+}
+
+.back-button {
+    background: #0d0d0d;
+    color: var(--gold, #c9a84c);
+    border: 1px solid var(--gold, #c9a84c);
+    border-radius: 4px;
+    width: 40px;
+    height: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.back-button:hover {
+    background: var(--gold, #c9a84c);
+    color: #000;
+}
+
+.detail-title {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 36px;
+    letter-spacing: 1px;
+    margin: 0;
+    color: #000;
+}
+
+.detail-title .accent {
+    color: var(--gold, #c9a84c);
+}
+
+/* Pagination container (Matching perfectly) */
+.pagination-container {
+    margin-top: 20px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 20px;
+    padding: 10px 0;
+}
+
+.pagination-container .page-btn {
+    background: rgba(201, 168, 76, 0.1);
+    border: 1px solid rgba(201, 168, 76, 0.2);
+    padding: 6px 15px;
+    border-radius: 4px;
+    font-size: 11px;
+    font-weight: 800;
+    cursor: pointer;
+    color: var(--gold, #c9a84c);
+    font-family: 'Space Mono', monospace;
+    transition: all 0.2s ease;
+}
+
+.pagination-container .page-btn:hover:not(:disabled) {
+    background: var(--gold, #c9a84c);
+    color: #000;
+    border-color: var(--gold, #c9a84c);
+}
+
+.pagination-container .page-btn:disabled {
+    opacity: 0.3;
+    cursor: not-allowed;
+}
+
+.pagination-container .page-info {
+    font-family: 'Space Mono', monospace;
+    font-size: 12px;
+    font-weight: 800;
+    color: var(--gold, #c9a84c);
+}
+
+/* Animations */
+.fade-in {
+    animation: fadeIn 0.4s ease-out;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(5px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+@media (max-width: 640px) {
+    .trophy-podium {
+        height: auto;
+        flex-direction: column;
+        align-items: center;
+        gap: 24px;
+    }
+    .podium-step {
+        width: 100%;
+        max-width: 180px;
+    }
+    .podium-bar {
+        display: none;
+    }
+}

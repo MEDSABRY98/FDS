@@ -61,9 +61,11 @@ export function useTableData(addNotification) {
                 if (selectedTable === "egy_NT_SQUAD") {
                     query = query.order("ROW_ID", { ascending: true });
                 } else if (selectedTable === "egy_NT_MATCHDETAILS") {
-                    query = query.order("DATE", { ascending: false });
+                    query = query.order("DATE", { ascending: false }).order("ROW_ID", { ascending: true });
                 } else if (selectedTable.includes("DETAILS") || selectedTable.includes("MISSED")) {
-                    query = query.order("MATCH_ID", { ascending: false });
+                    query = query.order("MATCH_ID", { ascending: false }).order("ROW_ID", { ascending: true });
+                } else {
+                    query = query.order("ROW_ID", { ascending: true });
                 }
 
                 const { data, error } = await query.range(from, from + step - 1);

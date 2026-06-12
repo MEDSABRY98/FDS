@@ -20,6 +20,7 @@ export const AlAhlyFinalsService = {
                     .from('alahly_FINALS_MATCHDETAILS')
                     .select('*')
                     .order('DATE', { ascending: false })
+                    .order('ROW_ID', { ascending: true })
                     .range(from, from + step - 1);
 
                 if (error) throw error;
@@ -52,6 +53,7 @@ export const AlAhlyFinalsService = {
                 const { data, error } = await supabase
                     .from('alahly_FINALS_LINEUPDETAILS')
                     .select('*')
+                    .order('ROW_ID', { ascending: true })
                     .range(from, from + step - 1);
 
                 if (error) throw error;
@@ -84,6 +86,7 @@ export const AlAhlyFinalsService = {
                 const { data, error } = await supabase
                     .from('alahly_FINALS_PLAYERDETAILS')
                     .select('*')
+                    .order('ROW_ID', { ascending: true })
                     .range(from, from + step - 1);
 
                 if (error) throw error;

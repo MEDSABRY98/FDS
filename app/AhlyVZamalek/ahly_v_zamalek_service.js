@@ -20,6 +20,7 @@ export const AhlyVZamalekService = {
                     .from('alahly_vs_zamalek_MATCHDETAILS')
                     .select('*')
                     .order('DATE', { ascending: false })
+                    .order('ROW_ID', { ascending: true })
                     .range(from, from + step - 1);
 
                 if (error) throw error;
@@ -52,6 +53,7 @@ export const AhlyVZamalekService = {
                 const { data, error } = await supabase
                     .from('alahly_vs_zamalek_LINEUPDETAILS')
                     .select('*')
+                    .order('ROW_ID', { ascending: true })
                     .range(from, from + step - 1);
 
                 if (error) throw error;
@@ -84,6 +86,7 @@ export const AhlyVZamalekService = {
                 const { data, error } = await supabase
                     .from('alahly_vs_zamalek_PLAYERDETAILS')
                     .select('*')
+                    .order('ROW_ID', { ascending: true })
                     .range(from, from + step - 1);
 
                 if (error) throw error;

@@ -25,6 +25,7 @@ export const EgyptNTPKSService = {
                 const { data, error } = await supabase
                     .from('egy_NT_PKS')
                     .select('*')
+                    .order('ROW_ID', { ascending: true })
                     .range(from, from + step - 1);
 
                 if (error) throw error;
@@ -47,6 +48,7 @@ export const EgyptNTPKSService = {
                 const { data, error } = await supabase
                     .from('egy_NT_MATCHDETAILS')
                     .select('MATCH_ID, CHAMPION, SEASON, ROUND, DATE, "EGYPT MANAGER", "OPPONENT MANAGER", "H-A-N", PLACE')
+                    .order('ROW_ID', { ascending: true })
                     .range(mFrom, mFrom + mStep - 1);
 
                 if (error) {

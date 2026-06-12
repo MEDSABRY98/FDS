@@ -1,0 +1,166 @@
+/* ==========================================================================
+   EGYPT CLUBS TROPHIES - SEASONS TAB SPECIFIC STYLES
+   ========================================================================== */
+
+.seasons-wrap {
+    max-width: 1848px;
+    width: 98%;
+    margin: 0 auto;
+}
+
+/* Seasons Control Row Layout */
+.seasons-control-toolbar {
+    margin-bottom: 24px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 20px;
+    flex-wrap: wrap;
+}
+
+.season-selector-wrapper {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.selector-label {
+    font-family: 'Space Mono', monospace;
+    font-size: 11px;
+    font-weight: 800;
+    color: #666;
+    letter-spacing: 1px;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    white-space: nowrap;
+}
+
+/* Override dropdown width inside season selector */
+.season-dropdown-unified {
+    min-width: 200px;
+}
+
+.season-search-wrapper {
+    max-width: 360px;
+    width: 100%;
+}
+
+/* Quick Stats Grid inside Season View */
+.season-stats-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: 16px;
+    margin-bottom: 24px;
+}
+
+.season-stat-card {
+    background: var(--surface, #f5f5f3);
+    border: 1px solid var(--border, rgba(10, 10, 10, 0.08));
+    border-radius: 4px;
+    padding: 16px;
+    display: flex;
+    flex-direction: column;
+}
+
+.stat-card-title {
+    font-family: 'Space Mono', monospace;
+    font-size: 10px;
+    font-weight: 800;
+    color: #888;
+    letter-spacing: 1px;
+    margin-bottom: 4px;
+}
+
+.stat-card-value {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 32px;
+    color: var(--black, #0a0a0a);
+    line-height: 1;
+}
+
+/* Table Container & Seasons Table Styles (Perfect Match) */
+.table-container {
+    background: #fff;
+    border: 1px solid #eef0f2;
+    border-radius: 4px;
+    padding: 10px;
+    overflow-x: auto;
+}
+
+.seasons-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 16px;
+    text-align: center;
+    table-layout: fixed;
+}
+
+.seasons-table th {
+    font-weight: bold;
+    text-align: center;
+    font-size: 16px;
+    border-bottom: 2px solid #ddd;
+    color: #555;
+    height: 48px;
+    background: transparent;
+}
+
+.seasons-table td {
+    text-align: center;
+    font-size: 16px;
+    height: 56px;
+    border-bottom: 1px solid #eee;
+    color: #333;
+}
+
+.season-table-row {
+    border-bottom: 1px solid #eee;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.season-table-row:hover td {
+    background: rgba(201, 168, 76, 0.04) !important;
+}
+
+/* Pagination container (Matching perfectly) */
+.pagination-container {
+    margin-top: 20px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 20px;
+    padding: 10px 0;
+}
+
+.pagination-container .page-btn {
+    background: rgba(201, 168, 76, 0.1);
+    border: 1px solid rgba(201, 168, 76, 0.2);
+    padding: 6px 15px;
+    border-radius: 4px;
+    font-size: 11px;
+    font-weight: 800;
+    cursor: pointer;
+    color: var(--gold, #c9a84c);
+    font-family: 'Space Mono', monospace;
+    transition: all 0.2s ease;
+}
+
+.pagination-container .page-btn:hover:not(:disabled) {
+    background: var(--gold, #c9a84c);
+    color: #000;
+    border-color: var(--gold, #c9a84c);
+}
+
+.pagination-container .page-btn:disabled {
+    opacity: 0.3;
+    cursor: not-allowed;
+}
+
+.pagination-container .page-info {
+    font-family: 'Space Mono', monospace;
+    font-size: 12px;
+    font-weight: 800;
+    color: var(--gold, #c9a84c);
+}

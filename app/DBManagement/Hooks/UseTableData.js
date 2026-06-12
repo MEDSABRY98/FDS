@@ -47,6 +47,7 @@ export function useTableData(addNotification) {
                 const { data, error } = await supabase
                     .from(selectedTable)
                     .select("*")
+                    .order("ROW_ID", { ascending: true })
                     .range(from, from + step - 1);
 
                 if (error) throw error;

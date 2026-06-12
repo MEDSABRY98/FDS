@@ -19,6 +19,7 @@ export const AlAhlyService = {
                     .from('alahly_MATCHDETAILS')
                     .select('*')
                     .order('DATE', { ascending: false })
+                    .order('ROW_ID', { ascending: true })
                     .range(from, from + step - 1);
 
                 if (error) throw error;
@@ -87,6 +88,7 @@ export const AlAhlyService = {
                 const { data, error } = await supabase
                     .from('alahly_MEDIATRACKER')
                     .select('*')
+                    .order('ROW_ID', { ascending: true })
                     .range(from, from + step - 1);
 
                 if (error) throw error;
@@ -137,6 +139,7 @@ export const AlAhlyService = {
                 const { data, error } = await supabase
                     .from('alahly_PLAYERDETAILS')
                     .select('*')
+                    .order('ROW_ID', { ascending: true })
                     .range(from, from + step - 1);
 
                 if (error) throw error;
@@ -169,6 +172,7 @@ export const AlAhlyService = {
                 const { data, error } = await supabase
                     .from('alahly_LINEUPDETAILS')
                     .select('*')
+                    .order('ROW_ID', { ascending: true })
                     .range(from, from + step - 1);
 
                 if (error) throw error;
@@ -201,6 +205,7 @@ export const AlAhlyService = {
                 const { data, error } = await supabase
                     .from('alahly_GKSDETAILS')
                     .select('*')
+                    .order('ROW_ID', { ascending: true })
                     .range(from, from + step - 1);
 
                 if (error) throw error;
@@ -287,6 +292,7 @@ export const AlAhlyService = {
                 const { data, error } = await supabase
                     .from('alahly_PKS')
                     .select('*')
+                    .order('ROW_ID', { ascending: true })
                     .range(from, from + step - 1);
 
                 if (error) throw error;
@@ -319,6 +325,7 @@ export const AlAhlyService = {
                 const { data, error } = await supabase
                     .from('alahly_HOWPENMISSED')
                     .select('*')
+                    .order('ROW_ID', { ascending: true })
                     .range(from, from + step - 1);
 
                 if (error) throw error;

@@ -21,11 +21,13 @@ export function useTableData(selectedTable, addNotification) {
 
                 // Deterministic ordering based on table type
                 if (selectedTable === "alahly_PLAYERDATABASE") {
-                    query = query.order("PLAYER NAME", { ascending: true });
+                    query = query.order("PLAYER NAME", { ascending: true }).order("ROW_ID", { ascending: true });
                 } else if (selectedTable === "alahly_MATCHDETAILS" || selectedTable === "alahly_vs_zamalek_MATCHDETAILS") {
-                    query = query.order("DATE", { ascending: false });
+                    query = query.order("DATE", { ascending: false }).order("ROW_ID", { ascending: true });
                 } else if (selectedTable.includes("DETAILS") || selectedTable.includes("MISSED")) {
-                    query = query.order("MATCH_ID", { ascending: false });
+                    query = query.order("MATCH_ID", { ascending: false }).order("ROW_ID", { ascending: true });
+                } else {
+                    query = query.order("ROW_ID", { ascending: true });
                 }
 
                 const { data, error } = await query.range(from, from + step - 1);

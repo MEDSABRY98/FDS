@@ -29,7 +29,8 @@ export default function HomeDbSelection() {
         ],
         egypt_clubs: [
             { href: "/EgyptClubdbManagement", label: "EGYPT CLUB DB MANAGEMENT", icon: Database },
-            { href: "/EgyptClub", label: "EGYPT CLUBS", icon: Trophy }
+            { href: "/EgyptClub", label: "EGYPT CLUBS", icon: Trophy },
+            { href: "/EgyptClubTrophy", label: "EGYPT CLUBS TROPHIES", icon: Trophy }
         ]
     };
 
