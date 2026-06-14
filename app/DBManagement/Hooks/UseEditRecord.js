@@ -6,6 +6,7 @@ export function useEditRecord(selectedTable, columns, fetchTableData, addNotific
     const [editForm, setEditForm] = useState({});
     const [saving, setSaving] = useState(false);
     const [deleting, setDeleting] = useState(false);
+    const [deletingRow, setDeletingRow] = useState(null);
 
     const handleEditClick = (row) => {
         setEditingRow(row);
@@ -72,12 +73,16 @@ export function useEditRecord(selectedTable, columns, fetchTableData, addNotific
         }
     };
 
-    const handleDelete = async (row) => {
-        if (!confirm("Are you sure you want to delete this record? This is permanent.")) return;
+    const handleDelete = (row) => {
+        setDeletingRow(row);
+    };
+
+    const handleConfirmDelete = async () => {
+        if (!deletingRow) return;
         setDeleting(true);
         try {
             const pkField = columns.find(c => c.toUpperCase() === "ROW_ID") || "ROW_ID";
-            const pkValue = row[pkField];
+            const pkValue = deletingRow[pkField];
 
             if (!pkValue) {
                 throw new Error("Primary key value (ROW_ID) is missing.");
@@ -92,6 +97,7 @@ export function useEditRecord(selectedTable, columns, fetchTableData, addNotific
 
             addNotification("Record deleted successfully.", "success");
             await fetchTableData();
+            setDeletingRow(null);
         } catch (error) {
             console.error("Delete error:", error);
             addNotification("Delete FAILED: " + error.message, "error");
@@ -110,6 +116,9 @@ export function useEditRecord(selectedTable, columns, fetchTableData, addNotific
         handleEditClick,
         handleAddClick,
         handleSaveEdit,
-        handleDelete
+        handleDelete,
+        deletingRow,
+        setDeletingRow,
+        handleConfirmDelete
     };
 }

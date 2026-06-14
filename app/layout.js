@@ -1,5 +1,6 @@
 import './globals.css'
 import { NotificationProvider } from './lib/Notification_db'
+import MobileBlocker from './lib/MobileBlocker'
 
 export const metadata = {
     title: 'Football Database',
@@ -15,9 +16,12 @@ export default function RootLayout({ children }) {
                 <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@300;400;500;600&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet" />
             </head>
             <body suppressHydrationWarning>
-                <NotificationProvider>
-                    {children}
-                </NotificationProvider>
+                <div className="app-main-wrapper">
+                    <NotificationProvider>
+                        {children}
+                    </NotificationProvider>
+                </div>
+                <MobileBlocker />
             </body>
         </html>
     )

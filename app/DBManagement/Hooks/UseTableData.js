@@ -19,10 +19,15 @@ export function useTableData(addNotification) {
                 const { data, error } = await supabase.rpc('get_dbmanagement_tables');
                 if (error) throw error;
                 if (data && data.length > 0) {
-                    const sorted = data.map(t => {
-                        const label = t.table_name.replace('db_', '').toUpperCase();
-                        return { name: t.table_name, label };
-                    }).sort((a, b) => a.label.localeCompare(b.label));
+                    const sorted = data
+                        .filter(t => t.table_name.toUpperCase() !== "DB_COLUMN_ORDERS")
+                        .map(t => {
+                            const label = t.table_name.replace('db_', '').toUpperCase();
+                            return { name: t.table_name, label };
+                        }).sort((a, b) => a.label.localeCompare(b.label));
+                    
+                    sorted.push({ name: "COLUMN_SORT", label: "COLUMN SORT" });
+                    
                     setAvailableTables(sorted);
                     setSelectedTable(sorted[0].name);
                 }
@@ -63,20 +68,47 @@ export function useTableData(addNotification) {
             if (allData.length > 0) {
                 let cols = Object.keys(allData[0]);
                 
-                // Keep ROW_ID at the very beginning
-                const rowIdIdx = cols.findIndex(c => c.toUpperCase() === "ROW_ID");
-                if (rowIdIdx > -1) {
-                    const rowIdKey = cols[rowIdIdx];
-                    cols.splice(rowIdIdx, 1);
-                    cols.unshift(rowIdKey);
+                // Fetch saved order from db_COLUMN_ORDERS
+                let dbOrder = null;
+                try {
+                    const { data: orderData } = await supabase
+                        .from("db_COLUMN_ORDERS")
+                        .select("COLUMN_ORDER")
+                        .eq("TABLE_NAME", selectedTable)
+                        .maybeSingle();
+                    if (orderData && orderData.COLUMN_ORDER) {
+                        dbOrder = orderData.COLUMN_ORDER;
+                    }
+                } catch (err) {
+                    console.error("Failed to fetch column order from database:", err);
                 }
-                
-                // Keep Entity ID (PLAYER_ID, MANAGER_ID, STADIUM_ID) in the second position
-                const entityIdIdx = cols.findIndex(c => c.endsWith("_ID") && c.toUpperCase() !== "ROW_ID");
-                if (entityIdIdx > -1) {
-                    const entityIdKey = cols[entityIdIdx];
-                    cols.splice(entityIdIdx, 1);
-                    cols.splice(1, 0, entityIdKey);
+
+                if (dbOrder && dbOrder.length > 0) {
+                    const normalizedOrder = dbOrder.map(c => c.toUpperCase());
+                    cols.sort((a, b) => {
+                        const idxA = normalizedOrder.indexOf(a.toUpperCase());
+                        const idxB = normalizedOrder.indexOf(b.toUpperCase());
+                        if (idxA === -1 && idxB === -1) return 0;
+                        if (idxA === -1) return 1;
+                        if (idxB === -1) return -1;
+                        return idxA - idxB;
+                    });
+                } else {
+                    // Keep ROW_ID at the very beginning
+                    const rowIdIdx = cols.findIndex(c => c.toUpperCase() === "ROW_ID");
+                    if (rowIdIdx > -1) {
+                        const rowIdKey = cols[rowIdIdx];
+                        cols.splice(rowIdIdx, 1);
+                        cols.unshift(rowIdKey);
+                    }
+                    
+                    // Keep Entity ID (PLAYER_ID, MANAGER_ID, STADIUM_ID) in the second position
+                    const entityIdIdx = cols.findIndex(c => c.endsWith("_ID") && c.toUpperCase() !== "ROW_ID");
+                    if (entityIdIdx > -1) {
+                        const entityIdKey = cols[entityIdIdx];
+                        cols.splice(entityIdIdx, 1);
+                        cols.splice(1, 0, entityIdKey);
+                    }
                 }
 
                 setColumns(cols);
@@ -111,14 +143,16 @@ export function useTableData(addNotification) {
     }, [selectedTable, addNotification]);
 
     useEffect(() => {
-        if (selectedTable) {
+        if (selectedTable && selectedTable !== "COLUMN_SORT") {
             fetchTableData();
         }
     }, [selectedTable, fetchTableData]);
 
     const changeSelectedTable = (newTable) => {
         if (newTable !== selectedTable) {
-            setLoading(true);
+            if (newTable !== "COLUMN_SORT") {
+                setLoading(true);
+            }
             setTableData([]);
             setColumns([]);
             setSelectedTable(newTable);

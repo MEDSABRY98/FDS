@@ -17,8 +17,11 @@ import Pagination from "./Components/Pagination";
 import MergeModal from "./Modals/MergeModal";
 import EditModal from "./Modals/EditModal";
 import EntityStatsModal from "./Modals/EntityStatsModal";
+import MergeToolModal from "./Modals/MergeToolModal";
+import DeleteConfirmModal from "./Modals/DeleteConfirmModal";
+import ColumnSortView from "./Components/ColumnSortView";
 
-import { Plus } from "lucide-react";
+import { Plus, GitMerge, X } from "lucide-react";
 
 export default function DBManagement() {
     const { addNotification } = useNotification();
@@ -52,7 +55,10 @@ export default function DBManagement() {
         handleEditClick,
         handleAddClick,
         handleSaveEdit,
-        handleDelete
+        handleDelete,
+        deletingRow,
+        setDeletingRow,
+        handleConfirmDelete
     } = useEditRecord(selectedTable, columns, fetchTableData, addNotification);
 
     // Merge record hooks
@@ -73,6 +79,7 @@ export default function DBManagement() {
     } = useMergeRecords(selectedTable, fetchTableData, addNotification);
 
     const [statsEntityName, setStatsEntityName] = useState(null);
+    const [showMergeTool, setShowMergeTool] = useState(false);
 
     // Clear selected rows when changing table
     useEffect(() => {
@@ -106,7 +113,7 @@ export default function DBManagement() {
         }
     };
 
-    const isLoading = tableLoading || saving || deleting;
+    const isLoading = selectedTable !== "COLUMN_SORT" && (tableLoading || saving || deleting);
 
     return (
         <Login_db title="EDITOR ACCESS" subtitle="GLOBAL DATABASE MANAGEMENT">
@@ -120,6 +127,8 @@ export default function DBManagement() {
                     <main className="db-content">
                         {isLoading && tableData.length === 0 ? (
                             <Loading_db title="GLOBAL" subtitle="DATABASE" message="SYNCING REAL-TIME DATA..." inline={true} />
+                        ) : selectedTable === "COLUMN_SORT" ? (
+                            <ColumnSortView addNotification={addNotification} />
                         ) : (
                             <>
                                 <div className="data-toolbar">
@@ -155,6 +164,28 @@ export default function DBManagement() {
                                         >
                                             <Plus size={14} />
                                             ADD RECORD
+                                        </button>
+
+                                        {/* Always Visible Merge Tool Button */}
+                                        <button
+                                            onClick={() => setShowMergeTool(true)}
+                                            style={{
+                                                background: '#cf1322',
+                                                color: '#fff',
+                                                padding: '8px 16px',
+                                                borderRadius: '8px',
+                                                border: 'none',
+                                                fontWeight: '800',
+                                                cursor: 'pointer',
+                                                fontSize: '11px',
+                                                display: 'flex',
+                                                alignItems: 'center',
+                                                gap: '6px',
+                                                boxShadow: '0 4px 10px rgba(207,19,34,0.2)'
+                                            }}
+                                        >
+                                            <GitMerge size={14} />
+                                            MERGE RECORDS
                                         </button>
 
                                         {/* Merge Buttons */}
@@ -233,6 +264,48 @@ export default function DBManagement() {
                     entityTable={selectedTable}
                     entityName={statsEntityName}
                 />
+
+                {showMergeTool && (
+                    <MergeToolModal
+                        selectedTable={selectedTable}
+                        tableData={tableData}
+                        onClose={() => setShowMergeTool(false)}
+                        onMergeComplete={fetchTableData}
+                        addNotification={addNotification}
+                        getName={getName}
+                    />
+                )}
+
+                {deletingRow && (
+                    <DeleteConfirmModal
+                        deletingRow={deletingRow}
+                        onClose={() => setDeletingRow(null)}
+                        onConfirm={handleConfirmDelete}
+                        deleting={deleting}
+                        getName={getName}
+                    />
+                )}
+                {/* Floating Merge Widget */}
+                {selectedRows.length > 1 && (
+                    <div className="floating-merge-widget">
+                        <button
+                            className="floating-merge-btn"
+                            onClick={handleMergeTrigger}
+                            disabled={isMerging}
+                            title={`Merge ${selectedRows.length} selected records`}
+                        >
+                            <GitMerge size={16} className={isMerging ? "spinning-merge-icon" : "floating-merge-icon"} />
+                            <span>{isMerging ? "MERGING..." : `MERGE (${selectedRows.length})`}</span>
+                        </button>
+                        <button
+                            className="floating-clear-btn"
+                            onClick={() => setSelectedRows([])}
+                            title="Deselect all records"
+                        >
+                            <X size={14} />
+                        </button>
+                    </div>
+                )}
                 </div>
             </DatabaseSidebar>
         </Login_db>

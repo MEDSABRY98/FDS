@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo } from 'react';
 import { supabase } from "../../lib/supabase";
-import { COLUMN_ORDER, TABLES_TO_SORT_BY_ROWID } from '../Constants/DbConstants';
+import { TABLES_TO_SORT_BY_ROWID } from '../Constants/DbConstants';
 
 export function useTableData(addNotification) {
     const [availableTables, setAvailableTables] = useState([]);
@@ -88,15 +88,31 @@ export function useTableData(addNotification) {
             if (allData.length > 0) {
                 let cols = Object.keys(allData[0]);
                 
-                const preferredOrder = COLUMN_ORDER[selectedTable];
+                // Fetch saved order from db_COLUMN_ORDERS
+                let dbOrder = null;
+                try {
+                    const { data: orderData } = await supabase
+                        .from("db_COLUMN_ORDERS")
+                        .select("COLUMN_ORDER")
+                        .eq("TABLE_NAME", selectedTable)
+                        .maybeSingle();
+                    if (orderData && orderData.COLUMN_ORDER) {
+                        dbOrder = orderData.COLUMN_ORDER;
+                    }
+                } catch (err) {
+                    console.error("Failed to fetch column order from database:", err);
+                }
+
+                const preferredOrder = dbOrder;
                 if (preferredOrder) {
+                    const normalizedOrder = preferredOrder.map(c => c.toUpperCase());
                     cols.sort((a, b) => {
-                        const idxA = preferredOrder.indexOf(a);
-                        const idxB = preferredOrder.indexOf(b);
-                        if (idxA > -1 && idxB > -1) return idxA - idxB;
-                        if (idxA > -1) return -1;
-                        if (idxB > -1) return 1;
-                        return a.localeCompare(b);
+                        const idxA = normalizedOrder.indexOf(a.toUpperCase());
+                        const idxB = normalizedOrder.indexOf(b.toUpperCase());
+                        if (idxA === -1 && idxB === -1) return 0;
+                        if (idxA === -1) return 1;
+                        if (idxB === -1) return -1;
+                        return idxA - idxB;
                     });
                 } else {
                     const rowIdIdx = cols.findIndex(c => c.toUpperCase() === "ROW_ID");
