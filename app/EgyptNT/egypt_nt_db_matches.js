@@ -100,7 +100,7 @@ export default function EgyptNTMatches({ matches, onMatchClick }) {
     };
 
     const VenueIndicator = ({ venue, type }) => {
-        const v = String(venue || 'N').trim().toUpperCase();
+        const v = String(venue || 'N').replace(/[^a-zA-Z]/g, '').charAt(0).toUpperCase();
         return <div className={`venue-circle ${type}`}>{v}</div>;
     };
 
@@ -156,9 +156,8 @@ export default function EgyptNTMatches({ matches, onMatchClick }) {
                                             <div style={{ fontSize: '15px', color: 'var(--gold)', fontWeight: '800', flex: 1 }}>🏆 {m["SEASON"]}</div>
                                         </div>
 
-                                        {/* Main Match Center (Flex 1) */}
                                         <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '30px', padding: '0 20px' }}>
-                                            <div style={{ flex: 1, textAlign: 'right', fontWeight: '800', fontSize: '18px', color: m["H-A-N"] === 'A' ? '#aaa' : '#000' }}>منتخب مصر</div>
+                                            <div style={{ flex: 1, textAlign: 'right', fontWeight: '800', fontSize: '18px', color: m["H-A-N"] === 'A' ? '#aaa' : '#000' }}>{m["Egypt TEAM"] || 'Egypt'}</div>
 
                                             <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', minWidth: '90px' }}>
                                                 <div style={{ fontSize: '20px', fontWeight: '900', fontFamily: 'Space Mono', letterSpacing: '-1px', color: '#000' }}>

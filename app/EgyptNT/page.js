@@ -15,7 +15,8 @@ import {
     GitCompare, 
     Menu, 
     ArrowLeft,
-    Award
+    Award,
+    Edit
 } from "lucide-react";
 import Link from "next/link";
 
@@ -30,6 +31,7 @@ import EgyptNTManagers from "./egypt_nt_db_managers";
 import EgyptNTFilters from "./egypt_nt_db_filters";
 import EgyptNTSquad from "./egypt_nt_db_squad";
 import EgyptNTSquadEditor from "./egypt_nt_db_squad_editor";
+import EgyptNTEditor from "./egypt_nt_db_editor";
 
 import EgyptNTMatchDetails from "./egypt_nt_db_match_details";
 import EgyptNTChampions from "./egypt_nt_db_champions";
@@ -195,6 +197,7 @@ export default function EgyptNTDatabase() {
     const tabs = [
         { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
         { id: 'matches', label: 'Matches', icon: Trophy },
+        { id: 'editor', label: 'Editor', icon: Edit },
         { id: 'squad', label: 'Squad List', icon: Users },
         { id: 'add_squad', label: 'Add Squad', icon: Users },
         { id: 'champions', label: 'Champions', icon: Award },
@@ -357,6 +360,7 @@ export default function EgyptNTDatabase() {
                             {activeTab === 'h2h' && <EgyptNTH2H matches={filteredMatches} />}
                             {activeTab === 'referees' && <EgyptNTReferees matches={filteredMatches} playerDetails={playerDetails} howPenMissed={howPenMissed} />}
                             {activeTab === 'champions' && <EgyptNTChampions matchesData={filteredMatches} />}
+                            {activeTab === 'editor' && <EgyptNTEditor />}
                         </>
                     )}
                 </main>
