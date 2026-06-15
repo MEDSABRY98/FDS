@@ -4,16 +4,16 @@ import { useState, useEffect } from "react";
 import Link from "next/link";
 import { LayoutDashboard, Trophy, Edit, Award, Users, UserCheck, Download, Filter } from "lucide-react";
 import SideBar_db from "../lib/SideBar_db";
-import { AlAhlyFinalsService } from "./alahly_finals_service";
-import AlAhlyFinalsDashboard from "./alahly_finals_dashboard";
-import AlAhlyFinalsMatches from "./alahly_finals_matches";
-import AlAhlyFinalsPlayers from "./alahly_finals_players";
-import AlAhlyFinalsChampions from "./alahly_finals_champions";
-import AlAhlyFinalsManagers from "./alahly_finals_managers";
-import AlAhlyFinalsEditor from "./alahly_finals_editor";
-import AlAhlyFinalsFilter from "./alahly_finals_filters";
+import { AlAhlyFinalsService } from "./Service/alahly_finals_service";
+import AlAhlyFinalsDashboard from "./Dashboard/alahly_finals_dashboard";
+import AlAhlyFinalsMatches from "./Matches/alahly_finals_matches";
+import AlAhlyFinalsPlayers from "./Players/alahly_finals_players";
+import AlAhlyFinalsChampions from "./Champions/alahly_finals_champions";
+import AlAhlyFinalsManagers from "./Managers/alahly_finals_managers";
+import AlAhlyFinalsEditor from "./Editor/alahly_finals_editor";
+import AlAhlyFinalsFilter from "./Filters/alahly_finals_filters";
 import Loading_db from "../lib/Loading_db";
-import AlAhlyFinalsMatchDetails from "./alahly_finals_match_details";
+import AlAhlyFinalsMatchDetails from "./MatchDetails/alahly_finals_match_details";
 
 
 export default function AlAhlyFinalsDatabase() {

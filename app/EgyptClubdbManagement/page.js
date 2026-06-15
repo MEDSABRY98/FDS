@@ -7,7 +7,7 @@ import * as XLSX from "xlsx";
 import Login_db from "../lib/Login_db";
 import Loading_db from "../lib/Loading_db";
 import { useNotification } from "../lib/Notification_db";
-import "../EgyptClub/egy_c_sidebar.css";
+import "../EgyptClub/Sidebar/egy_c_sidebar.css";
 import "./EgyptClubdbManagement.css";
 
 // Import Custom Hooks

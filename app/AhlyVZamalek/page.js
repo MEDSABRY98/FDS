@@ -12,17 +12,17 @@ import {
     FileText
 } from "lucide-react";
 import Link from "next/link";
-import { AhlyVZamalekService } from "./ahly_v_zamalek_service";
-import AhlyVZamalekDashboard from "./ahly_v_zamalek_dashboard";
-import AhlyVZamalekMatches from "./ahly_v_zamalek_matches";
-import AhlyVZamalekChampions from "./ahly_v_zamalek_champions";
-import AhlyVZamalekPlayers from "./ahly_v_zamalek_players";
-import AhlyVZamalekManagers from "./ahly_v_zamalek_managers";
-import AhlyVZamalekFilters from "./ahly_v_zamalek_filters";
-import AhlyVZamalekMatchDetails from "./ahly_v_zamalek_match_details";
-import AhlyVZamalekPlayerDetails from "./ahly_v_zamalek_player_details";
-import AhlyVZamalekManagerDetails from "./ahly_v_zamalek_manager_details";
-import AhlyVZamalekEditor from "./ahly_v_zamalek_editor";
+import { AhlyVZamalekService } from "./Service/ahly_v_zamalek_service";
+import AhlyVZamalekDashboard from "./Dashboard/ahly_v_zamalek_dashboard";
+import AhlyVZamalekMatches from "./Matches/ahly_v_zamalek_matches";
+import AhlyVZamalekChampions from "./Champions/ahly_v_zamalek_champions";
+import AhlyVZamalekPlayers from "./Players/ahly_v_zamalek_players";
+import AhlyVZamalekManagers from "./Managers/ahly_v_zamalek_managers";
+import AhlyVZamalekFilters from "./Filters/ahly_v_zamalek_filters";
+import AhlyVZamalekMatchDetails from "./MatchDetails/ahly_v_zamalek_match_details";
+import AhlyVZamalekPlayerDetails from "./PlayerDetails/ahly_v_zamalek_player_details";
+import AhlyVZamalekManagerDetails from "./ManagerDetails/ahly_v_zamalek_manager_details";
+import AhlyVZamalekEditor from "./Editor/ahly_v_zamalek_editor";
 import Login_db from "../lib/Login_db";
 import Loading_db from "../lib/Loading_db";
 import SideBar_db from "../lib/SideBar_db";

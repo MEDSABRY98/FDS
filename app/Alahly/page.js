@@ -20,25 +20,25 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 
-import { AlAhlyService } from "./alahly_db_service";
+import { AlAhlyService } from "./Service/alahly_db_service";
 import { supabase } from "../lib/supabase";
-import AlAhlyDashboard from "./alahly_db_dashboard";
-import AlAhlyMatches from "./alahly_db_matches";
-import AlAhlySeasons from "./alahly_db_seasons_name";
-import AlAhlySeasonsN from "./alahly_db_seasons_number";
-import AlAhlyYears from "./alahly_db_years";
-import AlAhlyPlayers from "./alahly_db_players";
-import AlAhlyGKs from "./alahly_db_gks";
-import AlAhlyManagers from "./alahly_db_managers";
-import AlAhlyFilters from "./alahly_db_filters";
+import AlAhlyDashboard from "./Dashboard/alahly_db_dashboard";
+import AlAhlyMatches from "./Matches/alahly_db_matches";
+import AlAhlySeasons from "./SeasonsName/alahly_db_seasons_name";
+import AlAhlySeasonsN from "./SeasonsNumber/alahly_db_seasons_number";
+import AlAhlyYears from "./Years/alahly_db_years";
+import AlAhlyPlayers from "./Players/alahly_db_players";
+import AlAhlyGKs from "./Gks/alahly_db_gks";
+import AlAhlyManagers from "./Managers/alahly_db_managers";
+import AlAhlyFilters from "./Filters/alahly_db_filters";
 
-import AlAhlyMatchDetails from "./alahly_db_match_details";
-import AlAhlyEditor from "./alahly_db_editor";
-import AlAhlyChampions from "./alahly_db_champions";
-import AlAhlyReferees from "./alahly_db_referees";
-import AlAhlyH2H from "./alahly_db_h2h";
-import AlAhlyMediaTracker from "./alahly_db_media_tracker";
-import AlAhlyOTD from "./alahly_db_otd";
+import AlAhlyMatchDetails from "./MatchDetails/alahly_db_match_details";
+import AlAhlyEditor from "./Editor/alahly_db_editor";
+import AlAhlyChampions from "./Champions/alahly_db_champions";
+import AlAhlyReferees from "./Referees/alahly_db_referees";
+import AlAhlyH2H from "./HeadToHead/alahly_db_h2h";
+import AlAhlyMediaTracker from "./MediaTracker/alahly_db_media_tracker";
+import AlAhlyOTD from "./OnThisDay/alahly_db_otd";
 import Loading_db from "../lib/Loading_db";
 import SideBar_db from "../lib/SideBar_db";
 

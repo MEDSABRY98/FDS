@@ -20,26 +20,26 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 
-import { EgyptNTService } from "./egypt_nt_db_service";
+import { EgyptNTService } from "./Service/egypt_nt_db_service";
 import { supabase } from "../lib/supabase";
-import EgyptNTDashboard from "./egypt_nt_db_dashboard";
-import EgyptNTMatches from "./egypt_nt_db_matches";
-import EgyptNTSeasons from "./egypt_nt_db_seasons";
-import EgyptNTYears from "./egypt_nt_db_years";
-import EgyptNTPlayers from "./egypt_nt_db_players";
-import EgyptNTGKs from "./egypt_nt_db_gks";
-import EgyptNTManagers from "./egypt_nt_db_managers";
-import EgyptNTFilters from "./egypt_nt_db_filters";
-import EgyptNTSquad from "./egypt_nt_db_squad";
-import EgyptNTSquadEditor from "./egypt_nt_db_squad_editor";
-import EgyptNTEditor from "./egypt_nt_db_editor";
+import EgyptNTDashboard from "./Dashboard/egypt_nt_db_dashboard";
+import EgyptNTMatches from "./Matches/egypt_nt_db_matches";
+import EgyptNTSeasons from "./Seasons/egypt_nt_db_seasons";
+import EgyptNTYears from "./Years/egypt_nt_db_years";
+import EgyptNTPlayers from "./Players/egypt_nt_db_players";
+import EgyptNTGKs from "./Gks/egypt_nt_db_gks";
+import EgyptNTManagers from "./Managers/egypt_nt_db_managers";
+import EgyptNTFilters from "./Filters/egypt_nt_db_filters";
+import EgyptNTSquad from "./Squad/egypt_nt_db_squad";
+import EgyptNTSquadEditor from "./SquadEditor/egypt_nt_db_squad_editor";
+import EgyptNTEditor from "./Editor/egypt_nt_db_editor";
 
-import EgyptNTMatchDetails from "./egypt_nt_db_match_details";
-import EgyptNTChampions from "./egypt_nt_db_champions";
-import EgyptNTReferees from "./egypt_nt_db_referees";
-import EgyptNTH2H from "./egypt_nt_db_h2h";
+import EgyptNTMatchDetails from "./MatchDetails/egypt_nt_db_match_details";
+import EgyptNTChampions from "./Champions/egypt_nt_db_champions";
+import EgyptNTReferees from "./Referees/egypt_nt_db_referees";
+import EgyptNTH2H from "./HeadToHead/egypt_nt_db_h2h";
 import Loading_db from "../lib/Loading_db";
-import "./egypt_nt_sidebar.css";
+import "./Sidebar/egypt_nt_sidebar.css";
 
 export default function EgyptNTDatabase() {
     const [activeTab, setActiveTab] = useState("dashboard");

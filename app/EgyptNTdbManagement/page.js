@@ -7,12 +7,11 @@ import * as XLSX from "xlsx";
 import Login_db from "../lib/Login_db";
 import Loading_db from "../lib/Loading_db";
 import { useNotification } from "../lib/Notification_db";
-import "../EgyptNT/egypt_nt_sidebar.css";
+import "../EgyptNT/Sidebar/egypt_nt_sidebar.css";
 import "./EgyptNTdbManagement.css"; // Newly extracted styles
 
 // Import Custom Hooks
 import { useTableData } from "./Hooks/UseTableData";
-import { useMergeRecords } from "./Hooks/UseMergeRecords";
 import { useEditRecord } from "./Hooks/UseEditRecord";
 
 // Import Components
@@ -23,7 +22,6 @@ import { Pagination } from "./Components/Pagination";
 
 // Import Modals
 import { EditRecordModal } from "./Modals/EditRecordModal";
-import { MergePlayersModal } from "./Modals/MergePlayersModal";
 
 export default function EgyptDatabaseManagement() {
     const { addNotification } = useNotification();
@@ -47,19 +45,7 @@ export default function EgyptDatabaseManagement() {
         fetchTableData
     } = useTableData(addNotification);
 
-    const {
-        selectedRows,
-        isMerging,
-        showMergeModal,
-        setShowMergeModal,
-        isConfirmingMerge,
-        setIsConfirmingMerge,
-        mergeTargetName,
-        setMergeTargetName,
-        handleToggleSelect,
-        handleMergeTrigger,
-        handleConfirmMerge
-    } = useMergeRecords(selectedTable, fetchTableData, addNotification);
+
 
     const {
         editingRow,
@@ -162,37 +148,12 @@ export default function EgyptDatabaseManagement() {
                                     loading={loading}
                                 />
 
-                                {["egy_NT_SQUAD", "egy_NT_PLAYERDETAILS"].includes(selectedTable) && selectedRows.length > 0 && (
-                                    <div style={{ background: '#fff', padding: '15px 20px', borderRadius: '12px', marginBottom: '20px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', boxShadow: '0 4px 15px rgba(0,0,0,0.05)', border: '1px solid #eee' }}>
-                                        <div>
-                                            <span style={{ fontWeight: 'bold', color: '#C8102E' }}>{selectedRows.length}</span> records selected
-                                        </div>
-                                        <button
-                                            onClick={handleMergeTrigger}
-                                            disabled={isMerging}
-                                            style={{
-                                                background: '#C8102E',
-                                                color: '#fff',
-                                                padding: '8px 16px',
-                                                borderRadius: '8px',
-                                                border: 'none',
-                                                fontWeight: '800',
-                                                cursor: 'pointer',
-                                                fontSize: '11px',
-                                                boxShadow: '0 4px 10px rgba(200,16,46,0.2)'
-                                            }}
-                                        >
-                                            {isMerging ? "MERGING..." : `MERGE RECORDS`}
-                                        </button>
-                                    </div>
-                                )}
-
                                 <DynamicTable 
                                     selectedTable={selectedTable}
                                     columns={columns}
                                     paginatedData={paginatedData}
-                                    selectedRows={selectedRows}
-                                    handleToggleSelect={handleToggleSelect}
+                                    selectedRows={[]}
+                                    handleToggleSelect={() => {}}
                                     handleEditClick={handleEditClick}
                                     handleDelete={handleDelete}
                                 />
@@ -214,19 +175,6 @@ export default function EgyptDatabaseManagement() {
                             saving={saving}
                             setEditingRow={setEditingRow}
                             handleSaveEdit={handleSaveEdit}
-                        />
-                    )}
-
-                    {showMergeModal && (
-                        <MergePlayersModal 
-                            selectedTable={selectedTable}
-                            selectedRows={selectedRows}
-                            isConfirmingMerge={isConfirmingMerge}
-                            setIsConfirmingMerge={setIsConfirmingMerge}
-                            setShowMergeModal={setShowMergeModal}
-                            mergeTargetName={mergeTargetName}
-                            setMergeTargetName={setMergeTargetName}
-                            handleConfirmMerge={handleConfirmMerge}
                         />
                     )}
                 </div>

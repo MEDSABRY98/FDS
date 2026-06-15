@@ -11,16 +11,16 @@ import {
     User, 
     GitCompare 
 } from "lucide-react";
-import { EgyptNTPKSService } from "./egypt_nt_pks_service";
-import EgyptNTPKSMatches from "./egypt_nt_pks_matches";
-import EgyptNTPKSMatchDetails from "./egypt_nt_pks_match_details";
-import EgyptNTPKSPlayers from "./egypt_nt_pks_players";
-import EgyptNTPKSGKs from "./egypt_nt_pks_gks";
-import EgyptNTPKSChampions from "./egypt_nt_pks_champions";
-import EgyptNTPKSFilters from "./egypt_nt_pks_filters";
-import EgyptNTPKSH2H from "./egypt_nt_pks_h2h";
-import EgyptNTPKSManagers from "./egypt_nt_pks_managers";
-import EgyptNTPKSDashboard from "./egypt_nt_pks_dashboard";
+import { EgyptNTPKSService } from "./Service/egypt_nt_pks_service";
+import EgyptNTPKSMatches from "./Matches/egypt_nt_pks_matches";
+import EgyptNTPKSMatchDetails from "./MatchDetails/egypt_nt_pks_match_details";
+import EgyptNTPKSPlayers from "./Players/egypt_nt_pks_players";
+import EgyptNTPKSGKs from "./Gks/egypt_nt_pks_gks";
+import EgyptNTPKSChampions from "./Champions/egypt_nt_pks_champions";
+import EgyptNTPKSFilters from "./Filters/egypt_nt_pks_filters";
+import EgyptNTPKSH2H from "./HeadToHead/egypt_nt_pks_h2h";
+import EgyptNTPKSManagers from "./Managers/egypt_nt_pks_managers";
+import EgyptNTPKSDashboard from "./Dashboard/egypt_nt_pks_dashboard";
 import Loading_db from "../lib/Loading_db";
 import SideBar_db from "../lib/SideBar_db";
 

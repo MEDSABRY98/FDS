@@ -12,10 +12,11 @@ export const DBManagementService = {
             const sources = namesToMerge.filter(n => n !== targetName);
             if (sources.length === 0) return true;
 
-            let results = [];
+            let updatePromises = [];
+            let deletePromise = null;
 
             if (table === "db_PLAYERS") {
-                results = await Promise.all([
+                updatePromises = [
                     // Al Ahly Tables
                     supabase.from('alahly_LINEUPDETAILS').update({ "PLAYER NAME": targetName }).in('PLAYER NAME', sources),
                     supabase.from('alahly_LINEUPDETAILS').update({ "PLAYER NAME OUT": targetName }).in('PLAYER NAME OUT', sources),
@@ -23,6 +24,8 @@ export const DBManagementService = {
                     supabase.from('alahly_GKSDETAILS').update({ "PLAYER NAME": targetName }).in('PLAYER NAME', sources),
                     supabase.from('alahly_PKS').update({ "AHLY PLAYER": targetName }).in('AHLY PLAYER', sources),
                     supabase.from('alahly_PKS').update({ "OPPONENT PLAYER": targetName }).in('OPPONENT PLAYER', sources),
+                    supabase.from('alahly_PKS').update({ "AHLY GK": targetName }).in('AHLY GK', sources),
+                    supabase.from('alahly_PKS').update({ "OPPONENT GK": targetName }).in('OPPONENT GK', sources),
 
                     // Al Ahly Finals
                     supabase.from('alahly_FINALS_LINEUPDETAILS').update({ "PLAYER NAME": targetName }).in('PLAYER NAME', sources),
@@ -42,13 +45,13 @@ export const DBManagementService = {
                     supabase.from('egy_NT_SQUAD').update({ "PLAYERNAME": targetName }).in('PLAYERNAME', sources),
                     supabase.from('egy_NT_PKS').update({ "Egypt PLAYER": targetName }).in('Egypt PLAYER', sources),
                     supabase.from('egy_NT_PKS').update({ "OPPONENT PLAYER": targetName }).in('OPPONENT PLAYER', sources),
-
-                    // Delete duplicates from the db_PLAYERS catalog table itself
-                    supabase.from('db_PLAYERS').delete().in('PLAYER_NAME', sources)
-                ]);
+                    supabase.from('egy_NT_PKS').update({ "EGYPT GK": targetName }).in('EGYPT GK', sources),
+                    supabase.from('egy_NT_PKS').update({ "OPPONENT GK": targetName }).in('OPPONENT GK', sources)
+                ];
+                deletePromise = supabase.from('db_PLAYERS').delete().in('PLAYER_NAME', sources);
             }
             else if (table === "db_MANAGERS") {
-                results = await Promise.all([
+                updatePromises = [
                     // Al Ahly Match Details
                     supabase.from('alahly_MATCHDETAILS').update({ "AHLY MANAGER": targetName }).in('AHLY MANAGER', sources),
                     supabase.from('alahly_MATCHDETAILS').update({ "OPPONENT MANAGER": targetName }).in('OPPONENT MANAGER', sources),
@@ -63,14 +66,12 @@ export const DBManagementService = {
 
                     // Egypt NT Match Details
                     supabase.from('egy_NT_MATCHDETAILS').update({ "EGYPT MANAGER": targetName }).in('EGYPT MANAGER', sources),
-                    supabase.from('egy_NT_MATCHDETAILS').update({ "OPPONENT MANAGER": targetName }).in('OPPONENT MANAGER', sources),
-
-                    // Delete duplicates from the db_MANAGERS catalog table
-                    supabase.from('db_MANAGERS').delete().in('MANAGER_NAME', sources)
-                ]);
+                    supabase.from('egy_NT_MATCHDETAILS').update({ "OPPONENT MANAGER": targetName }).in('OPPONENT MANAGER', sources)
+                ];
+                deletePromise = supabase.from('db_MANAGERS').delete().in('MANAGER_NAME', sources);
             }
             else if (table === "db_STADIUMS") {
-                results = await Promise.all([
+                updatePromises = [
                     // Al Ahly Match Details
                     supabase.from('alahly_MATCHDETAILS').update({ "STAD": targetName }).in('STAD', sources),
 
@@ -80,12 +81,13 @@ export const DBManagementService = {
                     // Egypt NT Match Details
                     supabase.from('egy_NT_MATCHDETAILS').update({ "PLACE": targetName }).in('PLACE', sources),
 
-                    // Delete duplicates from the db_STADIUMS catalog table
-                    supabase.from('db_STADIUMS').delete().in('STADIUM_NAME', sources)
-                ]);
+                    // Egypt Club Match Details
+                    supabase.from('egy_CLUB_MATCHDETAILS').update({ "PLACE": targetName }).in('PLACE', sources)
+                ];
+                deletePromise = supabase.from('db_STADIUMS').delete().in('STADIUM_NAME', sources);
             }
             else if (table === "db_REFEREES") {
-                results = await Promise.all([
+                updatePromises = [
                     // Al Ahly Match Details
                     supabase.from('alahly_MATCHDETAILS').update({ "REFREE": targetName }).in('REFREE', sources),
 
@@ -96,14 +98,12 @@ export const DBManagementService = {
                     supabase.from('alahly_vs_zamalek_MATCHDETAILS').update({ "REFEREE": targetName }).in('REFEREE', sources),
 
                     // Egypt NT Match Details
-                    supabase.from('egy_NT_MATCHDETAILS').update({ "REFREE": targetName }).in('REFREE', sources),
-
-                    // Delete duplicates from the db_REFEREES catalog table
-                    supabase.from('db_REFEREES').delete().in('REFEREE_NAME', sources)
-                ]);
+                    supabase.from('egy_NT_MATCHDETAILS').update({ "REFREE": targetName }).in('REFREE', sources)
+                ];
+                deletePromise = supabase.from('db_REFEREES').delete().in('REFEREE_NAME', sources);
             }
             else if (table === "db_TEAMS") {
-                results = await Promise.all([
+                updatePromises = [
                     // Al Ahly Finals
                     supabase.from('alahly_FINALS_LINEUPDETAILS').update({ "TEAM": targetName }).in('TEAM', sources),
                     supabase.from('alahly_FINALS_MATCHDETAILS').update({ "AHLY TEAM": targetName }).in('AHLY TEAM', sources),
@@ -137,25 +137,36 @@ export const DBManagementService = {
                     supabase.from('egy_NT_PKS').update({ "Egypt TEAM": targetName }).in('Egypt TEAM', sources),
                     supabase.from('egy_NT_PKS').update({ "OPPONENT TEAM": targetName }).in('OPPONENT TEAM', sources),
                     supabase.from('egy_NT_PLAYERDETAILS').update({ "TEAM": targetName }).in('TEAM', sources),
-                    supabase.from('egy_NT_SQUAD').update({ "CLUB": targetName }).in('CLUB', sources),
-
-                    // Delete duplicates from db_TEAMS
-                    supabase.from('db_TEAMS').delete().in('TEAM_NAME', sources)
-                ]);
+                    supabase.from('egy_NT_SQUAD').update({ "CLUB": targetName }).in('CLUB', sources)
+                ];
+                deletePromise = supabase.from('db_TEAMS').delete().in('TEAM_NAME', sources);
             }
             else if (table === "db_COUNTRIES") {
-                results = [
-                    await supabase.rpc('merge_countries', { 
+                updatePromises = [
+                    supabase.rpc('merge_countries', { 
                         target_country: targetName, 
                         source_countries: sources 
                     })
                 ];
             }
 
-            const errors = results.filter(r => r.error).map(r => r.error.message);
-            if (errors.length > 0) {
-                console.error("Merge partial fail:", errors);
-                throw new Error("One or more tables failed to update during merge: " + errors.join(", "));
+            // 1. Run updates on referencing tables first to ensure ID mapping succeeds before deletion
+            if (updatePromises && updatePromises.length > 0) {
+                const updateResults = await Promise.all(updatePromises);
+                const updateErrors = updateResults.filter(r => r && r.error).map(r => r.error.message);
+                if (updateErrors.length > 0) {
+                    console.error("Merge partial fail (Updates):", updateErrors);
+                    throw new Error("One or more tables failed to update during merge: " + updateErrors.join(", "));
+                }
+            }
+
+            // 2. Once all updates are successful, run the delete query to clear old catalog records
+            if (deletePromise) {
+                const deleteResult = await deletePromise;
+                if (deleteResult && deleteResult.error) {
+                    console.error("Merge partial fail (Delete):", deleteResult.error.message);
+                    throw new Error("Updates succeeded but failed to delete source records: " + deleteResult.error.message);
+                }
             }
 
             console.log("Merge operation completed successfully.");

@@ -12,17 +12,17 @@ import {
     User,
     GitCompare
 } from "lucide-react";
-import { AlAhlyService } from "../Alahly/alahly_db_service";
-import AlAhlyPKsMatches from "./alahly_pks_matches";
-import AlAhlyPKsMatchDetails from "./alahly_pks_match_details";
-import AlAhlyPKsPlayers from "./alahly_pks_players";
-import AlAhlyPKsGKs from "./alahly_pks_gks";
-import AlAhlyPKsChampions from "./alahly_pks_champions";
-import AlAhlyPKsFilter from "./alahly_pks_filters";
-import AlAhlyPKsH2H from "./alahly_pks_h2h";
-import AlAhlyPKsManagers from "./alahly_pks_managers";
-import AlAhlyPKsEditor from "./alahly_pks_editor";
-import AlAhlyPKsDashboard from "./alahly_pks_dashboard";
+import { AlAhlyService } from "../Alahly/Service/alahly_db_service";
+import AlAhlyPKsMatches from "./Matches/alahly_pks_matches";
+import AlAhlyPKsMatchDetails from "./MatchDetails/alahly_pks_match_details";
+import AlAhlyPKsPlayers from "./Players/alahly_pks_players";
+import AlAhlyPKsGKs from "./Gks/alahly_pks_gks";
+import AlAhlyPKsChampions from "./Champions/alahly_pks_champions";
+import AlAhlyPKsFilter from "./Filters/alahly_pks_filters";
+import AlAhlyPKsH2H from "./HeadToHead/alahly_pks_h2h";
+import AlAhlyPKsManagers from "./Managers/alahly_pks_managers";
+import AlAhlyPKsEditor from "./Editor/alahly_pks_editor";
+import AlAhlyPKsDashboard from "./Dashboard/alahly_pks_dashboard";
 import Login_db from "../lib/Login_db";
 import Loading_db from "../lib/Loading_db";
 import SideBar_db from "../lib/SideBar_db";

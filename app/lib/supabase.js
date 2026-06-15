@@ -266,7 +266,8 @@ async function resolveAndRegisterPayload(payload, tableName) {
         'alahly_MATCHDETAILS',
         'alahly_FINALS_MATCHDETAILS',
         'alahly_vs_zamalek_MATCHDETAILS',
-        'egy_NT_MATCHDETAILS'
+        'egy_NT_MATCHDETAILS',
+        'egy_CLUB_MATCHDETAILS'
     ].includes(tableName);
     
     const playerCols = playerColumnsMap[tableName];
@@ -474,7 +475,10 @@ function wrapQueryBuilder(target, tableName, calls = []) {
                                 if (newCall.args[0] && typeof newCall.args[0] === 'object') {
                                     newCall.args[0] = await resolveAndRegisterPayload(newCall.args[0], tableName);
                                 }
-                                // Invalidate caches if writing to the catalogs
+                            }
+                            
+                            // Invalidate caches if writing or deleting in the catalogs
+                            if (['insert', 'update', 'upsert', 'delete'].includes(call.method)) {
                                 if (['db_STADIUMS', 'db_MANAGERS', 'db_PLAYERS', 'db_REFEREES', 'db_TEAMS'].includes(tableName)) {
                                     cachesPromise = null;
                                     cachesLoaded = false;
@@ -511,7 +515,8 @@ function wrapQueryBuilder(target, tableName, calls = []) {
                             'alahly_MATCHDETAILS',
                             'alahly_FINALS_MATCHDETAILS',
                             'alahly_vs_zamalek_MATCHDETAILS',
-                            'egy_NT_MATCHDETAILS'
+                            'egy_NT_MATCHDETAILS',
+                            'egy_CLUB_MATCHDETAILS'
                         ].includes(tableName);
                         
                         const playerCols = playerColumnsMap[tableName];

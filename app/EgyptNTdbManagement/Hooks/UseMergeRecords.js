@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { EgyptNTService } from "../../EgyptNT/egypt_nt_db_service";
+import { EgyptNTService } from "../../EgyptNT/Service/egypt_nt_db_service";
 
 export function useMergeRecords(selectedTable, fetchTableData, addNotification) {
     const [selectedRows, setSelectedRows] = useState([]);

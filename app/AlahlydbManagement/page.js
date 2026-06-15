@@ -10,12 +10,9 @@ import { useNotification } from "../lib/Notification_db";
 import "./AlahlydbManagement.css";
 import { useTableData } from "./Hooks/UseTableData";
 import { useEditRecord } from "./Hooks/UseEditRecord";
-import { useMergeRecords } from "./Hooks/UseMergeRecords";
-
 import DatabaseSidebar from "./Components/DatabaseSidebar";
 import DynamicTable from "./Components/DynamicTable";
 import Pagination from "./Components/Pagination";
-import MergeModal from "./Modals/MergeModal";
 import EditModal from "./Modals/EditModal";
 
 export default function DatabaseManagement() {
@@ -68,14 +65,6 @@ export default function DatabaseManagement() {
         saving, loading: editLoading, 
         handleEditClick, handleSaveEdit, handleDelete 
     } = useEditRecord(selectedTable, columns, fetchTableData, addNotification);
-
-    const {
-        isMerging,
-        showMergeModal, setShowMergeModal,
-        isConfirmingMerge, setIsConfirmingMerge,
-        mergeTargetName, setMergeTargetName,
-        handleMergeTrigger, handleConfirmMerge
-    } = useMergeRecords(selectedRows, setSelectedRows, fetchTableData, addNotification);
 
     // Effect triggers
     useEffect(() => {
@@ -164,26 +153,6 @@ export default function DatabaseManagement() {
                                     />
                                 </div>
                                 <div className="record-count">{filteredData.length} RECORDS FOUND (PAGE {currentPage} OF {totalPages})</div>
-
-                                {selectedTable === "alahly_PLAYERDATABASE" && selectedRows.length > 1 && (
-                                    <button
-                                        onClick={handleMergeTrigger}
-                                        disabled={isMerging}
-                                        style={{
-                                            background: '#ff3b30',
-                                            color: '#fff',
-                                            padding: '10px 20px',
-                                            borderRadius: '4px',
-                                            border: 'none',
-                                            fontWeight: 'bold',
-                                            cursor: 'pointer',
-                                            fontSize: '11px',
-                                            marginLeft: '20px'
-                                        }}
-                                    >
-                                        {isMerging ? "MERGING..." : `MERGE ${selectedRows.length} LEGENDS`}
-                                    </button>
-                                )}
                             </div>
 
                             <DynamicTable 
@@ -214,17 +183,6 @@ export default function DatabaseManagement() {
                     setEditForm={setEditForm}
                     saving={saving}
                     handleSaveEdit={handleSaveEdit}
-                />
-
-                <MergeModal 
-                    showMergeModal={showMergeModal}
-                    setShowMergeModal={setShowMergeModal}
-                    isConfirmingMerge={isConfirmingMerge}
-                    setIsConfirmingMerge={setIsConfirmingMerge}
-                    mergeTargetName={mergeTargetName}
-                    setMergeTargetName={setMergeTargetName}
-                    selectedRows={selectedRows}
-                    handleConfirmMerge={handleConfirmMerge}
                 />
                 </div>
             </DatabaseSidebar>
