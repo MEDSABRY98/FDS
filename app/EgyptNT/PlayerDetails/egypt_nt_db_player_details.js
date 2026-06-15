@@ -841,28 +841,26 @@ export default function EgyptNTPlayerDetails({ playerName, playerDetails, lineup
             {/* Tab Navigation */}
             <div className="player-details-tabs">
                 {[
-                    { id: 'overview', title: 'OVERVIEW', label: 'SUMMARY' },
-                    { id: 'dashboard', title: 'CHARTS', label: 'SEASONAL' },
-                    { id: 'presence', title: 'INFLUENCE', label: 'TEAM W/L' },
-                    { id: 'goal_impact', title: 'GOAL IMPACT', label: 'DECIDING' },
-                    { id: 'assist_impact', title: 'ASSIST IMPACT', label: 'DECIDING' },
-                    { id: 'timing', title: 'TIMING', label: 'MINUTES' },
-                    { id: 'matches', title: 'MATCHES', label: 'HISTORY' },
-                    { id: 'match_events', title: 'EVENTS', label: 'GOALS/CARDS' },
-                    { id: 'championships', title: 'CHAMPIONSHIPS', label: 'METRICS' },
-                    { id: 'seasons', title: 'SEASONS', label: 'CAMPAIGNS' },
-                    { id: 'vs_teams', title: 'VS TEAMS', label: 'H2H RECORDS' },
-                    { id: 'vs_gks', title: 'VS GKS', label: 'GOALKEEPERS' },
-                    { id: 'player_with_player', title: 'PARTNERS', label: 'ASSIST LINKS' }
+                    { id: 'overview', title: 'OVERVIEW' },
+                    { id: 'dashboard', title: 'DASHBOARD' },
+                    { id: 'presence', title: 'SQUAD INFLUENCE' },
+                    { id: 'goal_impact', title: 'GOAL IMPACT' },
+                    { id: 'assist_impact', title: 'ASSIST IMPACT' },
+                    { id: 'timing', title: 'TIMING' },
+                    { id: 'matches', title: 'MATCHES' },
+                    { id: 'match_events', title: 'MATCH EVENTS' },
+                    { id: 'championships', title: 'CHAMPIONSHIPS' },
+                    { id: 'seasons', title: 'SEASONS' },
+                    { id: 'vs_teams', title: 'VS TEAMS' },
+                    { id: 'vs_gks', title: 'VS GKS' },
+                    { id: 'player_with_player', title: 'P W P' }
                 ].map(t => (
                     <div 
                         key={t.id} 
                         className={`player-tab-item ${activeTab === t.id ? 'active' : ''}`} 
                         onClick={() => setActiveTab(t.id)}
-                        style={{ borderBottom: activeTab === t.id ? '3px solid var(--gold)' : '' }}
                     >
-                        <span className="tab-label">{t.label}</span>
-                        <div className="tab-title" style={{ fontSize: '13px', fontWeight: '800' }}>{t.title}</div>
+                        <span className="tab-title">{t.title}</span>
                     </div>
                 ))}
             </div>

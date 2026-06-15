@@ -566,7 +566,14 @@ export default function AlAhlyFinalsEditor({ matchesData, lineupsData, playersDa
                             columns={["FINAL ID", "EVENT_ID", "PARENT_EVENT_ID", "PLAYER NAME", "TEAM", "TYPE", "TYPE_SUB", "MINUTE"]}
                             emptyRow={{ "FINAL ID": "", "EVENT_ID": "", "PARENT_EVENT_ID": "", "PLAYER NAME": "", TEAM: "الأهلي", TYPE: "GOAL", TYPE_SUB: "", MINUTE: "" }}
                             autoFields={{
-                                "EVENT_ID": (id, rows) => `${id}-${rows.length + 1}`,
+                                "EVENT_ID": (id, rows) => {
+                                    const maxSeq = rows.reduce((max, r) => {
+                                        const parts = String(r.EVENT_ID || '').split('-');
+                                        const num = parseInt(parts[parts.length - 1]);
+                                        return (!isNaN(num) && num > max) ? num : max;
+                                    }, 0);
+                                    return `${matchForm.MATCH_ID}-${maxSeq + 1}`;
+                                },
                                 "FINAL ID": (id) => id
                             }}
                             columnOptions={{
