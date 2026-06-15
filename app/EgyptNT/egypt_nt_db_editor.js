@@ -324,16 +324,13 @@ export default function EgyptNTEditor() {
             };
 
             const t = await fetchUniqueCol('egy_NT_PLAYERDETAILS', 'TYPE');
-            const defaultTypes = ['Goal', 'Yellow Card', 'Red Card', 'Assist', 'Sub In', 'Sub Out', 'Own Goal'];
-            setEventTypes([...new Set([...t, ...defaultTypes])].sort());
+            setEventTypes(t);
 
             const ts = await fetchUniqueCol('egy_NT_PLAYERDETAILS', 'TYPE_SUB');
-            const defaultSubTypes = ['Penalty', 'Header', 'Free Kick', 'Inside Box', 'Outside Box', 'Tap-in'];
-            setEventSubTypes([...new Set([...ts, ...defaultSubTypes])].sort());
+            setEventSubTypes(ts);
 
             const hm = await fetchUniqueCol('egy_NT_HOWPENMISSED', 'HOW MISSED?');
-            const defaultPenMisses = ['Saved', 'Post', 'Crossbar', 'Wide', 'High'];
-            setHowMissedOptions([...new Set([...hm, ...defaultPenMisses])].sort());
+            setHowMissedOptions(hm);
         })();
     }, []);
 

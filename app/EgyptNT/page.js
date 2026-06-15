@@ -21,6 +21,7 @@ import {
 import Link from "next/link";
 
 import { EgyptNTService } from "./egypt_nt_db_service";
+import { supabase } from "../lib/supabase";
 import EgyptNTDashboard from "./egypt_nt_db_dashboard";
 import EgyptNTMatches from "./egypt_nt_db_matches";
 import EgyptNTSeasons from "./egypt_nt_db_seasons";
@@ -50,6 +51,7 @@ export default function EgyptNTDatabase() {
     const [gkDetails, setGkDetails] = useState([]);
     const [howPenMissed, setHowPenMissed] = useState([]);
     const [squadData, setSquadData] = useState([]);
+    const [countries, setCountries] = useState([]);
     const [loading, setLoading] = useState(true);
     const [selectedMatchId, setSelectedMatchId] = useState(null);
     const [isFilterOpen, setIsFilterOpen] = useState(false);
@@ -82,7 +84,9 @@ export default function EgyptNTDatabase() {
         wdl: 'All',
         clean_sheet: 'All',
         wl_q_f: 'All',
-        note: 'All'
+        note: 'All',
+        country: 'All',
+        continent: 'All'
     });
 
     useEffect(() => {
@@ -91,6 +95,9 @@ export default function EgyptNTDatabase() {
 
     async function fetchMatchData(silent = false) {
         if (!silent) setLoading(true);
+        const { data: countriesData } = await supabase.from('db_COUNTRIES').select('*');
+        if (countriesData) setCountries(countriesData);
+        
         const data = await EgyptNTService.getAllMatches();
         const pData = await EgyptNTService.getAllPlayerDetails();
         const lData = await EgyptNTService.getAllLineupDetails();
@@ -107,10 +114,171 @@ export default function EgyptNTDatabase() {
         if (!silent) setLoading(false);
     }
 
+    const getMatchCountryName = (opponentTeam) => {
+        if (!opponentTeam) return null;
+        const parts = opponentTeam.split(' - ');
+        return parts[parts.length - 1].trim().toLowerCase();
+    };
+
+    const checkMatchPassesFilter = (m, key, val, countriesList, startD, endD) => {
+        if (val === 'All') return true;
+        
+        if (key === 'year') {
+            if (!m.DATE) return false;
+            const mYear = new Date(m.DATE).getFullYear().toString();
+            return mYear === val;
+        }
+        
+        if (key === 'country') {
+            const mCountry = getMatchCountryName(m["OPPONENT TEAM"]);
+            if (!mCountry) return false;
+            const targetRows = countriesList.filter(c => c.COUNTRY_NAME === val);
+            return targetRows.some(c => 
+                (c.COUNTRY_NAME && c.COUNTRY_NAME.toLowerCase() === mCountry) ||
+                (c.COUNTRY_NAME_EN && c.COUNTRY_NAME_EN.toLowerCase() === mCountry)
+            );
+        }
+        
+        if (key === 'continent') {
+            const mCountry = getMatchCountryName(m["OPPONENT TEAM"]);
+            if (!mCountry) return false;
+            const countryRow = countriesList.find(c =>
+                (c.COUNTRY_NAME && c.COUNTRY_NAME.toLowerCase() === mCountry) ||
+                (c.COUNTRY_NAME_EN && c.COUNTRY_NAME_EN.toLowerCase() === mCountry)
+            );
+            return countryRow && countryRow.CONTINENT === val;
+        }
+        
+        const colMap = {
+            match_id: 'MATCH_ID',
+            age: 'AGE',
+            champion_system: 'CHAMPION_SYSTEM',
+            system_kind: 'SYSTEM_KIND',
+            champion: 'CHAMPION',
+            season: 'SEASON',
+            egypt_manager: 'EGYPT MANAGER',
+            opponent_manager: 'OPPONENT MANAGER',
+            referee: 'REFREE',
+            round: 'ROUND',
+            han: 'H-A-N',
+            stad: 'STAD',
+            place: 'PLACE',
+            egypt_team: 'Egypt TEAM',
+            gf: 'GF',
+            ga: 'GA',
+            et: 'ET',
+            pen: 'PEN',
+            opponent_team: 'OPPONENT TEAM',
+            wdl: 'W-D-L',
+            clean_sheet: 'CLEAN SHEET',
+            wl_q_f: 'W-L Q & F',
+            note: 'NOTE'
+        };
+        
+        const colName = colMap[key];
+        if (!colName) return true;
+        return String(m[colName]) === String(val);
+    };
+
+    const getOptionsForField = (key, colName) => {
+        const partialMatches = matches.filter(m => {
+            let withinRange = true;
+            if (m.DATE) {
+                const mDate = new Date(m.DATE);
+                if (startDate && mDate < new Date(startDate)) withinRange = false;
+                if (endDate && mDate > new Date(endDate)) withinRange = false;
+            } else if (startDate || endDate) {
+                withinRange = false;
+            }
+            if (!withinRange) return false;
+
+            for (const k of Object.keys(dbFilters)) {
+                if (k === key) continue;
+                if (!checkMatchPassesFilter(m, k, dbFilters[k], countries, startDate, endDate)) {
+                    return false;
+                }
+            }
+            return true;
+        });
+
+        if (key === 'year') {
+            const years = partialMatches.map(m => m.DATE ? new Date(m.DATE).getFullYear() : null).filter(Boolean);
+            return ["All", ...new Set(years)].sort((a, b) => b - a);
+        }
+        
+        if (key === 'country') {
+            const matchCountryNames = partialMatches.map(m => {
+                if (!m["OPPONENT TEAM"]) return null;
+                const parts = m["OPPONENT TEAM"].split(' - ');
+                return parts[parts.length - 1].trim().toLowerCase();
+            }).filter(Boolean);
+            
+            const countryOpts = countries
+                .filter(c => c.COUNTRY_NAME && (
+                    matchCountryNames.includes(c.COUNTRY_NAME.toLowerCase()) || 
+                    (c.COUNTRY_NAME_EN && matchCountryNames.includes(c.COUNTRY_NAME_EN.toLowerCase()))
+                ))
+                .map(c => c.COUNTRY_NAME);
+                
+            return ["All", ...new Set(countryOpts)].sort((a, b) => a.localeCompare(b, 'ar'));
+        }
+        
+        if (key === 'continent') {
+            const matchCountryNames = partialMatches.map(m => {
+                if (!m["OPPONENT TEAM"]) return null;
+                const parts = m["OPPONENT TEAM"].split(' - ');
+                return parts[parts.length - 1].trim().toLowerCase();
+            }).filter(Boolean);
+            
+            const continentOpts = countries
+                .filter(c => c.CONTINENT && (
+                    matchCountryNames.includes(c.COUNTRY_NAME.toLowerCase()) || 
+                    (c.COUNTRY_NAME_EN && matchCountryNames.includes(c.COUNTRY_NAME_EN.toLowerCase()))
+                ))
+                .map(c => c.CONTINENT);
+                
+            return ["All", ...new Set(continentOpts)].sort((a, b) => a.localeCompare(b, 'ar'));
+        }
+        
+        const vals = partialMatches.map(m => m[colName]).filter(v => v !== null && v !== undefined && v !== '');
+        const uniqueVals = [...new Set(vals)].sort();
+        if (['SEASON', 'DATE'].includes(colName)) {
+            uniqueVals.reverse();
+        }
+        return ["All", ...uniqueVals];
+    };
+
     // Dynamic Filter Options for ALL columns
     const filterOptions = useMemo(() => {
-        return EgyptNTService.getUniqueFilters(matches);
-    }, [matches]);
+        return {
+            match_ids: getOptionsForField('match_id', 'MATCH_ID'),
+            ages: getOptionsForField('age', 'AGE'),
+            champion_systems: getOptionsForField('champion_system', 'CHAMPION_SYSTEM'),
+            system_kinds: getOptionsForField('system_kind', 'SYSTEM_KIND'),
+            years: getOptionsForField('year', null),
+            champions: getOptionsForField('champion', 'CHAMPION'),
+            seasons: getOptionsForField('season', 'SEASON'),
+            egy_managers: getOptionsForField('egypt_manager', 'EGYPT MANAGER'),
+            opponent_managers: getOptionsForField('opponent_manager', 'OPPONENT MANAGER'),
+            referees: getOptionsForField('referee', 'REFREE'),
+            rounds: getOptionsForField('round', 'ROUND'),
+            places: getOptionsForField('place', 'PLACE'),
+            han: getOptionsForField('han', 'H-A-N'),
+            stadiums: getOptionsForField('stad', 'STAD'),
+            egy_teams: getOptionsForField('egypt_team', 'Egypt TEAM'),
+            gf: getOptionsForField('gf', 'GF'),
+            ga: getOptionsForField('ga', 'GA'),
+            et: getOptionsForField('et', 'ET'),
+            pen: getOptionsForField('pen', 'PEN'),
+            opponent_teams: getOptionsForField('opponent_team', 'OPPONENT TEAM'),
+            wdl: getOptionsForField('wdl', 'W-D-L'),
+            clean_sheets: getOptionsForField('clean_sheet', 'CLEAN SHEET'),
+            wl_q_fs: getOptionsForField('wl_q_f', 'W-L Q & F'),
+            notes: getOptionsForField('note', 'NOTE'),
+            countries: getOptionsForField('country', null),
+            continents: getOptionsForField('continent', null)
+        };
+    }, [matches, dbFilters, countries, startDate, endDate]);
 
     const updateFilter = (key, value) => {
         setDbFilters(prev => ({ ...prev, [key]: value }));
@@ -143,7 +311,9 @@ export default function EgyptNTDatabase() {
             wdl: 'All',
             clean_sheet: 'All',
             wl_q_f: 'All',
-            note: 'All'
+            note: 'All',
+            country: 'All',
+            continent: 'All'
         });
     };
 
@@ -165,8 +335,38 @@ export default function EgyptNTDatabase() {
                 withinRange = false;
             }
 
+            let passCountry = true;
+            if (dbFilters.country !== 'All') {
+                const mCountry = getMatchCountryName(m["OPPONENT TEAM"]);
+                if (!mCountry) {
+                    passCountry = false;
+                } else {
+                    const targetRows = countries.filter(c => c.COUNTRY_NAME === dbFilters.country);
+                    passCountry = targetRows.some(c => 
+                        (c.COUNTRY_NAME && c.COUNTRY_NAME.toLowerCase() === mCountry) ||
+                        (c.COUNTRY_NAME_EN && c.COUNTRY_NAME_EN.toLowerCase() === mCountry)
+                    );
+                }
+            }
+
+            let passContinent = true;
+            if (dbFilters.continent !== 'All') {
+                const mCountry = getMatchCountryName(m["OPPONENT TEAM"]);
+                if (!mCountry) {
+                    passContinent = false;
+                } else {
+                    const countryRow = countries.find(c =>
+                        (c.COUNTRY_NAME && c.COUNTRY_NAME.toLowerCase() === mCountry) ||
+                        (c.COUNTRY_NAME_EN && c.COUNTRY_NAME_EN.toLowerCase() === mCountry)
+                    );
+                    passContinent = countryRow && countryRow.CONTINENT === dbFilters.continent;
+                }
+            }
+
             return (
                 withinRange &&
+                passCountry &&
+                passContinent &&
                 check('match_id', 'MATCH_ID') &&
                 check('age', 'AGE') &&
                 check('champion_system', 'CHAMPION_SYSTEM') &&
@@ -192,7 +392,7 @@ export default function EgyptNTDatabase() {
                 check('note', 'NOTE')
             );
         });
-    }, [matches, dbFilters, startDate, endDate]);
+    }, [matches, dbFilters, startDate, endDate, countries]);
 
     const tabs = [
         { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },

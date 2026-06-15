@@ -13,6 +13,8 @@ let playersIdToName = {};
 let playersNameToId = {};
 let refereesIdToName = {};
 let refereesNameToId = {};
+let teamsIdToName = {};
+let teamsNameToId = {};
 let cachesLoaded = false;
 let cachesPromise = null;
 
@@ -30,6 +32,28 @@ const playerColumnsMap = {
     'egy_NT_PKS': ['EGYPT GK', 'Egypt PLAYER', 'OPPONENT GK', 'OPPONENT PLAYER'],
     'egy_NT_PLAYERDETAILS': ['PLAYER NAME'],
     'egy_NT_SQUAD': ['PLAYERNAME']
+};
+
+const teamColumnsMap = {
+    'alahly_FINALS_LINEUPDETAILS': ['TEAM'],
+    'alahly_FINALS_MATCHDETAILS': ['AHLY TEAM', 'OPPONENT TEAM'],
+    'alahly_FINALS_PLAYERDETAILS': ['TEAM'],
+    'alahly_GKSDETAILS': ['TEAM'],
+    'alahly_HOWPENMISSED': ['TEAM'],
+    'alahly_LINEUPDETAILS': ['TEAM'],
+    'alahly_MATCHDETAILS': ['AHLY TEAM', 'OPPONENT TEAM'],
+    'alahly_PKS': ['AHLY TEAM', 'OPPONENT TEAM'],
+    'alahly_PLAYERDETAILS': ['TEAM'],
+    'alahly_vs_zamalek_LINEUPDETAILS': ['TEAM'],
+    'alahly_vs_zamalek_PLAYERDETAILS': ['TEAM'],
+    'egy_CLUB_MATCHDETAILS': ['EGYPT TEAM', 'OPPONENT TEAM'],
+    'egy_NT_GKSDETAILS': ['TEAM'],
+    'egy_NT_HOWPENMISSED': ['TEAM'],
+    'egy_NT_LINEUPDETAILS': ['TEAM'],
+    'egy_NT_MATCHDETAILS': ['Egypt TEAM', 'OPPONENT TEAM'],
+    'egy_NT_PKS': ['Egypt TEAM', 'OPPONENT TEAM'],
+    'egy_NT_PLAYERDETAILS': ['TEAM'],
+    'egy_NT_SQUAD': ['CLUB']
 };
 
 async function fetchAllRows(tableName, selectColumns) {
@@ -64,11 +88,12 @@ async function loadCaches() {
     if (cachesPromise) return cachesPromise;
     cachesPromise = (async () => {
         try {
-            const [stadsData, mgrsData, playersData, refsData] = await Promise.all([
+            const [stadsData, mgrsData, playersData, refsData, teamsData] = await Promise.all([
                 fetchAllRows('db_STADIUMS', 'STADIUM_ID, STADIUM_NAME'),
                 fetchAllRows('db_MANAGERS', 'MANAGER_ID, MANAGER_NAME'),
                 fetchAllRows('db_PLAYERS', 'PLAYER_ID, PLAYER_NAME'),
-                fetchAllRows('db_REFEREES', 'REFEREE_ID, REFEREE_NAME')
+                fetchAllRows('db_REFEREES', 'REFEREE_ID, REFEREE_NAME'),
+                fetchAllRows('db_TEAMS', 'TEAM_ID, TEAM_NAME')
             ]);
             
             stadiumsIdToName = {};
@@ -79,6 +104,8 @@ async function loadCaches() {
             playersNameToId = {};
             refereesIdToName = {};
             refereesNameToId = {};
+            teamsIdToName = {};
+            teamsNameToId = {};
 
             if (stadsData) {
                 stadsData.forEach(r => {
@@ -109,6 +136,14 @@ async function loadCaches() {
                     if (r.REFEREE_ID && r.REFEREE_NAME) {
                         refereesIdToName[r.REFEREE_ID] = r.REFEREE_NAME;
                         refereesNameToId[r.REFEREE_NAME.trim().toLowerCase()] = r.REFEREE_ID;
+                    }
+                });
+            }
+            if (teamsData) {
+                teamsData.forEach(r => {
+                    if (r.TEAM_ID && r.TEAM_NAME) {
+                        teamsIdToName[r.TEAM_ID] = r.TEAM_NAME;
+                        teamsNameToId[r.TEAM_NAME.trim().toLowerCase()] = r.TEAM_ID;
                     }
                 });
             }
@@ -166,6 +201,16 @@ function mapRowDbToApp(row, tableName) {
         });
     }
     
+    // Teams
+    const teamCols = teamColumnsMap[tableName];
+    if (teamCols) {
+        teamCols.forEach(col => {
+            if (mapped[col] && teamsIdToName[mapped[col]]) {
+                mapped[col] = teamsIdToName[mapped[col]];
+            }
+        });
+    }
+    
     return mapped;
 }
 
@@ -203,6 +248,13 @@ function resolveNameToId(columnName, value, tableName) {
         return playersNameToId[clean];
     }
     
+    // Check if team column
+    const teamCols = teamColumnsMap[tableName];
+    const isTeamCol = teamCols && teamCols.includes(columnName);
+    if (isTeamCol && teamsNameToId[clean]) {
+        return teamsNameToId[clean];
+    }
+    
     return value;
 }
 
@@ -218,7 +270,8 @@ async function resolveAndRegisterPayload(payload, tableName) {
     ].includes(tableName);
     
     const playerCols = playerColumnsMap[tableName];
-    const isMappedTable = isStadiumsOrManagersTable || !!playerCols;
+    const teamCols = teamColumnsMap[tableName];
+    const isMappedTable = isStadiumsOrManagersTable || !!playerCols || !!teamCols;
     
     if (!isMappedTable) return payload;
     
@@ -229,8 +282,9 @@ async function resolveAndRegisterPayload(payload, tableName) {
         const isManager = ['AHLY MANAGER', 'OPPONENT MANAGER', 'ZAMALEK MANAGER', 'EGYPT MANAGER'].includes(col);
         const isReferee = ['REFREE', 'REFEREE'].includes(col);
         const isPlayer = playerCols && playerCols.includes(col);
+        const isTeam = teamCols && teamCols.includes(col);
         
-        if (!isStadium && !isManager && !isReferee && !isPlayer) return val;
+        if (!isStadium && !isManager && !isReferee && !isPlayer && !isTeam) return val;
         
         const clean = String(val).trim().toLowerCase();
         
@@ -354,6 +408,36 @@ async function resolveAndRegisterPayload(payload, tableName) {
             }
         }
         
+        if (isTeam) {
+            if (teamsNameToId[clean]) return teamsNameToId[clean];
+            if (String(val).startsWith('T-')) return val;
+            
+            // Register new team
+            try {
+                const { data } = await rawSupabase.from('db_TEAMS').select('TEAM_ID');
+                const nums = data ? data.map(r => {
+                    const m = String(r.TEAM_ID).match(/(\d+)$/);
+                    return m ? parseInt(m[1], 10) : 0;
+                }) : [0];
+                const nextNum = Math.max(0, ...nums) + 1;
+                const nextId = 'T-' + String(nextNum).padStart(4, '0');
+                const nextRowId = 'R-' + String(nextNum).padStart(4, '0');
+                
+                await rawSupabase.from('db_TEAMS').insert({
+                    ROW_ID: nextRowId,
+                    TEAM_ID: nextId,
+                    TEAM_NAME: String(val).trim()
+                });
+                
+                teamsIdToName[nextId] = String(val).trim();
+                teamsNameToId[clean] = nextId;
+                return nextId;
+            } catch (e) {
+                console.error("Auto-register team failed:", e);
+                return val;
+            }
+        }
+        
         return val;
     };
     
@@ -391,7 +475,7 @@ function wrapQueryBuilder(target, tableName, calls = []) {
                                     newCall.args[0] = await resolveAndRegisterPayload(newCall.args[0], tableName);
                                 }
                                 // Invalidate caches if writing to the catalogs
-                                if (['db_STADIUMS', 'db_MANAGERS', 'db_PLAYERS', 'db_REFEREES'].includes(tableName)) {
+                                if (['db_STADIUMS', 'db_MANAGERS', 'db_PLAYERS', 'db_REFEREES', 'db_TEAMS'].includes(tableName)) {
                                     cachesPromise = null;
                                     cachesLoaded = false;
                                 }
@@ -431,7 +515,8 @@ function wrapQueryBuilder(target, tableName, calls = []) {
                         ].includes(tableName);
                         
                         const playerCols = playerColumnsMap[tableName];
-                        const isMappedTable = isStadiumsOrManagersTable || !!playerCols;
+                        const teamCols = teamColumnsMap[tableName];
+                        const isMappedTable = isStadiumsOrManagersTable || !!playerCols || !!teamCols;
                         
                         if (result && result.data && isMappedTable) {
                             result.data = mapDataDbToApp(result.data, tableName);

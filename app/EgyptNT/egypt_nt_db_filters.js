@@ -136,10 +136,10 @@ export default function EgyptNTFilters({
             <div className="filters-wrap" style={{ maxWidth: '1400px', width: '100%', margin: '0 auto' }}>
                 <div className="filter-grid-layout">
                     {/* ROW 1 */}
+                    <SearchableSelect label="COUNTRY" value={dbFilters.country} options={filterOptions?.countries || []} onChange={(v) => updateFilter('country', v)} />
+                    <SearchableSelect label="CONTINENT" value={dbFilters.continent} options={filterOptions?.continents || []} onChange={(v) => updateFilter('continent', v)} />
                     <SearchableSelect label="MATCH ID" value={dbFilters.match_id} options={filterOptions?.match_ids || []} onChange={(v) => updateFilter('match_id', v)} />
                     <SearchableSelect label="AGE" value={dbFilters.age} options={filterOptions?.ages || []} onChange={(v) => updateFilter('age', v)} />
-                    <SearchableSelect label="CHAMPION SYSTEM" value={dbFilters.champion_system} options={filterOptions?.champion_systems || []} onChange={(v) => updateFilter('champion_system', v)} />
-                    <SearchableSelect label="SYSTEM KIND" value={dbFilters.system_kind} options={filterOptions?.system_kinds || []} onChange={(v) => updateFilter('system_kind', v)} />
 
                     {/* ROW 2 */}
                     <div className="filter-group">
@@ -178,6 +178,8 @@ export default function EgyptNTFilters({
                     <SearchableSelect label="W-L Q & F" value={dbFilters.wl_q_f} options={filterOptions?.wl_q_fs || []} onChange={(v) => updateFilter('wl_q_f', v)} />
 
                     {/* ROW 7 */}
+                    <SearchableSelect label="CHAMPION SYSTEM" value={dbFilters.champion_system} options={filterOptions?.champion_systems || []} onChange={(v) => updateFilter('champion_system', v)} />
+                    <SearchableSelect label="SYSTEM KIND" value={dbFilters.system_kind} options={filterOptions?.system_kinds || []} onChange={(v) => updateFilter('system_kind', v)} />
                     <SearchableSelect label="NOTE" value={dbFilters.note} options={filterOptions?.notes || []} onChange={(v) => updateFilter('note', v)} />
                 </div>
             </div>

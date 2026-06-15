@@ -122,6 +122,10 @@ export function useTableData(addNotification) {
                     allData.sort((a, b) => String(a.STADIUM_NAME || '').localeCompare(String(b.STADIUM_NAME || ''), 'ar'));
                 } else if (cols.includes("REFEREE_NAME")) {
                     allData.sort((a, b) => String(a.REFEREE_NAME || '').localeCompare(String(b.REFEREE_NAME || ''), 'ar'));
+                } else if (cols.includes("TEAM_NAME")) {
+                    allData.sort((a, b) => String(a.TEAM_NAME || '').localeCompare(String(b.TEAM_NAME || ''), 'ar'));
+                } else if (cols.includes("COUNTRY_NAME")) {
+                    allData.sort((a, b) => String(a.COUNTRY_NAME || '').localeCompare(String(b.COUNTRY_NAME || ''), 'ar'));
                 } else {
                     const ridKey = cols.find(c => c.toUpperCase() === "ROW_ID");
                     if (ridKey) {

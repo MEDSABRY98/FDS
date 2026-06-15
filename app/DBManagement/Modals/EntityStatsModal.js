@@ -43,6 +43,8 @@ export default function EntityStatsModal({
         if (entityTable === 'db_PLAYERS') return 'PLAYER';
         if (entityTable === 'db_MANAGERS') return 'MANAGER';
         if (entityTable === 'db_REFEREES') return 'REFEREE';
+        if (entityTable === 'db_TEAMS') return 'TEAM';
+        if (entityTable === 'db_COUNTRIES') return 'COUNTRY';
         return 'STADIUM';
     };
 

@@ -137,8 +137,12 @@ export default function AlAhlyFilters({
             <div className="filters-wrap" style={{ maxWidth: '1400px', width: '100%', margin: '0 auto' }}>
                 <div className="filter-grid-layout">
                     {/* ROW 1 */}
+                    <SearchableSelect label="COUNTRY" value={dbFilters.country} options={filterOptions?.countries || []} onChange={(v) => updateFilter('country', v)} />
+                    <SearchableSelect label="CONTINENT" value={dbFilters.continent} options={filterOptions?.continents || []} onChange={(v) => updateFilter('continent', v)} />
                     <SearchableSelect label="MATCH ID" value={dbFilters.match_id} options={filterOptions?.match_ids || []} onChange={(v) => updateFilter('match_id', v)} />
                     <SearchableSelect label="CHAMPION SYSTEM" value={dbFilters.champion_system} options={filterOptions?.champion_systems || []} onChange={(v) => updateFilter('champion_system', v)} />
+
+                    {/* ROW 2 */}
                     <div className="filter-group">
                         <label className="filter-label">DATE FROM</label>
                         <input type="date" className="date-input" value={startDate} onChange={(e) => setStartDate(e.target.value)} />
@@ -147,10 +151,10 @@ export default function AlAhlyFilters({
                         <label className="filter-label">DATE TO</label>
                         <input type="date" className="date-input" value={endDate} onChange={(e) => setEndDate(e.target.value)} />
                     </div>
-
-                    {/* ROW 2 */}
                     <SearchableSelect label="YEAR" value={dbFilters.year} options={filterOptions?.years || []} onChange={(v) => updateFilter('year', v)} />
                     <SearchableSelect label="CHAMPION" value={dbFilters.champion} options={filterOptions?.champions || []} onChange={(v) => updateFilter('champion', v)} />
+
+                    {/* ROW 3 */}
                     <SearchableSelect label="SEASON - NAME" value={dbFilters.season} options={filterOptions?.seasons || []} onChange={(v) => updateFilter('season', v)} />
                     <SearchableSelect label="SEASON - NUMBER" value={dbFilters.sy} options={filterOptions?.sy || []} onChange={(v) => updateFilter('sy', v)} />
 

@@ -10,7 +10,7 @@ export function useMergeRecords(selectedTable, fetchTableData, addNotification) 
 
     const getName = (row) => {
         if (!row) return "";
-        return row.PLAYER_NAME || row.MANAGER_NAME || row.STADIUM_NAME || row.REFEREE_NAME || "";
+        return row.PLAYER_NAME || row.MANAGER_NAME || row.STADIUM_NAME || row.REFEREE_NAME || row.TEAM_NAME || row.COUNTRY_NAME || "";
     };
 
     const handleToggleSelect = (row) => {

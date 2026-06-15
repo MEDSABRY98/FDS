@@ -102,6 +102,55 @@ export const DBManagementService = {
                     supabase.from('db_REFEREES').delete().in('REFEREE_NAME', sources)
                 ]);
             }
+            else if (table === "db_TEAMS") {
+                results = await Promise.all([
+                    // Al Ahly Finals
+                    supabase.from('alahly_FINALS_LINEUPDETAILS').update({ "TEAM": targetName }).in('TEAM', sources),
+                    supabase.from('alahly_FINALS_MATCHDETAILS').update({ "AHLY TEAM": targetName }).in('AHLY TEAM', sources),
+                    supabase.from('alahly_FINALS_MATCHDETAILS').update({ "OPPONENT TEAM": targetName }).in('OPPONENT TEAM', sources),
+                    supabase.from('alahly_FINALS_PLAYERDETAILS').update({ "TEAM": targetName }).in('TEAM', sources),
+
+                    // Al Ahly
+                    supabase.from('alahly_GKSDETAILS').update({ "TEAM": targetName }).in('TEAM', sources),
+                    supabase.from('alahly_HOWPENMISSED').update({ "TEAM": targetName }).in('TEAM', sources),
+                    supabase.from('alahly_LINEUPDETAILS').update({ "TEAM": targetName }).in('TEAM', sources),
+                    supabase.from('alahly_MATCHDETAILS').update({ "AHLY TEAM": targetName }).in('AHLY TEAM', sources),
+                    supabase.from('alahly_MATCHDETAILS').update({ "OPPONENT TEAM": targetName }).in('OPPONENT TEAM', sources),
+                    supabase.from('alahly_PKS').update({ "AHLY TEAM": targetName }).in('AHLY TEAM', sources),
+                    supabase.from('alahly_PKS').update({ "OPPONENT TEAM": targetName }).in('OPPONENT TEAM', sources),
+                    supabase.from('alahly_PLAYERDETAILS').update({ "TEAM": targetName }).in('TEAM', sources),
+
+                    // Derby
+                    supabase.from('alahly_vs_zamalek_LINEUPDETAILS').update({ "TEAM": targetName }).in('TEAM', sources),
+                    supabase.from('alahly_vs_zamalek_PLAYERDETAILS').update({ "TEAM": targetName }).in('TEAM', sources),
+
+                    // Egypt Club
+                    supabase.from('egy_CLUB_MATCHDETAILS').update({ "EGYPT TEAM": targetName }).in('EGYPT TEAM', sources),
+                    supabase.from('egy_CLUB_MATCHDETAILS').update({ "OPPONENT TEAM": targetName }).in('OPPONENT TEAM', sources),
+
+                    // Egypt NT
+                    supabase.from('egy_NT_GKSDETAILS').update({ "TEAM": targetName }).in('TEAM', sources),
+                    supabase.from('egy_NT_HOWPENMISSED').update({ "TEAM": targetName }).in('TEAM', sources),
+                    supabase.from('egy_NT_LINEUPDETAILS').update({ "TEAM": targetName }).in('TEAM', sources),
+                    supabase.from('egy_NT_MATCHDETAILS').update({ "Egypt TEAM": targetName }).in('Egypt TEAM', sources),
+                    supabase.from('egy_NT_MATCHDETAILS').update({ "OPPONENT TEAM": targetName }).in('OPPONENT TEAM', sources),
+                    supabase.from('egy_NT_PKS').update({ "Egypt TEAM": targetName }).in('Egypt TEAM', sources),
+                    supabase.from('egy_NT_PKS').update({ "OPPONENT TEAM": targetName }).in('OPPONENT TEAM', sources),
+                    supabase.from('egy_NT_PLAYERDETAILS').update({ "TEAM": targetName }).in('TEAM', sources),
+                    supabase.from('egy_NT_SQUAD').update({ "CLUB": targetName }).in('CLUB', sources),
+
+                    // Delete duplicates from db_TEAMS
+                    supabase.from('db_TEAMS').delete().in('TEAM_NAME', sources)
+                ]);
+            }
+            else if (table === "db_COUNTRIES") {
+                results = [
+                    await supabase.rpc('merge_countries', { 
+                        target_country: targetName, 
+                        source_countries: sources 
+                    })
+                ];
+            }
 
             const errors = results.filter(r => r.error).map(r => r.error.message);
             if (errors.length > 0) {

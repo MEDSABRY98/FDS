@@ -15,6 +15,8 @@ export default function MergeModal({
         if (selectedTable === 'db_PLAYERS') return 'PLAYER';
         if (selectedTable === 'db_MANAGERS') return 'MANAGER';
         if (selectedTable === 'db_REFEREES') return 'REFEREE';
+        if (selectedTable === 'db_TEAMS') return 'TEAM';
+        if (selectedTable === 'db_COUNTRIES') return 'COUNTRY';
         return 'STADIUM';
     };
 

@@ -21,6 +21,7 @@ import {
 import Link from "next/link";
 
 import { AlAhlyService } from "./alahly_db_service";
+import { supabase } from "../lib/supabase";
 import AlAhlyDashboard from "./alahly_db_dashboard";
 import AlAhlyMatches from "./alahly_db_matches";
 import AlAhlySeasons from "./alahly_db_seasons_name";
@@ -49,6 +50,7 @@ export default function AlAhlyDatabase() {
     const [gkDetails, setGkDetails] = useState([]);
     const [howPenMissed, setHowPenMissed] = useState([]);
     const [mediaTrackerData, setMediaTrackerData] = useState([]);
+    const [countries, setCountries] = useState([]);
     const [loading, setLoading] = useState(true);
     const [selectedMatchId, setSelectedMatchId] = useState(null);
     const [isFilterOpen, setIsFilterOpen] = useState(false);
@@ -79,7 +81,9 @@ export default function AlAhlyDatabase() {
         opponent_team: 'All',
         wdl: 'All',
         clean_sheet: 'All',
-        note: 'All'
+        note: 'All',
+        country: 'All',
+        continent: 'All'
     });
 
     useEffect(() => {
@@ -88,6 +92,9 @@ export default function AlAhlyDatabase() {
 
     async function fetchMatchData(silent = false) {
         if (!silent) setLoading(true);
+        const { data: countriesData } = await supabase.from('db_COUNTRIES').select('*');
+        if (countriesData) setCountries(countriesData);
+
         const data = await AlAhlyService.getAllMatches();
         const pData = await AlAhlyService.getAllPlayerDetails();
         const lData = await AlAhlyService.getAllLineupDetails();
@@ -103,10 +110,165 @@ export default function AlAhlyDatabase() {
         if (!silent) setLoading(false);
     }
 
-    // Dynamic Filter Options for ALL columns
+    const getMatchCountryName = (opponentTeam) => {
+        if (!opponentTeam) return null;
+        const parts = opponentTeam.split(' - ');
+        return parts[parts.length - 1].trim().toLowerCase();
+    };
+
+    const checkMatchPassesFilter = (m, key, val, countriesList, startD, endD) => {
+        if (val === 'All') return true;
+        
+        if (key === 'year') {
+            if (!m.DATE) return false;
+            const mYear = new Date(m.DATE).getFullYear().toString();
+            return mYear === val;
+        }
+        
+        if (key === 'country') {
+            const mCountry = getMatchCountryName(m["OPPONENT TEAM"]);
+            if (!mCountry) return false;
+            const targetRows = countriesList.filter(c => c.COUNTRY_NAME === val);
+            return targetRows.some(c => 
+                (c.COUNTRY_NAME && c.COUNTRY_NAME.toLowerCase() === mCountry) ||
+                (c.COUNTRY_NAME_EN && c.COUNTRY_NAME_EN.toLowerCase() === mCountry)
+            );
+        }
+        
+        if (key === 'continent') {
+            const mCountry = getMatchCountryName(m["OPPONENT TEAM"]);
+            if (!mCountry) return false;
+            const countryRow = countriesList.find(c =>
+                (c.COUNTRY_NAME && c.COUNTRY_NAME.toLowerCase() === mCountry) ||
+                (c.COUNTRY_NAME_EN && c.COUNTRY_NAME_EN.toLowerCase() === mCountry)
+            );
+            return countryRow && countryRow.CONTINENT === val;
+        }
+        
+        const colMap = {
+            match_id: 'MATCH_ID',
+            champion_system: 'CHAMPION SYSTEM',
+            champion: 'CHAMPION',
+            season: 'SEASON - NAME',
+            sy: 'SEASON - NUMBER',
+            ahly_manager: 'AHLY MANAGER',
+            opponent_manager: 'OPPONENT MANAGER',
+            referee: 'REFREE',
+            round: 'ROUND',
+            han: 'H-A-N',
+            stad: 'STAD',
+            ahly_team: 'AHLY TEAM',
+            gf: 'GF',
+            ga: 'GA',
+            et: 'ET',
+            pen: 'PEN',
+            opponent_team: 'OPPONENT TEAM',
+            wdl: 'W-D-L',
+            clean_sheet: 'CLEAN SHEET',
+            note: 'NOTE'
+        };
+        
+        const colName = colMap[key];
+        if (!colName) return true;
+        return String(m[colName]) === String(val);
+    };
+
+    const getOptionsForField = (key, colName) => {
+        const partialMatches = matches.filter(m => {
+            let withinRange = true;
+            if (m.DATE) {
+                const mDate = new Date(m.DATE);
+                if (startDate && mDate < new Date(startDate)) withinRange = false;
+                if (endDate && mDate > new Date(endDate)) withinRange = false;
+            } else if (startDate || endDate) {
+                withinRange = false;
+            }
+            if (!withinRange) return false;
+
+            for (const k of Object.keys(dbFilters)) {
+                if (k === key) continue;
+                if (!checkMatchPassesFilter(m, k, dbFilters[k], countries, startDate, endDate)) {
+                    return false;
+                }
+            }
+            return true;
+        });
+
+        if (key === 'year') {
+            const years = partialMatches.map(m => m.DATE ? new Date(m.DATE).getFullYear() : null).filter(Boolean);
+            return ["All", ...new Set(years)].sort((a, b) => b - a);
+        }
+        
+        if (key === 'country') {
+            const matchCountryNames = partialMatches.map(m => {
+                if (!m["OPPONENT TEAM"]) return null;
+                const parts = m["OPPONENT TEAM"].split(' - ');
+                return parts[parts.length - 1].trim().toLowerCase();
+            }).filter(Boolean);
+            
+            const countryOpts = countries
+                .filter(c => c.COUNTRY_NAME && (
+                    matchCountryNames.includes(c.COUNTRY_NAME.toLowerCase()) || 
+                    (c.COUNTRY_NAME_EN && matchCountryNames.includes(c.COUNTRY_NAME_EN.toLowerCase()))
+                ))
+                .map(c => c.COUNTRY_NAME);
+                
+            return ["All", ...new Set(countryOpts)].sort((a, b) => a.localeCompare(b, 'ar'));
+        }
+        
+        if (key === 'continent') {
+            const matchCountryNames = partialMatches.map(m => {
+                if (!m["OPPONENT TEAM"]) return null;
+                const parts = m["OPPONENT TEAM"].split(' - ');
+                return parts[parts.length - 1].trim().toLowerCase();
+            }).filter(Boolean);
+            
+            const continentOpts = countries
+                .filter(c => c.CONTINENT && (
+                    matchCountryNames.includes(c.COUNTRY_NAME.toLowerCase()) || 
+                    (c.COUNTRY_NAME_EN && matchCountryNames.includes(c.COUNTRY_NAME_EN.toLowerCase()))
+                ))
+                .map(c => c.CONTINENT);
+                
+            return ["All", ...new Set(continentOpts)].sort((a, b) => a.localeCompare(b, 'ar'));
+        }
+        
+        const vals = partialMatches.map(m => m[colName]).filter(v => v !== null && v !== undefined && v !== '');
+        const uniqueVals = [...new Set(vals)].sort();
+        if (['SEASON - NAME', 'DATE'].includes(colName)) {
+            uniqueVals.reverse();
+        }
+        return ["All", ...uniqueVals];
+    };
+
+    // Dynamic Filter Options for ALL columns (Cascading dependent filters)
     const filterOptions = useMemo(() => {
-        return AlAhlyService.getUniqueFilters(matches);
-    }, [matches]);
+        return {
+            match_ids: getOptionsForField('match_id', 'MATCH_ID'),
+            champion_systems: getOptionsForField('champion_system', 'CHAMPION SYSTEM'),
+            years: getOptionsForField('year', null),
+            champions: getOptionsForField('champion', 'CHAMPION'),
+            seasons: getOptionsForField('season', 'SEASON - NAME'),
+            sy: getOptionsForField('sy', 'SEASON - NUMBER'),
+            ahly_managers: getOptionsForField('ahly_manager', 'AHLY MANAGER'),
+            opponent_managers: getOptionsForField('opponent_manager', 'OPPONENT MANAGER'),
+            referees: getOptionsForField('referee', 'REFREE'),
+            rounds: getOptionsForField('round', 'ROUND'),
+            han: getOptionsForField('han', 'H-A-N'),
+            stadiums: getOptionsForField('stad', 'STAD'),
+            ahly_teams: getOptionsForField('ahly_team', 'AHLY TEAM'),
+            gf: getOptionsForField('gf', 'GF'),
+            ga: getOptionsForField('ga', 'GA'),
+            et: getOptionsForField('et', 'ET'),
+            pen: getOptionsForField('pen', 'PEN'),
+            opponent_teams: getOptionsForField('opponent_team', 'OPPONENT TEAM'),
+            wdl: getOptionsForField('wdl', 'W-D-L'),
+            clean_sheets: getOptionsForField('clean_sheet', 'CLEAN SHEET'),
+            notes: getOptionsForField('note', 'NOTE'),
+            countries: getOptionsForField('country', null),
+            continents: getOptionsForField('continent', null)
+        };
+    }, [matches, dbFilters, countries, startDate, endDate]);
 
     const updateFilter = (key, value) => {
         setDbFilters(prev => ({ ...prev, [key]: value }));
@@ -136,7 +298,9 @@ export default function AlAhlyDatabase() {
             opponent_team: 'All',
             wdl: 'All',
             clean_sheet: 'All',
-            note: 'All'
+            note: 'All',
+            country: 'All',
+            continent: 'All'
         });
     };
 
@@ -162,8 +326,38 @@ export default function AlAhlyDatabase() {
                 withinRange = false;
             }
 
+            let passCountry = true;
+            if (dbFilters.country !== 'All') {
+                const mCountry = getMatchCountryName(m["OPPONENT TEAM"]);
+                if (!mCountry) {
+                    passCountry = false;
+                } else {
+                    const targetRows = countries.filter(c => c.COUNTRY_NAME === dbFilters.country);
+                    passCountry = targetRows.some(c => 
+                        (c.COUNTRY_NAME && c.COUNTRY_NAME.toLowerCase() === mCountry) ||
+                        (c.COUNTRY_NAME_EN && c.COUNTRY_NAME_EN.toLowerCase() === mCountry)
+                    );
+                }
+            }
+
+            let passContinent = true;
+            if (dbFilters.continent !== 'All') {
+                const mCountry = getMatchCountryName(m["OPPONENT TEAM"]);
+                if (!mCountry) {
+                    passContinent = false;
+                } else {
+                    const countryRow = countries.find(c =>
+                        (c.COUNTRY_NAME && c.COUNTRY_NAME.toLowerCase() === mCountry) ||
+                        (c.COUNTRY_NAME_EN && c.COUNTRY_NAME_EN.toLowerCase() === mCountry)
+                    );
+                    passContinent = countryRow && countryRow.CONTINENT === dbFilters.continent;
+                }
+            }
+
             return (
                 withinRange &&
+                passCountry &&
+                passContinent &&
                 check('match_id', 'MATCH_ID') &&
                 check('champion_system', 'CHAMPION SYSTEM') &&
                 check('champion', 'CHAMPION') &&
@@ -186,7 +380,7 @@ export default function AlAhlyDatabase() {
                 check('note', 'NOTE')
             );
         });
-    }, [matches, dbFilters, startDate, endDate]);
+    }, [matches, dbFilters, startDate, endDate, countries]);
 
 
     const tabs = [

@@ -1,32 +1,200 @@
 "use client";
 
-import { useMemo, useState, useEffect } from "react";
+import { useMemo, useState, useEffect, useRef } from "react";
 import { EgyptNTService } from "./egypt_nt_db_service";
 import { EgyptNTExcelExport } from "./egypt_nt_export_excel";
 import NoData_db from "../lib/NoData_db";
 import SearchBar_db from "../lib/SearchBar_db";
 
+function SearchScopeSelect({ value, onChange }) {
+    const [isOpen, setIsOpen] = useState(false);
+    const containerRef = useRef(null);
+
+    const options = [
+        { value: "all", label: "All Fields" },
+        { value: "opponent_team", label: "Opponent Team" },
+        { value: "opponent_manager", label: "Opponent Manager" },
+        { value: "egypt_manager", label: "Egypt Manager" },
+        { value: "season", label: "Season" },
+        { value: "match_id", label: "Match ID" },
+        { value: "stad", label: "Stadium" },
+        { value: "referee", label: "Referee" },
+        { value: "place", label: "Place" }
+    ];
+
+    const currentLabel = options.find(o => o.value === value)?.label || "All Fields";
+
+    useEffect(() => {
+        function handleClickOutside(event) {
+            if (containerRef.current && !containerRef.current.contains(event.target)) {
+                setIsOpen(false);
+            }
+        }
+        document.addEventListener("mousedown", handleClickOutside);
+        return () => document.removeEventListener("mousedown", handleClickOutside);
+    }, []);
+
+    return (
+        <div className="search-scope-container" ref={containerRef}>
+            <div
+                className={`search-scope-box ${isOpen ? 'open' : ''}`}
+                onClick={() => setIsOpen(!isOpen)}
+            >
+                <span>{currentLabel}</span>
+                <span className="select-arrow">▼</span>
+            </div>
+
+            {isOpen && (
+                <div className="search-scope-dropdown">
+                    <div className="options-list">
+                        {options.map((opt) => (
+                            <div
+                                key={opt.value}
+                                className={`option-item ${value === opt.value ? 'active' : ''}`}
+                                onClick={() => {
+                                    onChange(opt.value);
+                                    setIsOpen(false);
+                                }}
+                            >
+                                {opt.label}
+                            </div>
+                        ))}
+                    </div>
+                </div>
+            )}
+
+            <style jsx>{`
+                .search-scope-container {
+                    position: relative;
+                    width: 100%;
+                }
+                .search-scope-box {
+                    background: #fdfdfd;
+                    border: 2px solid #eee;
+                    padding: 0 20px;
+                    border-radius: 12px;
+                    font-size: 15px;
+                    font-weight: 500;
+                    color: #0a0a0a;
+                    font-family: 'DM Sans', sans-serif;
+                    cursor: pointer;
+                    display: flex;
+                    justify-content: space-between;
+                    align-items: center;
+                    height: 52px;
+                    box-sizing: border-box;
+                    transition: 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+                    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.02);
+                }
+                .search-scope-box:hover {
+                    border-color: #c9a84c;
+                }
+                .search-scope-box.open {
+                    border-color: #c9a84c;
+                    background: #fff;
+                    box-shadow: 0 10px 30px rgba(201, 168, 76, 0.08);
+                }
+                .select-arrow {
+                    font-size: 10px;
+                    color: #c9a84c;
+                    opacity: 0.8;
+                    transition: transform 0.3s;
+                }
+                .search-scope-box.open .select-arrow {
+                    transform: rotate(180deg);
+                }
+                .search-scope-dropdown {
+                    position: absolute;
+                    left: 0;
+                    right: 0;
+                    top: calc(100% + 6px);
+                    background: #fff;
+                    border: 2px solid #c9a84c;
+                    border-radius: 12px;
+                    z-index: 10000;
+                    box-shadow: 0 10px 30px rgba(201, 168, 76, 0.1);
+                    overflow: hidden;
+                    animation: slideDown 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+                }
+                @keyframes slideDown {
+                    from { opacity: 0; transform: translateY(-8px); }
+                    to { opacity: 1; transform: translateY(0); }
+                }
+                .options-list {
+                    max-height: 300px;
+                    overflow-y: auto;
+                    padding: 6px;
+                }
+                .option-item {
+                    padding: 10px 14px;
+                    font-size: 14px;
+                    font-weight: 500;
+                    color: #333;
+                    cursor: pointer;
+                    border-radius: 8px;
+                    transition: all 0.2s;
+                    font-family: 'DM Sans', sans-serif;
+                }
+                .option-item:hover {
+                    background: #f9f9f9;
+                    color: #c9a84c;
+                }
+                .option-item.active {
+                    background: rgba(201, 168, 76, 0.1);
+                    color: #c9a84c;
+                    font-weight: 700;
+                }
+                .options-list::-webkit-scrollbar {
+                    width: 4px;
+                }
+                .options-list::-webkit-scrollbar-thumb {
+                    background: #c9a84c;
+                    border-radius: 10px;
+                }
+            `}</style>
+        </div>
+    );
+}
+
 export default function EgyptNTMatches({ matches, onMatchClick }) {
     const [currentPage, setCurrentPage] = useState(1);
     const [searchTerm, setSearchTerm] = useState("");
+    const [searchScope, setSearchScope] = useState("all");
     const pageSize = 50;
 
     const filteredBySearch = useMemo(() => {
         if (!searchTerm) return matches || [];
         const lowSearch = searchTerm.toLowerCase().trim();
         return (matches || []).filter(m => {
-            return (
-                String(m["OPPONENT TEAM"] || "").toLowerCase().includes(lowSearch) ||
-                String(m["OPPONENT MANAGER"] || "").toLowerCase().includes(lowSearch) ||
-                String(m["EGYPT MANAGER"] || "").toLowerCase().includes(lowSearch) ||
-                String(m["SEASON"] || "").toLowerCase().includes(lowSearch) ||
-                String(m.MATCH_ID || "").toLowerCase().includes(lowSearch) ||
-                String(m.STAD || "").toLowerCase().includes(lowSearch) ||
-                String(m.REFREE || "").toLowerCase().includes(lowSearch) ||
-                String(m.PLACE || "").toLowerCase().includes(lowSearch)
-            );
+            if (searchScope === "all") {
+                return (
+                    String(m["OPPONENT TEAM"] || "").toLowerCase().includes(lowSearch) ||
+                    String(m["OPPONENT MANAGER"] || "").toLowerCase().includes(lowSearch) ||
+                    String(m["EGYPT MANAGER"] || "").toLowerCase().includes(lowSearch) ||
+                    String(m["SEASON"] || "").toLowerCase().includes(lowSearch) ||
+                    String(m.MATCH_ID || "").toLowerCase().includes(lowSearch) ||
+                    String(m.STAD || "").toLowerCase().includes(lowSearch) ||
+                    String(m.REFREE || "").toLowerCase().includes(lowSearch) ||
+                    String(m.PLACE || "").toLowerCase().includes(lowSearch)
+                );
+            }
+
+            const scopeMap = {
+                opponent_team: "OPPONENT TEAM",
+                opponent_manager: "OPPONENT MANAGER",
+                egypt_manager: "EGYPT MANAGER",
+                season: "SEASON",
+                match_id: "MATCH_ID",
+                stad: "STAD",
+                referee: "REFREE",
+                place: "PLACE"
+            };
+
+            const colName = scopeMap[searchScope];
+            if (!colName) return false;
+            return String(m[colName] || "").toLowerCase().includes(lowSearch);
         });
-    }, [matches, searchTerm]);
+    }, [matches, searchTerm, searchScope]);
 
     const groupMatchesByMonth = (matchList) => {
         const groups = {};
@@ -78,7 +246,7 @@ export default function EgyptNTMatches({ matches, onMatchClick }) {
 
     useEffect(() => {
         setCurrentPage(1);
-    }, [matches, searchTerm]);
+    }, [matches, searchTerm, searchScope]);
 
     const formatPenalties = (penString) => {
         if (!penString) return "";
@@ -113,12 +281,18 @@ export default function EgyptNTMatches({ matches, onMatchClick }) {
                     </div>
                     <div className="gold-line"></div>
 
-                    <div className="match-search-container" style={{ display: 'flex', justifyContent: 'center', marginTop: '20px' }}>
-                        <div style={{ width: '100%', maxWidth: '500px' }}>
+                    <div className="match-search-container" style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '12px', marginTop: '20px' }}>
+                        <div className="search-scope-wrapper" style={{ width: '200px', flexShrink: 0 }}>
+                            <SearchScopeSelect
+                                value={searchScope}
+                                onChange={setSearchScope}
+                            />
+                        </div>
+                        <div style={{ width: '100%', maxWidth: '350px' }}>
                             <SearchBar_db
                                 value={searchTerm}
                                 onChange={setSearchTerm}
-                                placeholder="Search matches (ID, Team, Manager, Stad, Referee, Place...)"
+                                placeholder="Type search term..."
                             />
                         </div>
                     </div>
