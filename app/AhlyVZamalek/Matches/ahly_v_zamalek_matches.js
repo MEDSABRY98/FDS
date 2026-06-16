@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useMemo, useState, useEffect, useRef } from "react";
 import { AhlyVZamalekService } from "../Service/ahly_v_zamalek_service";
 import { AhlyVZamalekExcelExport } from "../ExportExcel/ahly_v_zamalek_export_excel";
 import "./ahly_v_zamalek_matches.css";
@@ -18,7 +18,8 @@ function SearchScopeSelect({ value, onChange }) {
         { value: "stad", label: "Stadium" },
         { value: "date", label: "Date/Year" },
         { value: "season", label: "Season" },
-        { value: "referee", label: "Referee" }
+        { value: "referee", label: "Referee" },
+        { value: "match_id", label: "Match ID" }
     ];
 
     const options = [
@@ -161,39 +162,69 @@ function SearchScopeSelect({ value, onChange }) {
 }
 
 export default function AhlyVZamalekMatches({ derbyData, onSelectMatch }) {
+    const [currentPage, setCurrentPage] = useState(1);
     const [searchTerm, setSearchTerm] = useState("");
     const [searchScope, setSearchScope] = useState("all");
+    const pageSize = 50;
 
-    const displayedMatches = derbyData.filter(m => {
+    const filteredBySearch = useMemo(() => {
+        if (!searchTerm) return derbyData || [];
         const lowSearch = searchTerm.toLowerCase().trim();
-        if (!lowSearch) return true;
+        return (derbyData || []).filter(m => {
+            if (searchScope === "all") {
+                const searchStr = `${m.MATCH_ID} ${m.CHAMPION} ${m.ROUND} ${m.STAD} ${m.DATE} ${m.YEAR} ${m["SEASON - NAME"]} ${m.REFEREE}`.toLowerCase();
+                return searchStr.includes(lowSearch);
+            }
 
-        if (searchScope === "all") {
-            const searchStr = `${m.CHAMPION} ${m.ROUND} ${m.STAD} ${m.DATE} ${m.YEAR} ${m["SEASON - NAME"]} ${m.REFEREE}`.toLowerCase();
-            return searchStr.includes(lowSearch);
-        }
+            const scopeMap = {
+                champion: "CHAMPION",
+                round: "ROUND",
+                stad: "STAD",
+                season: "SEASON - NAME",
+                referee: "REFEREE",
+                match_id: "MATCH_ID"
+            };
 
-        const scopeMap = {
-            champion: "CHAMPION",
-            round: "ROUND",
-            stad: "STAD",
-            season: "SEASON - NAME",
-            referee: "REFEREE"
-        };
+            if (searchScope === "date") {
+                return String(m.DATE || m.YEAR || "").toLowerCase().includes(lowSearch);
+            }
 
-        if (searchScope === "date") {
-            return String(m.DATE || m.YEAR || "").toLowerCase().includes(lowSearch);
-        }
+            const colName = scopeMap[searchScope];
+            if (!colName) return false;
+            return String(m[colName] || "").toLowerCase().includes(lowSearch);
+        });
+    }, [derbyData, searchTerm, searchScope]);
 
-        const colName = scopeMap[searchScope];
-        if (!colName) return false;
-        return String(m[colName] || "").toLowerCase().includes(lowSearch);
-    });
+    const groupMatchesByMonth = (matchList) => {
+        const groups = {};
+        matchList.forEach(m => {
+            const dateVal = m.DATE || m.YEAR;
+            if (!dateVal) return;
+            let monthYear = "";
+            if (m.DATE) {
+                const date = new Date(m.DATE);
+                monthYear = date.toLocaleString('default', { month: 'long', year: 'numeric' }).toUpperCase();
+            } else {
+                monthYear = String(m.YEAR);
+            }
+            if (!groups[monthYear]) groups[monthYear] = [];
+            groups[monthYear].push(m);
+        });
+        return groups;
+    };
+
+    const paginatedMatches = useMemo(() => {
+        const start = (currentPage - 1) * pageSize;
+        return filteredBySearch.slice(start, start + pageSize);
+    }, [filteredBySearch, currentPage]);
+
+    const groupedMatches = useMemo(() => groupMatchesByMonth(paginatedMatches), [paginatedMatches]);
+    const totalPages = Math.ceil(filteredBySearch.length / pageSize);
 
     useEffect(() => {
         const handleExport = () => {
-            if (displayedMatches.length > 0) {
-                const exportData = displayedMatches.map((m, idx) => ({
+            if (filteredBySearch.length > 0) {
+                const exportData = filteredBySearch.map((m, idx) => ({
                     "#": idx + 1,
                     "DATE": m.DATE || m.YEAR,
                     "CHAMPION": m.CHAMPION,
@@ -213,91 +244,427 @@ export default function AhlyVZamalekMatches({ derbyData, onSelectMatch }) {
 
         window.addEventListener('avz-export-excel', handleExport);
         return () => window.removeEventListener('avz-export-excel', handleExport);
-    }, [displayedMatches]);
+    }, [filteredBySearch]);
+
+    useEffect(() => {
+        setCurrentPage(1);
+    }, [searchTerm, searchScope]);
+
+    const getResultColor = (wdl) => {
+        if (wdl === "W") return "#10b981"; // Emerald
+        if (wdl === "L") return "#ef4444"; // Red
+        return "#f59e0b"; // Gold/Orange for Draw
+    };
+
+    const formatDate = (dateStr, yearStr) => {
+        if (dateStr) {
+            const d = new Date(dateStr);
+            if (!isNaN(d)) {
+                return `${String(d.getDate()).padStart(2, '0')}/${String(d.getMonth() + 1).padStart(2, '0')}/${d.getFullYear()}`;
+            }
+        }
+        return yearStr || "N/A";
+    };
 
     return (
-        <div className="avz-matches-container fade-in">
-            <div className="avz-matches-header">
-                <h1 className="avz-matches-title">DERBY <span className="avz-gold-text">MATCHES</span></h1>
-
-                <div className="match-search-container" style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '12px', marginTop: '20px', marginBottom: '20px' }}>
-                    <div style={{ width: '200px', flexShrink: 0 }}>
-                        <SearchScopeSelect
-                            value={searchScope}
-                            onChange={setSearchScope}
-                        />
+        <div className="tab-content fade-in" id="tab-matches">
+            <div className="matches-wrap">
+                <div className="matches-header">
+                    <div className="header-tabs-container">
+                        <div className="section-title">DERBY <span className="accent">MATCHES</span></div>
                     </div>
-                    <div style={{ width: '100%', maxWidth: '350px' }}>
-                        <SearchBar_db
-                            placeholder="Type search term..."
-                            value={searchTerm}
-                            onChange={setSearchTerm}
-                        />
+                    <div className="gold-line"></div>
+
+                    <div className="match-search-container">
+                        <div className="search-scope-wrapper">
+                            <SearchScopeSelect
+                                value={searchScope}
+                                onChange={setSearchScope}
+                            />
+                        </div>
+                        <div className="match-search-box">
+                            <SearchBar_db
+                                value={searchTerm}
+                                onChange={setSearchTerm}
+                                placeholder="Type search term..."
+                            />
+                        </div>
                     </div>
                 </div>
 
-            </div>
-
-            <div className="avz-matches-list">
-                {displayedMatches.length > 0 ? (
-                    displayedMatches.map((match, idx) => (
-                        <div key={match.ROW_ID || idx} className="avz-match-card" onClick={() => onSelectMatch && onSelectMatch(match.MATCH_ID)}>
-                            <div className="avz-match-teams">
-                                <span className={`avz-team ${match["W-D-L"] === "W" ? "winner" : ""}`}>
-                                    {match.AHLY || "الأهلي"} <span className="avz-score">{match.GF}</span>
-                                </span>
-                                <span className="avz-vs">VS</span>
-                                <span className={`avz-team ${match["W-D-L"] === "L" ? "winner" : ""}`}>
-                                    <span className="avz-score">{match.GA}</span> {match.ZAMALEK || "الزمالك"}
-                                </span>
+                {Object.keys(groupedMatches).length === 0 ? (
+                    <NoData_db message="No matches found for current filters." />
+                ) : (
+                    Object.keys(groupedMatches).map(monthYear => (
+                        <div key={monthYear} className="month-section fade-in">
+                            <div className="luxury-month-divider">
+                                <span className="m-text">{monthYear}</span>
+                                <div className="m-line"></div>
                             </div>
 
-                            <div className="avz-match-meta">
-                                <span className="avz-meta-date">{match.DATE || match.YEAR}</span>
+                            <div className="match-list-vertical">
+                                {groupedMatches[monthYear].map(m => (
+                                    <div 
+                                        key={m.MATCH_ID || Math.random()} 
+                                        className="modern-match-row-h" 
+                                        onClick={() => onSelectMatch && onSelectMatch(m.MATCH_ID)}
+                                    >
+                                        <div 
+                                            className="match-result-indicator"
+                                            style={{ background: getResultColor(m["W-D-L"]) }}
+                                        ></div>
 
-                                {match.CHAMPION && (
-                                    <>
-                                        <span className="avz-divider">•</span>
-                                        <span className="avz-meta-champion">{match.CHAMPION}</span>
-                                    </>
-                                )}
+                                        <div className="match-meta-left">
+                                            <div className="match-date">
+                                                {formatDate(m.DATE, m.YEAR)}
+                                            </div>
+                                            <div className="match-meta-divider"></div>
+                                            <div className="match-season">
+                                                📅 {m.CHAMPION ? `${m.CHAMPION} | ` : ""}{m["SEASON - NAME"]}
+                                            </div>
+                                            {m.ROUND && (
+                                                <>
+                                                    <div className="match-meta-divider"></div>
+                                                    <div className="match-round">
+                                                        ⚔️ {m.ROUND}
+                                                    </div>
+                                                </>
+                                            )}
+                                        </div>
 
-                                {match["SEASON - NAME"] && (
-                                    <>
-                                        <span className="avz-divider">•</span>
-                                        <span>{match["SEASON - NAME"]}</span>
-                                    </>
-                                )}
+                                        <div className="match-board-center">
+                                            <div className="match-team-name-left">
+                                                {m.AHLY || 'النادي الأهلي'}
+                                            </div>
 
-                                {match.ROUND && (
-                                    <>
-                                        <span className="avz-divider">•</span>
-                                        <span>{match.ROUND}</span>
-                                    </>
-                                )}
+                                            <div className="match-score-box">
+                                                <div className="match-score-value">
+                                                    {m.GF} <span style={{ color: 'var(--gold, #c9a84c)' }}>-</span> {m.GA}
+                                                </div>
+                                                {m.PEN && (
+                                                    <div className="match-penalties">
+                                                        {m.PEN}
+                                                    </div>
+                                                )}
+                                            </div>
 
-                                {match.STAD && (
-                                    <>
-                                        <span className="avz-divider">•</span>
-                                        <span>{match.STAD}</span>
-                                    </>
-                                )}
+                                            <div className="match-team-name-right">
+                                                {m.ZAMALEK || 'الزمالك'}
+                                            </div>
+                                        </div>
 
-                                {match.REFEREE && (
-                                    <>
-                                        <span className="avz-divider">•</span>
-                                        <span className="avz-meta-referee">{match.REFEREE}</span>
-                                    </>
-                                )}
+                                        <div className="match-meta-right">
+                                            
+                                            <div 
+                                                className="match-venue-badge"
+                                                title={m.STAD ? `Stadium: ${m.STAD}` : ""}
+                                            >
+                                                {m.STAD ? m.STAD.substring(0, 1).toUpperCase() : 'N'}
+                                            </div>
+                                        </div>
+                                    </div>
+                                ))}
                             </div>
                         </div>
                     ))
+                )}
 
-                ) : (
-                    <NoData_db message="NO MATCHES FOUND FOR THIS FILTER" />
+                {totalPages > 1 && (
+                    <div className="pagination-matches">
+                        <button 
+                            className="page-btn prev-btn" 
+                            onClick={() => { setCurrentPage(p => Math.max(1, p - 1)); window.scrollTo({ top: 0, behavior: 'smooth' }); }} 
+                            disabled={currentPage === 1}
+                        >
+                            ← PREV
+                        </button>
+                        <div className="page-info">
+                            PAGE <span className="current-page">{currentPage}</span> OF <span className="total-pages">{totalPages}</span>
+                        </div>
+                        <button 
+                            className="page-btn next-btn" 
+                            onClick={() => { setCurrentPage(p => Math.max(totalPages, p + 1)); window.scrollTo({ top: 0, behavior: 'smooth' }); }} 
+                            disabled={currentPage === totalPages}
+                        >
+                            NEXT →
+                        </button>
+                    </div>
                 )}
             </div>
 
+            <style jsx>{`
+                .matches-wrap {
+                    max-width: 1400px;
+                    width: 95%;
+                    margin: 0 auto;
+                }
+                .matches-header {
+                    padding-bottom: 10px;
+                }
+                .header-tabs-container {
+                    display: flex;
+                    align-items: center;
+                    margin-bottom: 5px;
+                }
+                .section-title {
+                    font-size: 24px;
+                    font-weight: 900;
+                    font-family: 'Space Mono', monospace;
+                    color: #111;
+                    letter-spacing: 1px;
+                }
+                .section-title .accent {
+                    color: var(--gold, #c9a84c);
+                }
+                .gold-line {
+                    height: 2px;
+                    background: var(--gold, #c9a84c);
+                    margin: 15px 0 20px;
+                }
+                .match-search-container {
+                    display: flex;
+                    justify-content: center;
+                    align-items: center;
+                    gap: 12px;
+                    margin-top: 20px;
+                    margin-bottom: 20px;
+                }
+                .search-scope-wrapper {
+                    width: 200px;
+                    flex-shrink: 0;
+                }
+                .match-search-box {
+                    width: 100%;
+                    max-width: 350px;
+                }
+                .month-section {
+                    margin-bottom: 30px;
+                }
+                .luxury-month-divider {
+                    display: flex;
+                    align-items: center;
+                    gap: 20px;
+                    margin: 30px 0 15px;
+                }
+                .m-text {
+                    font-family: 'Space Mono', monospace;
+                    font-weight: 800;
+                    font-size: 12px;
+                    color: #fff;
+                    background: var(--gold, #c9a84c);
+                    padding: 4px 15px;
+                    border-radius: 50px;
+                }
+                .m-line {
+                    flex: 1;
+                    height: 1px;
+                    background: linear-gradient(to right, rgba(201, 168, 76, 0.3), transparent);
+                }
+                .match-list-vertical {
+                    display: flex;
+                    flex-direction: column;
+                    gap: 8px;
+                }
+                .modern-match-row-h {
+                    cursor: pointer;
+                    background: #fff;
+                    border-radius: 8px;
+                    padding: 12px 20px;
+                    display: flex;
+                    align-items: center;
+                    justify-content: space-between;
+                    border: 1px solid #eef0f2;
+                    transition: all 0.2s ease;
+                    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.01);
+                    position: relative;
+                    overflow: hidden;
+                }
+                .modern-match-row-h:hover {
+                    transform: translateY(-2px);
+                    box-shadow: 0 6px 16px rgba(0, 0, 0, 0.04);
+                    border-color: rgba(201, 168, 76, 0.3);
+                }
+                .match-result-indicator {
+                    position: absolute;
+                    left: 0;
+                    top: 0;
+                    bottom: 0;
+                    width: 4px;
+                }
+                .match-meta-left {
+                    display: flex;
+                    align-items: center;
+                    gap: 15px;
+                    width: 430px;
+                    flex-shrink: 0;
+                }
+                .match-date {
+                    font-size: 11px;
+                    color: #888;
+                    width: 85px;
+                    font-family: 'Space Mono', monospace;
+                }
+                .match-meta-divider {
+                    height: 15px;
+                    width: 1px;
+                    background: #eee;
+                }
+                .match-season {
+                    font-size: 13px;
+                    font-weight: 700;
+                    color: #333;
+                    width: 240px;
+                    overflow: hidden;
+                    text-overflow: ellipsis;
+                    white-space: nowrap;
+                }
+                .match-round {
+                    font-size: 13px;
+                    font-weight: 500;
+                    color: #666;
+                    width: 70px;
+                    overflow: hidden;
+                    text-overflow: ellipsis;
+                    white-space: nowrap;
+                }
+                .match-board-center {
+                    flex: 1;
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    gap: 20px;
+                    padding: 0 15px;
+                }
+                .match-team-name-left {
+                    flex: 1;
+                    text-align: right;
+                    font-weight: 800;
+                    font-size: 15px;
+                    color: #000;
+                }
+                .match-team-name-right {
+                    flex: 1;
+                    text-align: left;
+                    font-weight: 800;
+                    font-size: 15px;
+                    color: #0d0d0d;
+                }
+                .match-score-box {
+                    display: flex;
+                    flex-direction: column;
+                    align-items: center;
+                    min-width: 80px;
+                }
+                .match-score-value {
+                    font-size: 18px;
+                    font-weight: 900;
+                    font-family: 'Space Mono', monospace;
+                    color: #fff;
+                    background: #0d0d0d;
+                    padding: 3px 12px;
+                    border-radius: 4px;
+                    border: 1px solid var(--gold, #c9a84c);
+                    letter-spacing: 0px;
+                }
+                .match-penalties {
+                    font-size: 10px;
+                    color: var(--gold, #c9a84c);
+                    font-weight: 700;
+                    margin-top: 3px;
+                }
+                .match-meta-right {
+                    width: 160px;
+                    text-align: right;
+                    display: flex;
+                    align-items: center;
+                    justify-content: flex-end;
+                    gap: 12px;
+                    flex-shrink: 0;
+                }
+                .match-note {
+                    font-size: 11px;
+                    color: #888;
+                    font-style: italic;
+                    max-width: 100px;
+                    overflow: hidden;
+                    text-overflow: ellipsis;
+                    white-space: nowrap;
+                }
+                .match-venue-badge {
+                    width: 28px;
+                    height: 28px;
+                    border-radius: 50%;
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    font-size: 11px;
+                    font-weight: 900;
+                    font-family: 'Space Mono', monospace;
+                    background: #0d0d0d;
+                    color: var(--gold, #c9a84c);
+                    border: 1px solid var(--gold, #c9a84c);
+                }
+                .pagination-matches {
+                    margin-top: 40px;
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    gap: 30px;
+                    padding: 20px 0;
+                }
+                .page-btn {
+                    background: rgba(201, 168, 76, 0.1);
+                    border: 1px solid rgba(201, 168, 76, 0.2);
+                    padding: 8px 20px;
+                    border-radius: 4px;
+                    font-size: 11px;
+                    font-weight: 800;
+                    cursor: pointer;
+                    transition: 0.2s;
+                    color: var(--gold, #c9a84c);
+                    font-family: 'Space Mono', monospace;
+                    text-transform: uppercase;
+                    letter-spacing: 1px;
+                }
+                .page-btn:hover:not(:disabled) {
+                    background: var(--gold, #c9a84c);
+                    color: #000;
+                    border-color: var(--gold, #c9a84c);
+                }
+                .page-btn:disabled {
+                    opacity: 0.3;
+                    cursor: not-allowed;
+                }
+                .page-info {
+                    font-family: 'Space Mono', monospace;
+                    font-size: 12px;
+                    font-weight: 700;
+                    color: #888;
+                }
+                .page-info .current-page {
+                    color: #000;
+                }
+                .fade-in {
+                    animation: fadeIn 0.4s ease-out;
+                }
+                @keyframes fadeIn {
+                    from { opacity: 0; transform: translateY(5px); }
+                    to { opacity: 1; transform: translateY(0); }
+                }
+                @media (max-width: 1000px) {
+                    .modern-match-row-h {
+                        flex-direction: column;
+                        gap: 15px;
+                        padding: 20px;
+                        text-align: center;
+                    }
+                    .modern-match-row-h > div {
+                        width: 100% !important;
+                        justify-content: center !important;
+                        text-align: center !important;
+                    }
+                }
+            `}</style>
         </div>
     );
 }
