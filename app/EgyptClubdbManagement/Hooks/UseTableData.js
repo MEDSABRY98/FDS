@@ -1,6 +1,5 @@
 import { useState, useEffect, useMemo } from 'react';
-import { supabase } from "../../lib/supabase";
-import { TABLES_TO_SORT_BY_ROWID } from '../Constants/DbConstants';
+import { supabase, sortManagementTableData } from "../../lib/supabase";
 
 export function useTableData(addNotification) {
     const [availableTables, setAvailableTables] = useState([]);
@@ -62,18 +61,11 @@ export function useTableData(addNotification) {
             let finished = false;
 
             while (!finished) {
-                let query = supabase.from(selectedTable).select("*");
-
-                // Deterministic ordering based on table type
-                if (selectedTable === "egy_CLUB_MATCHDETAILS") {
-                    query = query.order("DATE", { ascending: false }).order("ROW_ID", { ascending: true });
-                } else if (selectedTable.includes("DETAILS") || selectedTable.includes("MISSED")) {
-                    query = query.order("MATCH_ID", { ascending: false }).order("ROW_ID", { ascending: true });
-                } else {
-                    query = query.order("ROW_ID", { ascending: true });
-                }
-
-                const { data, error } = await query.range(from, from + step - 1);
+                const { data, error } = await supabase
+                    .from(selectedTable)
+                    .select("*")
+                    .order("ROW_ID", { ascending: false })
+                    .range(from, from + step - 1);
 
                 if (error) throw error;
                 if (data && data.length > 0) {
@@ -123,34 +115,7 @@ export function useTableData(addNotification) {
                     }
                 }
                 setColumns(cols);
-
-                let matchDateMap = {};
-                const ridKey = cols.find(c => c.toUpperCase() === "ROW_ID");
-
-                if (selectedTable === 'egy_CLUB_MATCHDETAILS' && cols.includes('DATE')) {
-                    const parseDate = (d) => {
-                        if (!d) return 0;
-                        if (String(d).includes('/')) {
-                            const [day, month, year] = String(d).split('/');
-                            const dateObj = new Date(`${year}-${month}-${day}`);
-                            return isNaN(dateObj.getTime()) ? 0 : dateObj.getTime();
-                        }
-                        const dateObj = new Date(d);
-                        return isNaN(dateObj.getTime()) ? 0 : dateObj.getTime();
-                    };
-                    allData.sort((a, b) => parseDate(b.DATE) - parseDate(a.DATE));
-                } else if (TABLES_TO_SORT_BY_ROWID.includes(selectedTable) && ridKey) {
-                    allData.sort((a, b) => String(a[ridKey]).localeCompare(String(b[ridKey]), undefined, { numeric: true }));
-                } else if (cols.includes('MATCH_ID')) {
-                    allData.sort((a, b) => {
-                        if (String(a.MATCH_ID) !== String(b.MATCH_ID)) {
-                            return String(b.MATCH_ID).localeCompare(String(a.MATCH_ID), undefined, { numeric: true });
-                        }
-                        return 0;
-                    });
-                }
-
-                setTableData(allData);
+                setTableData(sortManagementTableData(allData, cols));
             } else {
                 setTableData([]);
                 setColumns([]);

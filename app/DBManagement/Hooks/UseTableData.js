@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo, useCallback } from 'react';
-import { supabase } from "../../lib/supabase";
+import { supabase, sortManagementTableData } from "../../lib/supabase";
 
 export function useTableData(addNotification) {
     const [availableTables, setAvailableTables] = useState([]);
@@ -52,7 +52,7 @@ export function useTableData(addNotification) {
                 const { data, error } = await supabase
                     .from(selectedTable)
                     .select("*")
-                    .order("ROW_ID", { ascending: true })
+                    .order("ROW_ID", { ascending: false })
                     .range(from, from + step - 1);
 
                 if (error) throw error;
@@ -112,28 +112,7 @@ export function useTableData(addNotification) {
                 }
 
                 setColumns(cols);
-
-                // Sort alphabetically based on entity name using Arabic locale
-                if (cols.includes("PLAYER_NAME")) {
-                    allData.sort((a, b) => String(a.PLAYER_NAME || '').localeCompare(String(b.PLAYER_NAME || ''), 'ar'));
-                } else if (cols.includes("MANAGER_NAME")) {
-                    allData.sort((a, b) => String(a.MANAGER_NAME || '').localeCompare(String(b.MANAGER_NAME || ''), 'ar'));
-                } else if (cols.includes("STADIUM_NAME")) {
-                    allData.sort((a, b) => String(a.STADIUM_NAME || '').localeCompare(String(b.STADIUM_NAME || ''), 'ar'));
-                } else if (cols.includes("REFEREE_NAME")) {
-                    allData.sort((a, b) => String(a.REFEREE_NAME || '').localeCompare(String(b.REFEREE_NAME || ''), 'ar'));
-                } else if (cols.includes("TEAM_NAME")) {
-                    allData.sort((a, b) => String(a.TEAM_NAME || '').localeCompare(String(b.TEAM_NAME || ''), 'ar'));
-                } else if (cols.includes("COUNTRY_NAME")) {
-                    allData.sort((a, b) => String(a.COUNTRY_NAME || '').localeCompare(String(b.COUNTRY_NAME || ''), 'ar'));
-                } else {
-                    const ridKey = cols.find(c => c.toUpperCase() === "ROW_ID");
-                    if (ridKey) {
-                        allData.sort((a, b) => String(a[ridKey]).localeCompare(String(b[ridKey]), undefined, { numeric: true }));
-                    }
-                }
-
-                setTableData(allData);
+                setTableData(sortManagementTableData(allData, cols));
             } else {
                 setTableData([]);
                 setColumns([]);

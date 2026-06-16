@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { supabase } from "../../lib/supabase";
+import { supabase, getChangedFormFields } from "../../lib/supabase";
 
 export function useEditRecord(selectedTable, columns, fetchTableData, addNotification) {
     const [editingRow, setEditingRow] = useState(null);
@@ -16,6 +16,13 @@ export function useEditRecord(selectedTable, columns, fetchTableData, addNotific
         if (!editingRow) return;
         setSaving(true);
         try {
+            const changedForm = getChangedFormFields(editingRow, editForm);
+            if (Object.keys(changedForm).length === 0) {
+                addNotification("No changes to save.", "info");
+                setSaving(false);
+                return;
+            }
+
             // Find a unique identifier: 'ROW_ID', 'id' (exact), or anything ending in 'id'
             const pkField = columns.find(c => c.toUpperCase() === "ROW_ID") ||
                 columns.find(c => c.toLowerCase() === "id") ||
@@ -26,14 +33,14 @@ export function useEditRecord(selectedTable, columns, fetchTableData, addNotific
             if (pkField && pkValue !== null && pkValue !== undefined && pkValue !== "") {
                 const { error } = await supabase
                     .from(selectedTable)
-                    .update(editForm)
+                    .update(changedForm)
                     .eq(pkField, pkValue);
                 if (error) throw error;
             } else {
                 // Fallback: Composite Key Matching
-                let query = supabase.from(selectedTable).update(editForm);
-                Object.keys(editForm).filter(key => key !== 'MATCH_ID' && key !== 'EVENT_ID' && key !== 'PARENT_EVENT_ID' && key !== 'ROW_ID').forEach(key => {
-                    const val = editForm[key];
+                let query = supabase.from(selectedTable).update(changedForm);
+                Object.keys(editingRow).filter(key => !['MATCH_ID', 'EVENT_ID', 'PARENT_EVENT_ID', 'ROW_ID'].includes(key)).forEach(key => {
+                    const val = editingRow[key];
                     if (val === null || val === undefined) {
                         query = query.is(key, null);
                     } else {

@@ -4,6 +4,40 @@ import { useMemo, useState, useEffect } from "react";
 import "./egypt_nt_db_match_details.css";
 import NoData_db from "../../lib/NoData_db";
 
+const parseTimelineMinute = (value) => {
+    const raw = String(value ?? "").trim();
+    if (!raw || raw === "?" || raw === "؟" || raw === "-") return null;
+    const num = parseInt(raw.replace(/[^0-9]/g, ""), 10);
+    return Number.isFinite(num) ? num : null;
+};
+
+const parseTimelineEventOrder = (event) => {
+    const id = String(event?.EVENT_ID || event?.PARENT_EVENT_ID || "").trim();
+    if (!id) return Number.MAX_SAFE_INTEGER;
+
+    const trailingNumber = id.match(/(\d+)(?!.*\d)/);
+    if (trailingNumber) return parseInt(trailingNumber[1], 10);
+
+    return Number.MAX_SAFE_INTEGER - 1;
+};
+
+const compareTimelineEvents = (a, b) => {
+    const minuteA = parseTimelineMinute(a.MINUTE);
+    const minuteB = parseTimelineMinute(b.MINUTE);
+    const orderA = parseTimelineEventOrder(a);
+    const orderB = parseTimelineEventOrder(b);
+
+    if (minuteA !== null && minuteB !== null) {
+        if (minuteA !== minuteB) return minuteA - minuteB;
+        return orderA - orderB;
+    }
+
+    if (minuteA !== null) return -1;
+    if (minuteB !== null) return 1;
+
+    return orderA - orderB;
+};
+
 export default function EgyptNTMatchDetails({
     matchId,
     matches,
@@ -22,26 +56,60 @@ export default function EgyptNTMatchDetails({
 
     // Core data extraction
     const matchInfo = useMemo(() => (matches || []).find(m => String(m.MATCH_ID) === String(matchId)), [matchId, matches]);
-    const opponentName = matchInfo?.["OPPONENT TEAM"] || "";
 
-    const checkIfEgypt = (teamName) => {
-        if (!teamName) return true;
-        const name = String(teamName).trim();
-        const opp = String(opponentName).trim();
+    const { egyptTeamName, opponentTeamName, isEgyptSide } = useMemo(() => {
+        const egyptTeamName = String(matchInfo?.["Egypt TEAM"] || matchInfo?.["EGYPT TEAM"] || "منتخب مصر").trim();
+        const opponentTeamName = String(matchInfo?.["OPPONENT TEAM"] || "").trim();
+        const norm = (value) => String(value || "").trim().toLowerCase();
 
-        // 1. If it's exactly the opponent name, it's NOT Egypt
-        if (name === opp) return false;
+        const egyptIdentifiers = new Set([
+            "egypt",
+            "مصر",
+            "منتخب مصر",
+            "المنتخب المصري",
+            norm(egyptTeamName)
+        ].filter(Boolean));
 
-        // 2. If it is exactly "مصر" or "Egypt" or "منتخب مصر" or "المنتخب المصري", it IS Egypt
-        if (name === "مصر" || name === "Egypt" || name === "منتخب مصر" || name === "المنتخب المصري") return true;
+        const resolveTeamSide = (teamValue) => {
+            const name = String(teamValue || "").trim();
+            if (!name) return null;
 
-        // 3. Fallback: If opponent name is something else and it's not clearly opponent, assume Egypt if team is blank or generic
-        return false;
-    };
+            const normalizedName = norm(name);
+            if (opponentTeamName && normalizedName === norm(opponentTeamName)) return false;
+            if (normalizedName === "opponent" && opponentTeamName) return false;
+            if (egyptIdentifiers.has(normalizedName)) return true;
+            return null;
+        };
+
+        const playerSideByName = new Map();
+        (lineupDetails || []).forEach((lineupRow) => {
+            if (String(lineupRow.MATCH_ID) !== String(matchId)) return;
+
+            const playerName = String(lineupRow["PLAYER NAME"] || "").trim();
+            if (!playerName) return;
+
+            const side = resolveTeamSide(lineupRow.TEAM);
+            if (side !== null) playerSideByName.set(playerName, side);
+        });
+
+        const isEgyptSide = (record) => {
+            const byTeam = resolveTeamSide(record?.TEAM);
+            if (byTeam !== null) return byTeam;
+
+            const playerName = String(record?.["PLAYER NAME"] || "").trim();
+            if (playerName && playerSideByName.has(playerName)) {
+                return playerSideByName.get(playerName);
+            }
+
+            return false;
+        };
+
+        return { egyptTeamName, opponentTeamName, isEgyptSide };
+    }, [matchInfo, lineupDetails, matchId]);
 
     const squads = useMemo(() => {
-        const egyptLineup = (lineupDetails || []).filter(l => String(l.MATCH_ID) === String(matchId) && checkIfEgypt(l.TEAM));
-        const oppLineup = (lineupDetails || []).filter(l => String(l.MATCH_ID) === String(matchId) && !checkIfEgypt(l.TEAM));
+        const egyptLineup = (lineupDetails || []).filter(l => String(l.MATCH_ID) === String(matchId) && isEgyptSide(l));
+        const oppLineup = (lineupDetails || []).filter(l => String(l.MATCH_ID) === String(matchId) && !isEgyptSide(l));
 
         return {
             egypt: {
@@ -53,20 +121,20 @@ export default function EgyptNTMatchDetails({
                 subs: oppLineup.filter(p => p.STATU !== 'اساسي')
             }
         };
-    }, [matchId, lineupDetails, opponentName]);
+    }, [matchId, lineupDetails, isEgyptSide]);
 
     const events = useMemo(() => {
         const allEvents = [
             ...(playerDetails || []).filter(p => String(p.MATCH_ID) === String(matchId)).map(e => ({ ...e, eventType: 'player' })),
             ...(howPenMissed || []).filter(h => String(h.MATCH_ID) === String(matchId)).map(e => ({ ...e, eventType: 'penMiss', TYPE: 'PEN MISS' }))
-        ].sort((a, b) => parseInt(a.MINUTE || 0) - parseInt(b.MINUTE || 0));
+        ].sort(compareTimelineEvents);
 
         return {
-            egypt: allEvents.filter(e => checkIfEgypt(e.TEAM)),
-            opp: allEvents.filter(e => !checkIfEgypt(e.TEAM)),
+            egypt: allEvents.filter(e => isEgyptSide(e)),
+            opp: allEvents.filter(e => !isEgyptSide(e)),
             chronological: allEvents
         };
-    }, [matchId, playerDetails, howPenMissed, opponentName]);
+    }, [matchId, playerDetails, howPenMissed, isEgyptSide]);
 
     const getSubInfo = (subPlayer) => {
         const inMin = subPlayer["IN MINUTE"] || subPlayer["MINUTE IN"] || subPlayer["MINUTE"] || subPlayer["OUT MINUTE"];
@@ -81,10 +149,19 @@ export default function EgyptNTMatchDetails({
         return null;
     };
 
-    const gks = useMemo(() => ({
-        egypt: (gkDetails || []).filter(g => String(g.MATCH_ID) === String(matchId) && checkIfEgypt(g.TEAM)),
-        opp: (gkDetails || []).filter(g => String(g.MATCH_ID) === String(matchId) && !checkIfEgypt(g.TEAM))
-    }), [matchId, gkDetails, opponentName]);
+    const gks = useMemo(() => {
+        const matchGks = (gkDetails || []).filter(g => String(g.MATCH_ID) === String(matchId));
+        const sortGks = (list) => [...list].sort((a, b) => {
+            const aStarter = String(a.STATU || "").trim() === "اساسي" ? 0 : 1;
+            const bStarter = String(b.STATU || "").trim() === "اساسي" ? 0 : 1;
+            return aStarter - bStarter;
+        });
+
+        return {
+            egypt: sortGks(matchGks.filter(g => isEgyptSide(g))),
+            opp: sortGks(matchGks.filter(g => !isEgyptSide(g)))
+        };
+    }, [matchId, gkDetails, isEgyptSide]);
 
     if (!matchInfo) return <div className="error-state">Match record not located.</div>;
 
@@ -96,8 +173,8 @@ export default function EgyptNTMatchDetails({
 
     const getEventIcon = (type) => {
         const t = String(type || "").trim().toLowerCase();
+        if (t.includes('اسيست') || t.includes('assist') || t.includes('صنع') || t.includes('penassist') || t.includes('penmake')) return '🅰️';
         if (t.includes('هدف') || t.includes('goal')) return '⚽';
-        if (t.includes('اسيست') || t.includes('assist') || t.includes('صنع')) return 'A';
 
         switch (t) {
             case 'انذار':
@@ -109,6 +186,36 @@ export default function EgyptNTMatchDetails({
             case 'pen miss': return '❌';
             default: return '⚽';
         }
+    };
+
+    const getEventMeta = (event) => {
+        const type = String(event.TYPE || "").trim().toUpperCase();
+        const sub = String(event.TYPE_SUB || "").trim().toUpperCase();
+
+        if (type === "PENASSISTGOAL") return { kind: "assist", label: "Penalty Assist" };
+        if (type === "PENMAKEGOAL") return { kind: "assist", label: "Penalty Won" };
+        if (type === "ASSIST" || type === "اسيست" || type === "صنع" || type.includes("ASSIST")) {
+            return { kind: "assist", label: "Assist" };
+        }
+
+        if (event.eventType === "penMiss" || type === "PEN MISS") {
+            return { kind: "miss", label: "Penalty Missed" };
+        }
+
+        if (type === "GOAL" || type === "هدف" || sub === "PENGOAL" || sub === "هدف جزاء") {
+            const isPen = sub === "PENGOAL" || sub === "هدف جزاء";
+            return { kind: "goal", label: isPen ? "Penalty Goal" : "Goal" };
+        }
+
+        if (type === "انذار" || type === "YELLOW") return { kind: "card", label: "Yellow Card" };
+        if (type === "طرد" || type === "RED") return { kind: "card", label: "Red Card" };
+        if (type === "تغيير" || type === "SUB") return { kind: "sub", label: "Substitution" };
+
+        return {
+            kind: "other",
+            label: event.TYPE || "Event",
+            subLabel: event.TYPE_SUB || null
+        };
     };
 
     return (
@@ -131,7 +238,7 @@ export default function EgyptNTMatchDetails({
                             <div className="logo-placeholder egypt-logo">🇪🇬</div>
                         </div>
                         <div className="team-meta">
-                            <h1 className="team-name">منتخب مصر</h1>
+                            <h1 className="team-name">{egyptTeamName}</h1>
                             <span className="manager-tag">COACH: {matchInfo["EGYPT MANAGER"]}</span>
                         </div>
                     </div>
@@ -147,7 +254,7 @@ export default function EgyptNTMatchDetails({
 
                     <div className="team-display opponent">
                         <div className="team-meta tr">
-                            <h1 className="team-name" dir="auto">{matchInfo["OPPONENT TEAM"]}</h1>
+                            <h1 className="team-name" dir="auto">{opponentTeamName}</h1>
                             <span className="manager-tag">COACH: {matchInfo["OPPONENT MANAGER"]}</span>
                         </div>
                         <div className="team-logo-container">
@@ -223,7 +330,7 @@ export default function EgyptNTMatchDetails({
                             {/* Egypt Column */}
                             <div className="team-column egypt-theme">
                                 <div className="column-header">
-                                    <span className="team-label">منتخب مصر</span>
+                                    <span className="team-label">{egyptTeamName}</span>
                                     <span className="starter-count">{squads.egypt.starters.length} STARTERS</span>
                                 </div>
                                 <div className="players-list">
@@ -296,7 +403,7 @@ export default function EgyptNTMatchDetails({
                             {/* Opponent Column */}
                             <div className="team-column opp-theme">
                                 <div className="column-header">
-                                    <span className="team-label">{matchInfo["OPPONENT TEAM"]}</span>
+                                    <span className="team-label">{opponentTeamName}</span>
                                     <span className="starter-count">{squads.opp.starters.length} STARTERS</span>
                                 </div>
                                 <div className="players-list">
@@ -435,7 +542,8 @@ export default function EgyptNTMatchDetails({
                             ) : (
                                 <div className="timeline-track">
                                     {events.chronological.map((e, i) => {
-                                        const isEgypt = checkIfEgypt(e.TEAM);
+                                        const isEgypt = isEgyptSide(e);
+                                        const eventMeta = getEventMeta(e);
                                         return (
                                             <div key={i} className={`timeline-entry ${isEgypt ? 'left' : 'right'}`}>
                                                 <div className="entry-content">
@@ -443,14 +551,14 @@ export default function EgyptNTMatchDetails({
                                                     <div className="entry-details">
                                                         <span className="entry-icon">{getEventIcon(e.TYPE)}</span>
                                                         <div className="entry-text">
-                                                            <span className="entry-player">
-                                                                {e["PLAYER NAME"]}
-                                                                {e.CLUB && <span style={{ fontSize: '11px', color: '#999', marginLeft: '6px' }}>({e.CLUB})</span>}
-                                                            </span>
+                                                            <span className="entry-player">{e["PLAYER NAME"]}</span>
+                                                            {e.CLUB && <span className="entry-club">{e.CLUB}</span>}
                                                             {!e["HOW MISSED?"] ? (
-                                                                <span className="entry-type">
-                                                                    {e.TYPE}
-                                                                    {e.TYPE_SUB && <span style={{ color: '#ff5252', fontStyle: 'normal' }}> / {e.TYPE_SUB}</span>}
+                                                                <span className={`entry-type entry-type--${eventMeta.kind}`}>
+                                                                    {eventMeta.label}
+                                                                    {eventMeta.subLabel && (
+                                                                        <span className="entry-type-sub"> / {eventMeta.subLabel}</span>
+                                                                    )}
                                                                 </span>
                                                             ) : (
                                                                 <span className="entry-note">HOW MISSED: {e["HOW MISSED?"]}</span>

@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { supabase, resolveCatalogFieldsInForm } from "../../lib/supabase";
+import { supabase, resolveCatalogFieldsInForm, getChangedFormFields } from "../../lib/supabase";
 
 export function useEditRecord(selectedTable, columns, fetchTableData, addNotification) {
     const [editingRow, setEditingRow] = useState(null);
@@ -28,7 +28,17 @@ export function useEditRecord(selectedTable, columns, fetchTableData, addNotific
         setSaving(true);
         try {
             const isNew = editingRow.isNew;
-            const resolvedForm = await resolveCatalogFieldsInForm(selectedTable, editForm);
+
+            if (!isNew && Object.keys(getChangedFormFields(editingRow, editForm)).length === 0) {
+                addNotification("No changes to save.", "info");
+                setSaving(false);
+                return;
+            }
+
+            const resolvedForm = await resolveCatalogFieldsInForm(
+                selectedTable,
+                isNew ? editForm : getChangedFormFields(editingRow, editForm)
+            );
 
             if (isNew) {
                 // For inserts, filter out auto-generated ID columns if they are empty

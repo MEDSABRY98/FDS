@@ -678,6 +678,29 @@ const wrappedSupabase = new Proxy(rawSupabase, {
 
 export const supabase = wrappedSupabase;
 
+const UPDATE_EXCLUDED_FIELDS = new Set([
+    "ROW_ID",
+    "MATCH_ID",
+    "EVENT_ID",
+    "PARENT_EVENT_ID"
+]);
+
+export function getChangedFormFields(original = {}, updated = {}) {
+    const changed = {};
+
+    for (const key of Object.keys(updated)) {
+        if (UPDATE_EXCLUDED_FIELDS.has(String(key).toUpperCase())) continue;
+
+        const originalValue = original[key] ?? "";
+        const updatedValue = updated[key] ?? "";
+        if (String(originalValue).trim() !== String(updatedValue).trim()) {
+            changed[key] = updated[key];
+        }
+    }
+
+    return changed;
+}
+
 export async function resolveCatalogFieldsInForm(selectedTable, form) {
     await loadCaches();
     const resolved = { ...form };
@@ -700,6 +723,58 @@ export async function resolveCatalogFieldsInForm(selectedTable, form) {
     }
 
     return resolved;
+}
+
+const parseManagementIdSortValue = (value) => {
+    const raw = String(value ?? "").trim();
+    if (!raw) return 0;
+
+    const trailingNumber = raw.match(/(\d+)(?!.*\d)/);
+    if (trailingNumber) return parseInt(trailingNumber[1], 10);
+
+    const asNum = parseInt(raw, 10);
+    return Number.isFinite(asNum) ? asNum : 0;
+};
+
+const findManagementSortKey = (columns = []) => {
+    const cols = columns.map((column) => String(column));
+    const upperCols = cols.map((column) => column.toUpperCase());
+
+    const rowIdIndex = upperCols.indexOf("ROW_ID");
+    if (rowIdIndex !== -1) return cols[rowIdIndex];
+
+    const eventIdIndex = upperCols.indexOf("EVENT_ID");
+    if (eventIdIndex !== -1) return cols[eventIdIndex];
+
+    const matchIdIndex = upperCols.indexOf("MATCH_ID");
+    if (matchIdIndex !== -1) return cols[matchIdIndex];
+
+    const entityId = cols.find((column) => {
+        const upper = column.toUpperCase();
+        return upper.endsWith("_ID") && upper !== "ROW_ID";
+    });
+    if (entityId) return entityId;
+
+    return null;
+};
+
+const compareManagementRowsByIdDesc = (a, b, sortKey) => {
+    if (!sortKey) return 0;
+
+    const valueA = parseManagementIdSortValue(a?.[sortKey]);
+    const valueB = parseManagementIdSortValue(b?.[sortKey]);
+    if (valueB !== valueA) return valueB - valueA;
+
+    return String(b?.[sortKey] ?? "").localeCompare(String(a?.[sortKey] ?? ""), undefined, { numeric: true });
+};
+
+export function sortManagementTableData(rows, columns) {
+    if (!Array.isArray(rows) || rows.length === 0) return rows;
+
+    const sortKey = findManagementSortKey(columns);
+    if (!sortKey) return rows;
+
+    return [...rows].sort((a, b) => compareManagementRowsByIdDesc(a, b, sortKey));
 }
 
 // Trigger initial cache load in the background
