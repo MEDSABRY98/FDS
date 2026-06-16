@@ -17,7 +17,6 @@ let teamsIdToName = {};
 let teamsNameToId = {};
 let countriesIdToName = {};
 let countriesNameToId = {};
-let cachesLoaded = false;
 let cachesPromise = null;
 
 const playerColumnsMap = {
@@ -312,7 +311,6 @@ async function loadCaches() {
                     }
                 });
             }
-            cachesLoaded = true;
         } catch (e) {
             console.error("Failed to load database caches in supabase.js", e);
             cachesPromise = null; // Reset to allow retry
@@ -570,6 +568,78 @@ async function resolveAndRegisterPayload(payload, tableName) {
     return await mapRow(payload);
 }
 
+function parseTrailingIdNumber(value) {
+    const raw = String(value ?? "").trim();
+    if (!raw) return 0;
+
+    const trailingNumber = raw.match(/(\d+)(?!.*\d)/);
+    if (trailingNumber) return parseInt(trailingNumber[1], 10);
+
+    const asNum = parseInt(raw, 10);
+    return Number.isFinite(asNum) ? asNum : 0;
+}
+
+const ROW_ID_AUTO_TABLE_PATTERN = /_(LINEUPDETAILS|PLAYERDETAILS|GKSDETAILS|HOWPENMISSED|SQUAD)$/i;
+
+function shouldAutoAssignRowId(tableName) {
+    if (CATALOG_TABLES.includes(tableName)) return false;
+    if (String(tableName || "").endsWith("_MATCHDETAILS")) return false;
+    if (tableName === "alahly_PKS" || tableName === "egy_NT_PKS") return false;
+    return ROW_ID_AUTO_TABLE_PATTERN.test(String(tableName || ""));
+}
+
+function rowNeedsAutoRowId(row) {
+    const rowId = String(row?.ROW_ID ?? "").trim();
+    return rowId === "" || rowId === "null" || rowId === "undefined";
+}
+
+async function allocateRowIds(tableName, count = 1) {
+    const total = Math.max(1, Number(count) || 1);
+    let maxNum = 0;
+    let from = 0;
+
+    while (true) {
+        const { data, error } = await rawSupabase
+            .from(tableName)
+            .select("ROW_ID")
+            .range(from, from + 999);
+
+        if (error) throw error;
+        if (!data?.length) break;
+
+        data.forEach((row) => {
+            maxNum = Math.max(maxNum, parseTrailingIdNumber(row?.ROW_ID));
+        });
+
+        if (data.length < 1000) break;
+        from += 1000;
+    }
+
+    return Array.from({ length: total }, (_, index) =>
+        `R-${String(maxNum + 1 + index).padStart(4, "0")}`
+    );
+}
+
+async function ensureRowIdsOnInsert(payload, tableName) {
+    if (!shouldAutoAssignRowId(tableName) || payload == null) return payload;
+
+    if (Array.isArray(payload)) {
+        const missingCount = payload.filter(rowNeedsAutoRowId).length;
+        if (missingCount === 0) return payload;
+
+        const rowIds = await allocateRowIds(tableName, missingCount);
+        let idIndex = 0;
+        return payload.map((row) => {
+            if (!rowNeedsAutoRowId(row)) return row;
+            return { ...row, ROW_ID: rowIds[idIndex++] };
+        });
+    }
+
+    if (!rowNeedsAutoRowId(payload)) return payload;
+    const [rowId] = await allocateRowIds(tableName, 1);
+    return { ...payload, ROW_ID: rowId };
+}
+
 function wrapQueryBuilder(target, tableName, calls = []) {
     return new Proxy(target, {
         get(obj, prop, receiver) {
@@ -588,6 +658,9 @@ function wrapQueryBuilder(target, tableName, calls = []) {
                             if (['insert', 'update', 'upsert'].includes(call.method)) {
                                 if (newCall.args[0] && typeof newCall.args[0] === 'object') {
                                     newCall.args[0] = await resolveAndRegisterPayload(newCall.args[0], tableName);
+                                    if (call.method === 'insert' || call.method === 'upsert') {
+                                        newCall.args[0] = await ensureRowIdsOnInsert(newCall.args[0], tableName);
+                                    }
                                 }
                             }
                             
@@ -595,7 +668,6 @@ function wrapQueryBuilder(target, tableName, calls = []) {
                             if (['insert', 'update', 'upsert', 'delete'].includes(call.method)) {
                                 if (['db_STADIUMS', 'db_MANAGERS', 'db_PLAYERS', 'db_REFEREES', 'db_TEAMS', 'db_COUNTRIES'].includes(tableName)) {
                                     cachesPromise = null;
-                                    cachesLoaded = false;
                                 }
                             }
                             
@@ -725,16 +797,7 @@ export async function resolveCatalogFieldsInForm(selectedTable, form) {
     return resolved;
 }
 
-const parseManagementIdSortValue = (value) => {
-    const raw = String(value ?? "").trim();
-    if (!raw) return 0;
-
-    const trailingNumber = raw.match(/(\d+)(?!.*\d)/);
-    if (trailingNumber) return parseInt(trailingNumber[1], 10);
-
-    const asNum = parseInt(raw, 10);
-    return Number.isFinite(asNum) ? asNum : 0;
-};
+const parseManagementIdSortValue = (value) => parseTrailingIdNumber(value);
 
 const findManagementSortKey = (columns = []) => {
     const cols = columns.map((column) => String(column));

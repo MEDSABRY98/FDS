@@ -2,7 +2,7 @@
 
 import { useState, useCallback, useEffect } from "react";
 import "./egypt_nt_db_editor.css";
-import { supabase } from "../../lib/supabase";
+import { supabase, getChangedFormFields, resolveCatalogFieldsInForm } from "../../lib/supabase";
 import Login_db from "../../lib/Login_db";
 import NoData_db from "../../lib/NoData_db";
 import SearchBar_db from "../../lib/SearchBar_db";
@@ -19,6 +19,69 @@ const EMPTY_LINEUP = { "MATCH_ID": "", "MATCH MINUTE": "", "TEAM": "", "PLAYER N
 const EMPTY_PLAYER = { "MATCH_ID": "", "EVENT_ID": "", "PARENT_EVENT_ID": "", "PLAYER NAME": "", "TEAM": "", "TYPE": "", "TYPE_SUB": "", "MINUTE": "" };
 const EMPTY_GK = { "MATCH_ID": "", "EVENT_ID": "", "TEAM": "", "PLAYER NAME": "", "STATU": "", "OUT MINUTE": "", "GOALS CONCEDED": "" };
 const EMPTY_PEN = { "MATCH_ID": "", "PARENT_EVENT_ID": "", "HOW MISSED?": "", "TEAM": "", "MINUTE": "" };
+
+const parseEventIdSuffix = (eventId) => {
+    const id = String(eventId || "").trim();
+    if (!id) return 0;
+    const trailing = id.match(/(\d+)(?!.*\d)/);
+    return trailing ? parseInt(trailing[1], 10) : 0;
+};
+
+const getNextPlayerEventId = (matchId, rows = []) => {
+    const normalizedMatchId = String(matchId || "").trim();
+    if (!normalizedMatchId) return "";
+
+    let maxSuffix = 0;
+    rows.forEach((row) => {
+        maxSuffix = Math.max(maxSuffix, parseEventIdSuffix(row?.EVENT_ID));
+    });
+
+    return `${normalizedMatchId}-${maxSuffix + 1}`;
+};
+
+const isPlayerEventRowSaveable = (row) => (
+    String(row?.["PLAYER NAME"] || "").trim() !== "" ||
+    String(row?.TYPE || "").trim() !== "" ||
+    String(row?.MINUTE || "").trim() !== "" ||
+    String(row?.TYPE_SUB || "").trim() !== ""
+);
+
+const isLinkedRowSaveable = (tableName, row) => {
+    if (tableName === "egy_NT_PLAYERDETAILS") return isPlayerEventRowSaveable(row);
+    if (tableName === "egy_NT_HOWPENMISSED") {
+        return String(row?.["HOW MISSED?"] || "").trim() !== "" || String(row?.MINUTE || "").trim() !== "";
+    }
+    return String(row?.["PLAYER NAME"] || "").trim() !== "";
+};
+
+const EDITOR_META_KEYS = new Set(["_isNew", "_isDirty", "_key", "_snapshot"]);
+
+const toEditorSnapshot = (row = {}) => {
+    const snapshot = {};
+    Object.keys(row).forEach((key) => {
+        if (!EDITOR_META_KEYS.has(key)) snapshot[key] = row[key];
+    });
+    return snapshot;
+};
+
+const attachEditorRowMeta = (row, key) => ({
+    ...row,
+    _key: key,
+    _snapshot: toEditorSnapshot(row),
+});
+
+const hasPersistedRowId = (row) => {
+    const rowId = String(row?.ROW_ID ?? "").trim();
+    return rowId !== "" && rowId !== "null" && rowId !== "undefined";
+};
+
+const shouldInsertEditorRow = (row) => Boolean(row?._isNew) && !hasPersistedRowId(row);
+
+const mergeSavedEditorRow = (existingRow, savedRow) => {
+    const merged = { ...existingRow, ...savedRow, _isNew: false, _isDirty: false };
+    merged._snapshot = toEditorSnapshot(merged);
+    return merged;
+};
 
 // ── Autocomplete Input ───────────────────────────────────────────────────────
 function AutocompleteInput({ value, onChange, options = [], placeholder, style, disabled, className }) {
@@ -128,8 +191,22 @@ function AutocompleteInput({ value, onChange, options = [], placeholder, style, 
 }
 
 // ── Editable Table ───────────────────────────────────────────────────────────
-function EditableTable({ title, color, rows, setRows, columns, matchId, emptyRow, tableName, onSave, onDelete, isSaving, autoFields = {}, columnOptions = {} }) {
-    const handleAdd = () => {
+function EditableTable({ title, color, rows, setRows, columns, matchId, emptyRow, tableName, onSave, onDelete, isSaving, autoFields = {}, columnOptions = {}, onAddRow }) {
+    const [addingRow, setAddingRow] = useState(false);
+
+    const handleAdd = async () => {
+        if (addingRow) return;
+
+        if (onAddRow) {
+            setAddingRow(true);
+            try {
+                await onAddRow(setRows, rows, matchId);
+            } finally {
+                setAddingRow(false);
+            }
+            return;
+        }
+
         const computed = {};
         Object.entries(autoFields).forEach(([field, fn]) => {
             computed[field] = fn(matchId, rows);
@@ -149,6 +226,7 @@ function EditableTable({ title, color, rows, setRows, columns, matchId, emptyRow
                 </div>
                 <button
                     onClick={handleAdd}
+                    disabled={addingRow}
                     style={{
                         background: '#0a0a0a',
                         color: '#C8102E',
@@ -158,7 +236,7 @@ function EditableTable({ title, color, rows, setRows, columns, matchId, emptyRow
                         transition: 'all 0.2s', letterSpacing: 0.5
                     }}>
                     <span style={{ fontSize: 16, lineHeight: 1 }}>+</span>
-                    ADD ROW
+                    {addingRow ? "ADDING..." : "ADD ROW"}
                 </button>
             </div>
 
@@ -477,6 +555,53 @@ export default function EgyptNTEditor() {
         addNotification(msg, type);
     };
 
+    const resolveNextPlayerEventId = useCallback(async (matchId, currentRows = [], excludeKey = null) => {
+        const normalizedMatchId = String(matchId || "").trim();
+        if (!normalizedMatchId) return "";
+
+        const localRows = currentRows.filter((row) => row._key !== excludeKey);
+        let combined = [...localRows];
+
+        const { data: dbEvents, error } = await supabase
+            .from("egy_NT_PLAYERDETAILS")
+            .select("EVENT_ID")
+            .eq("MATCH_ID", normalizedMatchId);
+
+        if (error) throw error;
+        if (dbEvents?.length) {
+            combined = [...combined, ...dbEvents.map((event) => ({ EVENT_ID: event.EVENT_ID }))];
+        }
+
+        return getNextPlayerEventId(normalizedMatchId, combined);
+    }, []);
+
+    const handleAddPlayerEventRow = useCallback(async (setter, currentRows, matchId) => {
+        try {
+            const eventId = await resolveNextPlayerEventId(matchId, currentRows);
+            const row = {
+                ...EMPTY_PLAYER,
+                MATCH_ID: matchId,
+                EVENT_ID: eventId,
+                _isNew: true,
+                _key: Date.now()
+            };
+            setter([...currentRows, row]);
+        } catch (error) {
+            addToast(`Failed to add player event row: ${error.message}`, "error");
+        }
+    }, [resolveNextPlayerEventId]);
+
+    const handleAddNewPlayerEventRow = useCallback((setter, currentRows, matchId) => {
+        const row = {
+            ...EMPTY_PLAYER,
+            MATCH_ID: matchId,
+            EVENT_ID: getNextPlayerEventId(matchId, currentRows),
+            _isNew: true,
+            _key: Date.now()
+        };
+        setter([...currentRows, row]);
+    }, []);
+
     // ── Search ──────────────────────────────────────────────────────────────
     const handleSearch = async () => {
         const id = searchId.trim();
@@ -516,12 +641,12 @@ export default function EgyptNTEditor() {
                 setEgyLineupRows(applyLineupLogic(initialEgyLineup, initialEgyLineup));
                 setOppLineupRows(applyLineupLogic(initialOppLineup, initialOppLineup));
             } else {
-                setEgyLineupRows(ld.filter(r => r.TEAM === 'EGYPT').map((r, i) => ({ ...r, _key: i })));
-                setOppLineupRows(ld.filter(r => r.TEAM !== 'EGYPT').map((r, i) => ({ ...r, _key: 100 + i })));
+                setEgyLineupRows(ld.filter(r => r.TEAM === 'EGYPT').map((r, i) => attachEditorRowMeta(r, i)));
+                setOppLineupRows(ld.filter(r => r.TEAM !== 'EGYPT').map((r, i) => attachEditorRowMeta(r, 100 + i)));
             }
-            setPlayerRows((pd || []).map((r, i) => ({ ...r, _key: 1000 + i })));
-            setGkRows((gd || []).map((r, i) => ({ ...r, _key: 2000 + i })));
-            setPenRows((pen || []).map((r, i) => ({ ...r, _key: 3000 + i })));
+            setPlayerRows((pd || []).map((r, i) => attachEditorRowMeta(r, 1000 + i)));
+            setGkRows((gd || []).map((r, i) => attachEditorRowMeta(r, 2000 + i)));
+            setPenRows((pen || []).map((r, i) => attachEditorRowMeta(r, 3000 + i)));
             setMode('edit');
         } catch (e) { addToast('Error: ' + e.message, 'error'); }
         setLoading(false);
@@ -531,22 +656,46 @@ export default function EgyptNTEditor() {
     const handleSaveRow = useCallback(async (row, ri, tableName, setterFn) => {
         if (isSaving) return;
         setIsSaving(true);
-        const { _isNew, _isDirty, _key, ...cleanRow } = row;
+        const { _isNew, _isDirty, _key, _snapshot, ...cleanRow } = row;
 
         if (!cleanRow.MATCH_ID && matchData) cleanRow.MATCH_ID = matchData.MATCH_ID;
-        if (cleanRow.ROW_ID === "" || cleanRow.ROW_ID === null || cleanRow.ROW_ID === undefined) {
-            delete cleanRow.ROW_ID;
+
+        if (tableName === "egy_NT_PLAYERDETAILS" && !isPlayerEventRowSaveable(cleanRow)) {
+            addToast("Fill at least PLAYER NAME, TYPE, or MINUTE before saving.", "error");
+            setIsSaving(false);
+            return;
         }
 
         try {
+            if (tableName === "egy_NT_PLAYERDETAILS" && _isNew && cleanRow.MATCH_ID) {
+                cleanRow.EVENT_ID = await resolveNextPlayerEventId(
+                    cleanRow.MATCH_ID,
+                    playerRows,
+                    row._key
+                );
+            }
+
             let result;
-            if (_isNew) {
-                result = await supabase.from(tableName).insert(cleanRow).select();
+            const treatAsInsert = _isNew && !hasPersistedRowId(row);
+
+            if (treatAsInsert) {
+                const insertPayload = await resolveCatalogFieldsInForm(tableName, cleanRow);
+                result = await supabase.from(tableName).insert(insertPayload).select();
             } else {
-                if (cleanRow.ROW_ID) {
-                    result = await supabase.from(tableName).update(cleanRow).eq('ROW_ID', cleanRow.ROW_ID).select();
+                const changed = getChangedFormFields(_snapshot || {}, cleanRow);
+                if (Object.keys(changed).length === 0) {
+                    addToast("No changes to save.", "info");
+                    setIsSaving(false);
+                    return;
+                }
+
+                const resolved = await resolveCatalogFieldsInForm(tableName, changed);
+                if (hasPersistedRowId(cleanRow)) {
+                    result = await supabase.from(tableName).update(resolved).eq("ROW_ID", cleanRow.ROW_ID).select();
+                } else if (cleanRow.EVENT_ID) {
+                    result = await supabase.from(tableName).update(resolved).eq("EVENT_ID", cleanRow.EVENT_ID).select();
                 } else {
-                    result = await supabase.from(tableName).upsert(cleanRow).select();
+                    result = await supabase.from(tableName).update(resolved).match(cleanRow).select();
                 }
             }
 
@@ -558,18 +707,19 @@ export default function EgyptNTEditor() {
             const savedRow = result.data?.[0];
             if (!savedRow) throw new Error("No data returned from DB after save success.");
 
-            addToast(row._isNew ? 'Row inserted ✓' : 'Row updated ✓');
+            addToast(treatAsInsert ? 'Row inserted ✓' : 'Row updated ✓');
 
-            setterFn?.(prev => prev.map((r, i) =>
-                i === ri ? { ...r, ...savedRow, _isNew: false, _isDirty: false } : r
-            ));
+            setterFn?.(prev => prev.map((r, i) => {
+                if (i !== ri) return r;
+                return mergeSavedEditorRow(r, savedRow);
+            }));
         } catch (e) {
             console.error("Save Error:", e);
             addToast('Save FAILED: ' + (e.message || "Unknown error"), 'error');
         } finally {
             setIsSaving(false);
         }
-    }, [matchData]);
+    }, [matchData, playerRows, resolveNextPlayerEventId, isSaving, addNotification]);
 
     // ── Delete a row ─────────────────────────────────────────────────────────
     const handleDeleteRow = useCallback(async (row, ri, tableName, setterFn) => {
@@ -602,45 +752,143 @@ export default function EgyptNTEditor() {
 
             const saveLinkedTable = async (tableName, rows, setter) => {
                 const pending = rows.filter(r => r._isNew || r._isDirty);
-                const filled = pending.filter(r => r["PLAYER NAME"] && String(r["PLAYER NAME"]).trim() !== "");
+                const filled = pending.filter(r => isLinkedRowSaveable(tableName, r));
                 if (filled.length === 0) return;
 
-                const toInsert = filled.filter(r => r._isNew);
-                const toUpdate = filled.filter(r => !r._isNew);
+                const toInsert = filled.filter(shouldInsertEditorRow);
+                const toUpdate = filled.filter((row) => !shouldInsertEditorRow(row));
 
                 const cleanObj = (r, isNew) => {
-                    const { _isNew, _isDirty, _key, ...clean } = { ...r, MATCH_ID: matchData.MATCH_ID };
-                    if (isNew || !clean.ROW_ID || clean.ROW_ID === "" || clean.ROW_ID === null) {
+                    const { _isNew, _isDirty, _key, _snapshot, ...clean } = { ...r, MATCH_ID: matchData.MATCH_ID };
+                    if (!isNew && !hasPersistedRowId(clean)) {
                         delete clean.ROW_ID;
                     }
                     return clean;
                 };
 
                 let savedResults = [];
+                const insertedByKey = new Map();
                 try {
                     if (toInsert.length > 0) {
-                        const { data, error: insErr } = await supabase.from(tableName).insert(toInsert.map(r => cleanObj(r, true))).select();
-                        if (insErr) throw insErr;
-                        if (data) savedResults.push(...data);
+                        let insertPayload = toInsert.map(r => cleanObj(r, true));
+
+                        if (tableName === "egy_NT_PLAYERDETAILS") {
+                            const { data: dbEvents, error: eventFetchError } = await supabase
+                                .from("egy_NT_PLAYERDETAILS")
+                                .select("EVENT_ID")
+                                .eq("MATCH_ID", matchData.MATCH_ID);
+                            if (eventFetchError) throw eventFetchError;
+
+                            let combined = [
+                                ...rows.filter((row) => !shouldInsertEditorRow(row) || !toInsert.some((pending) => pending._key === row._key)),
+                                ...(dbEvents || []).map((event) => ({ EVENT_ID: event.EVENT_ID }))
+                            ];
+
+                            insertPayload = toInsert.map((pendingRow) => {
+                                const clean = cleanObj(pendingRow, true);
+                                clean.EVENT_ID = getNextPlayerEventId(matchData.MATCH_ID, combined);
+                                combined = [...combined, { EVENT_ID: clean.EVENT_ID }];
+                                return clean;
+                            });
+                        }
+
+                        insertPayload = await Promise.all(
+                            insertPayload.map((payload) => resolveCatalogFieldsInForm(tableName, payload))
+                        );
+
+                        if (tableName === "egy_NT_PLAYERDETAILS") {
+                            const { data: existingRows, error: existingFetchError } = await supabase
+                                .from("egy_NT_PLAYERDETAILS")
+                                .select("EVENT_ID, ROW_ID")
+                                .eq("MATCH_ID", matchData.MATCH_ID);
+                            if (existingFetchError) throw existingFetchError;
+
+                            const existingByEventId = new Map(
+                                (existingRows || []).map((eventRow) => [String(eventRow.EVENT_ID), eventRow])
+                            );
+
+                            const safeInsertPayload = [];
+                            const safeInsertSources = [];
+
+                            insertPayload.forEach((payload, index) => {
+                                const sourceRow = toInsert[index];
+                                const existingMatch = existingByEventId.get(String(payload.EVENT_ID));
+                                if (existingMatch) {
+                                    insertedByKey.set(sourceRow._key, {
+                                        ROW_ID: existingMatch.ROW_ID,
+                                        EVENT_ID: existingMatch.EVENT_ID,
+                                    });
+                                    toUpdate.push({
+                                        ...sourceRow,
+                                        ROW_ID: existingMatch.ROW_ID,
+                                        EVENT_ID: existingMatch.EVENT_ID,
+                                        _isNew: false
+                                    });
+                                    return;
+                                }
+
+                                safeInsertPayload.push(payload);
+                                safeInsertSources.push(sourceRow);
+                                existingByEventId.set(String(payload.EVENT_ID), payload);
+                            });
+
+                            insertPayload = safeInsertPayload;
+                            toInsert.length = 0;
+                            toInsert.push(...safeInsertSources);
+                        }
+
+                        if (insertPayload.length > 0) {
+                            const { data, error: insErr } = await supabase.from(tableName).insert(insertPayload).select();
+                            if (insErr) throw insErr;
+                            (data || []).forEach((savedRow, index) => {
+                                const sourceKey = toInsert[index]?._key;
+                                if (sourceKey != null) insertedByKey.set(sourceKey, savedRow);
+                                savedResults.push(savedRow);
+                            });
+                        }
                     }
                     if (toUpdate.length > 0) {
-                        const { data, error: upErr } = await supabase.from(tableName).upsert(toUpdate.map(r => cleanObj(r, false))).select();
-                        if (upErr) throw upErr;
-                        if (data) savedResults.push(...data);
+                        for (const pendingRow of toUpdate) {
+                            const clean = cleanObj(pendingRow, false);
+                            const changed = getChangedFormFields(pendingRow._snapshot || {}, clean);
+                            if (Object.keys(changed).length === 0) continue;
+
+                            const resolved = await resolveCatalogFieldsInForm(tableName, changed);
+                            let updateQuery = supabase.from(tableName).update(resolved);
+                            if (hasPersistedRowId(clean)) {
+                                updateQuery = updateQuery.eq("ROW_ID", clean.ROW_ID);
+                            } else if (clean.EVENT_ID) {
+                                updateQuery = updateQuery.eq("EVENT_ID", clean.EVENT_ID);
+                            } else {
+                                updateQuery = updateQuery.match(clean);
+                            }
+
+                            const { data, error: upErr } = await updateQuery.select();
+                            if (upErr) throw upErr;
+                            if (data?.[0]) savedResults.push(data[0]);
+                        }
                     }
                 } catch (e) {
                     throw new Error(`${tableName}: ${e.message}`);
                 }
 
-                if (savedResults.length > 0) {
+                if (savedResults.length > 0 || insertedByKey.size > 0) {
                     setter(prev => prev.map(existingRow => {
-                        const saved = savedResults.find(s =>
-                            (existingRow.ROW_ID && s.ROW_ID === existingRow.ROW_ID) ||
-                            (existingRow._isNew && !existingRow.ROW_ID &&
-                                s["PLAYER NAME"] === existingRow["PLAYER NAME"] &&
-                                s.TEAM === existingRow.TEAM)
-                        );
-                        return saved ? { ...existingRow, ...saved, _isNew: false, _isDirty: false } : existingRow;
+                        if (insertedByKey.has(existingRow._key)) {
+                            return mergeSavedEditorRow(existingRow, insertedByKey.get(existingRow._key));
+                        }
+
+                        const saved = savedResults.find((candidate) => {
+                            if (hasPersistedRowId(existingRow) && hasPersistedRowId(candidate)) {
+                                return String(candidate.ROW_ID) === String(existingRow.ROW_ID);
+                            }
+                            if (existingRow.EVENT_ID && candidate.EVENT_ID) {
+                                return String(candidate.EVENT_ID) === String(existingRow.EVENT_ID);
+                            }
+                            return false;
+                        });
+
+                        return saved ? mergeSavedEditorRow(existingRow, saved) : existingRow;
                     }));
                 }
             };
@@ -673,13 +921,25 @@ export default function EgyptNTEditor() {
             if (matchErr) throw new Error(`Match Details: ${matchErr.message}`);
 
             const saveStagedTable = async (tableName, rows) => {
-                const filled = rows.filter(r => r["PLAYER NAME"] && String(r["PLAYER NAME"]).trim() !== "");
+                const filled = rows.filter(r => isLinkedRowSaveable(tableName, r));
                 if (filled.length === 0) return;
-                const clean = filled.map(({ _isNew, _isDirty, _key, ...r }) => {
+
+                let combined = [];
+                let clean = filled.map(({ _isNew, _isDirty, _key, _snapshot, ...r }) => {
                     const row = { ...r, MATCH_ID: mid };
-                    if (row.ROW_ID === "" || row.ROW_ID === null) delete row.ROW_ID;
+
+                    if (tableName === "egy_NT_PLAYERDETAILS") {
+                        row.EVENT_ID = getNextPlayerEventId(mid, combined);
+                        combined = [...combined, { EVENT_ID: row.EVENT_ID }];
+                    }
+
                     return row;
                 });
+
+                clean = await Promise.all(
+                    clean.map((row) => resolveCatalogFieldsInForm(tableName, row))
+                );
+
                 const { error: insErr } = await supabase.from(tableName).insert(clean);
                 if (insErr) throw new Error(`${tableName}: ${insErr.message}`);
             };
@@ -850,7 +1110,7 @@ export default function EgyptNTEditor() {
                                     columns={playerCols} matchId={newMatchData.MATCH_ID || '---'}
                                     emptyRow={EMPTY_PLAYER} tableName="egy_NT_PLAYERDETAILS"
                                     onSave={() => { }} onDelete={(row, ri, _, setter) => setter(prev => prev.filter((_, i) => i !== ri))} isSaving={false}
-                                    autoFields={{ 'EVENT_ID': (mid, rows) => `${mid}-${rows.length + 1}` }}
+                                    onAddRow={(setter, currentRows, mid) => handleAddNewPlayerEventRow(setter, currentRows, mid)}
                                     columnOptions={{
                                         "PLAYER NAME": allPlayersList,
                                         "TEAM": ["EGYPT", newMatchData["OPPONENT TEAM"]].filter(Boolean),
@@ -975,7 +1235,7 @@ export default function EgyptNTEditor() {
                                     columns={playerCols} matchId={matchData.MATCH_ID}
                                     emptyRow={EMPTY_PLAYER} tableName="egy_NT_PLAYERDETAILS"
                                     onSave={handleSaveRow} onDelete={handleDeleteRow} isSaving={isSaving}
-                                    autoFields={{ 'EVENT_ID': (mid, rows) => `${mid}-${rows.length + 1}` }}
+                                    onAddRow={handleAddPlayerEventRow}
                                     columnOptions={{
                                         "PLAYER NAME": allPlayersList,
                                         "TEAM": ["EGYPT", matchData["OPPONENT TEAM"]].filter(Boolean),
