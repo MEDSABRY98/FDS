@@ -1,5 +1,12 @@
 import { useState } from "react";
 import { supabase } from "../../lib/supabase";
+import {
+    CATALOG_CONFIG,
+    getCatalogForColumn,
+    isLikelyCatalogName,
+    buildCatalogError,
+    isSkippableCatalogValue
+} from "../../lib/catalogValidation";
 
 export function useEditRecord(selectedTable, columns, fetchTableData, addNotification) {
     const [editingRow, setEditingRow] = useState(null);
@@ -23,29 +30,53 @@ export function useEditRecord(selectedTable, columns, fetchTableData, addNotific
         setEditForm(initialForm);
     };
 
-    const getCatalogForColumn = (colName) => {
-        const col = colName.toUpperCase();
-        if (col.includes("PLAYER") || col === "MOTM" || col === "CAPTAIN_ID" || col.includes("GK") || col.includes("CAPTAIN")) return "db_PLAYERS";
-        if (col.includes("MANAGER")) return "db_MANAGERS";
-        if (col.includes("TEAM") || col.includes("OPPONENT") || col === "CHAMPION") return "db_TEAMS";
-        if (col.includes("STAD") || col === "PLACE") return "db_STADIUMS";
-        if (col.includes("REF")) return "db_REFEREES";
-        return null;
-    };
+    const getCatalogForColumnLocal = getCatalogForColumn;
 
     const resolutionMap = {
         "db_PLAYERS": { idCol: "PLAYER_ID", nameCol: "PLAYER_NAME" },
         "db_MANAGERS": { idCol: "MANAGER_ID", nameCol: "MANAGER_NAME" },
         "db_TEAMS": { idCol: "TEAM_ID", nameCol: "TEAM_NAME" },
         "db_STADIUMS": { idCol: "STADIUM_ID", nameCol: "STADIUM_NAME" },
-        "db_REFEREES": { idCol: "REFEREE_ID", nameCol: "REFEREE_NAME" }
+        "db_REFEREES": { idCol: "REFEREE_ID", nameCol: "REFEREE_NAME" },
+        "db_COUNTRIES": { idCol: "COUNTRY_ID", nameCols: ["COUNTRY_NAME", "COUNTRY_NAME_EN"] }
     };
 
-    const isLikelyName = (val) => {
-        if (typeof val !== 'string') return false;
-        if (/^[A-Za-z]+-\d+$/.test(val.trim())) return false; // Looks like ID (e.g. P-001)
-        if (/^\d+$/.test(val.trim())) return false; // Looks like purely numeric ID or stat
-        return true;
+    const isLikelyName = (val, catalog) => {
+        const prefix = catalog ? CATALOG_CONFIG[catalog]?.idPrefix : null;
+        return isLikelyCatalogName(val, prefix);
+    };
+
+    const lookupCatalogId = async (catalog, val) => {
+        const map = resolutionMap[catalog];
+        if (!map) return null;
+
+        const nameCols = map.nameCols || [map.nameCol];
+        for (const nameCol of nameCols) {
+            const { data } = await supabase
+                .from(catalog)
+                .select(map.idCol)
+                .ilike(nameCol, val.trim())
+                .limit(1);
+
+            if (data && data.length > 0) {
+                return data[0][map.idCol];
+            }
+
+            const altNameCol = nameCol.replace('_', ' ');
+            if (altNameCol !== nameCol) {
+                const { data: altData } = await supabase
+                    .from(catalog)
+                    .select(map.idCol)
+                    .ilike(altNameCol, val.trim())
+                    .limit(1);
+
+                if (altData && altData.length > 0) {
+                    return altData[0][map.idCol];
+                }
+            }
+        }
+
+        return null;
     };
 
     const handleSaveEdit = async () => {
@@ -58,41 +89,15 @@ export function useEditRecord(selectedTable, columns, fetchTableData, addNotific
             const resolvedForm = { ...editForm };
             for (const col of Object.keys(resolvedForm)) {
                 const val = resolvedForm[col];
-                if (typeof val === 'string' && val.trim() !== '') {
-                    // Check if this column is meant to be an ID or is frequently replaced by an ID
+                if (typeof val === 'string' && !isSkippableCatalogValue(val)) {
                     if (col.toUpperCase().endsWith('_ID') || ['MOTM', 'STAD', 'REFEREE', 'MANAGER', 'OPPONENT', 'CHAMPION', 'CAPTAIN'].includes(col.toUpperCase())) {
-                        if (isLikelyName(val)) {
-                            const catalog = getCatalogForColumn(col);
-                            if (catalog) {
-                                const map = resolutionMap[catalog];
-                                let foundId = null;
-                                
-                                // First try with primary nameCol
-                                const { data } = await supabase
-                                    .from(catalog)
-                                    .select(map.idCol)
-                                    .ilike(map.nameCol, val.trim())
-                                    .limit(1);
-                                    
-                                if (data && data.length > 0) {
-                                    foundId = data[0][map.idCol];
-                                } else {
-                                    // Try with alternate name column (e.g. "PLAYER NAME" instead of "PLAYER_NAME")
-                                    const altNameCol = map.nameCol.replace('_', ' ');
-                                    const { data: altData } = await supabase
-                                        .from(catalog)
-                                        .select(map.idCol)
-                                        .ilike(altNameCol, val.trim())
-                                        .limit(1);
-                                        
-                                    if (altData && altData.length > 0) {
-                                        foundId = altData[0][map.idCol];
-                                    }
-                                }
-                                
-                                if (foundId) {
-                                    resolvedForm[col] = foundId;
-                                }
+                        const catalog = getCatalogForColumnLocal(col);
+                        if (catalog && catalog !== 'db_STADIUMS' && isLikelyName(val, catalog)) {
+                            const foundId = await lookupCatalogId(catalog, val);
+                            if (foundId) {
+                                resolvedForm[col] = foundId;
+                            } else {
+                                throw new Error(buildCatalogError(catalog, val.trim()));
                             }
                         }
                     }

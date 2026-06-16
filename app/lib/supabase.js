@@ -1,4 +1,10 @@
 import { createClient } from '@supabase/supabase-js'
+import {
+    CATALOG_CONFIG,
+    getCatalogForColumn,
+    isSkippableCatalogValue,
+    buildCatalogError
+} from './catalogValidation'
 
 const supabaseUrl = 'https://wsygeerxfdaavdtvogvy.supabase.co'
 const supabaseAnonKey = 'sb_publishable_Y2kr-reraWveea23ykKViw_8Z3AbtOk'
@@ -15,6 +21,8 @@ let refereesIdToName = {};
 let refereesNameToId = {};
 let teamsIdToName = {};
 let teamsNameToId = {};
+let countriesIdToName = {};
+let countriesNameToId = {};
 let cachesLoaded = false;
 let cachesPromise = null;
 
@@ -88,12 +96,13 @@ async function loadCaches() {
     if (cachesPromise) return cachesPromise;
     cachesPromise = (async () => {
         try {
-            const [stadsData, mgrsData, playersData, refsData, teamsData] = await Promise.all([
+            const [stadsData, mgrsData, playersData, refsData, teamsData, countriesData] = await Promise.all([
                 fetchAllRows('db_STADIUMS', 'STADIUM_ID, STADIUM_NAME'),
                 fetchAllRows('db_MANAGERS', 'MANAGER_ID, MANAGER_NAME'),
                 fetchAllRows('db_PLAYERS', 'PLAYER_ID, PLAYER_NAME'),
                 fetchAllRows('db_REFEREES', 'REFEREE_ID, REFEREE_NAME'),
-                fetchAllRows('db_TEAMS', 'TEAM_ID, TEAM_NAME')
+                fetchAllRows('db_TEAMS', 'TEAM_ID, TEAM_NAME'),
+                fetchAllRows('db_COUNTRIES', 'COUNTRY_ID, COUNTRY_NAME, COUNTRY_NAME_EN')
             ]);
             
             stadiumsIdToName = {};
@@ -106,6 +115,8 @@ async function loadCaches() {
             refereesNameToId = {};
             teamsIdToName = {};
             teamsNameToId = {};
+            countriesIdToName = {};
+            countriesNameToId = {};
 
             if (stadsData) {
                 stadsData.forEach(r => {
@@ -144,6 +155,19 @@ async function loadCaches() {
                     if (r.TEAM_ID && r.TEAM_NAME) {
                         teamsIdToName[r.TEAM_ID] = r.TEAM_NAME;
                         teamsNameToId[r.TEAM_NAME.trim().toLowerCase()] = r.TEAM_ID;
+                    }
+                });
+            }
+            if (countriesData) {
+                countriesData.forEach(r => {
+                    if (r.COUNTRY_ID) {
+                        countriesIdToName[r.COUNTRY_ID] = r.COUNTRY_NAME || r.COUNTRY_NAME_EN;
+                        if (r.COUNTRY_NAME) {
+                            countriesNameToId[r.COUNTRY_NAME.trim().toLowerCase()] = r.COUNTRY_ID;
+                        }
+                        if (r.COUNTRY_NAME_EN) {
+                            countriesNameToId[r.COUNTRY_NAME_EN.trim().toLowerCase()] = r.COUNTRY_ID;
+                        }
                     }
                 });
             }
@@ -258,42 +282,86 @@ function resolveNameToId(columnName, value, tableName) {
     return value;
 }
 
-// Async resolution and registration of payload names -> IDs
-async function resolveAndRegisterPayload(payload, tableName) {
-    await loadCaches();
-    
-    const isStadiumsOrManagersTable = [
-        'alahly_MATCHDETAILS',
-        'alahly_FINALS_MATCHDETAILS',
-        'alahly_vs_zamalek_MATCHDETAILS',
-        'egy_NT_MATCHDETAILS',
-        'egy_CLUB_MATCHDETAILS'
-    ].includes(tableName);
-    
+const CATALOG_TABLES = Object.keys(CATALOG_CONFIG);
+
+function getNameToIdMap(catalog) {
+    switch (catalog) {
+        case 'db_PLAYERS': return playersNameToId;
+        case 'db_MANAGERS': return managersNameToId;
+        case 'db_REFEREES': return refereesNameToId;
+        case 'db_TEAMS': return teamsNameToId;
+        case 'db_COUNTRIES': return countriesNameToId;
+        default: return null;
+    }
+}
+
+function getIdToNameMap(catalog) {
+    switch (catalog) {
+        case 'db_PLAYERS': return playersIdToName;
+        case 'db_MANAGERS': return managersIdToName;
+        case 'db_REFEREES': return refereesIdToName;
+        case 'db_TEAMS': return teamsIdToName;
+        case 'db_COUNTRIES': return countriesIdToName;
+        default: return null;
+    }
+}
+
+function resolveStrictCatalogValue(catalog, val) {
+    const cfg = CATALOG_CONFIG[catalog];
+    if (!cfg) return val;
+
+    const raw = String(val).trim();
+    const clean = raw.toLowerCase();
+    const nameToId = getNameToIdMap(catalog);
+    const idToName = getIdToNameMap(catalog);
+
+    if (raw.toUpperCase().startsWith(cfg.idPrefix.toUpperCase())) {
+        if (idToName?.[raw]) return raw;
+        throw new Error(buildCatalogError(catalog, raw));
+    }
+
+    const resolvedId = nameToId?.[clean];
+    if (resolvedId) return resolvedId;
+
+    throw new Error(buildCatalogError(catalog, raw));
+}
+
+function isCatalogReferenceColumn(col, tableName) {
+    if (CATALOG_TABLES.includes(tableName)) return false;
+
+    const catalog = getCatalogForColumn(col);
+    if (!catalog) return false;
+
     const playerCols = playerColumnsMap[tableName];
     const teamCols = teamColumnsMap[tableName];
-    const isMappedTable = isStadiumsOrManagersTable || !!playerCols || !!teamCols;
-    
-    if (!isMappedTable) return payload;
+
+    if (playerCols?.includes(col)) return catalog === 'db_PLAYERS';
+    if (teamCols?.includes(col)) return catalog === 'db_TEAMS';
+
+    const matchDetailCols = [
+        'AHLY MANAGER', 'OPPONENT MANAGER', 'ZAMALEK MANAGER', 'EGYPT MANAGER',
+        'REFREE', 'REFEREE'
+    ];
+    if (matchDetailCols.includes(col)) return true;
+
+    return !!catalog;
+}
+
+// Resolve catalog names to IDs — reject unknown names (no auto-register)
+async function resolveAndRegisterPayload(payload, tableName) {
+    await loadCaches();
+
+    if (CATALOG_TABLES.includes(tableName)) return payload;
     
     const resolveOrRegister = async (col, val) => {
-        if (!val || val === '-' || val === 'Unknown' || val === '?' || val === '؟') return val;
-        
+        if (isSkippableCatalogValue(val)) return val;
+
         const isStadium = ['STAD', 'PLACE'].includes(col);
-        const isManager = ['AHLY MANAGER', 'OPPONENT MANAGER', 'ZAMALEK MANAGER', 'EGYPT MANAGER'].includes(col);
-        const isReferee = ['REFREE', 'REFEREE'].includes(col);
-        const isPlayer = playerCols && playerCols.includes(col);
-        const isTeam = teamCols && teamCols.includes(col);
-        
-        if (!isStadium && !isManager && !isReferee && !isPlayer && !isTeam) return val;
-        
-        const clean = String(val).trim().toLowerCase();
-        
         if (isStadium) {
+            const clean = String(val).trim().toLowerCase();
             if (stadiumsNameToId[clean]) return stadiumsNameToId[clean];
             if (String(val).startsWith('S-')) return val;
-            
-            // Register new stadium
+
             try {
                 const { data } = await rawSupabase.from('db_STADIUMS').select('STADIUM_ID');
                 const nums = data ? data.map(r => {
@@ -303,13 +371,13 @@ async function resolveAndRegisterPayload(payload, tableName) {
                 const nextNum = Math.max(0, ...nums) + 1;
                 const nextId = 'S-' + String(nextNum).padStart(4, '0');
                 const nextRowId = 'R-' + String(nextNum).padStart(4, '0');
-                
+
                 await rawSupabase.from('db_STADIUMS').insert({
                     ROW_ID: nextRowId,
                     STADIUM_ID: nextId,
                     STADIUM_NAME: String(val).trim()
                 });
-                
+
                 stadiumsIdToName[nextId] = String(val).trim();
                 stadiumsNameToId[clean] = nextId;
                 return nextId;
@@ -318,127 +386,14 @@ async function resolveAndRegisterPayload(payload, tableName) {
                 return val;
             }
         }
-        
-        if (isManager) {
-            if (managersNameToId[clean]) return managersNameToId[clean];
-            if (String(val).startsWith('M-')) return val;
-            
-            // Register new manager
-            try {
-                const { data } = await rawSupabase.from('db_MANAGERS').select('MANAGER_ID');
-                const nums = data ? data.map(r => {
-                    const m = String(r.MANAGER_ID).match(/(\d+)$/);
-                    return m ? parseInt(m[1], 10) : 0;
-                }) : [0];
-                const nextNum = Math.max(0, ...nums) + 1;
-                const nextId = 'M-' + String(nextNum).padStart(4, '0');
-                const nextRowId = 'R-' + String(nextNum).padStart(4, '0');
-                
-                await rawSupabase.from('db_MANAGERS').insert({
-                    ROW_ID: nextRowId,
-                    MANAGER_ID: nextId,
-                    MANAGER_NAME: String(val).trim()
-                });
-                
-                managersIdToName[nextId] = String(val).trim();
-                managersNameToId[clean] = nextId;
-                return nextId;
-            } catch (e) {
-                console.error("Auto-register manager failed:", e);
-                return val;
-            }
+
+        if (!isCatalogReferenceColumn(col, tableName)) return val;
+
+        const catalog = getCatalogForColumn(col);
+        if (catalog) {
+            return resolveStrictCatalogValue(catalog, val);
         }
-        
-        if (isReferee) {
-            if (refereesNameToId[clean]) return refereesNameToId[clean];
-            if (String(val).startsWith('REF-')) return val;
-            
-            // Register new referee
-            try {
-                const { data } = await rawSupabase.from('db_REFEREES').select('REFEREE_ID');
-                const nums = data ? data.map(r => {
-                    const m = String(r.REFEREE_ID).match(/(\d+)$/);
-                    return m ? parseInt(m[1], 10) : 0;
-                }) : [0];
-                const nextNum = Math.max(0, ...nums) + 1;
-                const nextId = 'REF-' + String(nextNum).padStart(4, '0');
-                const nextRowId = 'R-' + String(nextNum).padStart(4, '0');
-                
-                await rawSupabase.from('db_REFEREES').insert({
-                    ROW_ID: nextRowId,
-                    REFEREE_ID: nextId,
-                    REFEREE_NAME: String(val).trim()
-                });
-                
-                refereesIdToName[nextId] = String(val).trim();
-                refereesNameToId[clean] = nextId;
-                return nextId;
-            } catch (e) {
-                console.error("Auto-register referee failed:", e);
-                return val;
-            }
-        }
-        
-        if (isPlayer) {
-            if (playersNameToId[clean]) return playersNameToId[clean];
-            if (String(val).startsWith('P-')) return val;
-            
-            // Register new player
-            try {
-                const { data } = await rawSupabase.from('db_PLAYERS').select('PLAYER_ID');
-                const nums = data ? data.map(r => {
-                    const m = String(r.PLAYER_ID).match(/(\d+)$/);
-                    return m ? parseInt(m[1], 10) : 0;
-                }) : [0];
-                const nextNum = Math.max(0, ...nums) + 1;
-                const nextId = 'P-' + String(nextNum).padStart(4, '0');
-                const nextRowId = 'R-' + String(nextNum).padStart(4, '0');
-                
-                await rawSupabase.from('db_PLAYERS').insert({
-                    ROW_ID: nextRowId,
-                    PLAYER_ID: nextId,
-                    PLAYER_NAME: String(val).trim()
-                });
-                
-                playersIdToName[nextId] = String(val).trim();
-                playersNameToId[clean] = nextId;
-                return nextId;
-            } catch (e) {
-                console.error("Auto-register player failed:", e);
-                return val;
-            }
-        }
-        
-        if (isTeam) {
-            if (teamsNameToId[clean]) return teamsNameToId[clean];
-            if (String(val).startsWith('T-')) return val;
-            
-            // Register new team
-            try {
-                const { data } = await rawSupabase.from('db_TEAMS').select('TEAM_ID');
-                const nums = data ? data.map(r => {
-                    const m = String(r.TEAM_ID).match(/(\d+)$/);
-                    return m ? parseInt(m[1], 10) : 0;
-                }) : [0];
-                const nextNum = Math.max(0, ...nums) + 1;
-                const nextId = 'T-' + String(nextNum).padStart(4, '0');
-                const nextRowId = 'R-' + String(nextNum).padStart(4, '0');
-                
-                await rawSupabase.from('db_TEAMS').insert({
-                    ROW_ID: nextRowId,
-                    TEAM_ID: nextId,
-                    TEAM_NAME: String(val).trim()
-                });
-                
-                teamsIdToName[nextId] = String(val).trim();
-                teamsNameToId[clean] = nextId;
-                return nextId;
-            } catch (e) {
-                console.error("Auto-register team failed:", e);
-                return val;
-            }
-        }
-        
+
         return val;
     };
     
@@ -479,7 +434,7 @@ function wrapQueryBuilder(target, tableName, calls = []) {
                             
                             // Invalidate caches if writing or deleting in the catalogs
                             if (['insert', 'update', 'upsert', 'delete'].includes(call.method)) {
-                                if (['db_STADIUMS', 'db_MANAGERS', 'db_PLAYERS', 'db_REFEREES', 'db_TEAMS'].includes(tableName)) {
+                                if (['db_STADIUMS', 'db_MANAGERS', 'db_PLAYERS', 'db_REFEREES', 'db_TEAMS', 'db_COUNTRIES'].includes(tableName)) {
                                     cachesPromise = null;
                                     cachesLoaded = false;
                                 }
