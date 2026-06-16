@@ -777,5 +777,32 @@ export function sortManagementTableData(rows, columns) {
     return [...rows].sort((a, b) => compareManagementRowsByIdDesc(a, b, sortKey));
 }
 
+const GLOBAL_DB_NAME_SORT_COLUMNS = [
+    "PLAYER_NAME",
+    "MANAGER_NAME",
+    "STADIUM_NAME",
+    "REFEREE_NAME",
+    "TEAM_NAME",
+    "COUNTRY_NAME"
+];
+
+export function sortGlobalDbManagementTableData(rows, columns = []) {
+    if (!Array.isArray(rows) || rows.length === 0) return rows;
+
+    const nameColumn = GLOBAL_DB_NAME_SORT_COLUMNS.find((col) => columns.includes(col));
+    if (nameColumn) {
+        return [...rows].sort((a, b) =>
+            String(a[nameColumn] || "").localeCompare(String(b[nameColumn] || ""), "ar")
+        );
+    }
+
+    const sortKey = findManagementSortKey(columns);
+    if (!sortKey) return rows;
+
+    return [...rows].sort((a, b) =>
+        String(a[sortKey] ?? "").localeCompare(String(b[sortKey] ?? ""), undefined, { numeric: true })
+    );
+}
+
 // Trigger initial cache load in the background
 loadCaches();

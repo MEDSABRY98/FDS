@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo, useCallback } from 'react';
-import { supabase, sortManagementTableData } from "../../lib/supabase";
+import { supabase, sortGlobalDbManagementTableData } from "../../lib/supabase";
 
 export function useTableData(addNotification) {
     const [availableTables, setAvailableTables] = useState([]);
@@ -52,7 +52,6 @@ export function useTableData(addNotification) {
                 const { data, error } = await supabase
                     .from(selectedTable)
                     .select("*")
-                    .order("ROW_ID", { ascending: false })
                     .range(from, from + step - 1);
 
                 if (error) throw error;
@@ -112,7 +111,7 @@ export function useTableData(addNotification) {
                 }
 
                 setColumns(cols);
-                setTableData(sortManagementTableData(allData, cols));
+                setTableData(sortGlobalDbManagementTableData(allData, cols));
             } else {
                 setTableData([]);
                 setColumns([]);
