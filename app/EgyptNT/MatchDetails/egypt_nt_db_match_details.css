@@ -460,7 +460,7 @@
 
 .timeline-track {
     position: relative;
-    padding: 40px 0;
+    padding: 12px 0 40px;
 }
 
 .timeline-track::before {
@@ -829,4 +829,197 @@
     display: flex;
     align-items: center;
     gap: 4px;
+}
+
+.timeline-axis-controls {
+    display: flex;
+    justify-content: center;
+    margin-bottom: 4px;
+}
+
+.timeline-axis-actions {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.timeline-axis-icon-btn {
+    width: 36px;
+    height: 36px;
+    border: 2px solid #111;
+    border-radius: 50%;
+    background: #fff;
+    color: #111;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: background 0.2s ease, color 0.2s ease, transform 0.2s ease;
+}
+
+.timeline-axis-icon-btn:hover:not(:disabled) {
+    background: #111;
+    color: var(--gold);
+    transform: translateY(-1px);
+}
+
+.timeline-axis-icon-btn:disabled {
+    opacity: 0.35;
+    cursor: not-allowed;
+}
+
+.timeline-axis-icon-btn--save {
+    border-color: #16a34a;
+    color: #16a34a;
+}
+
+.timeline-axis-icon-btn--save:hover:not(:disabled) {
+    background: #16a34a;
+    color: #fff;
+}
+
+.timeline-axis-icon-btn--cancel {
+    border-color: #dc2626;
+    color: #dc2626;
+}
+
+.timeline-axis-icon-btn--cancel:hover:not(:disabled) {
+    background: #dc2626;
+    color: #fff;
+}
+
+.timeline-axis-spinner {
+    width: 16px;
+    height: 16px;
+    border: 2px solid currentColor;
+    border-top-color: transparent;
+    border-radius: 50%;
+    animation: timeline-axis-spin 0.7s linear infinite;
+}
+
+@keyframes timeline-axis-spin {
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+.timeline-order-error {
+    margin-bottom: 16px;
+    padding: 12px 16px;
+    border-radius: 12px;
+    background: #fef2f2;
+    color: #b91c1c;
+    font-size: 13px;
+    font-weight: 600;
+}
+
+.event-reorder-panel {
+    max-width: 760px;
+    margin: 0 auto;
+}
+
+.event-reorder-list {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.event-reorder-row {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    padding: 14px 16px;
+    background: #fafafa;
+    border: 1px solid #eee;
+    border-radius: 16px;
+}
+
+.event-order-badge {
+    width: 34px;
+    height: 34px;
+    border-radius: 50%;
+    background: #0a0a0a;
+    color: var(--gold);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 14px;
+    font-weight: 900;
+    flex-shrink: 0;
+}
+
+.event-reorder-main {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.event-reorder-player {
+    font-size: 16px;
+    font-weight: 800;
+}
+
+.event-reorder-club {
+    font-size: 11px;
+    color: #888;
+    font-weight: 600;
+}
+
+.event-reorder-meta {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px;
+}
+
+.event-reorder-minute {
+    font-size: 12px;
+    font-weight: 800;
+    color: #666;
+}
+
+.event-reorder-id {
+    font-size: 10px;
+    color: #aaa;
+    font-family: 'Space Mono', monospace;
+}
+
+.event-reorder-controls {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.event-move-btn {
+    width: 34px;
+    height: 34px;
+    border: 1px solid #ddd;
+    border-radius: 10px;
+    background: #fff;
+    color: #111;
+    font-size: 16px;
+    font-weight: 900;
+    cursor: pointer;
+}
+
+.event-move-btn:disabled {
+    opacity: 0.35;
+    cursor: not-allowed;
+}
+
+.entry-order-badge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 24px;
+    height: 20px;
+    padding: 0 6px;
+    margin-right: 6px;
+    border-radius: 999px;
+    background: #111;
+    color: var(--gold);
+    font-size: 10px;
+    font-weight: 900;
 }

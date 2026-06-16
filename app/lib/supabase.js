@@ -804,5 +804,130 @@ export function sortGlobalDbManagementTableData(rows, columns = []) {
     );
 }
 
+const remapEventId = (value, idMap) => {
+    const key = String(value || "").trim();
+    if (!key) return key;
+    return idMap.get(key) || key;
+};
+
+export async function reorderMatchEvents(matchId, orderedRowIds = []) {
+    const normalizedMatchId = String(matchId || "").trim();
+    if (!normalizedMatchId) {
+        throw new Error("MATCH_ID is required to reorder events.");
+    }
+
+    const { data: events, error: fetchError } = await rawSupabase
+        .from("egy_NT_PLAYERDETAILS")
+        .select("*")
+        .eq("MATCH_ID", normalizedMatchId);
+
+    if (fetchError) throw fetchError;
+    if (!events?.length) return { updated: 0 };
+
+    const eventByRowId = new Map(
+        events.map((event) => [String(event.ROW_ID || ""), event]).filter(([rowId]) => rowId)
+    );
+
+    const orderedEvents = [];
+    orderedRowIds.forEach((rowId) => {
+        const event = eventByRowId.get(String(rowId));
+        if (event) {
+            orderedEvents.push(event);
+            eventByRowId.delete(String(rowId));
+        }
+    });
+
+    eventByRowId.forEach((event) => orderedEvents.push(event));
+    if (orderedEvents.length === 0) {
+        throw new Error("No player events found for this match.");
+    }
+
+    const oldToNew = new Map();
+    orderedEvents.forEach((event, index) => {
+        const oldId = String(event.EVENT_ID || "").trim();
+        const newId = `${normalizedMatchId}-${index + 1}`;
+        if (oldId) oldToNew.set(oldId, newId);
+    });
+
+    for (const event of orderedEvents) {
+        const rowId = String(event.ROW_ID || "").trim();
+        if (!rowId) continue;
+        const { error } = await rawSupabase
+            .from("egy_NT_PLAYERDETAILS")
+            .update({ EVENT_ID: `__TEMP__${rowId}` })
+            .eq("ROW_ID", rowId);
+        if (error) throw error;
+    }
+
+    for (let index = 0; index < orderedEvents.length; index += 1) {
+        const event = orderedEvents[index];
+        const rowId = String(event.ROW_ID || "").trim();
+        if (!rowId) continue;
+
+        const newEventId = `${normalizedMatchId}-${index + 1}`;
+        const newParentId = remapEventId(event.PARENT_EVENT_ID, oldToNew);
+
+        const { error } = await rawSupabase
+            .from("egy_NT_PLAYERDETAILS")
+            .update({
+                EVENT_ID: newEventId,
+                PARENT_EVENT_ID: newParentId || null
+            })
+            .eq("ROW_ID", rowId);
+        if (error) throw error;
+    }
+
+    const { data: gkRows, error: gkFetchError } = await rawSupabase
+        .from("egy_NT_GKSDETAILS")
+        .select("ROW_ID, EVENT_ID")
+        .eq("MATCH_ID", normalizedMatchId);
+
+    if (gkFetchError) throw gkFetchError;
+
+    for (const gkRow of gkRows || []) {
+        const oldEventId = String(gkRow.EVENT_ID || "").trim();
+        const mappedId = oldToNew.get(oldEventId);
+        if (!mappedId || !gkRow.ROW_ID) continue;
+
+        const { error } = await rawSupabase
+            .from("egy_NT_GKSDETAILS")
+            .update({ EVENT_ID: mappedId })
+            .eq("ROW_ID", gkRow.ROW_ID);
+        if (error) throw error;
+    }
+
+    const { data: penRows, error: penFetchError } = await rawSupabase
+        .from("egy_NT_HOWPENMISSED")
+        .select("*")
+        .eq("MATCH_ID", normalizedMatchId);
+
+    if (penFetchError) throw penFetchError;
+
+    for (const penRow of penRows || []) {
+        if (!penRow.ROW_ID) continue;
+
+        const updates = {};
+        const oldParentId = String(penRow.PARENT_EVENT_ID || "").trim();
+        const oldEventId = String(penRow.EVENT_ID || "").trim();
+
+        if (oldParentId && oldToNew.has(oldParentId)) {
+            updates.PARENT_EVENT_ID = oldToNew.get(oldParentId);
+        }
+        if (oldEventId && oldToNew.has(oldEventId)) {
+            updates.EVENT_ID = oldToNew.get(oldEventId);
+        }
+
+        if (Object.keys(updates).length === 0) continue;
+
+        const { error } = await rawSupabase
+            .from("egy_NT_HOWPENMISSED")
+            .update(updates)
+            .eq("ROW_ID", penRow.ROW_ID);
+        if (error) throw error;
+    }
+
+    return { updated: orderedEvents.length };
+}
+
 // Trigger initial cache load in the background
 loadCaches();

@@ -1,8 +1,9 @@
 "use client";
 
-import { useMemo, useState, useEffect } from "react";
+import { useMemo, useState, useEffect, useCallback } from "react";
 import "./egypt_nt_db_match_details.css";
 import NoData_db from "../../lib/NoData_db";
+import { reorderMatchEvents } from "../../lib/supabase";
 
 const parseTimelineMinute = (value) => {
     const raw = String(value ?? "").trim();
@@ -45,10 +46,16 @@ export default function EgyptNTMatchDetails({
     lineupDetails,
     gkDetails,
     howPenMissed,
-    onBack
+    onBack,
+    onRefresh
 }) {
 
-    const [activeTab, setActiveTab] = useState('lineup'); // 'lineup' or 'events'
+    const [activeTab, setActiveTab] = useState('lineup');
+    const [isReorderMode, setIsReorderMode] = useState(false);
+    const [reorderRows, setReorderRows] = useState([]);
+    const [orderDirty, setOrderDirty] = useState(false);
+    const [savingOrder, setSavingOrder] = useState(false);
+    const [orderError, setOrderError] = useState("");
 
     useEffect(() => {
         window.scrollTo(0, 0);
@@ -135,6 +142,72 @@ export default function EgyptNTMatchDetails({
             chronological: allEvents
         };
     }, [matchId, playerDetails, howPenMissed, isEgyptSide]);
+
+    const matchPlayerEvents = useMemo(() => (
+        (playerDetails || [])
+            .filter((event) => String(event.MATCH_ID) === String(matchId))
+            .sort(compareTimelineEvents)
+    ), [playerDetails, matchId]);
+
+    const startReorderMode = useCallback(() => {
+        setReorderRows(matchPlayerEvents.map((event) => ({ ...event })));
+        setOrderDirty(false);
+        setOrderError("");
+        setIsReorderMode(true);
+    }, [matchPlayerEvents]);
+
+    const cancelReorderMode = useCallback(() => {
+        setIsReorderMode(false);
+        setReorderRows([]);
+        setOrderDirty(false);
+        setOrderError("");
+    }, []);
+
+    const moveEventRow = useCallback((index, direction) => {
+        setReorderRows((prev) => {
+            const nextIndex = index + direction;
+            if (nextIndex < 0 || nextIndex >= prev.length) return prev;
+            const nextRows = [...prev];
+            [nextRows[index], nextRows[nextIndex]] = [nextRows[nextIndex], nextRows[index]];
+            return nextRows;
+        });
+        setOrderDirty(true);
+        setOrderError("");
+    }, []);
+
+    const saveEventOrder = useCallback(async () => {
+        if (!reorderRows.length) return;
+
+        const orderedRowIds = reorderRows
+            .map((event) => String(event.ROW_ID || "").trim())
+            .filter(Boolean);
+
+        if (orderedRowIds.length !== reorderRows.length) {
+            setOrderError("Some events are missing ROW_ID and cannot be reordered.");
+            return;
+        }
+
+        setSavingOrder(true);
+        setOrderError("");
+        try {
+            await reorderMatchEvents(matchId, orderedRowIds);
+            if (onRefresh) await onRefresh();
+            setIsReorderMode(false);
+            setReorderRows([]);
+            setOrderDirty(false);
+        } catch (error) {
+            setOrderError(error?.message || "Failed to save event order.");
+        } finally {
+            setSavingOrder(false);
+        }
+    }, [reorderRows, matchId, onRefresh]);
+
+    useEffect(() => {
+        setIsReorderMode(false);
+        setReorderRows([]);
+        setOrderDirty(false);
+        setOrderError("");
+    }, [matchId]);
 
     const getSubInfo = (subPlayer) => {
         const inMin = subPlayer["IN MINUTE"] || subPlayer["MINUTE IN"] || subPlayer["MINUTE"] || subPlayer["OUT MINUTE"];
@@ -536,18 +609,127 @@ export default function EgyptNTMatchDetails({
 
                 {activeTab === 'events' && (
                     <div className="timeline-view">
+                        {orderError && (
+                            <div className="timeline-order-error">{orderError}</div>
+                        )}
+
+                        {isReorderMode ? (
+                            <>
+                                <div className="timeline-axis-controls">
+                                    <div className="timeline-axis-actions">
+                                        <button
+                                            type="button"
+                                            className="timeline-axis-icon-btn timeline-axis-icon-btn--save"
+                                            onClick={saveEventOrder}
+                                            disabled={savingOrder}
+                                            title="Save order"
+                                        >
+                                            {savingOrder ? (
+                                                <span className="timeline-axis-spinner" aria-hidden="true" />
+                                            ) : (
+                                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                                                    <polyline points="20 6 9 17 4 12" />
+                                                </svg>
+                                            )}
+                                        </button>
+                                        <button
+                                            type="button"
+                                            className="timeline-axis-icon-btn timeline-axis-icon-btn--cancel"
+                                            onClick={cancelReorderMode}
+                                            disabled={savingOrder}
+                                            title="Cancel"
+                                        >
+                                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                                                <line x1="18" y1="6" x2="6" y2="18" />
+                                                <line x1="6" y1="6" x2="18" y2="18" />
+                                            </svg>
+                                        </button>
+                                    </div>
+                                </div>
+                            <div className="event-reorder-panel">
+                                {reorderRows.length === 0 ? (
+                                    <NoData_db message="No player events to reorder for this game." />
+                                ) : (
+                                    <div className="event-reorder-list">
+                                        {reorderRows.map((event, index) => {
+                                            const eventMeta = getEventMeta({ ...event, eventType: "player" });
+                                            return (
+                                                <div key={String(event.ROW_ID || index)} className="event-reorder-row">
+                                                    <span className="event-order-badge">{index + 1}</span>
+                                                    <div className="event-reorder-main">
+                                                        <span className="event-reorder-player">{event["PLAYER NAME"] || "—"}</span>
+                                                        {event.CLUB && <span className="event-reorder-club">{event.CLUB}</span>}
+                                                        <div className="event-reorder-meta">
+                                                            <span className="event-reorder-minute">{event.MINUTE || "?"}'</span>
+                                                            <span className={`entry-type entry-type--${eventMeta.kind}`}>{eventMeta.label}</span>
+                                                            <span className="event-reorder-id">{event.EVENT_ID}</span>
+                                                        </div>
+                                                    </div>
+                                                    <div className="event-reorder-controls">
+                                                        <button
+                                                            type="button"
+                                                            className="event-move-btn"
+                                                            onClick={() => moveEventRow(index, -1)}
+                                                            disabled={index === 0 || savingOrder}
+                                                            title="Move up"
+                                                        >
+                                                            ↑
+                                                        </button>
+                                                        <button
+                                                            type="button"
+                                                            className="event-move-btn"
+                                                            onClick={() => moveEventRow(index, 1)}
+                                                            disabled={index === reorderRows.length - 1 || savingOrder}
+                                                            title="Move down"
+                                                        >
+                                                            ↓
+                                                        </button>
+                                                    </div>
+                                                </div>
+                                            );
+                                        })}
+                                    </div>
+                                )}
+                            </div>
+                            </>
+                        ) : (
                         <div className="timeline-container">
                             {events.chronological.length === 0 ? (
                                 <NoData_db message="No specific match events recorded for this game." />
                             ) : (
+                                <>
+                                <div className="timeline-axis-controls">
+                                    <button
+                                        type="button"
+                                        className="timeline-axis-icon-btn"
+                                        onClick={startReorderMode}
+                                        disabled={matchPlayerEvents.length === 0}
+                                        title="Edit event order"
+                                        aria-label="Edit event order"
+                                    >
+                                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                                            <line x1="8" y1="6" x2="21" y2="6" />
+                                            <line x1="8" y1="12" x2="21" y2="12" />
+                                            <line x1="8" y1="18" x2="21" y2="18" />
+                                            <line x1="3" y1="6" x2="3.01" y2="6" />
+                                            <line x1="3" y1="12" x2="3.01" y2="12" />
+                                            <line x1="3" y1="18" x2="3.01" y2="18" />
+                                        </svg>
+                                    </button>
+                                </div>
                                 <div className="timeline-track">
                                     {events.chronological.map((e, i) => {
                                         const isEgypt = isEgyptSide(e);
                                         const eventMeta = getEventMeta(e);
+                                        const playerIndex = matchPlayerEvents.findIndex((event) => String(event.ROW_ID) === String(e.ROW_ID));
+                                        const orderNumber = playerIndex >= 0 ? playerIndex + 1 : null;
                                         return (
                                             <div key={i} className={`timeline-entry ${isEgypt ? 'left' : 'right'}`}>
                                                 <div className="entry-content">
-                                                    <div className="entry-time">{e.MINUTE}'</div>
+                                                    <div className="entry-time">
+                                                        {orderNumber ? <span className="entry-order-badge">#{orderNumber}</span> : null}
+                                                        {e.MINUTE}'
+                                                    </div>
                                                     <div className="entry-details">
                                                         <span className="entry-icon">{getEventIcon(e.TYPE)}</span>
                                                         <div className="entry-text">
@@ -571,8 +753,10 @@ export default function EgyptNTMatchDetails({
                                         );
                                     })}
                                 </div>
+                                </>
                             )}
                         </div>
+                        )}
                     </div>
                 )}
                 {activeTab === 'subs' && (

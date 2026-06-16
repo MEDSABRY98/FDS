@@ -547,6 +547,7 @@ export default function EgyptNTDatabase() {
                                         gkDetails={gkDetails}
                                         howPenMissed={howPenMissed}
                                         onBack={() => setSelectedMatchId(null)}
+                                        onRefresh={() => fetchMatchData(true)}
                                     />
                                 )
                             )}
