@@ -23,15 +23,85 @@ export function useEditRecord(selectedTable, columns, fetchTableData, addNotific
         setEditForm(initialForm);
     };
 
+    const getCatalogForColumn = (colName) => {
+        const col = colName.toUpperCase();
+        if (col.includes("PLAYER") || col === "MOTM" || col === "CAPTAIN_ID" || col.includes("GK") || col.includes("CAPTAIN")) return "db_PLAYERS";
+        if (col.includes("MANAGER")) return "db_MANAGERS";
+        if (col.includes("TEAM") || col.includes("OPPONENT") || col === "CHAMPION") return "db_TEAMS";
+        if (col.includes("STAD") || col === "PLACE") return "db_STADIUMS";
+        if (col.includes("REF")) return "db_REFEREES";
+        return null;
+    };
+
+    const resolutionMap = {
+        "db_PLAYERS": { idCol: "PLAYER_ID", nameCol: "PLAYER_NAME" },
+        "db_MANAGERS": { idCol: "MANAGER_ID", nameCol: "MANAGER_NAME" },
+        "db_TEAMS": { idCol: "TEAM_ID", nameCol: "TEAM_NAME" },
+        "db_STADIUMS": { idCol: "STADIUM_ID", nameCol: "STADIUM_NAME" },
+        "db_REFEREES": { idCol: "REFEREE_ID", nameCol: "REFEREE_NAME" }
+    };
+
+    const isLikelyName = (val) => {
+        if (typeof val !== 'string') return false;
+        if (/^[A-Za-z]+-\d+$/.test(val.trim())) return false; // Looks like ID (e.g. P-001)
+        if (/^\d+$/.test(val.trim())) return false; // Looks like purely numeric ID or stat
+        return true;
+    };
+
     const handleSaveEdit = async () => {
         if (!editingRow) return;
         setSaving(true);
         try {
             const isNew = editingRow.isNew;
 
+            // Resolve Names to IDs if needed
+            const resolvedForm = { ...editForm };
+            for (const col of Object.keys(resolvedForm)) {
+                const val = resolvedForm[col];
+                if (typeof val === 'string' && val.trim() !== '') {
+                    // Check if this column is meant to be an ID or is frequently replaced by an ID
+                    if (col.toUpperCase().endsWith('_ID') || ['MOTM', 'STAD', 'REFEREE', 'MANAGER', 'OPPONENT', 'CHAMPION', 'CAPTAIN'].includes(col.toUpperCase())) {
+                        if (isLikelyName(val)) {
+                            const catalog = getCatalogForColumn(col);
+                            if (catalog) {
+                                const map = resolutionMap[catalog];
+                                let foundId = null;
+                                
+                                // First try with primary nameCol
+                                const { data } = await supabase
+                                    .from(catalog)
+                                    .select(map.idCol)
+                                    .ilike(map.nameCol, val.trim())
+                                    .limit(1);
+                                    
+                                if (data && data.length > 0) {
+                                    foundId = data[0][map.idCol];
+                                } else {
+                                    // Try with alternate name column (e.g. "PLAYER NAME" instead of "PLAYER_NAME")
+                                    const altNameCol = map.nameCol.replace('_', ' ');
+                                    const { data: altData } = await supabase
+                                        .from(catalog)
+                                        .select(map.idCol)
+                                        .ilike(altNameCol, val.trim())
+                                        .limit(1);
+                                        
+                                    if (altData && altData.length > 0) {
+                                        foundId = altData[0][map.idCol];
+                                    }
+                                }
+                                
+                                if (foundId) {
+                                    resolvedForm[col] = foundId;
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+
             if (isNew) {
                 // For inserts, filter out auto-generated ID columns if they are empty
-                const insertData = { ...editForm };
+                const insertData = { ...resolvedForm };
                 columns.forEach(col => {
                     const upper = col.toUpperCase();
                     if (upper === "ROW_ID" || (col.endsWith("_ID") && !insertData[col])) {
@@ -56,7 +126,7 @@ export function useEditRecord(selectedTable, columns, fetchTableData, addNotific
 
                 const { error } = await supabase
                     .from(selectedTable)
-                    .update(editForm)
+                    .update(resolvedForm)
                     .eq(pkField, pkValue);
 
                 if (error) throw error;

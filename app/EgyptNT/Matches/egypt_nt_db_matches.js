@@ -10,7 +10,7 @@ function SearchScopeSelect({ value, onChange }) {
     const [isOpen, setIsOpen] = useState(false);
     const containerRef = useRef(null);
 
-    const options = [
+    const rawOptions = [
         { value: "all", label: "All Fields" },
         { value: "opponent_team", label: "Opponent Team" },
         { value: "opponent_manager", label: "Opponent Manager" },
@@ -20,6 +20,11 @@ function SearchScopeSelect({ value, onChange }) {
         { value: "stad", label: "Stadium" },
         { value: "referee", label: "Referee" },
         { value: "place", label: "Place" }
+    ];
+
+    const options = [
+        rawOptions[0],
+        ...rawOptions.slice(1).sort((a, b) => a.label.localeCompare(b.label))
     ];
 
     const currentLabel = options.find(o => o.value === value)?.label || "All Fields";
