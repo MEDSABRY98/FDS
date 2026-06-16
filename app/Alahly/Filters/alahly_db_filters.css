@@ -11,18 +11,6 @@
     gap: 24px;
 }
 
-.filter-group {
-    display: flex;
-    flex-direction: column;
-    gap: 8px;
-}
-
-.filter-label {
-    font-family: 'Space Mono', monospace;
-    font-size: 11px;
-    color: var(--text-muted);
-}
-
 .filter-select {
     background: var(--surface);
     border: 1px solid var(--border);

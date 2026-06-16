@@ -2,7 +2,10 @@
 
 import { useState, useMemo, useEffect, useRef } from "react";
 import { X } from "lucide-react";
+import { UseColumnOrder, SortColumnNames } from "../../lib/ColumnOrder";
 import "./alahly_finals_filters.css";
+
+const TABLE_NAME = "alahly_FINALS_MATCHDETAILS";
 
 // Custom Searchable Dropdown Component
 function SearchableDropdown({ label, options, value, onChange }) {
@@ -91,6 +94,7 @@ export default function AlAhlyFinalsFilter({ data, onFilter, isOpen, onClose }) 
     const [activeFilters, setActiveFilters] = useState({});
     const [startDate, setStartDate] = useState("");
     const [endDate, setEndDate] = useState("");
+    const ColumnOrder = UseColumnOrder(TABLE_NAME);
 
     const standardizeDate = (d) => {
         if (!d) return "";
@@ -114,10 +118,10 @@ export default function AlAhlyFinalsFilter({ data, onFilter, isOpen, onClose }) 
         if (!data || data.length === 0) return [];
         const firstRecord = data[0];
         if (!firstRecord) return [];
-        // Exclude internal IDs and technical columns
         const excluded = ["ROW_ID", "MATCH_ID", "FINAL_ID", "FINAL ID", "EVENT_ID", "PARENT_EVENT_ID", "ROUND"];
-        return Object.keys(firstRecord).filter(col => !excluded.includes(col.toUpperCase()));
-    }, [data]);
+        const RawColumns = Object.keys(firstRecord).filter(col => !excluded.includes(col.toUpperCase()));
+        return SortColumnNames(RawColumns, ColumnOrder);
+    }, [data, ColumnOrder]);
 
     const filterOptions = useMemo(() => {
         const options = {};

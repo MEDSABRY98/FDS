@@ -2,7 +2,10 @@
 
 import { useState, useMemo, useEffect, useRef } from "react";
 import { X } from "lucide-react";
+import { UseColumnOrder, SortColumnNames } from "../../lib/ColumnOrder";
 import "./egypt_nt_pks_filters.css";
+
+const TABLE_NAME = "egy_NT_PKS";
 
 // Custom Searchable Dropdown Component (Matching Al Ahly Style)
 function SearchableDropdown({ label, options, value, onChange }) {
@@ -89,17 +92,19 @@ function SearchableDropdown({ label, options, value, onChange }) {
 
 export default function EgyptNTPKSFilters({ data, onFilter, isOpen, onClose }) {
     const [activeFilters, setActiveFilters] = useState({});
+    const ColumnOrder = UseColumnOrder(TABLE_NAME);
 
     const columns = useMemo(() => {
         if (!data || data.length === 0) return [];
         const firstRecord = data[0];
         if (!firstRecord) return [];
-        return Object.keys(firstRecord).filter(col =>
+        const RawColumns = Object.keys(firstRecord).filter(col =>
             col.toUpperCase() !== "ROW_ID" &&
             col.toUpperCase() !== "MATCH_ID" &&
             !["Egypt PLAYER", "OPPONENT PLAYER", "EGYPT HOW MISS", "OPPONENT HOW MISS"].includes(col)
         );
-    }, [data]);
+        return SortColumnNames(RawColumns, ColumnOrder);
+    }, [data, ColumnOrder]);
 
     const filterOptions = useMemo(() => {
         const options = {};

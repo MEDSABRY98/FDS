@@ -1,7 +1,39 @@
 "use client";
 
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, useMemo } from "react";
+import { UseColumnOrder, SortFilterFields } from "../../lib/ColumnOrder";
+import "../../lib/Filters_db.css";
 import "./alahly_db_filters.css";
+
+const TABLE_NAME = "alahly_MATCHDETAILS";
+
+const FILTER_FIELD_DEFS = [
+    { key: "country", label: "COUNTRY", type: "select", optionsKey: "countries" },
+    { key: "continent", label: "CONTINENT", type: "select", optionsKey: "continents" },
+    { key: "match_id", label: "MATCH ID", type: "select", optionsKey: "match_ids", dbColumn: "MATCH_ID" },
+    { key: "champion_system", label: "CHAMPION SYSTEM", type: "select", optionsKey: "champion_systems", dbColumn: "CHAMPION SYSTEM" },
+    { key: "date_from", label: "DATE FROM", type: "date", dbColumn: "DATE" },
+    { key: "date_to", label: "DATE TO", type: "date", dbColumn: "DATE" },
+    { key: "year", label: "YEAR", type: "select", optionsKey: "years", dbColumn: "DATE" },
+    { key: "champion", label: "CHAMPION", type: "select", optionsKey: "champions", dbColumn: "CHAMPION" },
+    { key: "season", label: "SEASON - NAME", type: "select", optionsKey: "seasons", dbColumn: "SEASON - NAME" },
+    { key: "sy", label: "SEASON - NUMBER", type: "select", optionsKey: "sy", dbColumn: "SEASON - NUMBER" },
+    { key: "ahly_manager", label: "AHLY MANAGER", type: "select", optionsKey: "ahly_managers", dbColumn: "AHLY MANAGER" },
+    { key: "opponent_manager", label: "OPPONENT MANAGER", type: "select", optionsKey: "opponent_managers", dbColumn: "OPPONENT MANAGER" },
+    { key: "referee", label: "REFEREE", type: "select", optionsKey: "referees", dbColumn: "REFREE" },
+    { key: "round", label: "ROUND", type: "select", optionsKey: "rounds", dbColumn: "ROUND" },
+    { key: "han", label: "H-A-N (H/A/N)", type: "select", optionsKey: "han", dbColumn: "H-A-N" },
+    { key: "stad", label: "STADIUM", type: "select", optionsKey: "stadiums", dbColumn: "STAD" },
+    { key: "ahly_team", label: "AHLY TEAM", type: "select", optionsKey: "ahly_teams", dbColumn: "AHLY TEAM" },
+    { key: "gf", label: "GF", type: "select", optionsKey: "gf", dbColumn: "GF" },
+    { key: "ga", label: "GA", type: "select", optionsKey: "ga", dbColumn: "GA" },
+    { key: "et", label: "ET (Extra Time)", type: "select", optionsKey: "et", dbColumn: "ET" },
+    { key: "pen", label: "PENALTIES", type: "select", optionsKey: "pen", dbColumn: "PEN" },
+    { key: "opponent_team", label: "OPPONENT TEAM", type: "select", optionsKey: "opponent_teams", dbColumn: "OPPONENT TEAM" },
+    { key: "wdl", label: "W-D-L", type: "select", optionsKey: "wdl", dbColumn: "W-D-L" },
+    { key: "clean_sheet", label: "CLEAN SHEET", type: "select", optionsKey: "clean_sheets", dbColumn: "CLEAN SHEET" },
+    { key: "note", label: "NOTE", type: "select", optionsKey: "notes", dbColumn: "NOTE" },
+];
 
 // --- SEARCHABLE SELECT COMPONENT ---
 function SearchableSelect({ label, value, options, onChange }) {
@@ -132,58 +164,45 @@ export default function AlAhlyFilters({
     dbFilters, updateFilter, resetFilters, filterOptions,
     startDate, setStartDate, endDate, setEndDate
 }) {
+    const ColumnOrder = UseColumnOrder(TABLE_NAME);
+    const SortedFields = useMemo(
+        () => SortFilterFields(FILTER_FIELD_DEFS, ColumnOrder),
+        [ColumnOrder]
+    );
+
+    const renderField = (field) => {
+        if (field.type === "date") {
+            const value = field.key === "date_from" ? startDate : endDate;
+            const onChange = field.key === "date_from" ? setStartDate : setEndDate;
+            return (
+                <div key={field.key} className="filter-group">
+                    <label className="filter-label">{field.label}</label>
+                    <input type="date" className="filter-date-input" value={value} onChange={(e) => onChange(e.target.value)} />
+                </div>
+            );
+        }
+
+        return (
+            <SearchableSelect
+                key={field.key}
+                label={field.label}
+                value={dbFilters[field.key]}
+                options={filterOptions?.[field.optionsKey] || []}
+                onChange={(v) => updateFilter(field.key, v)}
+            />
+        );
+    };
+
     return (
         <div style={{ padding: '30px' }}>
             <div className="filters-wrap" style={{ maxWidth: '1400px', width: '100%', margin: '0 auto' }}>
                 <div className="filter-grid-layout">
-                    {/* ROW 1 */}
-                    <SearchableSelect label="COUNTRY" value={dbFilters.country} options={filterOptions?.countries || []} onChange={(v) => updateFilter('country', v)} />
-                    <SearchableSelect label="CONTINENT" value={dbFilters.continent} options={filterOptions?.continents || []} onChange={(v) => updateFilter('continent', v)} />
-                    <SearchableSelect label="MATCH ID" value={dbFilters.match_id} options={filterOptions?.match_ids || []} onChange={(v) => updateFilter('match_id', v)} />
-                    <SearchableSelect label="CHAMPION SYSTEM" value={dbFilters.champion_system} options={filterOptions?.champion_systems || []} onChange={(v) => updateFilter('champion_system', v)} />
-
-                    {/* ROW 2 */}
-                    <div className="filter-group">
-                        <label className="filter-label">DATE FROM</label>
-                        <input type="date" className="date-input" value={startDate} onChange={(e) => setStartDate(e.target.value)} />
-                    </div>
-                    <div className="filter-group">
-                        <label className="filter-label">DATE TO</label>
-                        <input type="date" className="date-input" value={endDate} onChange={(e) => setEndDate(e.target.value)} />
-                    </div>
-                    <SearchableSelect label="YEAR" value={dbFilters.year} options={filterOptions?.years || []} onChange={(v) => updateFilter('year', v)} />
-                    <SearchableSelect label="CHAMPION" value={dbFilters.champion} options={filterOptions?.champions || []} onChange={(v) => updateFilter('champion', v)} />
-
-                    {/* ROW 3 */}
-                    <SearchableSelect label="SEASON - NAME" value={dbFilters.season} options={filterOptions?.seasons || []} onChange={(v) => updateFilter('season', v)} />
-                    <SearchableSelect label="SEASON - NUMBER" value={dbFilters.sy} options={filterOptions?.sy || []} onChange={(v) => updateFilter('sy', v)} />
-
-                    {/* REST */}
-                    <SearchableSelect label="AHLY MANAGER" value={dbFilters.ahly_manager} options={filterOptions?.ahly_managers || []} onChange={(v) => updateFilter('ahly_manager', v)} />
-                    <SearchableSelect label="OPPONENT MANAGER" value={dbFilters.opponent_manager} options={filterOptions?.opponent_managers || []} onChange={(v) => updateFilter('opponent_manager', v)} />
-                    <SearchableSelect label="REFEREE" value={dbFilters.referee} options={filterOptions?.referees || []} onChange={(v) => updateFilter('referee', v)} />
-                    <SearchableSelect label="ROUND" value={dbFilters.round} options={filterOptions?.rounds || []} onChange={(v) => updateFilter('round', v)} />
-                    <SearchableSelect label="H-A-N (H/A/N)" value={dbFilters.han} options={filterOptions?.han || []} onChange={(v) => updateFilter('han', v)} />
-                    <SearchableSelect label="STADIUM" value={dbFilters.stad} options={filterOptions?.stadiums || []} onChange={(v) => updateFilter('stad', v)} />
-                    <SearchableSelect label="AHLY TEAM" value={dbFilters.ahly_team} options={filterOptions?.ahly_teams || []} onChange={(v) => updateFilter('ahly_team', v)} />
-                    <SearchableSelect label="GF" value={dbFilters.gf} options={filterOptions?.gf || []} onChange={(v) => updateFilter('gf', v)} />
-                    <SearchableSelect label="GA" value={dbFilters.ga} options={filterOptions?.ga || []} onChange={(v) => updateFilter('ga', v)} />
-                    <SearchableSelect label="ET (Extra Time)" value={dbFilters.et} options={filterOptions?.et || []} onChange={(v) => updateFilter('et', v)} />
-                    <SearchableSelect label="PENALTIES" value={dbFilters.pen} options={filterOptions?.pen || []} onChange={(v) => updateFilter('pen', v)} />
-                    <SearchableSelect label="OPPONENT TEAM" value={dbFilters.opponent_team} options={filterOptions?.opponent_teams || []} onChange={(v) => updateFilter('opponent_team', v)} />
-                    <SearchableSelect label="W-D-L" value={dbFilters.wdl} options={filterOptions?.wdl || []} onChange={(v) => updateFilter('wdl', v)} />
-                    <SearchableSelect label="CLEAN SHEET" value={dbFilters.clean_sheet} options={filterOptions?.clean_sheets || []} onChange={(v) => updateFilter('clean_sheet', v)} />
-                    <SearchableSelect label="NOTE" value={dbFilters.note} options={filterOptions?.notes || []} onChange={(v) => updateFilter('note', v)} />
+                    {SortedFields.map(renderField)}
                 </div>
             </div>
 
             <style jsx>{`
                 .filter-grid-layout { display: grid; grid-template-columns: repeat(4, 1fr); gap: 20px; margin-bottom: 40px; }
-                .date-input {
-                    width: 100%; height: 44px; background: var(--surface); border: 1px solid var(--border);
-                    padding: 8px 12px; border-radius: 2px; outline: none; font-family: inherit; font-size: 13px; box-sizing: border-box;
-                }
-                .date-input:focus { border-color: var(--gold); background: #fff; }
                 @media (max-width: 1024px) { .filter-grid-layout { grid-template-columns: repeat(2, 1fr); } }
                 @media (max-width: 600px) { .filter-grid-layout { grid-template-columns: 1fr; } }
                 .filter-footer { display: flex; justify-content: center; margin-top: 40px; }

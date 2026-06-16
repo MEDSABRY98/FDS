@@ -3,7 +3,10 @@
 import { useState, useMemo, useEffect, useRef } from "react";
 import { X } from "lucide-react";
 import { AhlyVZamalekService } from "../Service/ahly_v_zamalek_service";
+import { UseColumnOrder, SortFilterFields } from "../../lib/ColumnOrder";
 import "./ahly_v_zamalek_filters.css";
+
+const TABLE_NAME = "alahly_vs_zamalek_MATCHDETAILS";
 
 // Custom Searchable Dropdown Component (AVZ Version)
 function SearchableDropdown({ label, options, value, onChange }) {
@@ -165,22 +168,27 @@ export default function AhlyVZamalekFilters({ data, onFilter, isOpen, onClose })
         onFilter(data);
     };
 
-    if (!isOpen) return null;
+    const ColumnOrder = UseColumnOrder(TABLE_NAME);
 
-    const filterConfigs = [
-        { key: "champion_system", label: "CHAMPION SYSTEM", options: filterOptions.champion_systems },
-        { key: "champion", label: "CHAMPION", options: filterOptions.champions },
-        { key: "year", label: "YEAR", options: filterOptions.years },
-        { key: "season", label: "SEASON", options: filterOptions.seasons },
-        { key: "round", label: "ROUND", options: filterOptions.rounds },
-        { key: "stad", label: "STADIUM", options: filterOptions.stads },
-        { key: "ahly_manager", label: "AHLY MANAGER", options: filterOptions.ahly_managers },
-        { key: "zamalek_manager", label: "ZAMALEK MANAGER", options: filterOptions.zamalek_managers },
-        { key: "referee", label: "REFEREE", options: filterOptions.referees },
-        { key: "han", label: "H-A-N", options: filterOptions.han },
-        { key: "wdl", label: "W-D-L", options: filterOptions.wdl },
-        { key: "clean_sheet", label: "CLEAN SHEET", options: filterOptions.clean_sheets }
-    ];
+    const SortedFilterConfigs = useMemo(() => {
+        const FilterConfigs = [
+            { key: "champion_system", label: "CHAMPION SYSTEM", options: filterOptions.champion_systems, dbColumn: "CHAMPION SYSTEM" },
+            { key: "champion", label: "CHAMPION", options: filterOptions.champions, dbColumn: "CHAMPION" },
+            { key: "year", label: "YEAR", options: filterOptions.years, dbColumn: "DATE" },
+            { key: "season", label: "SEASON", options: filterOptions.seasons, dbColumn: "SEASON - NAME" },
+            { key: "round", label: "ROUND", options: filterOptions.rounds, dbColumn: "ROUND" },
+            { key: "stad", label: "STADIUM", options: filterOptions.stads, dbColumn: "STAD" },
+            { key: "ahly_manager", label: "AHLY MANAGER", options: filterOptions.ahly_managers, dbColumn: "AHLY MANAGER" },
+            { key: "zamalek_manager", label: "ZAMALEK MANAGER", options: filterOptions.zamalek_managers, dbColumn: "ZAMALEK MANAGER" },
+            { key: "referee", label: "REFEREE", options: filterOptions.referees, dbColumn: "REFEREE" },
+            { key: "han", label: "H-A-N", options: filterOptions.han, dbColumn: "H-A-N" },
+            { key: "wdl", label: "W-D-L", options: filterOptions.wdl, dbColumn: "W-D-L" },
+            { key: "clean_sheet", label: "CLEAN SHEET", options: filterOptions.clean_sheets, dbColumn: "CLEAN SHEET" }
+        ];
+        return SortFilterFields(FilterConfigs, ColumnOrder);
+    }, [ColumnOrder, filterOptions]);
+
+    if (!isOpen) return null;
 
     return (
         <div className="avz-filter-overlay" onClick={onClose}>
@@ -195,7 +203,7 @@ export default function AhlyVZamalekFilters({ data, onFilter, isOpen, onClose })
 
                 <div className="avz-filter-body">
                     <div className="avz-filter-grid">
-                        {filterConfigs.map(config => (
+                        {SortedFilterConfigs.map(config => (
                             <SearchableDropdown 
                                 key={config.key}
                                 label={config.label}

@@ -458,23 +458,13 @@
         text-align: left;
     }
 
-    .table-selector-wrap select {
-        padding: 14px 20px;
-        border: 2px solid #eee;
-        border-radius: 12px;
-        font-size: 14px;
-        font-weight: 700;
-        background: #fff;
-        color: #000;
-        outline: none;
-        transition: all 0.2s;
-        cursor: pointer;
-        width: 100%;
+    .table-selector-wrap.is-disabled {
+        opacity: 0.6;
+        pointer-events: none;
     }
 
-    .table-selector-wrap select:focus {
-        border-color: #c9a84c;
-        box-shadow: 0 0 10px rgba(201,168,76,0.1);
+    .table-selector-wrap .dropdown-db {
+        width: 100%;
     }
 
     .action-buttons-wrap {

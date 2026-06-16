@@ -2,7 +2,10 @@
 
 import { useState, useMemo, useEffect, useRef } from "react";
 import { Filter, X, RotateCcw, Search, ChevronDown, Check } from "lucide-react";
+import { UseColumnOrder, SortColumnNames } from "../../lib/ColumnOrder";
 import "./alahly_pks_filters.css";
+
+const TABLE_NAME = "alahly_PKS";
 
 // Custom Searchable Dropdown Component (Matching Al Ahly Style)
 function SearchableDropdown({ label, options, value, onChange }) {
@@ -89,13 +92,15 @@ function SearchableDropdown({ label, options, value, onChange }) {
 
 export default function AlAhlyPKsFilter({ data, onFilter, isOpen, onClose }) {
     const [activeFilters, setActiveFilters] = useState({});
+    const ColumnOrder = UseColumnOrder(TABLE_NAME);
 
     const columns = useMemo(() => {
         if (!data || data.length === 0) return [];
         const firstRecord = data[0];
         if (!firstRecord) return [];
-        return Object.keys(firstRecord).filter(col => col.toUpperCase() !== "ROW_ID" && col.toUpperCase() !== "MATCH_ID");
-    }, [data]);
+        const RawColumns = Object.keys(firstRecord).filter(col => col.toUpperCase() !== "ROW_ID" && col.toUpperCase() !== "MATCH_ID");
+        return SortColumnNames(RawColumns, ColumnOrder);
+    }, [data, ColumnOrder]);
 
     const filterOptions = useMemo(() => {
         const options = {};

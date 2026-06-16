@@ -305,10 +305,16 @@
     color: #0a0a0a;
     outline: none;
     min-height: 52px;
+    height: 52px;
     cursor: pointer;
     box-shadow: 0 2px 6px rgba(0,0,0,0.02);
     transition: all 0.3s;
     width: 100%;
+    box-sizing: border-box;
+    appearance: none;
+    -webkit-appearance: none;
+    -moz-appearance: textfield;
+    display: block;
 }
 
 .finals-individual-date-input:hover {

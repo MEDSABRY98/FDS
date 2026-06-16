@@ -1,7 +1,8 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { supabase } from "../../lib/supabase";
+import DropDownList_db from "../../lib/DropDownList_db";
 import { GripVertical, ArrowUp, ArrowDown, Save, RotateCcw, Sparkles } from "lucide-react";
 
 export default function ColumnSortView({ addNotification }) {
@@ -214,6 +215,11 @@ export default function ColumnSortView({ addNotification }) {
         }
     };
 
+    const tableOptions = useMemo(
+        () => tablesList.map((Table) => ({ value: Table.name, label: Table.label })),
+        [tablesList]
+    );
+
     return (
         <div className="column-sorter-container">
             <header className="sorter-header">
@@ -224,19 +230,15 @@ export default function ColumnSortView({ addNotification }) {
             </header>
 
             <div className="sorter-controls">
-                <div className="table-selector-wrap">
+                <div className={`table-selector-wrap ${loading || saving ? "is-disabled" : ""}`}>
                     <label>SELECT TABLE TO SORT</label>
-                    <select
+                    <DropDownList_db
+                        options={tableOptions}
                         value={selectedTable}
-                        onChange={(e) => setSelectedTable(e.target.value)}
-                        disabled={loading || saving}
-                    >
-                        {tablesList.map(t => (
-                            <option key={t.name} value={t.name}>
-                                {t.label}
-                            </option>
-                        ))}
-                    </select>
+                        onChange={setSelectedTable}
+                        placeholder="Select Table..."
+                        searchable={true}
+                    />
                 </div>
 
                 <div className="action-buttons-wrap">
