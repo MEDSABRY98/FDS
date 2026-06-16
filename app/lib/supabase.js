@@ -810,11 +810,38 @@ const remapEventId = (value, idMap) => {
     return idMap.get(key) || key;
 };
 
-export async function reorderMatchEvents(matchId, orderedRowIds = []) {
+const normalizeReorderItems = (items = []) => {
+    if (!Array.isArray(items)) return [];
+
+    return items
+        .map((item) => {
+            if (item && typeof item === "object" && item.rowId != null) {
+                return {
+                    rowId: String(item.rowId).trim(),
+                    minute: item.minute !== undefined ? String(item.minute).trim() : undefined
+                };
+            }
+
+            return {
+                rowId: String(item ?? "").trim(),
+                minute: undefined
+            };
+        })
+        .filter((item) => item.rowId);
+};
+
+export async function reorderMatchEvents(matchId, orderedItems = []) {
     const normalizedMatchId = String(matchId || "").trim();
     if (!normalizedMatchId) {
         throw new Error("MATCH_ID is required to reorder events.");
     }
+
+    const normalizedItems = normalizeReorderItems(orderedItems);
+    const minuteByRowId = new Map(
+        normalizedItems
+            .filter((item) => item.minute !== undefined)
+            .map((item) => [item.rowId, item.minute])
+    );
 
     const { data: events, error: fetchError } = await rawSupabase
         .from("egy_NT_PLAYERDETAILS")
@@ -829,7 +856,7 @@ export async function reorderMatchEvents(matchId, orderedRowIds = []) {
     );
 
     const orderedEvents = [];
-    orderedRowIds.forEach((rowId) => {
+    normalizedItems.forEach(({ rowId }) => {
         const event = eventByRowId.get(String(rowId));
         if (event) {
             orderedEvents.push(event);
@@ -843,10 +870,16 @@ export async function reorderMatchEvents(matchId, orderedRowIds = []) {
     }
 
     const oldToNew = new Map();
+    const minuteByOldEventId = new Map();
     orderedEvents.forEach((event, index) => {
         const oldId = String(event.EVENT_ID || "").trim();
         const newId = `${normalizedMatchId}-${index + 1}`;
         if (oldId) oldToNew.set(oldId, newId);
+
+        const rowId = String(event.ROW_ID || "").trim();
+        if (oldId && minuteByRowId.has(rowId)) {
+            minuteByOldEventId.set(oldId, minuteByRowId.get(rowId));
+        }
     });
 
     for (const event of orderedEvents) {
@@ -866,13 +899,18 @@ export async function reorderMatchEvents(matchId, orderedRowIds = []) {
 
         const newEventId = `${normalizedMatchId}-${index + 1}`;
         const newParentId = remapEventId(event.PARENT_EVENT_ID, oldToNew);
+        const payload = {
+            EVENT_ID: newEventId,
+            PARENT_EVENT_ID: newParentId || null
+        };
+
+        if (minuteByRowId.has(rowId)) {
+            payload.MINUTE = minuteByRowId.get(rowId) || null;
+        }
 
         const { error } = await rawSupabase
             .from("egy_NT_PLAYERDETAILS")
-            .update({
-                EVENT_ID: newEventId,
-                PARENT_EVENT_ID: newParentId || null
-            })
+            .update(payload)
             .eq("ROW_ID", rowId);
         if (error) throw error;
     }
@@ -915,6 +953,9 @@ export async function reorderMatchEvents(matchId, orderedRowIds = []) {
         }
         if (oldEventId && oldToNew.has(oldEventId)) {
             updates.EVENT_ID = oldToNew.get(oldEventId);
+        }
+        if (oldParentId && minuteByOldEventId.has(oldParentId)) {
+            updates.MINUTE = minuteByOldEventId.get(oldParentId) || null;
         }
 
         if (Object.keys(updates).length === 0) continue;

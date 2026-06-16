@@ -23,20 +23,17 @@ const parseTimelineEventOrder = (event) => {
 };
 
 const compareTimelineEvents = (a, b) => {
-    const minuteA = parseTimelineMinute(a.MINUTE);
-    const minuteB = parseTimelineMinute(b.MINUTE);
     const orderA = parseTimelineEventOrder(a);
     const orderB = parseTimelineEventOrder(b);
+    if (orderA !== orderB) return orderA - orderB;
 
-    if (minuteA !== null && minuteB !== null) {
-        if (minuteA !== minuteB) return minuteA - minuteB;
-        return orderA - orderB;
+    const minuteA = parseTimelineMinute(a.MINUTE);
+    const minuteB = parseTimelineMinute(b.MINUTE);
+    if (minuteA !== null && minuteB !== null && minuteA !== minuteB) {
+        return minuteA - minuteB;
     }
 
-    if (minuteA !== null) return -1;
-    if (minuteB !== null) return 1;
-
-    return orderA - orderB;
+    return String(a.ROW_ID ?? "").localeCompare(String(b.ROW_ID ?? ""), undefined, { numeric: true });
 };
 
 export default function EgyptNTMatchDetails({
@@ -175,14 +172,27 @@ export default function EgyptNTMatchDetails({
         setOrderError("");
     }, []);
 
+    const updateEventMinute = useCallback((index, minute) => {
+        setReorderRows((prev) => {
+            const nextRows = [...prev];
+            nextRows[index] = { ...nextRows[index], MINUTE: minute };
+            return nextRows;
+        });
+        setOrderDirty(true);
+        setOrderError("");
+    }, []);
+
     const saveEventOrder = useCallback(async () => {
         if (!reorderRows.length) return;
 
-        const orderedRowIds = reorderRows
-            .map((event) => String(event.ROW_ID || "").trim())
-            .filter(Boolean);
+        const orderedItems = reorderRows
+            .map((event) => ({
+                rowId: String(event.ROW_ID || "").trim(),
+                minute: String(event.MINUTE ?? "").trim()
+            }))
+            .filter((item) => item.rowId);
 
-        if (orderedRowIds.length !== reorderRows.length) {
+        if (orderedItems.length !== reorderRows.length) {
             setOrderError("Some events are missing ROW_ID and cannot be reordered.");
             return;
         }
@@ -190,7 +200,7 @@ export default function EgyptNTMatchDetails({
         setSavingOrder(true);
         setOrderError("");
         try {
-            await reorderMatchEvents(matchId, orderedRowIds);
+            await reorderMatchEvents(matchId, orderedItems);
             if (onRefresh) await onRefresh();
             setIsReorderMode(false);
             setReorderRows([]);
@@ -656,11 +666,22 @@ export default function EgyptNTMatchDetails({
                                             return (
                                                 <div key={String(event.ROW_ID || index)} className="event-reorder-row">
                                                     <span className="event-order-badge">{index + 1}</span>
+                                                    <label className="event-reorder-minute-field">
+                                                        <input
+                                                            type="text"
+                                                            className="event-reorder-minute-input"
+                                                            value={event.MINUTE ?? ""}
+                                                            onChange={(e) => updateEventMinute(index, e.target.value)}
+                                                            disabled={savingOrder}
+                                                            placeholder="?"
+                                                            aria-label={`Minute for event ${index + 1}`}
+                                                        />
+                                                        <span className="event-reorder-minute-suffix">'</span>
+                                                    </label>
                                                     <div className="event-reorder-main">
                                                         <span className="event-reorder-player">{event["PLAYER NAME"] || "—"}</span>
                                                         {event.CLUB && <span className="event-reorder-club">{event.CLUB}</span>}
                                                         <div className="event-reorder-meta">
-                                                            <span className="event-reorder-minute">{event.MINUTE || "?"}'</span>
                                                             <span className={`entry-type entry-type--${eventMeta.kind}`}>{eventMeta.label}</span>
                                                             <span className="event-reorder-id">{event.EVENT_ID}</span>
                                                         </div>
