@@ -3,7 +3,7 @@
 import { useMemo, useState, useEffect, useCallback } from "react";
 import "./egypt_nt_db_match_details.css";
 import NoData_db from "../../lib/NoData_db";
-import { reorderMatchEvents } from "../../lib/supabase";
+import { reorderMatchEvents, AutocompleteInput } from "../../lib/supabase";
 
 const parseTimelineMinute = (value) => {
     const raw = String(value ?? "").trim();
@@ -13,13 +13,19 @@ const parseTimelineMinute = (value) => {
 };
 
 const parseTimelineEventOrder = (event) => {
-    const id = String(event?.EVENT_ID || event?.PARENT_EVENT_ID || "").trim();
+    const isPenMissDetail = event?.eventType === 'penMiss';
+    const id = String(
+        isPenMissDetail
+            ? (event?.PARENT_EVENT_ID || event?.EVENT_ID || "")
+            : (event?.EVENT_ID || event?.PARENT_EVENT_ID || "")
+    ).trim();
     if (!id) return Number.MAX_SAFE_INTEGER;
 
     const trailingNumber = id.match(/(\d+)(?!.*\d)/);
-    if (trailingNumber) return parseInt(trailingNumber[1], 10);
+    const base = trailingNumber ? parseInt(trailingNumber[1], 10) : Number.MAX_SAFE_INTEGER - 1;
 
-    return Number.MAX_SAFE_INTEGER - 1;
+    // HOW MISSED detail follows the linked PENMISSED player event at the same minute
+    return isPenMissDetail ? base + 0.5 : base;
 };
 
 const compareTimelineEvents = (a, b) => {
@@ -31,6 +37,14 @@ const compareTimelineEvents = (a, b) => {
     const minuteB = parseTimelineMinute(b.MINUTE);
     if (minuteA !== null && minuteB !== null && minuteA !== minuteB) {
         return minuteA - minuteB;
+    }
+    if (minuteA !== null && minuteB === null) return -1;
+    if (minuteA === null && minuteB !== null) return 1;
+
+    const aIsPenMissDetail = a?.eventType === 'penMiss';
+    const bIsPenMissDetail = b?.eventType === 'penMiss';
+    if (aIsPenMissDetail !== bIsPenMissDetail) {
+        return aIsPenMissDetail ? 1 : -1;
     }
 
     return String(a.ROW_ID ?? "").localeCompare(String(b.ROW_ID ?? ""), undefined, { numeric: true });
@@ -182,13 +196,33 @@ export default function EgyptNTMatchDetails({
         setOrderError("");
     }, []);
 
+    const updateEventTypeSub = useCallback((index, typeSub) => {
+        setReorderRows((prev) => {
+            const nextRows = [...prev];
+            nextRows[index] = { ...nextRows[index], TYPE_SUB: typeSub };
+            return nextRows;
+        });
+        setOrderDirty(true);
+        setOrderError("");
+    }, []);
+
+    const eventSubTypeOptions = useMemo(() => {
+        const values = new Set();
+        (playerDetails || []).forEach((row) => {
+            const value = String(row?.TYPE_SUB || "").trim();
+            if (value) values.add(value);
+        });
+        return [...values].sort((a, b) => a.localeCompare(b));
+    }, [playerDetails]);
+
     const saveEventOrder = useCallback(async () => {
         if (!reorderRows.length) return;
 
         const orderedItems = reorderRows
             .map((event) => ({
                 rowId: String(event.ROW_ID || "").trim(),
-                minute: String(event.MINUTE ?? "").trim()
+                minute: String(event.MINUTE ?? "").trim(),
+                typeSub: String(event.TYPE_SUB ?? "").trim(),
             }))
             .filter((item) => item.rowId);
 
@@ -625,7 +659,8 @@ export default function EgyptNTMatchDetails({
 
                         {isReorderMode ? (
                             <>
-                                <div className="timeline-axis-controls">
+                                <div className="timeline-axis-controls timeline-axis-controls--edit">
+                                    <span className="timeline-axis-edit-title">Edit timeline</span>
                                     <div className="timeline-axis-actions">
                                         <button
                                             type="button"
@@ -666,23 +701,52 @@ export default function EgyptNTMatchDetails({
                                             return (
                                                 <div key={String(event.ROW_ID || index)} className="event-reorder-row">
                                                     <span className="event-order-badge">{index + 1}</span>
-                                                    <label className="event-reorder-minute-field">
-                                                        <input
-                                                            type="text"
-                                                            className="event-reorder-minute-input"
-                                                            value={event.MINUTE ?? ""}
-                                                            onChange={(e) => updateEventMinute(index, e.target.value)}
-                                                            disabled={savingOrder}
-                                                            placeholder="?"
-                                                            aria-label={`Minute for event ${index + 1}`}
-                                                        />
-                                                        <span className="event-reorder-minute-suffix">'</span>
-                                                    </label>
+                                                    <div className="event-reorder-edit-panel">
+                                                        <div className="event-reorder-field">
+                                                            <span className="event-reorder-field-label">Minute</span>
+                                                            <div className="event-reorder-minute-wrap">
+                                                                <input
+                                                                    type="text"
+                                                                    className="event-reorder-minute-input"
+                                                                    value={event.MINUTE ?? ""}
+                                                                    onChange={(e) => updateEventMinute(index, e.target.value)}
+                                                                    disabled={savingOrder}
+                                                                    placeholder="—"
+                                                                    aria-label={`Minute for event ${index + 1}`}
+                                                                />
+                                                                <span className="event-reorder-minute-suffix">'</span>
+                                                            </div>
+                                                        </div>
+                                                        <div className="event-reorder-field event-reorder-field--wide">
+                                                            <span className="event-reorder-field-label">Sub type</span>
+                                                            <AutocompleteInput
+                                                                value={String(event.TYPE_SUB ?? "")}
+                                                                onChange={(value) => updateEventTypeSub(index, value)}
+                                                                options={eventSubTypeOptions}
+                                                                placeholder="Optional"
+                                                                disabled={savingOrder}
+                                                                accentColor="#111"
+                                                                className="event-reorder-type-sub-input"
+                                                            />
+                                                        </div>
+                                                    </div>
                                                     <div className="event-reorder-main">
-                                                        <span className="event-reorder-player">{event["PLAYER NAME"] || "—"}</span>
-                                                        {event.CLUB && <span className="event-reorder-club">{event.CLUB}</span>}
+                                                        <div className="event-reorder-player-row">
+                                                            <span className="event-reorder-player">{event["PLAYER NAME"] || "—"}</span>
+                                                            {event.CLUB && (
+                                                                <>
+                                                                    <span className="event-reorder-dot" aria-hidden="true" />
+                                                                    <span className="event-reorder-club">{event.CLUB}</span>
+                                                                </>
+                                                            )}
+                                                        </div>
                                                         <div className="event-reorder-meta">
-                                                            <span className={`entry-type entry-type--${eventMeta.kind}`}>{eventMeta.label}</span>
+                                                            <span className={`entry-type entry-type--${eventMeta.kind}`}>
+                                                                {eventMeta.label}
+                                                                {eventMeta.subLabel && (
+                                                                    <span className="entry-type-sub"> / {eventMeta.subLabel}</span>
+                                                                )}
+                                                            </span>
                                                             <span className="event-reorder-id">{event.EVENT_ID}</span>
                                                         </div>
                                                     </div>

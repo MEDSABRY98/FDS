@@ -7,76 +7,10 @@ import SearchBar_db from "../../lib/SearchBar_db";
 import NoData_db from "../../lib/NoData_db";
 import Login_db from "../../lib/Login_db";
 import { useNotification } from "../../lib/Notification_db";
+import { AutocompleteInput, isEditorWrapColumn, ShrinkToFitInput } from "../../lib/supabase";
 import "./alahly_finals_editor.css";
 
 // ── Components ───────────────────────────────────────────────────────────────
-
-function AutocompleteInput({ value, onChange, options = [], placeholder, style, disabled }) {
-    const [open, setOpen] = useState(false);
-    const [query, setQuery] = useState(value || '');
-    const [rect, setRect] = useState(null);
-    const ref = useState(() => ({ current: null }))[0];
-
-    useEffect(() => { setQuery(value || ''); }, [value]);
-
-    const filtered = query
-        ? options.filter(o => String(o).toLowerCase().includes(String(query).toLowerCase())).slice(0, 50)
-        : options.slice(0, 50);
-
-    const handleSelect = (opt) => {
-        setQuery(opt);
-        onChange(opt);
-        setOpen(false);
-    };
-
-    useEffect(() => {
-        if (!open) return;
-        const updateRect = () => { if (ref.current) setRect(ref.current.getBoundingClientRect()); };
-        updateRect();
-        window.addEventListener('scroll', updateRect, true);
-        window.addEventListener('resize', updateRect);
-        return () => {
-            window.removeEventListener('scroll', updateRect, true);
-            window.removeEventListener('resize', updateRect);
-        };
-    }, [open]);
-
-    return (
-        <div style={{ position: 'relative', width: '100%' }} ref={r => ref.current = r} className="autocomplete-wrapper">
-            <input
-                value={query}
-                disabled={disabled}
-                placeholder={placeholder}
-                className="premium-input-field"
-                onChange={e => { setQuery(e.target.value); onChange(e.target.value); setOpen(true); }}
-                onFocus={() => { setOpen(true); if (ref.current) setRect(ref.current.getBoundingClientRect()); }}
-                onBlur={() => setTimeout(() => setOpen(false), 180)}
-                style={{ ...style }}
-                autoComplete="off"
-            />
-            {open && filtered.length > 0 && !disabled && rect && (
-                <div className="premium-scroll autocomplete-dropdown" style={{
-                    position: 'fixed',
-                    left: rect.left,
-                    width: rect.width,
-                    zIndex: 9999999,
-                    top: rect.bottom + 8,
-                    maxHeight: 280,
-                    overflowY: 'auto'
-                }}>
-                    {filtered.map((opt, i) => (
-                        <div key={i} className="dropdown-item" onMouseDown={() => handleSelect(opt)} dir="auto">
-                            <div className="opt-text">{opt}</div>
-                            <div className="opt-dot" />
-                        </div>
-                    ))}
-                </div>
-            )}
-        </div>
-    );
-}
-
-
 function DateSelectionModal({ matches, onSelect, onClose }) {
     if (!matches || matches.length === 0) return null;
 
@@ -152,23 +86,38 @@ function EditableTable({ title, color, rows, setRows, columns, parentId, emptyRo
                         <tbody>
                             {rows.map((row, ri) => (
                                 <tr key={row._key || ri} className={row._isNew ? 'new-row' : ''}>
-                                    {columns.map(col => (
+                                    {columns.map(col => {
+                                        const isFitCol = isEditorWrapColumn(col);
+                                        const inputClass = `${columnOptions[col] ? "premium-input-field" : "table-cell-input"}${isFitCol ? " field-input-fit" : ""}`;
+
+                                        return (
                                         <td key={col}>
                                             {columnOptions[col] ? (
                                                 <AutocompleteInput
                                                     value={row[col] ?? ''}
                                                     options={columnOptions[col]}
+                                                    placeholder={col}
                                                     onChange={val => setRows(prev => prev.map((r, i) => i === ri ? { ...r, [col]: val, _isDirty: true } : r))}
+                                                    className={inputClass}
+                                                    shrinkToFit={isFitCol}
+                                                    accentColor="#c9a84c"
+                                                />
+                                            ) : isFitCol ? (
+                                                <ShrinkToFitInput
+                                                    value={row[col] ?? ''}
+                                                    className={inputClass}
+                                                    onChange={e => setRows(prev => prev.map((r, i) => i === ri ? { ...r, [col]: e.target.value, _isDirty: true } : r))}
                                                 />
                                             ) : (
                                                 <input
                                                     value={row[col] ?? ''}
-                                                    className="table-cell-input"
+                                                    className={inputClass}
                                                     onChange={e => setRows(prev => prev.map((r, i) => i === ri ? { ...r, [col]: e.target.value, _isDirty: true } : r))}
                                                 />
                                             )}
                                         </td>
-                                    ))}
+                                        );
+                                    })}
                                     <td className="act-col">
                                         <button className="del-btn" onClick={() => handleRemove(ri)}>✕</button>
                                     </td>
@@ -474,7 +423,7 @@ export default function AlAhlyFinalsEditor({ matchesData, lineupsData, playersDa
                         <div key={f.key} className="field-unit">
                             <label className="field-label">{f.label}</label>
                             {f.type === "suggest" ? (
-                                <AutocompleteInput value={matchForm[f.key]} options={f.options} onChange={val => setMatchForm({ ...matchForm, [f.key]: val })} />
+                                <AutocompleteInput className="premium-input-field" accentColor="#c9a84c" value={matchForm[f.key]} options={f.options} onChange={val => setMatchForm({ ...matchForm, [f.key]: val })} />
                             ) : (
                                 <input
                                     type={f.type === "date" ? "date" : "text"}
@@ -496,19 +445,19 @@ export default function AlAhlyFinalsEditor({ matchesData, lineupsData, playersDa
                     </div>
                     <div className="field-unit">
                         <label className="field-label">ET</label>
-                        <AutocompleteInput value={matchForm["ET"]} options={suggestions.etOptions} onChange={val => setMatchForm({ ...matchForm, "ET": val })} />
+                        <AutocompleteInput className="premium-input-field" accentColor="#c9a84c" value={matchForm["ET"]} options={suggestions.etOptions} onChange={val => setMatchForm({ ...matchForm, "ET": val })} />
                     </div>
                     <div className="field-unit">
                         <label className="field-label">PEN</label>
-                        <AutocompleteInput value={matchForm["PEN"]} options={suggestions.penOptions} onChange={val => setMatchForm({ ...matchForm, "PEN": val })} />
+                        <AutocompleteInput className="premium-input-field" accentColor="#c9a84c" value={matchForm["PEN"]} options={suggestions.penOptions} onChange={val => setMatchForm({ ...matchForm, "PEN": val })} />
                     </div>
                     <div className="field-unit">
                         <label className="field-label">W-D-L MATCH</label>
-                        <AutocompleteInput value={matchForm["W-D-L MATCH"]} options={suggestions.wdlMatchOptions} onChange={val => setMatchForm({ ...matchForm, "W-D-L MATCH": val })} />
+                        <AutocompleteInput className="premium-input-field" accentColor="#c9a84c" value={matchForm["W-D-L MATCH"]} options={suggestions.wdlMatchOptions} onChange={val => setMatchForm({ ...matchForm, "W-D-L MATCH": val })} />
                     </div>
                     <div className="field-unit">
                         <label className="field-label">W-D-L FINAL</label>
-                        <AutocompleteInput value={matchForm["W-D-L FINAL"]} options={suggestions.wdlFinalOptions} onChange={val => setMatchForm({ ...matchForm, "W-D-L FINAL": val })} />
+                        <AutocompleteInput className="premium-input-field" accentColor="#c9a84c" value={matchForm["W-D-L FINAL"]} options={suggestions.wdlFinalOptions} onChange={val => setMatchForm({ ...matchForm, "W-D-L FINAL": val })} />
                     </div>
                 </div>
 

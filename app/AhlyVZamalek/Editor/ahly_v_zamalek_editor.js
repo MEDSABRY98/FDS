@@ -2,12 +2,11 @@
 
 import { useState, useCallback, useEffect } from "react";
 import "./ahly_v_zamalek_editor.css";
-import { supabase } from "../../lib/supabase";
+import { supabase, AutocompleteInput, isEditorWrapColumn, getEditorColumnMinWidth, ShrinkToFitInput } from "../../lib/supabase";
 import Login_db from "../../lib/Login_db";
 import NoData_db from "../../lib/NoData_db";
 import SearchBar_db from "../../lib/SearchBar_db";
 import { useNotification } from "../../lib/Notification_db";
-
 // ── Helper ──────────────────────────────────────────────────────────────────
 const EMPTY_MATCH = {
     "MATCH_ID": "", "CHAMPION SYSTEM": "", "DATE": "", "YEAR": "", "SEASON - NAME": "",
@@ -17,115 +16,6 @@ const EMPTY_MATCH = {
 };
 const EMPTY_LINEUP = { "MATCH_ID": "", "MATCH MINUTE": "", "TEAM": "", "PLAYER NAME": "", "STATU": "", "PLAYER NAME OUT": "", "OUT MINUTE": "", "TOTAL MINUTE": "" };
 const EMPTY_PLAYER = { "MATCH_ID": "", "EVENT_ID": "", "PARENT_EVENT_ID": "", "PLAYER NAME": "", "TEAM": "", "TYPE": "", "TYPE_SUB": "", "MINUTE": "" };
-
-// ── Autocomplete Input ───────────────────────────────────────────────────────
-function AutocompleteInput({ value, onChange, options = [], placeholder, style, disabled, className }) {
-    const [open, setOpen] = useState(false);
-    const [query, setQuery] = useState(value || '');
-    const [rect, setRect] = useState(null);
-    const ref = useState(() => ({ current: null }))[0];
-
-    // sync external value
-    useEffect(() => { setQuery(value || ''); }, [value]);
-
-    const filtered = query
-        ? options.filter(o => String(o).toLowerCase().includes(String(query).toLowerCase())).slice(0, 50)
-        : options.slice(0, 50);
-
-    const handleSelect = (opt) => {
-        setQuery(opt);
-        onChange(opt);
-        setOpen(false);
-    };
-
-    useEffect(() => {
-        if (!open) return;
-        const updateRect = () => {
-            if (ref.current) setRect(ref.current.getBoundingClientRect());
-        };
-        updateRect();
-        window.addEventListener('scroll', updateRect, true);
-        window.addEventListener('resize', updateRect);
-        return () => {
-            window.removeEventListener('scroll', updateRect, true);
-            window.removeEventListener('resize', updateRect);
-        };
-    }, [open]);
-
-    return (
-        <div style={{ position: 'relative', width: '100%' }} ref={r => ref.current = r} className="autocomplete-wrapper">
-            <input
-                value={query}
-                disabled={disabled}
-                placeholder={placeholder}
-                className={className}
-                onChange={e => { setQuery(e.target.value); onChange(e.target.value); setOpen(true); }}
-                onFocus={() => { setOpen(true); if (ref.current) setRect(ref.current.getBoundingClientRect()); }}
-                onBlur={() => setTimeout(() => setOpen(false), 180)}
-                style={{ ...style, width: '100%', boxSizing: 'border-box' }}
-                autoComplete="off"
-            />
-            {open && filtered.length > 0 && !disabled && rect && (() => {
-                const spaceBelow = typeof window !== 'undefined' ? window.innerHeight - rect.bottom : 300;
-                const dropdownHeight = 280;
-                const openUpwards = spaceBelow < dropdownHeight && rect.top > spaceBelow;
-
-                return (
-                    <div className="premium-scroll" style={{
-                        position: 'fixed',
-                        left: rect.left,
-                        width: rect.width,
-                        zIndex: 9999999,
-                        ...(openUpwards ? { bottom: window.innerHeight - rect.top + 8 } : { top: rect.bottom + 8 }),
-                        background: 'rgba(255, 255, 255, 0.85)',
-                        border: '1px solid rgba(0, 0, 0, 0.08)',
-                        borderRadius: openUpwards ? '16px 16px 0 0' : '0 0 16px 16px',
-                        borderTop: openUpwards ? '1px solid rgba(0, 0, 0, 0.08)' : '3px solid #da1b22',
-                        borderBottom: openUpwards ? '3px solid #da1b22' : '1px solid rgba(0, 0, 0, 0.08)',
-                        boxShadow: openUpwards ? '0 -20px 50px -10px rgba(0, 0, 0, 0.15)' : '0 20px 50px -10px rgba(0, 0, 0, 0.15)',
-                        maxHeight: dropdownHeight,
-                        overflowY: 'auto',
-                        backdropFilter: 'blur(20px)', WebkitBackdropFilter: 'blur(20px)',
-                        padding: '10px',
-                        animation: openUpwards ? 'slideUp 0.2s cubic-bezier(0.16, 1, 0.3, 1)' : 'slideIn 0.2s cubic-bezier(0.16, 1, 0.3, 1)',
-                        transformOrigin: openUpwards ? 'bottom center' : 'top center'
-                    }}>
-                        <div style={{ fontSize: 10, color: '#aaa', padding: '0 8px 8px', letterSpacing: 1, fontFamily: "'Space Mono', monospace" }}>
-                            SELECT {placeholder ? placeholder.toUpperCase() : 'OPTION'}
-                        </div>
-                        {filtered.map((opt, i) => (
-                            <div key={i}
-                                onMouseDown={() => handleSelect(opt)}
-                                style={{
-                                    padding: '12px 14px', cursor: 'pointer', fontSize: 14,
-                                    fontFamily: "'Outfit', sans-serif", fontWeight: 700, color: '#333',
-                                    borderRadius: 10,
-                                    display: 'flex', alignItems: 'center',
-                                    transition: 'all 0.2s cubic-bezier(0.2, 0.8, 0.2, 1)',
-                                    borderBottom: i < filtered.length - 1 ? '1px solid rgba(0,0,0,0.03)' : 'none'
-                                }}
-                                onMouseEnter={e => {
-                                    e.currentTarget.style.background = 'rgba(218, 27, 34, 0.15)';
-                                    e.currentTarget.style.color = '#000';
-                                    e.currentTarget.style.paddingLeft = '20px';
-                                }}
-                                onMouseLeave={e => {
-                                    e.currentTarget.style.background = 'transparent';
-                                    e.currentTarget.style.color = '#333';
-                                    e.currentTarget.style.paddingLeft = '14px';
-                                }}
-                                dir="auto"
-                            >
-                                <div style={{ flex: 1, transition: 'color 0.2s' }}>{opt}</div>
-                            </div>
-                        ))}
-                    </div>
-                );
-            })()}
-        </div>
-    );
-}
-
 
 // ── Editable Table ───────────────────────────────────────────────────────────
 function EditableTable({ title, color, rows, setRows, columns, matchId, emptyRow, tableName, onSave, onDelete, isSaving, autoFields = {}, columnOptions = {} }) {
@@ -182,6 +72,22 @@ function EditableTable({ title, color, rows, setRows, columns, matchId, emptyRow
                             <tr key={row._key || ri} className={row._isNew ? "table-row-new" : ""} style={{ borderBottom: '1px solid #f5f5f5', transition: 'background 0.2s' }}>
                                 {columns.map(col => {
                                     const isAuto = col in autoFields;
+                                    const isFitCol = isEditorWrapColumn(col);
+                                    const isDirty = row._isDirty || row._isNew;
+                                    const fieldStyle = {
+                                        border: isAuto
+                                            ? '1.5px solid rgba(218, 27, 34, 0.4)'
+                                            : (isDirty ? '1.5px solid ' + color : '1px solid #f0f0f0'),
+                                        background: isAuto ? 'rgba(218, 27, 34, 0.05)' : '#fff',
+                                        height: '34px',
+                                        fontSize: '12px',
+                                        minWidth: getEditorColumnMinWidth(col),
+                                        textAlign: 'center',
+                                        color: isAuto ? '#888' : '#000'
+                                    };
+                                    const fieldClass = `field-input${isFitCol ? ' field-input-fit' : ''}`;
+                                    const handleFieldChange = (val) => setRows(prev => prev.map((r, i) => i === ri ? { ...r, [col]: val, _isDirty: true } : r));
+
                                     return (
                                         <td key={col} style={{ padding: '6px 10px', textAlign: 'center' }}>
                                             {columnOptions[col] ? (
@@ -190,38 +96,27 @@ function EditableTable({ title, color, rows, setRows, columns, matchId, emptyRow
                                                     options={columnOptions[col]}
                                                     placeholder={col}
                                                     disabled={isAuto}
-                                                    onChange={val => setRows(prev => prev.map((r, i) => i === ri ? { ...r, [col]: val, _isDirty: true } : r))}
-                                                    className="field-input"
-                                                    style={{
-                                                        border: isAuto
-                                                            ? '1.5px solid rgba(218, 27, 34, 0.4)'
-                                                            : (row._isDirty || row._isNew ? '1.5px solid ' + color : '1px solid #f0f0f0'),
-                                                        background: isAuto ? 'rgba(218, 27, 34, 0.05)' : '#fff',
-                                                        height: '34px', fontSize: '12px',
-                                                        minWidth: col === 'PLAYER NAME' || col === 'PLAYER NAME OUT' ? 140 : 80,
-                                                        textAlign: 'center',
-                                                        color: isAuto ? '#888' : '#000'
-                                                    }}
+                                                    onChange={handleFieldChange}
+                                                    className={fieldClass}
+                                                    style={fieldStyle}
+                                                    shrinkToFit={isFitCol}
+                                                    accentColor="#DA1B22"
+                                                />
+                                            ) : isFitCol ? (
+                                                <ShrinkToFitInput
+                                                    value={row[col] ?? ''}
+                                                    disabled={isAuto}
+                                                    onChange={e => handleFieldChange(e.target.value)}
+                                                    className={fieldClass}
+                                                    style={fieldStyle}
                                                 />
                                             ) : (
                                                 <input
                                                     value={row[col] ?? ''}
                                                     disabled={isAuto}
-                                                    onChange={e => {
-                                                        const val = e.target.value;
-                                                        setRows(prev => prev.map((r, i) => i === ri ? { ...r, [col]: val, _isDirty: true } : r));
-                                                    }}
-                                                    className="field-input"
-                                                    style={{
-                                                        border: isAuto
-                                                            ? '1.5px solid rgba(218, 27, 34, 0.4)'
-                                                            : (row._isDirty || row._isNew ? '1.5px solid ' + color : '1px solid #f0f0f0'),
-                                                        background: isAuto ? 'rgba(218, 27, 34, 0.05)' : '#fff',
-                                                        height: '34px', fontSize: '12px',
-                                                        minWidth: col === 'PLAYER NAME' || col === 'PLAYER NAME OUT' ? 140 : 80,
-                                                        textAlign: 'center',
-                                                        color: isAuto ? '#888' : '#000'
-                                                    }}
+                                                    onChange={e => handleFieldChange(e.target.value)}
+                                                    className={fieldClass}
+                                                    style={fieldStyle}
                                                 />
                                             )}
                                         </td>
