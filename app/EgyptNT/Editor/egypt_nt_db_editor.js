@@ -39,6 +39,95 @@ const getNextPlayerEventId = (matchId, rows = []) => {
     return `${normalizedMatchId}-${maxSuffix + 1}`;
 };
 
+const sortRowsByEventId = (rows = []) => {
+    return [...rows].sort((a, b) => {
+        const idA = String(a?.EVENT_ID || "").trim();
+        const idB = String(b?.EVENT_ID || "").trim();
+        if (!idA && !idB) return 0;
+        if (!idA) return 1;
+        if (!idB) return -1;
+        const suffixDiff = parseEventIdSuffix(idA) - parseEventIdSuffix(idB);
+        if (suffixDiff !== 0) return suffixDiff;
+        return idA.localeCompare(idB);
+    });
+};
+
+const sortRowsByRowId = (rows = []) => {
+    return [...rows].sort((a, b) => {
+        const idA = String(a?.ROW_ID || "").trim();
+        const idB = String(b?.ROW_ID || "").trim();
+        if (!idA && !idB) return 0;
+        if (!idA) return 1;
+        if (!idB) return -1;
+        const suffixDiff = parseEventIdSuffix(idA) - parseEventIdSuffix(idB);
+        if (suffixDiff !== 0) return suffixDiff;
+        return idA.localeCompare(idB);
+    });
+};
+
+const sortRowsForTable = (tableName, rows = []) => {
+    if (tableName === "egy_NT_PLAYERDETAILS") return sortRowsByEventId(rows);
+    if (tableName === "egy_NT_LINEUPDETAILS") return sortRowsByRowId(rows);
+    return rows;
+};
+
+const normalizeTeamName = (value) => String(value || "").trim().toLowerCase();
+
+const getDefaultEgyptTeamLabel = (matchInfo = {}) => (
+    String(matchInfo["Egypt TEAM"] || matchInfo["EGYPT TEAM"] || "EGYPT").trim() || "EGYPT"
+);
+
+const buildLineupTeamResolver = (matchInfo = {}) => {
+    const egyptTeamName = getDefaultEgyptTeamLabel(matchInfo);
+    const opponentTeamName = String(matchInfo["OPPONENT TEAM"] || "").trim();
+
+    const egyptIdentifiers = new Set([
+        "egypt",
+        "مصر",
+        "منتخب مصر",
+        "المنتخب المصري",
+        normalizeTeamName(egyptTeamName),
+    ].filter(Boolean));
+
+    const resolveLineupTeamSide = (teamValue) => {
+        const name = String(teamValue || "").trim();
+        if (!name) return null;
+
+        const normalizedName = normalizeTeamName(name);
+        if (opponentTeamName && normalizedName === normalizeTeamName(opponentTeamName)) return "opponent";
+        if (normalizedName === "opponent" && opponentTeamName) return "opponent";
+        if (egyptIdentifiers.has(normalizedName)) return "egypt";
+        return null;
+    };
+
+    return {
+        egyptTeamName,
+        opponentTeamName,
+        isEgyptLineupTeam: (teamValue) => resolveLineupTeamSide(teamValue) === "egypt",
+        isOpponentLineupTeam: (teamValue) => resolveLineupTeamSide(teamValue) === "opponent",
+        resolveLineupTeamSide,
+    };
+};
+
+const splitLineupRowsByTeam = (rows = [], matchInfo = {}) => {
+    const { resolveLineupTeamSide } = buildLineupTeamResolver(matchInfo);
+    const egy = [];
+    const opp = [];
+
+    rows.forEach((row) => {
+        const side = resolveLineupTeamSide(row?.TEAM);
+        if (side === "egypt") {
+            egy.push(row);
+        } else if (side === "opponent") {
+            opp.push(row);
+        } else {
+            opp.push(row);
+        }
+    });
+
+    return { egy, opp };
+};
+
 const isPlayerEventRowSaveable = (row) => (
     String(row?.["PLAYER NAME"] || "").trim() !== "" ||
     String(row?.TYPE || "").trim() !== "" ||
@@ -510,7 +599,7 @@ export default function EgyptNTEditor() {
             const initialEgyLineup = Array.from({ length: 16 }, (_, i) => ({
                 ...EMPTY_LINEUP,
                 "MATCH MINUTE": "90",
-                "TEAM": "EGYPT",
+                "TEAM": getDefaultEgyptTeamLabel(newMatchData),
                 "STATU": i < 11 ? "اساسي" : "احتياطي",
                 "TOTAL MINUTE": i < 11 ? "90" : "",
                 MATCH_ID: newMatchData.MATCH_ID || '',
@@ -540,10 +629,24 @@ export default function EgyptNTEditor() {
     }, [newMatchData.MATCH_ID, mode]);
 
     useEffect(() => {
+        if (mode === 'new' && newMatchData["Egypt TEAM"]) {
+            const egyLabel = getDefaultEgyptTeamLabel(newMatchData);
+            setNewEgyLineupRows(prev => prev.map(r => r.TEAM !== egyLabel ? { ...r, TEAM: egyLabel } : r));
+        }
+    }, [newMatchData["Egypt TEAM"], mode]);
+
+    useEffect(() => {
         if (mode === 'new' && newMatchData["OPPONENT TEAM"]) {
             setNewOppLineupRows(prev => prev.map(r => r.TEAM !== newMatchData["OPPONENT TEAM"] ? { ...r, TEAM: newMatchData["OPPONENT TEAM"] } : r));
         }
     }, [newMatchData["OPPONENT TEAM"], mode]);
+
+    useEffect(() => {
+        if (mode === 'edit' && matchData?.["Egypt TEAM"]) {
+            const egyLabel = getDefaultEgyptTeamLabel(matchData);
+            setEgyLineupRows(prev => prev.map(r => r.TEAM !== egyLabel ? { ...r, TEAM: egyLabel, _isDirty: true } : r));
+        }
+    }, [matchData?.["Egypt TEAM"], mode]);
 
     useEffect(() => {
         if (mode === 'edit' && matchData && matchData["OPPONENT TEAM"]) {
@@ -585,7 +688,7 @@ export default function EgyptNTEditor() {
                 _isNew: true,
                 _key: Date.now()
             };
-            setter([...currentRows, row]);
+            setter(sortRowsByEventId([...currentRows, row]));
         } catch (error) {
             addToast(`Failed to add player event row: ${error.message}`, "error");
         }
@@ -599,7 +702,7 @@ export default function EgyptNTEditor() {
             _isNew: true,
             _key: Date.now()
         };
-        setter([...currentRows, row]);
+        setter(sortRowsByEventId([...currentRows, row]));
     }, []);
 
     // ── Search ──────────────────────────────────────────────────────────────
@@ -621,7 +724,7 @@ export default function EgyptNTEditor() {
                 const initialEgyLineup = Array.from({ length: 16 }, (_, i) => ({
                     ...EMPTY_LINEUP,
                     "MATCH MINUTE": "90",
-                    "TEAM": "EGYPT",
+                    "TEAM": getDefaultEgyptTeamLabel(md),
                     "STATU": i < 11 ? "اساسي" : "احتياطي",
                     "TOTAL MINUTE": i < 11 ? "90" : "",
                     MATCH_ID: id,
@@ -641,10 +744,11 @@ export default function EgyptNTEditor() {
                 setEgyLineupRows(applyLineupLogic(initialEgyLineup, initialEgyLineup));
                 setOppLineupRows(applyLineupLogic(initialOppLineup, initialOppLineup));
             } else {
-                setEgyLineupRows(ld.filter(r => r.TEAM === 'EGYPT').map((r, i) => attachEditorRowMeta(r, i)));
-                setOppLineupRows(ld.filter(r => r.TEAM !== 'EGYPT').map((r, i) => attachEditorRowMeta(r, 100 + i)));
+                const { egy, opp } = splitLineupRowsByTeam(ld, md);
+                setEgyLineupRows(sortRowsByRowId(egy.map((r, i) => attachEditorRowMeta(r, i))));
+                setOppLineupRows(sortRowsByRowId(opp.map((r, i) => attachEditorRowMeta(r, 100 + i))));
             }
-            setPlayerRows((pd || []).map((r, i) => attachEditorRowMeta(r, 1000 + i)));
+            setPlayerRows(sortRowsByEventId((pd || []).map((r, i) => attachEditorRowMeta(r, 1000 + i))));
             setGkRows((gd || []).map((r, i) => attachEditorRowMeta(r, 2000 + i)));
             setPenRows((pen || []).map((r, i) => attachEditorRowMeta(r, 3000 + i)));
             setMode('edit');
@@ -709,10 +813,13 @@ export default function EgyptNTEditor() {
 
             addToast(treatAsInsert ? 'Row inserted ✓' : 'Row updated ✓');
 
-            setterFn?.(prev => prev.map((r, i) => {
-                if (i !== ri) return r;
-                return mergeSavedEditorRow(r, savedRow);
-            }));
+            setterFn?.(prev => {
+                const updated = prev.map((r, i) => {
+                    if (i !== ri) return r;
+                    return mergeSavedEditorRow(r, savedRow);
+                });
+                return sortRowsForTable(tableName, updated);
+            });
         } catch (e) {
             console.error("Save Error:", e);
             addToast('Save FAILED: ' + (e.message || "Unknown error"), 'error');
@@ -873,23 +980,26 @@ export default function EgyptNTEditor() {
                 }
 
                 if (savedResults.length > 0 || insertedByKey.size > 0) {
-                    setter(prev => prev.map(existingRow => {
-                        if (insertedByKey.has(existingRow._key)) {
-                            return mergeSavedEditorRow(existingRow, insertedByKey.get(existingRow._key));
-                        }
+                    setter(prev => {
+                        const updated = prev.map(existingRow => {
+                            if (insertedByKey.has(existingRow._key)) {
+                                return mergeSavedEditorRow(existingRow, insertedByKey.get(existingRow._key));
+                            }
 
-                        const saved = savedResults.find((candidate) => {
-                            if (hasPersistedRowId(existingRow) && hasPersistedRowId(candidate)) {
-                                return String(candidate.ROW_ID) === String(existingRow.ROW_ID);
-                            }
-                            if (existingRow.EVENT_ID && candidate.EVENT_ID) {
-                                return String(candidate.EVENT_ID) === String(existingRow.EVENT_ID);
-                            }
-                            return false;
+                            const saved = savedResults.find((candidate) => {
+                                if (hasPersistedRowId(existingRow) && hasPersistedRowId(candidate)) {
+                                    return String(candidate.ROW_ID) === String(existingRow.ROW_ID);
+                                }
+                                if (existingRow.EVENT_ID && candidate.EVENT_ID) {
+                                    return String(candidate.EVENT_ID) === String(existingRow.EVENT_ID);
+                                }
+                                return false;
+                            });
+
+                            return saved ? mergeSavedEditorRow(existingRow, saved) : existingRow;
                         });
-
-                        return saved ? mergeSavedEditorRow(existingRow, saved) : existingRow;
-                    }));
+                        return sortRowsForTable(tableName, updated);
+                    });
                 }
             };
 
@@ -970,6 +1080,8 @@ export default function EgyptNTEditor() {
     const playerCols = Object.keys(EMPTY_PLAYER);
     const gkCols = Object.keys(EMPTY_GK);
     const penCols = Object.keys(EMPTY_PEN);
+    const newEgyTeamLabel = getDefaultEgyptTeamLabel(newMatchData);
+    const editEgyTeamLabel = getDefaultEgyptTeamLabel(matchData || {});
 
     return (
         <Login_db title="EDITOR ACCESS" subtitle="AUTHORIZATION REQUIRED">
@@ -1084,7 +1196,7 @@ export default function EgyptNTEditor() {
                                     onSave={() => { }} onDelete={(row, ri, _, setter) => setter(prev => prev.filter((_, i) => i !== ri))} isSaving={false}
                                     columnOptions={{
                                         "PLAYER NAME": allPlayersList,
-                                        "TEAM": ["EGYPT"],
+                                        "TEAM": [newEgyTeamLabel],
                                         "PLAYER NAME OUT": newEgyLineupRows.filter(r => String(r.STATU || '').trim() === 'اساسي' && String(r["PLAYER NAME"] || '').trim()).map(r => r["PLAYER NAME"]).sort((a, b) => a.localeCompare(b, 'ar'))
                                     }}
                                 />
@@ -1113,7 +1225,7 @@ export default function EgyptNTEditor() {
                                     onAddRow={(setter, currentRows, mid) => handleAddNewPlayerEventRow(setter, currentRows, mid)}
                                     columnOptions={{
                                         "PLAYER NAME": allPlayersList,
-                                        "TEAM": ["EGYPT", newMatchData["OPPONENT TEAM"]].filter(Boolean),
+                                        "TEAM": [newEgyTeamLabel, newMatchData["OPPONENT TEAM"]].filter(Boolean),
                                         "TYPE": eventTypes,
                                         "TYPE_SUB": eventSubTypes
                                     }}
@@ -1128,7 +1240,7 @@ export default function EgyptNTEditor() {
                                     onSave={() => { }} onDelete={(row, ri, _, setter) => setter(prev => prev.filter((_, i) => i !== ri))} isSaving={false}
                                     columnOptions={{
                                         "PLAYER NAME": allPlayersList,
-                                        "TEAM": ["EGYPT", newMatchData["OPPONENT TEAM"]].filter(Boolean),
+                                        "TEAM": [newEgyTeamLabel, newMatchData["OPPONENT TEAM"]].filter(Boolean),
                                         "STATU": ["اساسي", "احتياطي"]
                                     }}
                                 />
@@ -1141,7 +1253,7 @@ export default function EgyptNTEditor() {
                                     emptyRow={EMPTY_PEN} tableName="egy_NT_HOWPENMISSED"
                                     onSave={() => { }} onDelete={(row, ri, _, setter) => setter(prev => prev.filter((_, i) => i !== ri))} isSaving={false}
                                     columnOptions={{
-                                        "TEAM": ["EGYPT", newMatchData["OPPONENT TEAM"]].filter(Boolean),
+                                        "TEAM": [newEgyTeamLabel, newMatchData["OPPONENT TEAM"]].filter(Boolean),
                                         "HOW MISSED?": howMissedOptions
                                     }}
                                 />
@@ -1209,7 +1321,7 @@ export default function EgyptNTEditor() {
                                     onSave={handleSaveRow} onDelete={handleDeleteRow} isSaving={isSaving}
                                     columnOptions={{
                                         "PLAYER NAME": allPlayersList,
-                                        "TEAM": ["EGYPT"],
+                                        "TEAM": [editEgyTeamLabel],
                                         "PLAYER NAME OUT": egyLineupRows.filter(r => String(r.STATU || '').trim() === 'اساسي' && String(r["PLAYER NAME"] || '').trim()).map(r => r["PLAYER NAME"]).sort((a, b) => a.localeCompare(b, 'ar'))
                                     }}
                                 />
@@ -1238,7 +1350,7 @@ export default function EgyptNTEditor() {
                                     onAddRow={handleAddPlayerEventRow}
                                     columnOptions={{
                                         "PLAYER NAME": allPlayersList,
-                                        "TEAM": ["EGYPT", matchData["OPPONENT TEAM"]].filter(Boolean),
+                                        "TEAM": [editEgyTeamLabel, matchData["OPPONENT TEAM"]].filter(Boolean),
                                         "TYPE": eventTypes,
                                         "TYPE_SUB": eventSubTypes
                                     }}
@@ -1253,7 +1365,7 @@ export default function EgyptNTEditor() {
                                     onSave={handleSaveRow} onDelete={handleDeleteRow} isSaving={isSaving}
                                     columnOptions={{
                                         "PLAYER NAME": allPlayersList,
-                                        "TEAM": ["EGYPT", matchData["OPPONENT TEAM"]].filter(Boolean),
+                                        "TEAM": [editEgyTeamLabel, matchData["OPPONENT TEAM"]].filter(Boolean),
                                         "STATU": ["اساسي", "احتياطي"]
                                     }}
                                 />
@@ -1266,7 +1378,7 @@ export default function EgyptNTEditor() {
                                     emptyRow={EMPTY_PEN} tableName="egy_NT_HOWPENMISSED"
                                     onSave={handleSaveRow} onDelete={handleDeleteRow} isSaving={isSaving}
                                     columnOptions={{
-                                        "TEAM": ["EGYPT", matchData["OPPONENT TEAM"]].filter(Boolean),
+                                        "TEAM": [editEgyTeamLabel, matchData["OPPONENT TEAM"]].filter(Boolean),
                                         "HOW MISSED?": howMissedOptions
                                     }}
                                 />

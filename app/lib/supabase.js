@@ -750,18 +750,12 @@ const wrappedSupabase = new Proxy(rawSupabase, {
 
 export const supabase = wrappedSupabase;
 
-const UPDATE_EXCLUDED_FIELDS = new Set([
-    "ROW_ID",
-    "MATCH_ID",
-    "EVENT_ID",
-    "PARENT_EVENT_ID"
-]);
-
 export function getChangedFormFields(original = {}, updated = {}) {
     const changed = {};
+    const allKeys = new Set([...Object.keys(original), ...Object.keys(updated)]);
 
-    for (const key of Object.keys(updated)) {
-        if (UPDATE_EXCLUDED_FIELDS.has(String(key).toUpperCase())) continue;
+    for (const key of allKeys) {
+        if (key.startsWith("_")) continue;
 
         const originalValue = original[key] ?? "";
         const updatedValue = updated[key] ?? "";
