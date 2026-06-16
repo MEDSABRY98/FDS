@@ -1,10 +1,4 @@
 import { createClient } from '@supabase/supabase-js'
-import {
-    CATALOG_CONFIG,
-    getCatalogForColumn,
-    isSkippableCatalogValue,
-    buildCatalogError
-} from './catalogValidation'
 
 const supabaseUrl = 'https://wsygeerxfdaavdtvogvy.supabase.co'
 const supabaseAnonKey = 'sb_publishable_Y2kr-reraWveea23ykKViw_8Z3AbtOk'
@@ -64,6 +58,153 @@ const teamColumnsMap = {
     'egy_NT_SQUAD': ['CLUB']
 };
 
+const CATALOG_CONFIG = {
+    db_PLAYERS: {
+        idCol: "PLAYER_ID",
+        nameCols: ["PLAYER_NAME"],
+        idPrefix: "P-",
+        labelAr: "اللاعب"
+    },
+    db_MANAGERS: {
+        idCol: "MANAGER_ID",
+        nameCols: ["MANAGER_NAME"],
+        idPrefix: "M-",
+        labelAr: "المدرب"
+    },
+    db_REFEREES: {
+        idCol: "REFEREE_ID",
+        nameCols: ["REFEREE_NAME"],
+        idPrefix: "REF-",
+        labelAr: "الحكم"
+    },
+    db_TEAMS: {
+        idCol: "TEAM_ID",
+        nameCols: ["TEAM_NAME"],
+        idPrefix: "T-",
+        labelAr: "الفريق"
+    },
+    db_COUNTRIES: {
+        idCol: "COUNTRY_ID",
+        nameCols: ["COUNTRY_NAME", "COUNTRY_NAME_EN"],
+        idPrefix: "C-",
+        labelAr: "الدولة"
+    }
+};
+
+const CATALOG_SKIP_VALUES = new Set(["-", "unknown", "?", "؟", "n/a", "na", "none", ""]);
+
+function isSkippableCatalogValue(val) {
+    if (val === null || val === undefined) return true;
+    const s = String(val).trim();
+    if (!s) return true;
+    return CATALOG_SKIP_VALUES.has(s.toLowerCase());
+}
+
+function getCatalogForColumn(colName) {
+    const col = String(colName || "").toUpperCase();
+
+    if (col.includes("COUNTRY")) return "db_COUNTRIES";
+    if (
+        col.includes("PLAYER") ||
+        col === "MOTM" ||
+        col === "PLAYERNAME" ||
+        col === "CAPTAIN_ID" ||
+        col.includes("CAPTAIN") ||
+        (col.includes("GK") && !col.includes("TEAM"))
+    ) {
+        return "db_PLAYERS";
+    }
+    if (col.includes("MANAGER")) return "db_MANAGERS";
+    if (col.includes("REF")) return "db_REFEREES";
+    if (col.includes("TEAM") || col.includes("OPPONENT") || col === "CHAMPION" || col === "CLUB") {
+        return "db_TEAMS";
+    }
+
+    return null;
+}
+
+function isLikelyCatalogName(val, idPrefix) {
+    if (typeof val !== "string") return false;
+    const trimmed = val.trim();
+    if (!trimmed) return false;
+    if (idPrefix && trimmed.toUpperCase().startsWith(idPrefix.toUpperCase())) return false;
+    if (/^\d+$/.test(trimmed)) return false;
+    return true;
+}
+
+function buildCatalogError(catalog, value) {
+    const label = CATALOG_CONFIG[catalog]?.labelAr || catalog;
+    return `"${value}" غير موجود في ${label}. أضفه أولاً من Global DB Management.`;
+}
+
+function normalizeCatalogName(val) {
+    return String(val || "").trim().replace(/\s+/g, " ").toLowerCase();
+}
+
+async function lookupCatalogIdByText(catalog, value, rawClient, caches = null) {
+    if (isSkippableCatalogValue(value)) return value;
+
+    const cfg = CATALOG_CONFIG[catalog];
+    if (!cfg || !rawClient) return value;
+
+    const raw = String(value).trim().replace(/\s+/g, " ");
+    const normalized = normalizeCatalogName(raw);
+
+    const idToName = caches?.idToName?.[catalog];
+    const nameToId = caches?.nameToId?.[catalog];
+
+    if (raw.toUpperCase().startsWith(cfg.idPrefix.toUpperCase())) {
+        if (idToName?.[raw]) return raw;
+        const { data: idRow } = await rawClient
+            .from(catalog)
+            .select(cfg.idCol)
+            .eq(cfg.idCol, raw)
+            .maybeSingle();
+        if (idRow?.[cfg.idCol]) return idRow[cfg.idCol];
+        throw new Error(buildCatalogError(catalog, raw));
+    }
+
+    if (nameToId?.[normalized]) return nameToId[normalized];
+
+    for (const nameCol of cfg.nameCols) {
+        const { data, error } = await rawClient
+            .from(catalog)
+            .select(`${cfg.idCol}, ${nameCol}`)
+            .ilike(nameCol, raw)
+            .limit(10);
+
+        if (error) continue;
+
+        const exact = (data || []).find(
+            (row) => normalizeCatalogName(row[nameCol]) === normalized
+        );
+        if (exact?.[cfg.idCol]) {
+            const id = exact[cfg.idCol];
+            if (caches?.nameToId?.[catalog] && exact[nameCol]) {
+                caches.nameToId[catalog][normalizeCatalogName(exact[nameCol])] = id;
+                if (caches?.idToName?.[catalog]) {
+                    caches.idToName[catalog][id] = exact[nameCol];
+                }
+            }
+            return id;
+        }
+
+        if (data?.length === 1 && data[0]?.[cfg.idCol]) {
+            const id = data[0][cfg.idCol];
+            const dbName = data[0][nameCol];
+            if (caches?.nameToId?.[catalog] && dbName) {
+                caches.nameToId[catalog][normalizeCatalogName(dbName)] = id;
+                if (caches?.idToName?.[catalog]) {
+                    caches.idToName[catalog][id] = dbName;
+                }
+            }
+            return id;
+        }
+    }
+
+    throw new Error(buildCatalogError(catalog, raw));
+}
+
 async function fetchAllRows(tableName, selectColumns) {
     let allData = [];
     let from = 0;
@@ -122,7 +263,7 @@ async function loadCaches() {
                 stadsData.forEach(r => {
                     if (r.STADIUM_ID && r.STADIUM_NAME) {
                         stadiumsIdToName[r.STADIUM_ID] = r.STADIUM_NAME;
-                        stadiumsNameToId[r.STADIUM_NAME.trim().toLowerCase()] = r.STADIUM_ID;
+                        stadiumsNameToId[normalizeCatalogName(r.STADIUM_NAME)] = r.STADIUM_ID;
                     }
                 });
             }
@@ -130,7 +271,7 @@ async function loadCaches() {
                 mgrsData.forEach(r => {
                     if (r.MANAGER_ID && r.MANAGER_NAME) {
                         managersIdToName[r.MANAGER_ID] = r.MANAGER_NAME;
-                        managersNameToId[r.MANAGER_NAME.trim().toLowerCase()] = r.MANAGER_ID;
+                        managersNameToId[normalizeCatalogName(r.MANAGER_NAME)] = r.MANAGER_ID;
                     }
                 });
             }
@@ -138,7 +279,7 @@ async function loadCaches() {
                 playersData.forEach(r => {
                     if (r.PLAYER_ID && r.PLAYER_NAME) {
                         playersIdToName[r.PLAYER_ID] = r.PLAYER_NAME;
-                        playersNameToId[r.PLAYER_NAME.trim().toLowerCase()] = r.PLAYER_ID;
+                        playersNameToId[normalizeCatalogName(r.PLAYER_NAME)] = r.PLAYER_ID;
                     }
                 });
             }
@@ -146,7 +287,7 @@ async function loadCaches() {
                 refsData.forEach(r => {
                     if (r.REFEREE_ID && r.REFEREE_NAME) {
                         refereesIdToName[r.REFEREE_ID] = r.REFEREE_NAME;
-                        refereesNameToId[r.REFEREE_NAME.trim().toLowerCase()] = r.REFEREE_ID;
+                        refereesNameToId[normalizeCatalogName(r.REFEREE_NAME)] = r.REFEREE_ID;
                     }
                 });
             }
@@ -154,7 +295,7 @@ async function loadCaches() {
                 teamsData.forEach(r => {
                     if (r.TEAM_ID && r.TEAM_NAME) {
                         teamsIdToName[r.TEAM_ID] = r.TEAM_NAME;
-                        teamsNameToId[r.TEAM_NAME.trim().toLowerCase()] = r.TEAM_ID;
+                        teamsNameToId[normalizeCatalogName(r.TEAM_NAME)] = r.TEAM_ID;
                     }
                 });
             }
@@ -163,10 +304,10 @@ async function loadCaches() {
                     if (r.COUNTRY_ID) {
                         countriesIdToName[r.COUNTRY_ID] = r.COUNTRY_NAME || r.COUNTRY_NAME_EN;
                         if (r.COUNTRY_NAME) {
-                            countriesNameToId[r.COUNTRY_NAME.trim().toLowerCase()] = r.COUNTRY_ID;
+                            countriesNameToId[normalizeCatalogName(r.COUNTRY_NAME)] = r.COUNTRY_ID;
                         }
                         if (r.COUNTRY_NAME_EN) {
-                            countriesNameToId[r.COUNTRY_NAME_EN.trim().toLowerCase()] = r.COUNTRY_ID;
+                            countriesNameToId[normalizeCatalogName(r.COUNTRY_NAME_EN)] = r.COUNTRY_ID;
                         }
                     }
                 });
@@ -249,7 +390,7 @@ function mapDataDbToApp(data, tableName) {
 // Resolve filter value from name to ID
 function resolveNameToId(columnName, value, tableName) {
     if (!value) return value;
-    const clean = String(value).trim().toLowerCase();
+    const clean = normalizeCatalogName(value);
     
     const isStadiumCol = ['STAD', 'PLACE'].includes(columnName);
     const isManagerCol = ['AHLY MANAGER', 'OPPONENT MANAGER', 'ZAMALEK MANAGER', 'EGYPT MANAGER'].includes(columnName);
@@ -306,24 +447,42 @@ function getIdToNameMap(catalog) {
     }
 }
 
-function resolveStrictCatalogValue(catalog, val) {
-    const cfg = CATALOG_CONFIG[catalog];
-    if (!cfg) return val;
+function getCatalogCaches() {
+    return {
+        idToName: {
+            db_PLAYERS: playersIdToName,
+            db_MANAGERS: managersIdToName,
+            db_REFEREES: refereesIdToName,
+            db_TEAMS: teamsIdToName,
+            db_COUNTRIES: countriesIdToName
+        },
+        nameToId: {
+            db_PLAYERS: playersNameToId,
+            db_MANAGERS: managersNameToId,
+            db_REFEREES: refereesNameToId,
+            db_TEAMS: teamsNameToId,
+            db_COUNTRIES: countriesNameToId
+        }
+    };
+}
 
-    const raw = String(val).trim();
-    const clean = raw.toLowerCase();
-    const nameToId = getNameToIdMap(catalog);
+function registerCacheEntry(catalog, id, name) {
+    if (!id || !name) return;
     const idToName = getIdToNameMap(catalog);
+    const nameToId = getNameToIdMap(catalog);
+    if (!idToName || !nameToId) return;
+    idToName[id] = String(name).trim();
+    nameToId[normalizeCatalogName(name)] = id;
+}
 
-    if (raw.toUpperCase().startsWith(cfg.idPrefix.toUpperCase())) {
-        if (idToName?.[raw]) return raw;
-        throw new Error(buildCatalogError(catalog, raw));
+async function resolveStrictCatalogValue(catalog, val) {
+    const resolvedId = await lookupCatalogIdByText(catalog, val, rawSupabase, getCatalogCaches());
+    if (resolvedId !== val && CATALOG_CONFIG[catalog]) {
+        const cfg = CATALOG_CONFIG[catalog];
+        const idToName = getIdToNameMap(catalog);
+        registerCacheEntry(catalog, resolvedId, idToName?.[resolvedId] || String(val).trim());
     }
-
-    const resolvedId = nameToId?.[clean];
-    if (resolvedId) return resolvedId;
-
-    throw new Error(buildCatalogError(catalog, raw));
+    return resolvedId;
 }
 
 function isCatalogReferenceColumn(col, tableName) {
@@ -391,7 +550,7 @@ async function resolveAndRegisterPayload(payload, tableName) {
 
         const catalog = getCatalogForColumn(col);
         if (catalog) {
-            return resolveStrictCatalogValue(catalog, val);
+            return await resolveStrictCatalogValue(catalog, val);
         }
 
         return val;
@@ -518,6 +677,30 @@ const wrappedSupabase = new Proxy(rawSupabase, {
 });
 
 export const supabase = wrappedSupabase;
+
+export async function resolveCatalogFieldsInForm(selectedTable, form) {
+    await loadCaches();
+    const resolved = { ...form };
+
+    for (const col of Object.keys(resolved)) {
+        const val = resolved[col];
+        if (typeof val !== "string" || isSkippableCatalogValue(val)) continue;
+
+        const catalog = getCatalogForColumn(col);
+        if (!catalog || catalog === "db_STADIUMS") continue;
+
+        if (selectedTable === catalog) {
+            const cfg = CATALOG_CONFIG[catalog];
+            if (cfg?.nameCols?.includes(col)) continue;
+        }
+
+        if (isLikelyCatalogName(val, CATALOG_CONFIG[catalog]?.idPrefix)) {
+            resolved[col] = await resolveStrictCatalogValue(catalog, val);
+        }
+    }
+
+    return resolved;
+}
 
 // Trigger initial cache load in the background
 loadCaches();

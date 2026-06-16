@@ -1,5 +1,22 @@
 import { Edit, Trash2 } from "lucide-react";
 
+const SELECT_COL = {
+    width: '60px',
+    minWidth: '60px',
+    maxWidth: '60px',
+    position: 'sticky',
+    left: 0,
+    zIndex: 6
+};
+
+const ACTIONS_COL = {
+    width: '140px',
+    minWidth: '140px',
+    maxWidth: '140px',
+    position: 'sticky',
+    zIndex: 5
+};
+
 export default function DynamicTable({ 
     selectedTable, 
     columns, 
@@ -9,6 +26,9 @@ export default function DynamicTable({
     handleEditClick, 
     handleDelete 
 }) {
+    const hasSelectCol = selectedTable === "alahly_PLAYERDATABASE";
+    const actionsLeft = hasSelectCol ? '60px' : '0';
+
     return (
         <div className="table-overflow">
             <table className="db-table" style={{ 
@@ -17,16 +37,25 @@ export default function DynamicTable({
             }}>
                 <thead>
                     <tr style={{ height: '54px' }}>
-                        {selectedTable === "alahly_PLAYERDATABASE" && (
-                            <th className="select-header" style={{ width: '60px', minWidth: '60px', position: 'sticky', left: 0, zIndex: 15 }}>SELECT</th>
+                        {hasSelectCol && (
+                            <th
+                                className="select-header"
+                                style={{ ...SELECT_COL, top: 0, zIndex: 21 }}
+                            >
+                                SELECT
+                            </th>
                         )}
-                        <th className="actions-header" style={{
-                            width: '110px',
-                            minWidth: '110px',
-                            position: 'sticky',
-                            left: selectedTable === "alahly_PLAYERDATABASE" ? '60px' : '0',
-                            zIndex: 15
-                        }}>ACTIONS</th>
+                        <th
+                            className="actions-header"
+                            style={{
+                                ...ACTIONS_COL,
+                                left: actionsLeft,
+                                top: 0,
+                                zIndex: 20
+                            }}
+                        >
+                            ACTIONS
+                        </th>
                         {columns.map(col => {
                             const isNarrow = ['GF', 'GA', 'ET', 'W-D-L', 'SEASON - NUMBER', 'ROUND', 'H-A-N', 'PEN'].includes(col);
                             return (
@@ -47,7 +76,7 @@ export default function DynamicTable({
                     {paginatedData.length === 0 ? (
                         <tr>
                             <td
-                                colSpan={columns.length + (selectedTable === "alahly_PLAYERDATABASE" ? 2 : 1)}
+                                colSpan={columns.length + (hasSelectCol ? 2 : 1)}
                                 style={{
                                     padding: '120px 20px',
                                     color: '#c9a84c',
@@ -69,8 +98,8 @@ export default function DynamicTable({
 
                             return (
                                 <tr key={idx} className={isSelected ? 'selected-row' : ''}>
-                                    {selectedTable === "alahly_PLAYERDATABASE" && (
-                                        <td className="select-cell" style={{ textAlign: 'center', position: 'sticky', left: 0 }}>
+                                    {hasSelectCol && (
+                                        <td className="select-cell" style={{ ...SELECT_COL, textAlign: 'center' }}>
                                             <input
                                                 type="checkbox"
                                                 checked={isSelected}
@@ -79,10 +108,10 @@ export default function DynamicTable({
                                             />
                                         </td>
                                     )}
-                                    <td className="actions-cell" style={{
-                                        position: 'sticky',
-                                        left: selectedTable === "alahly_PLAYERDATABASE" ? '60px' : '0'
-                                    }}>
+                                    <td
+                                        className="actions-cell"
+                                        style={{ ...ACTIONS_COL, left: actionsLeft }}
+                                    >
                                         <div className="actions-flex">
                                             <button className="edit-row-btn" onClick={() => handleEditClick(row)} title="Edit">
                                                 <Edit size={16} />

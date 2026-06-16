@@ -149,11 +149,8 @@ export default function EgyptDatabaseManagement() {
                                 />
 
                                 <DynamicTable 
-                                    selectedTable={selectedTable}
                                     columns={columns}
                                     paginatedData={paginatedData}
-                                    selectedRows={[]}
-                                    handleToggleSelect={() => {}}
                                     handleEditClick={handleEditClick}
                                     handleDelete={handleDelete}
                                 />
