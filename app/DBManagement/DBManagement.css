@@ -128,13 +128,26 @@
     }
 
     .select-cell, .select-header {
-        min-width: 60px;
-        width: 60px;
-        max-width: 60px;
+        min-width: 90px;
+        width: 90px;
+        max-width: 90px;
     }
 
     .select-header {
         z-index: 21 !important;
+        color: #c9a84c !important;
+        letter-spacing: 3px;
+        padding-left: 12px;
+        padding-right: 12px;
+    }
+
+    .select-cell {
+        left: 0;
+    }
+
+    .actions-cell,
+    .actions-header {
+        left: 90px;
     }
 
     .db-table tr:hover td.select-cell,

@@ -116,7 +116,7 @@ function getCatalogForColumn(colName) {
     }
     if (col.includes("MANAGER")) return "db_MANAGERS";
     if (col.includes("REF")) return "db_REFEREES";
-    if (col.includes("TEAM") || col.includes("OPPONENT") || col === "CHAMPION" || col === "CLUB") {
+    if (col.includes("TEAM") || col.includes("OPPONENT") || col === "CLUB") {
         return "db_TEAMS";
     }
 

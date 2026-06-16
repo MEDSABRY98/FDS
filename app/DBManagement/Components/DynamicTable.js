@@ -2,9 +2,9 @@ import React from 'react';
 import { Edit3, Trash2 } from 'lucide-react';
 
 const SELECT_COL = {
-    width: '60px',
-    minWidth: '60px',
-    maxWidth: '60px',
+    width: '90px',
+    minWidth: '90px',
+    maxWidth: '90px',
     position: 'sticky',
     left: 0,
     zIndex: 6
@@ -15,7 +15,7 @@ const ACTIONS_COL = {
     minWidth: '140px',
     maxWidth: '140px',
     position: 'sticky',
-    left: '60px',
+    left: '90px',
     zIndex: 5
 };
 
@@ -49,7 +49,7 @@ export default function DynamicTable({
                             className="select-header"
                             style={{ ...SELECT_COL, top: 0, zIndex: 21 }}
                         >
-                            MERGE
+                            SEL
                         </th>
                         <th
                             className="actions-header"
