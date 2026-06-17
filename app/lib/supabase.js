@@ -29,8 +29,6 @@ const playerColumnsMap = {
     'alahly_LINEUPDETAILS': ['PLAYER NAME', 'PLAYER NAME OUT'],
     'alahly_PKS': ['AHLY GK', 'AHLY PLAYER', 'OPPONENT GK', 'OPPONENT PLAYER'],
     'alahly_PLAYERDETAILS': ['PLAYER NAME'],
-    'alahly_vs_zamalek_LINEUPDETAILS': ['PLAYER NAME', 'PLAYER NAME OUT'],
-    'alahly_vs_zamalek_PLAYERDETAILS': ['PLAYER NAME'],
     'egy_NT_GKSDETAILS': ['PLAYER NAME'],
     'egy_NT_LINEUPDETAILS': ['PLAYER NAME', 'PLAYER NAME OUT'],
     'egy_NT_PKS': ['EGYPT GK', 'Egypt PLAYER', 'OPPONENT GK', 'OPPONENT PLAYER'],
@@ -48,8 +46,6 @@ const teamColumnsMap = {
     'alahly_MATCHDETAILS': ['AHLY TEAM', 'OPPONENT TEAM'],
     'alahly_PKS': ['AHLY TEAM', 'OPPONENT TEAM'],
     'alahly_PLAYERDETAILS': ['TEAM'],
-    'alahly_vs_zamalek_LINEUPDETAILS': ['TEAM'],
-    'alahly_vs_zamalek_PLAYERDETAILS': ['TEAM'],
     'egy_CLUB_MATCHDETAILS': ['EGYPT TEAM', 'OPPONENT TEAM'],
     'egy_NT_GKSDETAILS': ['TEAM'],
     'egy_NT_HOWPENMISSED': ['TEAM'],
@@ -703,7 +699,6 @@ function wrapQueryBuilder(target, tableName, calls = []) {
                         const isStadiumsOrManagersTable = [
                             'alahly_MATCHDETAILS',
                             'alahly_FINALS_MATCHDETAILS',
-                            'alahly_vs_zamalek_MATCHDETAILS',
                             'egy_NT_MATCHDETAILS',
                             'egy_CLUB_MATCHDETAILS'
                         ].includes(tableName);
@@ -796,6 +791,72 @@ export async function resolveCatalogFieldsInForm(selectedTable, form) {
 
 const parseManagementIdSortValue = (value) => parseTrailingIdNumber(value);
 
+const findColumnByName = (columns = [], name) => {
+    const target = String(name || "").toUpperCase();
+    return columns.find((column) => String(column).toUpperCase() === target) || null;
+};
+
+const parseManagementDateSortValue = (value) => {
+    const raw = String(value ?? "").trim();
+    if (!raw) return 0;
+
+    const timestamp = Date.parse(raw);
+    if (Number.isFinite(timestamp)) return timestamp;
+
+    const parts = raw.match(/^(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{2,4})$/);
+    if (parts) {
+        const day = parseInt(parts[1], 10);
+        const month = parseInt(parts[2], 10) - 1;
+        let year = parseInt(parts[3], 10);
+        if (year < 100) year += 2000;
+        const parsed = new Date(year, month, day).getTime();
+        return Number.isFinite(parsed) ? parsed : 0;
+    }
+
+    return 0;
+};
+
+const compareRowsByConfiguredSort = (a, b, columns, sorting) => {
+    const rowIdCol = findColumnByName(columns, "ROW_ID");
+    const eventIdCol = findColumnByName(columns, "EVENT_ID");
+    const matchIdCol = findColumnByName(columns, "MATCH_ID");
+    const dateCol = findColumnByName(columns, "DATE");
+    const fallbackKey = findManagementSortKey(columns);
+    const mode = String(sorting || "ROW_ID").trim().toUpperCase();
+
+    if (mode === "DATE" && dateCol) {
+        const diff = parseManagementDateSortValue(b?.[dateCol]) - parseManagementDateSortValue(a?.[dateCol]);
+        if (diff !== 0) return diff;
+        return compareManagementRowsByIdDesc(a, b, rowIdCol || fallbackKey);
+    }
+
+    if (mode === "EVENT_ID") {
+        return compareManagementRowsByIdDesc(a, b, eventIdCol || fallbackKey);
+    }
+
+    if (mode === "DATE_ASC_EVENT_ID") {
+        if (dateCol) {
+            const diff = parseManagementDateSortValue(a?.[dateCol]) - parseManagementDateSortValue(b?.[dateCol]);
+            if (diff !== 0) return diff;
+        }
+        if (matchIdCol) {
+            const matchDiff = compareManagementRowsByIdDesc(a, b, matchIdCol);
+            if (matchDiff !== 0) return matchDiff;
+        }
+        return compareManagementRowsByIdDesc(a, b, eventIdCol || fallbackKey);
+    }
+
+    if (mode === "DATE_DESC_ROW_ID") {
+        if (dateCol) {
+            const diff = parseManagementDateSortValue(b?.[dateCol]) - parseManagementDateSortValue(a?.[dateCol]);
+            if (diff !== 0) return diff;
+        }
+        return compareManagementRowsByIdDesc(a, b, rowIdCol || fallbackKey);
+    }
+
+    return compareManagementRowsByIdDesc(a, b, rowIdCol || fallbackKey);
+};
+
 const findManagementSortKey = (columns = []) => {
     const cols = columns.map((column) => String(column));
     const upperCols = cols.map((column) => column.toUpperCase());
@@ -828,8 +889,12 @@ const compareManagementRowsByIdDesc = (a, b, sortKey) => {
     return String(b?.[sortKey] ?? "").localeCompare(String(a?.[sortKey] ?? ""), undefined, { numeric: true });
 };
 
-export function sortManagementTableData(rows, columns) {
+export function sortManagementTableData(rows, columns, sorting = null) {
     if (!Array.isArray(rows) || rows.length === 0) return rows;
+
+    if (sorting) {
+        return [...rows].sort((a, b) => compareRowsByConfiguredSort(a, b, columns, sorting));
+    }
 
     const sortKey = findManagementSortKey(columns);
     if (!sortKey) return rows;
@@ -846,8 +911,12 @@ const GLOBAL_DB_NAME_SORT_COLUMNS = [
     "COUNTRY_NAME"
 ];
 
-export function sortGlobalDbManagementTableData(rows, columns = []) {
+export function sortGlobalDbManagementTableData(rows, columns = [], sorting = null) {
     if (!Array.isArray(rows) || rows.length === 0) return rows;
+
+    if (sorting) {
+        return sortManagementTableData(rows, columns, sorting);
+    }
 
     const nameColumn = GLOBAL_DB_NAME_SORT_COLUMNS.find((col) => columns.includes(col));
     if (nameColumn) {
@@ -862,6 +931,169 @@ export function sortGlobalDbManagementTableData(rows, columns = []) {
     return [...rows].sort((a, b) =>
         String(a[sortKey] ?? "").localeCompare(String(b[sortKey] ?? ""), undefined, { numeric: true })
     );
+}
+
+export const SETTINGS_TAB_ID = "SETTINGS";
+
+export const TABLE_SORT_OPTIONS = [
+    { value: "ROW_ID", label: "ROW_ID" },
+    { value: "DATE", label: "Date (newest first)" },
+    { value: "EVENT_ID", label: "EVENT_ID" },
+    { value: "DATE_ASC_EVENT_ID", label: "Date oldest → newest, then MATCH_ID, then EVENT_ID" },
+    { value: "DATE_DESC_ROW_ID", label: "Date newest → oldest, then ROW_ID" },
+];
+
+const SETTINGS_TABLE = "db_Settings";
+
+const isSettingsTableMissing = (error) => {
+    const code = String(error?.code || "");
+    const message = String(error?.message || "");
+    return code === "PGRST205" || /db_settings/i.test(message);
+};
+
+const logSettingsError = (context, error) => {
+    if (isSettingsTableMissing(error)) return;
+    const message = error?.message || error?.details || JSON.stringify(error);
+    console.error(`${context}: ${message}`);
+};
+
+const parseSettingsRowIdNumber = (value) => {
+    const raw = String(value ?? "").trim();
+    if (!raw) return 0;
+
+    const trailingNumber = raw.match(/(\d+)(?!.*\d)/);
+    if (trailingNumber) return parseInt(trailingNumber[1], 10);
+
+    const asNum = parseInt(raw, 10);
+    return Number.isFinite(asNum) ? asNum : 0;
+};
+
+async function allocateNextSettingsRowId() {
+    let maxNum = 0;
+    let from = 0;
+
+    while (true) {
+        const { data, error } = await rawSupabase
+            .from(SETTINGS_TABLE)
+            .select("ROW_ID")
+            .range(from, from + 999);
+
+        if (error) throw error;
+        if (!data?.length) break;
+
+        data.forEach((row) => {
+            maxNum = Math.max(maxNum, parseSettingsRowIdNumber(row?.ROW_ID));
+        });
+
+        if (data.length < 1000) break;
+        from += 1000;
+    }
+
+    return `R-${String(maxNum + 1).padStart(4, "0")}`;
+}
+
+export async function FetchTableSortSetting(tableName) {
+    if (!tableName) return null;
+
+    try {
+        const { data, error } = await rawSupabase
+            .from(SETTINGS_TABLE)
+            .select("SORTING")
+            .eq("TABLE_NAME", tableName)
+            .maybeSingle();
+
+        if (error) {
+            logSettingsError("Failed to fetch table sort setting", error);
+            return null;
+        }
+        return data?.SORTING || null;
+    } catch (err) {
+        logSettingsError("Failed to fetch table sort setting", err);
+        return null;
+    }
+}
+
+export async function FetchAllTableSortSettings() {
+    try {
+        const { data, error } = await rawSupabase
+            .from(SETTINGS_TABLE)
+            .select("TABLE_NAME, SORTING");
+
+        if (error) {
+            logSettingsError("Failed to fetch table sort settings", error);
+            return {};
+        }
+
+        const settings = {};
+        (data || []).forEach((row) => {
+            settings[String(row.TABLE_NAME)] = String(row.SORTING || "ROW_ID");
+        });
+        return settings;
+    } catch (err) {
+        logSettingsError("Failed to fetch table sort settings", err);
+        return {};
+    }
+}
+
+export async function SaveTableSortSetting(tableName, sorting) {
+    const normalizedTableName = String(tableName || "").trim();
+    const normalizedSorting = String(sorting || "ROW_ID").trim();
+    if (!normalizedTableName) {
+        throw new Error("TABLE_NAME is required.");
+    }
+
+    const { data: existing, error: fetchError } = await rawSupabase
+        .from(SETTINGS_TABLE)
+        .select("ROW_ID")
+        .eq("TABLE_NAME", normalizedTableName)
+        .maybeSingle();
+
+    if (fetchError) {
+        if (isSettingsTableMissing(fetchError)) {
+            throw new Error("db_Settings table is missing. Run scripts/setup-db-settings.mjs first.");
+        }
+        throw fetchError;
+    }
+
+    if (existing?.ROW_ID) {
+        const { error } = await rawSupabase
+            .from(SETTINGS_TABLE)
+            .update({ SORTING: normalizedSorting })
+            .eq("TABLE_NAME", normalizedTableName);
+        if (error) throw error;
+        return existing.ROW_ID;
+    }
+
+    const rowId = await allocateNextSettingsRowId();
+    const { error } = await rawSupabase
+        .from(SETTINGS_TABLE)
+        .insert({
+            ROW_ID: rowId,
+            TABLE_NAME: normalizedTableName,
+            SORTING: normalizedSorting,
+        });
+
+    if (error) throw error;
+    return rowId;
+}
+
+export function formatManagementTableLabel(tableName = "") {
+    return String(tableName)
+        .replace(/^alahly_/i, "")
+        .replace(/^db_/i, "")
+        .replace(/^egy_CLUB_/i, "")
+        .replace(/^egy_NT_/i, "")
+        .replace(/_/g, " ")
+        .split(" ")
+        .map((word) => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
+        .join(" ");
+}
+
+export function appendSettingsTab(tables = []) {
+    const filtered = (tables || []).filter(
+        (table) => table.name !== SETTINGS_TAB_ID && table.name !== "COLUMN_SORT"
+    );
+    return [...filtered, { name: SETTINGS_TAB_ID, label: "Settings" }];
 }
 
 const remapEventId = (value, idMap) => {

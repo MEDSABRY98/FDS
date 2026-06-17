@@ -71,7 +71,10 @@ export default function Manager_PlayersUsed_Module({ stats }) {
             </div>
 
             <div style={{ overflowX: 'auto' }}>
-                <table className="player-match-table">
+                {playersList.length === 0 ? (
+                    <NoData_db message="No players found for this manager." />
+                ) : (
+                    <table className="player-match-table">
                     <thead>
                         <tr>
                             <th style={{ textAlign: 'center', fontFamily: 'Space Mono', fontSize: '13px', letterSpacing: '2px', color: '#999', padding: '15px 10px', textTransform: 'uppercase', fontWeight: '700' }}>
@@ -116,10 +119,7 @@ export default function Manager_PlayersUsed_Module({ stats }) {
                         </tr>
                     </thead>
                     <tbody>
-                        {playersList.length === 0 ? (
-                            <NoData_db isTable={true} colSpan={7} message="No players found for this manager." />
-                        ) : (
-                            playersList.map((p, idx) => (
+                        {playersList.map((p, idx) => (
                                 <tr key={p.name}>
                                     <td style={{ textAlign: 'center', fontFamily: 'Space Mono', fontWeight: '800', fontSize: '14px', color: '#ccc' }}>
                                         {idx + 1}
@@ -143,10 +143,8 @@ export default function Manager_PlayersUsed_Module({ stats }) {
                                         {p.assists || "-"}
                                     </td>
                                 </tr>
-                            ))
-                        )}
-                        {playersList.length > 0 && (
-                            <tr style={{ background: 'rgba(201, 168, 76, 0.05)', borderTop: '2px solid var(--player-gold)' }}>
+                            ))}
+                        <tr style={{ background: 'rgba(201, 168, 76, 0.05)', borderTop: '2px solid var(--player-gold)' }}>
                                 <td style={{ textAlign: 'center', color: '#ccc' }}>
                                     -
                                 </td>
@@ -169,9 +167,9 @@ export default function Manager_PlayersUsed_Module({ stats }) {
                                     {totals.assists || "-"}
                                 </td>
                             </tr>
-                        )}
                     </tbody>
                 </table>
+                )}
             </div>
         </div>
     );

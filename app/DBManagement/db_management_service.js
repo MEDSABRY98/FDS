@@ -32,11 +32,6 @@ export const DBManagementService = {
                     supabase.from('alahly_FINALS_LINEUPDETAILS').update({ "PLAYER NAME OUT": targetName }).in('PLAYER NAME OUT', sources),
                     supabase.from('alahly_FINALS_PLAYERDETAILS').update({ "PLAYER NAME": targetName }).in('PLAYER NAME', sources),
 
-                    // Al Ahly vs Zamalek
-                    supabase.from('alahly_vs_zamalek_LINEUPDETAILS').update({ "PLAYER NAME": targetName }).in('PLAYER NAME', sources),
-                    supabase.from('alahly_vs_zamalek_LINEUPDETAILS').update({ "PLAYER NAME OUT": targetName }).in('PLAYER NAME OUT', sources),
-                    supabase.from('alahly_vs_zamalek_PLAYERDETAILS').update({ "PLAYER NAME": targetName }).in('PLAYER NAME', sources),
-
                     // Egypt NT Tables
                     supabase.from('egy_NT_LINEUPDETAILS').update({ "PLAYER NAME": targetName }).in('PLAYER NAME', sources),
                     supabase.from('egy_NT_LINEUPDETAILS').update({ "PLAYER NAME OUT": targetName }).in('PLAYER NAME OUT', sources),
@@ -60,10 +55,6 @@ export const DBManagementService = {
                     supabase.from('alahly_FINALS_MATCHDETAILS').update({ "AHLY MANAGER": targetName }).in('AHLY MANAGER', sources),
                     supabase.from('alahly_FINALS_MATCHDETAILS').update({ "OPPONENT MANAGER": targetName }).in('OPPONENT MANAGER', sources),
 
-                    // Al Ahly vs Zamalek Match Details
-                    supabase.from('alahly_vs_zamalek_MATCHDETAILS').update({ "AHLY MANAGER": targetName }).in('AHLY MANAGER', sources),
-                    supabase.from('alahly_vs_zamalek_MATCHDETAILS').update({ "ZAMALEK MANAGER": targetName }).in('ZAMALEK MANAGER', sources),
-
                     // Egypt NT Match Details
                     supabase.from('egy_NT_MATCHDETAILS').update({ "EGYPT MANAGER": targetName }).in('EGYPT MANAGER', sources),
                     supabase.from('egy_NT_MATCHDETAILS').update({ "OPPONENT MANAGER": targetName }).in('OPPONENT MANAGER', sources)
@@ -74,9 +65,6 @@ export const DBManagementService = {
                 updatePromises = [
                     // Al Ahly Match Details
                     supabase.from('alahly_MATCHDETAILS').update({ "STAD": targetName }).in('STAD', sources),
-
-                    // Al Ahly vs Zamalek Match Details
-                    supabase.from('alahly_vs_zamalek_MATCHDETAILS').update({ "STAD": targetName }).in('STAD', sources),
 
                     // Egypt NT Match Details
                     supabase.from('egy_NT_MATCHDETAILS').update({ "PLACE": targetName }).in('PLACE', sources),
@@ -93,9 +81,6 @@ export const DBManagementService = {
 
                     // Al Ahly Finals Match Details
                     supabase.from('alahly_FINALS_MATCHDETAILS').update({ "REFREE": targetName }).in('REFREE', sources),
-
-                    // Al Ahly vs Zamalek Match Details
-                    supabase.from('alahly_vs_zamalek_MATCHDETAILS').update({ "REFEREE": targetName }).in('REFEREE', sources),
 
                     // Egypt NT Match Details
                     supabase.from('egy_NT_MATCHDETAILS').update({ "REFREE": targetName }).in('REFREE', sources)
@@ -119,10 +104,6 @@ export const DBManagementService = {
                     supabase.from('alahly_PKS').update({ "AHLY TEAM": targetName }).in('AHLY TEAM', sources),
                     supabase.from('alahly_PKS').update({ "OPPONENT TEAM": targetName }).in('OPPONENT TEAM', sources),
                     supabase.from('alahly_PLAYERDETAILS').update({ "TEAM": targetName }).in('TEAM', sources),
-
-                    // Derby
-                    supabase.from('alahly_vs_zamalek_LINEUPDETAILS').update({ "TEAM": targetName }).in('TEAM', sources),
-                    supabase.from('alahly_vs_zamalek_PLAYERDETAILS').update({ "TEAM": targetName }).in('TEAM', sources),
 
                     // Egypt Club
                     supabase.from('egy_CLUB_MATCHDETAILS').update({ "EGYPT TEAM": targetName }).in('EGYPT TEAM', sources),

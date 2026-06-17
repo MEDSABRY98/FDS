@@ -176,24 +176,26 @@ function GK_Matches_Module({ stats, renderEventsCell }) {
                     </div>
                 </div>
             </div>
-            <div style={{ overflowX: 'auto' }}>
-                <table className="player-match-table">
-                    <thead>
-                        <tr>
-                            <th>#</th>
-                            <th>MATCH ID</th>
-                            <th>DATE</th>
-                            <th>SEASON</th>
-                            <th>OPPONENT TEAM</th>
-                            <th>STATUS</th>
-                            <th>TIME</th>
-                            <th>GOALS CONC.</th>
-                            <th>STATS</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {currentMatches.length > 0 ? (
-                            currentMatches.map((m, idx) => (
+            {totalMatchesNum === 0 ? (
+                <NoData_db message="No match records found." />
+            ) : (
+                <div style={{ overflowX: 'auto' }}>
+                    <table className="player-match-table">
+                        <thead>
+                            <tr>
+                                <th>#</th>
+                                <th>MATCH ID</th>
+                                <th>DATE</th>
+                                <th>SEASON</th>
+                                <th>OPPONENT TEAM</th>
+                                <th>STATUS</th>
+                                <th>TIME</th>
+                                <th>GOALS CONC.</th>
+                                <th>STATS</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {currentMatches.map((m, idx) => (
                                 <tr key={idx}>
                                     <td>{startIdx + idx + 1}</td>
                                     <td>{m.idx}</td>
@@ -205,13 +207,11 @@ function GK_Matches_Module({ stats, renderEventsCell }) {
                                     <td style={{ color: m.gc > 0 ? '#e74c3c' : '#2ecc71', fontWeight: '900' }}>{m.gc}</td>
                                     <td>{renderEventsCell(m)}</td>
                                 </tr>
-                            ))
-                        ) : (
-                            <NoData_db isTable={true} colSpan={9} message="No match records found." />
-                        )}
-                    </tbody>
-                </table>
-            </div>
+                            ))}
+                        </tbody>
+                    </table>
+                </div>
+            )}
             {totalPages > 1 && (
                 <div className="p-pagination" style={{ marginTop: '20px', justifyContent: 'center' }}>
                     <button disabled={currentPage === 1} onClick={() => setCurrentPage(currentPage - 1)}>←</button>

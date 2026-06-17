@@ -23,6 +23,8 @@ import { Pagination } from "./Components/Pagination";
 // Import Modals
 import { EditRecordModal } from "./Modals/EditRecordModal";
 import { AddRecordModal } from "./Modals/AddRecordModal";
+import Settings_db from "../lib/Settings_db";
+import { SETTINGS_TAB_ID } from "../lib/supabase";
 
 export default function EgyptClubDatabaseManagement() {
     const { addNotification } = useNotification();
@@ -132,7 +134,9 @@ export default function EgyptClubDatabaseManagement() {
                     </header>
 
                     <main className="db-content">
-                        {loading ? (
+                        {selectedTable === SETTINGS_TAB_ID ? (
+                            <Settings_db availableTables={availableTables} addNotification={addNotification} />
+                        ) : loading ? (
                             <Loading_db title="EGYPT CLUBS" subtitle="DATABASE" message="SYNCING WITH DATABASE..." inline={true} />
                         ) : (
                             <>

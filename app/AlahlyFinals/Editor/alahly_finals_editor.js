@@ -74,6 +74,12 @@ function EditableTable({ title, color, rows, setRows, columns, parentId, emptyRo
                 </button>
             </div>
 
+            {rows.length === 0 ? (
+                <NoData_db
+                    message={`NO ${title.toUpperCase()} RECORDS FOUND`}
+                    height="240px"
+                />
+            ) : (
             <div className="table-viewport-container">
                 <div className="table-viewport premium-scroll">
                     <table className="premium-editor-table">
@@ -123,17 +129,11 @@ function EditableTable({ title, color, rows, setRows, columns, parentId, emptyRo
                                     </td>
                                 </tr>
                             ))}
-                            {rows.length === 0 && (
-                                <NoData_db
-                                    isTable={true}
-                                    colSpan={columns.length + 1}
-                                    message={`NO ${title.toUpperCase()} RECORDS FOUND`}
-                                />
-                            )}
                         </tbody>
                     </table>
                 </div>
             </div>
+            )}
         </div>
     );
 }

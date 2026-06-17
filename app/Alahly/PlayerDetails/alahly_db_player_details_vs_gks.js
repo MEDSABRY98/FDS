@@ -45,7 +45,10 @@ export default function PlayerVsGksTable({ stats }) {
                 </div>
             </div>
             <div style={{ overflowX: 'auto' }}>
-                <table className="player-match-table vs-teams-table">
+                {gkNames.length === 0 ? (
+                    <NoData_db message="No goalkeeper data available." />
+                ) : (
+                    <table className="player-match-table vs-teams-table">
                     <thead>
                         <tr>
                             <th></th>
@@ -57,10 +60,7 @@ export default function PlayerVsGksTable({ stats }) {
                         </tr>
                     </thead>
                     <tbody>
-                        {gkNames.length === 0 ? (
-                            <NoData_db isTable={true} colSpan={6} message="No goalkeeper data available." />
-                        ) : (
-                            gkNames.map(name => {
+                        {gkNames.map(name => {
                                 const s = gkStore[name];
                                 const teamNames = Object.keys(s.teams);
                                 const isExpanded = expandedGk === name;
@@ -100,11 +100,9 @@ export default function PlayerVsGksTable({ stats }) {
                                             );
                                         })}
                                     </Fragment>
-                                );
-                            })
-                        )}
-                        {gkNames.length > 0 && (
-                            <tr style={{ background: 'rgba(201, 168, 76, 0.05)', borderTop: '2px solid var(--player-gold)' }}>
+                            );
+                        })}
+                        <tr style={{ background: 'rgba(201, 168, 76, 0.05)', borderTop: '2px solid var(--player-gold)' }}>
                                 <td></td>
                                 <td style={{ textAlign: 'left', fontWeight: '950', color: 'var(--player-gold)', textTransform: 'uppercase', letterSpacing: '2px', fontSize: '15px' }}>TOTAL</td>
                                 <td style={{ color: '#27ae60', fontWeight: '950', fontSize: '24px' }}>{totals.goals || "-"}</td>
@@ -112,9 +110,9 @@ export default function PlayerVsGksTable({ stats }) {
                                 <td style={{ color: totals.penS > 0 ? '#e67e22' : 'inherit', fontWeight: '900', fontSize: '20px' }}>{totals.penS || "-"}</td>
                                 <td style={{ color: totals.penM > 0 ? '#e74c3c' : 'inherit', fontWeight: '900', fontSize: '20px' }}>{totals.penM || "-"}</td>
                             </tr>
-                        )}
                     </tbody>
                 </table>
+                )}
             </div>
             <style jsx>{`
                 .row-expanded { background: rgba(201, 168, 76, 0.03); }

@@ -1,5 +1,6 @@
 import { useState, useCallback } from "react";
 import { supabase, sortManagementTableData } from "../../lib/supabase";
+import { FetchTableSortSetting, SETTINGS_TAB_ID } from "../../lib/supabase";
 
 export function useTableData(selectedTable, addNotification) {
     const [tableData, setTableData] = useState([]);
@@ -7,7 +8,7 @@ export function useTableData(selectedTable, addNotification) {
     const [loading, setLoading] = useState(true);
 
     const fetchTableData = useCallback(async () => {
-        if (!selectedTable) return;
+        if (!selectedTable || selectedTable === SETTINGS_TAB_ID) return;
         setLoading(true);
         try {
             let allData = [];
@@ -71,7 +72,8 @@ export function useTableData(selectedTable, addNotification) {
                     }
                 }
                 setColumns(cols);
-                setTableData(sortManagementTableData(allData, cols));
+                const sortSetting = await FetchTableSortSetting(selectedTable);
+                setTableData(sortManagementTableData(allData, cols, sortSetting));
             } else {
                 setTableData([]);
                 setColumns([]);

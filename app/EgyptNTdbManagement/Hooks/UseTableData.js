@@ -1,5 +1,6 @@
 import { useState, useEffect, useMemo } from 'react';
 import { supabase, sortManagementTableData } from "../../lib/supabase";
+import { FetchTableSortSetting, appendSettingsTab, SETTINGS_TAB_ID } from "../../lib/supabase";
 
 export function useTableData(addNotification) {
     const [availableTables, setAvailableTables] = useState([]);
@@ -23,7 +24,7 @@ export function useTableData(addNotification) {
                         const label = t.table_name.replace('egy_NT_', '').replace(/_/g, ' ');
                         return { name: t.table_name, label };
                     }).sort((a, b) => a.name.localeCompare(b.name));
-                    setAvailableTables(sorted);
+                    setAvailableTables(appendSettingsTab(sorted));
                     setSelectedTable(sorted[0].name);
                 }
             } catch (err) {
@@ -34,14 +35,16 @@ export function useTableData(addNotification) {
     }, []);
 
     useEffect(() => {
-        if (selectedTable) {
+        if (selectedTable && selectedTable !== SETTINGS_TAB_ID) {
             fetchTableData();
         }
     }, [selectedTable]);
 
     const changeSelectedTable = (newTable) => {
         if (newTable !== selectedTable) {
-            setLoading(true);
+            if (newTable !== SETTINGS_TAB_ID) {
+                setLoading(true);
+            }
             setTableData([]);
             setColumns([]);
             setSelectedTable(newTable);
@@ -115,7 +118,8 @@ export function useTableData(addNotification) {
                     }
                 }
                 setColumns(cols);
-                setTableData(sortManagementTableData(allData, cols));
+                const sortSetting = await FetchTableSortSetting(selectedTable);
+                setTableData(sortManagementTableData(allData, cols, sortSetting));
             } else {
                 setTableData([]);
                 setColumns([]);

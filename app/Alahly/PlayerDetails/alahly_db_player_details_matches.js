@@ -22,22 +22,24 @@ export default function PlayerMatchesTable({
             </div>
 
             <div style={{ overflowX: 'auto' }}>
-                <table className="player-match-table">
-                    <thead>
-                        <tr>
-                            <th>#</th>
-                            <th>MATCH ID</th>
-                            <th>DATE</th>
-                            <th>SEASON</th>
-                            <th>OPPONENT TEAM</th>
-                            <th>STATUS</th>
-                            <th>TIME</th>
-                            <th>EVENTS</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {currentMatches.length > 0 ? (
-                            currentMatches.map((m, idx) => (
+                {totalMatches === 0 ? (
+                    <NoData_db message="NO MATCH RECORDS FOUND FOR THIS PLAYER" />
+                ) : (
+                    <table className="player-match-table">
+                        <thead>
+                            <tr>
+                                <th>#</th>
+                                <th>MATCH ID</th>
+                                <th>DATE</th>
+                                <th>SEASON</th>
+                                <th>OPPONENT TEAM</th>
+                                <th>STATUS</th>
+                                <th>TIME</th>
+                                <th>EVENTS</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {currentMatches.map((m, idx) => (
                                 <tr key={startIdx + idx}>
                                     <td style={{ color: '#ccc', fontSize: '11px' }}>{startIdx + idx + 1}</td>
                                     <td className="m-id-cell">{m.id}</td>
@@ -54,12 +56,10 @@ export default function PlayerMatchesTable({
                                         {renderEventsCell({ ...m, allEvents: (playerDetails || []).filter(e => String(e.MATCH_ID) === String(m.id) && String(e["PLAYER NAME"] || "").trim() === playerName) })}
                                     </td>
                                 </tr>
-                            ))
-                        ) : (
-                            <NoData_db isTable={true} colSpan={8} message="NO MATCH RECORDS FOUND FOR THIS PLAYER" />
-                        )}
-                    </tbody>
-                </table>
+                            ))}
+                        </tbody>
+                    </table>
+                )}
             </div>
 
             {totalPages > 1 && (

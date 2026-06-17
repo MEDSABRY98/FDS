@@ -152,43 +152,45 @@ export default function EgyptNTReferees({ matches, playerDetails, howPenMissed }
                     />
                 </div>
 
-                <div className="referee-table-container premium-scroll">
-                    <table className="modern-referee-table">
-                        <colgroup>
-                            <col style={{ width: '4%' }} />
-                            <col style={{ width: '16%' }} />
-                            <col style={{ width: '8%' }} />
-                            <col style={{ width: '6%' }} />
-                            <col style={{ width: '8%' }} />
-                            <col style={{ width: '8%' }} />
-                            <col style={{ width: '6%' }} />
-                            <col style={{ width: '6%' }} />
-                            <col style={{ width: '6%' }} />
-                            <col style={{ width: '8%' }} />
-                            <col style={{ width: '8%' }} />
-                            <col style={{ width: '8%' }} />
-                            <col style={{ width: '8%' }} />
-                        </colgroup>
-                        <thead>
-                            <tr>
-                                <th style={{ textAlign: 'center' }}>#</th>
-                                <th style={{ textAlign: 'center' }}>Referee Name</th>
-                                <th>MP</th>
-                                <th>W</th>
-                                <th>D (+)</th>
-                                <th>D (-)</th>
-                                <th>L</th>
-                                <th>GF</th>
-                                <th>GA</th>
-                                <th>CS (F)</th>
-                                <th>CS (A)</th>
-                                <th>PEN (F)</th>
-                                <th>PEN (A)</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {paginatedStats.length > 0 ? (
-                                paginatedStats.map((s, idx) => (
+                {paginatedStats.length === 0 ? (
+                    <NoData_db message="No referees found." />
+                ) : (
+                    <div className="referee-table-container premium-scroll">
+                        <table className="modern-referee-table">
+                            <colgroup>
+                                <col style={{ width: '4%' }} />
+                                <col style={{ width: '16%' }} />
+                                <col style={{ width: '8%' }} />
+                                <col style={{ width: '6%' }} />
+                                <col style={{ width: '8%' }} />
+                                <col style={{ width: '8%' }} />
+                                <col style={{ width: '6%' }} />
+                                <col style={{ width: '6%' }} />
+                                <col style={{ width: '6%' }} />
+                                <col style={{ width: '8%' }} />
+                                <col style={{ width: '8%' }} />
+                                <col style={{ width: '8%' }} />
+                                <col style={{ width: '8%' }} />
+                            </colgroup>
+                            <thead>
+                                <tr>
+                                    <th style={{ textAlign: 'center' }}>#</th>
+                                    <th style={{ textAlign: 'center' }}>Referee Name</th>
+                                    <th>MP</th>
+                                    <th>W</th>
+                                    <th>D (+)</th>
+                                    <th>D (-)</th>
+                                    <th>L</th>
+                                    <th>GF</th>
+                                    <th>GA</th>
+                                    <th>CS (F)</th>
+                                    <th>CS (A)</th>
+                                    <th>PEN (F)</th>
+                                    <th>PEN (A)</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {paginatedStats.map((s, idx) => (
                                     <tr key={s.name}>
                                         <td>
                                             <span className={`rank-badge-premium ${((currentPage - 1) * pageSize + idx) < 3 ? 'rank-gold' : ''}`}>
@@ -213,29 +215,27 @@ export default function EgyptNTReferees({ matches, playerDetails, howPenMissed }
                                         <td style={{ color: '#f39c12', fontWeight: 800 }}>{s.penFor}</td>
                                         <td style={{ color: '#e67e22', fontWeight: 800 }}>{s.penAgainst}</td>
                                     </tr>
-                                ))
-                            ) : (
-                                <NoData_db isTable={true} colSpan={13} message="No referees found." />
-                            )}
-                        </tbody>
-                        <tfoot>
-                            <tr className="total-row-premium">
-                                <td colSpan="2" style={{ textAlign: 'center' }}>TOTAL</td>
-                                <td>{grandTotals.matches}</td>
-                                <td className="w-cell">{grandTotals.wins}</td>
-                                <td>{grandTotals.pDraws}</td>
-                                <td>{grandTotals.nDraws}</td>
-                                <td className="l-cell">{grandTotals.losses}</td>
-                                <td>{grandTotals.gs}</td>
-                                <td>{grandTotals.ga}</td>
-                                <td className="cs-cell" style={{ color: 'var(--gold)', fontWeight: 800 }}>{grandTotals.csFor}</td>
-                                <td>{grandTotals.csAgainst}</td>
-                                <td style={{ color: '#f39c12' }}>{grandTotals.penFor}</td>
-                                <td style={{ color: '#e67e22' }}>{grandTotals.penAgainst}</td>
-                            </tr>
-                        </tfoot>
-                    </table>
-                </div>
+                                ))}
+                            </tbody>
+                            <tfoot>
+                                <tr className="total-row-premium">
+                                    <td colSpan="2" style={{ textAlign: 'center' }}>TOTAL</td>
+                                    <td>{grandTotals.matches}</td>
+                                    <td className="w-cell">{grandTotals.wins}</td>
+                                    <td>{grandTotals.pDraws}</td>
+                                    <td>{grandTotals.nDraws}</td>
+                                    <td className="l-cell">{grandTotals.losses}</td>
+                                    <td>{grandTotals.gs}</td>
+                                    <td>{grandTotals.ga}</td>
+                                    <td className="cs-cell" style={{ color: 'var(--gold)', fontWeight: 800 }}>{grandTotals.csFor}</td>
+                                    <td>{grandTotals.csAgainst}</td>
+                                    <td style={{ color: '#f39c12' }}>{grandTotals.penFor}</td>
+                                    <td style={{ color: '#e67e22' }}>{grandTotals.penAgainst}</td>
+                                </tr>
+                            </tfoot>
+                        </table>
+                    </div>
+                )}
 
                 {totalPages > 1 && (
                     <div className="pagination-referee">

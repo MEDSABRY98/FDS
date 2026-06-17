@@ -83,35 +83,35 @@ export default function EgyptNTPKSH2H({ pksData }) {
                 </div>
             </div>
 
-            <div className="h2h-table-wrapper">
-                <table className="h2h-main-table">
-                    <thead>
-                        <tr>
-                            <th rowSpan="2" className="sticky-col">OPPONENT TEAM</th>
-                            <th colSpan="4" className="group-header shootout-group">SHOOTOUT PERFORMANCE</th>
-                            <th colSpan="3" className="group-header egypt-group">EGYPT KICKS</th>
-                            <th colSpan="3" className="group-header opp-group">OPPONENT KICKS</th>
-                        </tr>
-                        <tr>
-                            <th className="sub-th">P</th>
-                            <th className="sub-th">W</th>
-                            <th className="sub-th">L</th>
-                            <th className="sub-th">WIN %</th>
-                            
-                            <th className="sub-th">S</th>
-                            <th className="sub-th">G</th>
-                            <th className="sub-th">M</th>
-                            
-                            <th className="sub-th">S</th>
-                            <th className="sub-th">G</th>
-                            <th className="sub-th">M</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {filteredStats.length === 0 ? (
-                            <NoData_db isTable={true} colSpan={11} message="NO H2H RECORDS FOUND" />
-                        ) : (
-                            filteredStats.map((st, i) => (
+            {filteredStats.length === 0 ? (
+                <NoData_db message="NO H2H RECORDS FOUND" />
+            ) : (
+                <div className="h2h-table-wrapper">
+                    <table className="h2h-main-table">
+                        <thead>
+                            <tr>
+                                <th rowSpan="2" className="sticky-col">OPPONENT TEAM</th>
+                                <th colSpan="4" className="group-header shootout-group">SHOOTOUT PERFORMANCE</th>
+                                <th colSpan="3" className="group-header egypt-group">EGYPT KICKS</th>
+                                <th colSpan="3" className="group-header opp-group">OPPONENT KICKS</th>
+                            </tr>
+                            <tr>
+                                <th className="sub-th">P</th>
+                                <th className="sub-th">W</th>
+                                <th className="sub-th">L</th>
+                                <th className="sub-th">WIN %</th>
+                                
+                                <th className="sub-th">S</th>
+                                <th className="sub-th">G</th>
+                                <th className="sub-th">M</th>
+                                
+                                <th className="sub-th">S</th>
+                                <th className="sub-th">G</th>
+                                <th className="sub-th">M</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {filteredStats.map((st, i) => (
                                 <tr key={i} className="h2h-row">
                                     <td className="team-name sticky-col">{st.team}</td>
                                     
@@ -131,9 +131,7 @@ export default function EgyptNTPKSH2H({ pksData }) {
                                     <td className="stat-num goals">{st.goalsOpp}</td>
                                     <td className="stat-num misses">{st.missesOpp}</td>
                                 </tr>
-                            ))
-                        )}
-                        {filteredStats.length > 0 && (
+                            ))}
                             <tr className="total-h2h-row">
                                 <td className="team-name sticky-col">TOTAL CAREER</td>
                                 <td className="stat-num">{filteredStats.reduce((a, b) => a + b.played, 0)}</td>
@@ -147,10 +145,10 @@ export default function EgyptNTPKSH2H({ pksData }) {
                                 <td className="stat-num">{filteredStats.reduce((a, b) => a + b.goalsOpp, 0)}</td>
                                 <td className="stat-num">{filteredStats.reduce((a, b) => a + b.missesOpp, 0)}</td>
                             </tr>
-                        )}
-                    </tbody>
-                </table>
-            </div>
+                        </tbody>
+                    </table>
+                </div>
+            )}
             
             <div className="h2h-legend">
                 <span><strong>P:</strong> Matches Played</span>

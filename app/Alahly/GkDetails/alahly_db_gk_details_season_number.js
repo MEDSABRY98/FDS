@@ -41,7 +41,10 @@ export default function GK_SeasonNumber_Component_Unique({ stats }) {
                 <div className="gold-line" style={{ height: '3px', background: 'var(--player-gold)', width: '80px', marginBottom: '30px' }}></div>
 
                 <div className="table-responsive" style={{ background: '#fff', borderRadius: '16px', overflow: 'hidden', border: '1px solid #ebebeb', boxShadow: '0 10px 40px rgba(0,0,0,0.05)' }}>
-                    <table className="analysis-table" style={{ width: '100%', borderCollapse: 'collapse', color: '#333' }}>
+                    {sortedSYs.length === 0 ? (
+                        <NoData_db message="No data found for this GK." />
+                    ) : (
+                        <table className="analysis-table" style={{ width: '100%', borderCollapse: 'collapse', color: '#333' }}>
                         <thead>
                             <tr style={{ background: '#0a0a0a' }}>
                                 <th style={{ padding: '20px', textAlign: 'center', fontSize: '12px', fontFamily: 'Space Mono', color: '#fff', textTransform: 'uppercase', letterSpacing: '2px', fontWeight: '700' }}>S. NUMBER (SY)</th>
@@ -53,10 +56,7 @@ export default function GK_SeasonNumber_Component_Unique({ stats }) {
                             </tr>
                         </thead>
                         <tbody>
-                            {sortedSYs.length === 0 ? (
-                                <NoData_db isTable={true} colSpan={6} message="No data found for this GK." />
-                            ) : (
-                                sortedSYs.map((sy, idx) => {
+                            {sortedSYs.map((sy, idx) => {
                                     const s = statsBySY[sy];
                                     return (
                                         <tr key={sy} style={{ background: idx % 2 === 0 ? '#fff' : '#fafafa', borderBottom: '1px solid #f0f0f0' }}>
@@ -68,8 +68,7 @@ export default function GK_SeasonNumber_Component_Unique({ stats }) {
                                             <td style={{ padding: '20px', textAlign: 'center', fontSize: '18px', color: '#2980b9', fontWeight: '900', fontFamily: 'Outfit' }}>{s.ps || "-"}</td>
                                         </tr>
                                     );
-                                })
-                            )}
+                            })}
                         </tbody>
                         <tfoot>
                             <tr style={{ background: '#0a0a0a', color: '#fff', fontWeight: '700' }}>
@@ -81,7 +80,8 @@ export default function GK_SeasonNumber_Component_Unique({ stats }) {
                                 <td style={{ padding: '20px', textAlign: 'center', color: '#5dade2', fontSize: '22px', fontFamily: 'Outfit', fontWeight: '900' }}>{grandTotals.PS || "-"}</td>
                             </tr>
                         </tfoot>
-                    </table>
+                        </table>
+                    )}
                 </div>
             </div>
         </div>

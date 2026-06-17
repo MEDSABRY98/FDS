@@ -38,24 +38,24 @@ export default function PlayerVsTeamsTable({ stats }) {
                 </div>
             </div>
             <div style={{ overflowX: 'auto' }}>
-                <table className="player-match-table vs-teams-table">
-                    <thead>
-                        <tr>
-                            <th>OPPONENT TEAM</th>
-                            <th>MATCHES</th>
-                            <th>G+A</th>
-                            <th>GOALS</th>
-                            <th>ASSISTS</th>
-                            <th>PEN GOALS</th>
-                            <th>PEN SAVED</th>
-                            <th>PEN MISSED</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {oppNames.length === 0 ? (
-                            <NoData_db isTable={true} colSpan={8} message="No opponent data available." />
-                        ) : (
-                            oppNames.map(name => {
+                {oppNames.length === 0 ? (
+                    <NoData_db message="No opponent data available." />
+                ) : (
+                    <table className="player-match-table vs-teams-table">
+                        <thead>
+                            <tr>
+                                <th>OPPONENT TEAM</th>
+                                <th>MATCHES</th>
+                                <th>G+A</th>
+                                <th>GOALS</th>
+                                <th>ASSISTS</th>
+                                <th>PEN GOALS</th>
+                                <th>PEN SAVED</th>
+                                <th>PEN MISSED</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {oppNames.map(name => {
                                 const s = stats.statsByOpponent[name];
                                 return (
                                     <tr key={name}>
@@ -69,9 +69,7 @@ export default function PlayerVsTeamsTable({ stats }) {
                                         <td style={{ color: s.penMissed > 0 ? '#e74c3c' : 'inherit' }}>{s.penMissed || "-"}</td>
                                     </tr>
                                 );
-                            })
-                        )}
-                        {oppNames.length > 0 && (
+                            })}
                             <tr style={{ background: 'rgba(201, 168, 76, 0.05)', borderTop: '2px solid var(--player-gold)' }}>
                                 <td style={{ fontWeight: '950', color: 'var(--player-gold)', textTransform: 'uppercase', letterSpacing: '2px', fontSize: '15px' }}>TOTAL</td>
                                 <td style={{ fontFamily: 'Space Mono', fontWeight: '900', fontSize: '20px' }}>{totals.apps || "-"}</td>
@@ -82,9 +80,9 @@ export default function PlayerVsTeamsTable({ stats }) {
                                 <td style={{ color: totals.penS > 0 ? '#e67e22' : 'inherit', fontWeight: '900', fontSize: '18px' }}>{totals.penS || "-"}</td>
                                 <td style={{ color: totals.penM > 0 ? '#e74c3c' : 'inherit', fontWeight: '900', fontSize: '18px' }}>{totals.penM || "-"}</td>
                             </tr>
-                        )}
-                    </tbody>
-                </table>
+                        </tbody>
+                    </table>
+                )}
             </div>
         </div>
     );

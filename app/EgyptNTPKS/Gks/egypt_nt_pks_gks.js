@@ -174,36 +174,36 @@ export default function EgyptNTPKSGKs({ pksData }) {
             </div>
 
             {/* TABLE */}
-            <div className="gks-table-wrapper">
-                <table className="gks-table">
-                    <thead>
-                        <tr>
-                            <th className="col-rank">#</th>
-                            <th className="col-gk-name clickable" onClick={() => requestSort('name')}>
-                                GOALKEEPER NAME {getSortIcon('name')}
-                            </th>
-                            <th className="col-stat clickable" onClick={() => requestSort('matches')}>
-                                M {getSortIcon('matches')}
-                            </th>
-                            <th className="col-stat clickable" onClick={() => requestSort('faced')}>
-                                FACED {getSortIcon('faced')}
-                            </th>
-                            <th className="col-stat clickable" onClick={() => requestSort('saved')}>
-                                SAVED {getSortIcon('saved')}
-                            </th>
-                            <th className="col-stat clickable" onClick={() => requestSort('saveRate')}>
-                                SAVE % {getSortIcon('saveRate')}
-                            </th>
-                            <th className="col-stat clickable" onClick={() => requestSort('conceded')}>
-                                CONCEDED {getSortIcon('conceded')}
-                            </th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {paginatedStats.length === 0 ? (
-                            <NoData_db isTable={true} colSpan={7} message="NO GOALKEEPER RECORDS FOUND" />
-                        ) : (
-                            paginatedStats.map((gk, i) => (
+            {paginatedStats.length === 0 ? (
+                <NoData_db message="NO GOALKEEPER RECORDS FOUND" />
+            ) : (
+                <div className="gks-table-wrapper">
+                    <table className="gks-table">
+                        <thead>
+                            <tr>
+                                <th className="col-rank">#</th>
+                                <th className="col-gk-name clickable" onClick={() => requestSort('name')}>
+                                    GOALKEEPER NAME {getSortIcon('name')}
+                                </th>
+                                <th className="col-stat clickable" onClick={() => requestSort('matches')}>
+                                    M {getSortIcon('matches')}
+                                </th>
+                                <th className="col-stat clickable" onClick={() => requestSort('faced')}>
+                                    FACED {getSortIcon('faced')}
+                                </th>
+                                <th className="col-stat clickable" onClick={() => requestSort('saved')}>
+                                    SAVED {getSortIcon('saved')}
+                                </th>
+                                <th className="col-stat clickable" onClick={() => requestSort('saveRate')}>
+                                    SAVE % {getSortIcon('saveRate')}
+                                </th>
+                                <th className="col-stat clickable" onClick={() => requestSort('conceded')}>
+                                    CONCEDED {getSortIcon('conceded')}
+                                </th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {paginatedStats.map((gk, i) => (
                                 <tr key={i} className="gks-row">
                                     <td className="col-rank">
                                         <span className="gks-rank-badge">{(currentPage - 1) * pageSize + i + 1}</span>
@@ -221,10 +221,8 @@ export default function EgyptNTPKSGKs({ pksData }) {
                                     </td>
                                     <td className="col-stat conceded">{gk.conceded}</td>
                                 </tr>
-                            ))
-                        )}
-                    </tbody>
-                    {paginatedStats.length > 0 && (
+                            ))}
+                        </tbody>
                         <tfoot>
                             <tr className="gks-total-row">
                                 <td colSpan={2} style={{ textAlign: 'center', fontFamily: "'Bebas Neue', sans-serif", fontSize: '16px', letterSpacing: '2px' }}>
@@ -243,9 +241,9 @@ export default function EgyptNTPKSGKs({ pksData }) {
                                 <td className="col-stat">{filteredStats.reduce((a, b) => a + b.conceded, 0)}</td>
                             </tr>
                         </tfoot>
-                    )}
-                </table>
-            </div>
+                    </table>
+                </div>
+            )}
 
             {/* PAGINATION */}
             {totalPages > 1 && (

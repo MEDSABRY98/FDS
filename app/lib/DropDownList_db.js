@@ -1,7 +1,9 @@
 "use client";
 
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useRef, useLayoutEffect, useCallback } from 'react';
 import './DropDownList_db.css';
+
+const MENU_ESTIMATED_HEIGHT = 320;
 
 /**
  * Premium Dropdown List Component with search support
@@ -14,7 +16,9 @@ import './DropDownList_db.css';
  */
 const DropDownList_db = ({ options = [], value, onChange, placeholder = "Select...", searchable = false, className = "" }) => {
     const [isOpen, setIsOpen] = useState(false);
+    const [openUpward, setOpenUpward] = useState(false);
     const [searchTerm, setSearchTerm] = useState("");
+    const wrapperRef = useRef(null);
 
     const selectedOption = options.find(opt => opt.value === value);
     const displayLabel = selectedOption ? selectedOption.label : placeholder;
@@ -26,6 +30,32 @@ const DropDownList_db = ({ options = [], value, onChange, placeholder = "Select.
         );
     }, [options, searchTerm, searchable]);
 
+    const updateMenuDirection = useCallback(() => {
+        const node = wrapperRef.current;
+        if (!node) return;
+
+        const rect = node.getBoundingClientRect();
+        const spaceBelow = window.innerHeight - rect.bottom;
+        const spaceAbove = rect.top;
+        setOpenUpward(spaceBelow < MENU_ESTIMATED_HEIGHT && spaceAbove > spaceBelow);
+    }, []);
+
+    useLayoutEffect(() => {
+        if (!isOpen) {
+            setOpenUpward(false);
+            return undefined;
+        }
+
+        updateMenuDirection();
+        window.addEventListener("resize", updateMenuDirection);
+        window.addEventListener("scroll", updateMenuDirection, true);
+
+        return () => {
+            window.removeEventListener("resize", updateMenuDirection);
+            window.removeEventListener("scroll", updateMenuDirection, true);
+        };
+    }, [isOpen, filteredOptions.length, updateMenuDirection]);
+
     const handleSelect = (val) => {
         onChange(val);
         setIsOpen(false);
@@ -33,7 +63,10 @@ const DropDownList_db = ({ options = [], value, onChange, placeholder = "Select.
     };
 
     return (
-        <div className={`dropdown-db ${isOpen ? 'is-open' : ''} ${className}`}>
+        <div
+            ref={wrapperRef}
+            className={`dropdown-db ${isOpen ? 'is-open' : ''} ${openUpward ? 'open-upward' : ''} ${className}`}
+        >
             <div className="dropdown-trigger-db" onClick={() => setIsOpen(!isOpen)}>
                 <span className="current-label-db">{displayLabel}</span>
                 <div className="dropdown-chevron-db">⌄</div>

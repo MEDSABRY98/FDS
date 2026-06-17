@@ -116,7 +116,10 @@ export default function GK_Matches_Component_Unique({
             </div>
 
             <div style={{ overflowX: 'auto' }}>
-                <table className="player-match-table">
+                {totalMatchesNum === 0 ? (
+                    <NoData_db message="NO MATCH RECORDS FOUND FOR THIS GK" />
+                ) : (
+                    <table className="player-match-table">
                     <thead>
                         <tr>
                             <th style={{ padding: '16px 20px', textAlign: 'center', fontSize: '13px', fontFamily: 'Space Mono', color: '#999', borderBottom: '2px solid #eee', textTransform: 'uppercase', letterSpacing: '2px', fontWeight: '700' }}>#</th>
@@ -131,8 +134,7 @@ export default function GK_Matches_Component_Unique({
                         </tr>
                     </thead>
                     <tbody>
-                        {currentMatches.length > 0 ? (
-                            currentMatches.map((m, idx) => (
+                        {currentMatches.map((m, idx) => (
                                 <tr key={startIdx + idx}>
                                     <td style={{ color: '#888', fontSize: '12px', textAlign: 'center', fontFamily: 'Space Mono' }}>{startIdx + idx + 1}</td>
                                     <td className="m-id-cell" style={{ textAlign: 'center', fontFamily: 'Space Mono', color: 'var(--player-gold)', fontSize: '12px' }}>{m.idx}</td>
@@ -151,16 +153,10 @@ export default function GK_Matches_Component_Unique({
                                         {renderEventsCell(m)}
                                     </td>
                                 </tr>
-                            ))
-                        ) : (
-                            <NoData_db 
-                                isTable={true} 
-                                colSpan={9} 
-                                message="NO MATCH RECORDS FOUND FOR THIS GK" 
-                            />
-                        )}
+                            ))}
                     </tbody>
                 </table>
+                )}
             </div>
 
             {totalPages > 1 && (

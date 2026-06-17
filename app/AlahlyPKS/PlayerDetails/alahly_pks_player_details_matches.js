@@ -14,30 +14,26 @@ export default function AlAhlyPKsPlayerDetailsMatches({ pksData, playerName }) {
             <div className="history-title" style={{ fontSize: '32px', marginBottom: '20px' }}>MATCHES HISTORY</div>
             
             <div style={{ overflowX: 'auto' }}>
-                <table className="player-match-table">
-                    <thead>
-                        <tr style={{ height: '70px' }}>
-                            <th style={{ fontSize: '15px' }}>PKS ID</th>
-                            <th style={{ fontSize: '15px' }}>DATE</th>
-                            <th style={{ fontSize: '15px' }}>CHAMPION</th>
-                            <th style={{ fontSize: '15px' }}>SEASON</th>
-                            <th style={{ fontSize: '15px' }}>PLAYER TEAM</th>
-                            <th style={{ fontSize: '15px' }}>OPPONENT TEAM</th>
-                            <th style={{ fontSize: '15px' }}>RESULT</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {sortedPks.length === 0 ? (
-                            <NoData_db isTable={true} colSpan={7} message="No penalty records found for this player." />
-                        ) : (
-                            sortedPks.map((pk, idx) => {
+                {sortedPks.length === 0 ? (
+                    <NoData_db message="No penalty records found for this player." />
+                ) : (
+                    <table className="player-match-table">
+                        <thead>
+                            <tr style={{ height: '70px' }}>
+                                <th style={{ fontSize: '15px' }}>PKS ID</th>
+                                <th style={{ fontSize: '15px' }}>DATE</th>
+                                <th style={{ fontSize: '15px' }}>CHAMPION</th>
+                                <th style={{ fontSize: '15px' }}>SEASON</th>
+                                <th style={{ fontSize: '15px' }}>PLAYER TEAM</th>
+                                <th style={{ fontSize: '15px' }}>OPPONENT TEAM</th>
+                                <th style={{ fontSize: '15px' }}>RESULT</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {sortedPks.map((pk, idx) => {
                                 const isAhlyPlayer = pk["AHLY PLAYER"] === playerName;
-                                
-                                // Team Info
                                 const playerTeam = isAhlyPlayer ? pk["AHLY TEAM"] : pk["OPPONENT TEAM"];
                                 const oppTeam = isAhlyPlayer ? pk["OPPONENT TEAM"] : pk["AHLY TEAM"];
-                                
-                                // Status (Goal/Miss)
                                 const status = isAhlyPlayer ? pk["AHLY STATUS"] : pk["OPPONENT STATUS"];
                                 const isGoal = String(status || "").toUpperCase().includes("GOAL");
 
@@ -105,10 +101,10 @@ export default function AlAhlyPKsPlayerDetailsMatches({ pksData, playerName }) {
                                         </td>
                                     </tr>
                                 );
-                            })
-                        )}
-                    </tbody>
-                </table>
+                            })}
+                        </tbody>
+                    </table>
+                )}
             </div>
         </div>
     );

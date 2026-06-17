@@ -83,35 +83,35 @@ export default function EgyptNTPKSChampions({ pksData }) {
                 </div>
             </div>
 
-            <div className="champs-table-wrapper">
-                <table className="champs-main-table">
-                    <thead>
-                        <tr>
-                            <th rowSpan="2" className="sticky-col">TOURNAMENT</th>
-                            <th colSpan="4" className="group-header shootout-group">SHOOTOUT PERFORMANCE</th>
-                            <th colSpan="3" className="group-header egypt-group">EGYPT KICKS</th>
-                            <th colSpan="3" className="group-header opp-group">OPPONENT KICKS</th>
-                        </tr>
-                        <tr>
-                            <th className="sub-th">P</th>
-                            <th className="sub-th">W</th>
-                            <th className="sub-th">L</th>
-                            <th className="sub-th">WIN %</th>
-                            
-                            <th className="sub-th">S</th>
-                            <th className="sub-th">G</th>
-                            <th className="sub-th">M</th>
-                            
-                            <th className="sub-th">S</th>
-                            <th className="sub-th">G</th>
-                            <th className="sub-th">M</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {filteredStats.length === 0 ? (
-                            <NoData_db isTable={true} colSpan={11} message="NO CHAMPION RECORDS FOUND" />
-                        ) : (
-                            filteredStats.map((st, i) => (
+            {filteredStats.length === 0 ? (
+                <NoData_db message="NO CHAMPION RECORDS FOUND" />
+            ) : (
+                <div className="champs-table-wrapper">
+                    <table className="champs-main-table">
+                        <thead>
+                            <tr>
+                                <th rowSpan="2" className="sticky-col">TOURNAMENT</th>
+                                <th colSpan="4" className="group-header shootout-group">SHOOTOUT PERFORMANCE</th>
+                                <th colSpan="3" className="group-header egypt-group">EGYPT KICKS</th>
+                                <th colSpan="3" className="group-header opp-group">OPPONENT KICKS</th>
+                            </tr>
+                            <tr>
+                                <th className="sub-th">P</th>
+                                <th className="sub-th">W</th>
+                                <th className="sub-th">L</th>
+                                <th className="sub-th">WIN %</th>
+                                
+                                <th className="sub-th">S</th>
+                                <th className="sub-th">G</th>
+                                <th className="sub-th">M</th>
+                                
+                                <th className="sub-th">S</th>
+                                <th className="sub-th">G</th>
+                                <th className="sub-th">M</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {filteredStats.map((st, i) => (
                                 <tr key={i} className="champs-row">
                                     <td className="champ-name sticky-col">{st.name}</td>
                                     
@@ -131,9 +131,7 @@ export default function EgyptNTPKSChampions({ pksData }) {
                                     <td className="stat-num goals">{st.goalsOpp}</td>
                                     <td className="stat-num misses">{st.missesOpp}</td>
                                 </tr>
-                            ))
-                        )}
-                        {filteredStats.length > 0 && (
+                            ))}
                             <tr className="total-champs-row">
                                 <td className="champ-name sticky-col">TOTAL CAREER</td>
                                 <td className="stat-num">{filteredStats.reduce((a, b) => a + b.played, 0)}</td>
@@ -147,10 +145,10 @@ export default function EgyptNTPKSChampions({ pksData }) {
                                 <td className="stat-num">{filteredStats.reduce((a, b) => a + b.goalsOpp, 0)}</td>
                                 <td className="stat-num">{filteredStats.reduce((a, b) => a + b.missesOpp, 0)}</td>
                             </tr>
-                        )}
-                    </tbody>
-                </table>
-            </div>
+                        </tbody>
+                    </table>
+                </div>
+            )}
             
             <div className="champs-legend">
                 <span><strong>P:</strong> Matches Played</span>

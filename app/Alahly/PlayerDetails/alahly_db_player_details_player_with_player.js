@@ -85,7 +85,10 @@ export default function PlayerWithPlayerTable({ stats }) {
             </div>
 
             <div style={{ overflowX: 'auto' }}>
-                <table className="player-match-table vs-teams-table sortable-table">
+                {partners.length === 0 ? (
+                    <NoData_db message="No partnership data available." />
+                ) : (
+                    <table className="player-match-table vs-teams-table sortable-table">
                     <thead>
                         <tr>
                             <th style={{ width: '60px', textAlign: 'center' }}>#</th>
@@ -104,10 +107,7 @@ export default function PlayerWithPlayerTable({ stats }) {
                         </tr>
                     </thead>
                     <tbody>
-                        {partners.length === 0 ? (
-                            <NoData_db isTable={true} colSpan={5} message="No partnership data available." />
-                        ) : (
-                            partners.map((p, i) => (
+                        {partners.map((p, i) => (
                                 <tr key={p.name}>
                                     <td style={{ textAlign: 'center', fontFamily: 'Space Mono', color: '#999', fontSize: '11px' }}>{i + 1}</td>
                                     <td style={{ fontWeight: '800', color: 'var(--player-dark)' }}>{p.name}</td>
@@ -115,19 +115,17 @@ export default function PlayerWithPlayerTable({ stats }) {
                                     <td style={{ textAlign: 'center', color: 'var(--player-gold)', fontWeight: '900', fontSize: '20px' }}>{p.received || "-"}</td>
                                     <td style={{ textAlign: 'center', fontWeight: '950', fontSize: '22px', fontFamily: 'Bebas Neue', color: '#000', background: 'rgba(201, 168, 76, 0.03)' }}>{p.total || "-"}</td>
                                 </tr>
-                            ))
-                        )}
-                        {partners.length > 0 && (
-                            <tr style={{ background: 'rgba(201, 168, 76, 0.05)', borderTop: '2px solid var(--player-gold)' }}>
+                            ))}
+                        <tr style={{ background: 'rgba(201, 168, 76, 0.05)', borderTop: '2px solid var(--player-gold)' }}>
                                 <td style={{ textAlign: 'center', fontFamily: 'Space Mono', color: 'var(--player-gold)', fontWeight: '900' }}>∑</td>
                                 <td style={{ fontWeight: '950', color: 'var(--player-gold)', textTransform: 'uppercase', letterSpacing: '2px', fontSize: '15px' }}>TOTAL</td>
                                 <td style={{ textAlign: 'center', color: '#27ae60', fontWeight: '900', fontSize: '24px' }}>{totals.given || "-"}</td>
                                 <td style={{ textAlign: 'center', color: 'var(--player-gold)', fontWeight: '950', fontSize: '24px' }}>{totals.received || "-"}</td>
                                 <td style={{ textAlign: 'center', fontWeight: '950', fontSize: '28px', fontFamily: 'Bebas Neue', color: '#000' }}>{totals.total || "-"}</td>
                             </tr>
-                        )}
                     </tbody>
                 </table>
+                )}
             </div>
 
             <style jsx>{`

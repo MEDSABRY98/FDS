@@ -175,51 +175,51 @@ export default function EgyptNTH2H({ matches }) {
                     />
                 </div>
 
-                <div className="table-container-premium">
-                    <table className="modern-h2h-table fade-in">
-                        <thead>
-                            <tr>
-                                <th style={{ width: '60px' }}>#</th>
-                                <th className="team-name-cell" onClick={() => handleSort('opponent')} style={{ cursor: 'pointer' }}>
-                                    OPPONENT {sortConfig.key === 'opponent' && (sortConfig.direction === 'asc' ? '↑' : '↓')}
-                                </th>
-                                <th onClick={() => handleSort('matches')} style={{ cursor: 'pointer' }}>
-                                    P {sortConfig.key === 'matches' && (sortConfig.direction === 'asc' ? '↑' : '↓')}
-                                </th>
-                                <th onClick={() => handleSort('wins')} style={{ cursor: 'pointer' }}>
-                                    W {sortConfig.key === 'wins' && (sortConfig.direction === 'asc' ? '↑' : '↓')}
-                                </th>
-                                <th onClick={() => handleSort('pDraws')} style={{ cursor: 'pointer' }}>
-                                    D (+) {sortConfig.key === 'pDraws' && (sortConfig.direction === 'asc' ? '↑' : '↓')}
-                                </th>
-                                <th onClick={() => handleSort('nDraws')} style={{ cursor: 'pointer' }}>
-                                    D (-) {sortConfig.key === 'nDraws' && (sortConfig.direction === 'asc' ? '↑' : '↓')}
-                                </th>
-                                <th onClick={() => handleSort('losses')} style={{ cursor: 'pointer' }}>
-                                    L {sortConfig.key === 'losses' && (sortConfig.direction === 'asc' ? '↑' : '↓')}
-                                </th>
-                                <th onClick={() => handleSort('gf')} style={{ cursor: 'pointer' }}>
-                                    GF {sortConfig.key === 'gf' && (sortConfig.direction === 'asc' ? '↑' : '↓')}
-                                </th>
-                                <th onClick={() => handleSort('ga')} style={{ cursor: 'pointer' }}>
-                                    GA {sortConfig.key === 'ga' && (sortConfig.direction === 'asc' ? '↑' : '↓')}
-                                </th>
-                                <th onClick={() => handleSort('gd')} style={{ cursor: 'pointer' }}>
-                                    GD {sortConfig.key === 'gd' && (sortConfig.direction === 'asc' ? '↑' : '↓')}
-                                </th>
-                                <th onClick={() => handleSort('csFor')} style={{ cursor: 'pointer' }}>
-                                    CS FOR {sortConfig.key === 'csFor' && (sortConfig.direction === 'asc' ? '↑' : '↓')}
-                                </th>
-                                <th onClick={() => handleSort('csAgainst')} style={{ cursor: 'pointer' }}>
-                                    CS AG {sortConfig.key === 'csAgainst' && (sortConfig.direction === 'asc' ? '↑' : '↓')}
-                                </th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {paginatedStats.length === 0 ? (
-                                <NoData_db isTable={true} colSpan={12} message="No H2H records found." />
-                            ) : (
-                                paginatedStats.map((s, i) => {
+                {paginatedStats.length === 0 ? (
+                    <NoData_db message="No H2H records found." />
+                ) : (
+                    <div className="table-container-premium">
+                        <table className="modern-h2h-table fade-in">
+                            <thead>
+                                <tr>
+                                    <th style={{ width: '60px' }}>#</th>
+                                    <th className="team-name-cell" onClick={() => handleSort('opponent')} style={{ cursor: 'pointer' }}>
+                                        OPPONENT {sortConfig.key === 'opponent' && (sortConfig.direction === 'asc' ? '↑' : '↓')}
+                                    </th>
+                                    <th onClick={() => handleSort('matches')} style={{ cursor: 'pointer' }}>
+                                        P {sortConfig.key === 'matches' && (sortConfig.direction === 'asc' ? '↑' : '↓')}
+                                    </th>
+                                    <th onClick={() => handleSort('wins')} style={{ cursor: 'pointer' }}>
+                                        W {sortConfig.key === 'wins' && (sortConfig.direction === 'asc' ? '↑' : '↓')}
+                                    </th>
+                                    <th onClick={() => handleSort('pDraws')} style={{ cursor: 'pointer' }}>
+                                        D (+) {sortConfig.key === 'pDraws' && (sortConfig.direction === 'asc' ? '↑' : '↓')}
+                                    </th>
+                                    <th onClick={() => handleSort('nDraws')} style={{ cursor: 'pointer' }}>
+                                        D (-) {sortConfig.key === 'nDraws' && (sortConfig.direction === 'asc' ? '↑' : '↓')}
+                                    </th>
+                                    <th onClick={() => handleSort('losses')} style={{ cursor: 'pointer' }}>
+                                        L {sortConfig.key === 'losses' && (sortConfig.direction === 'asc' ? '↑' : '↓')}
+                                    </th>
+                                    <th onClick={() => handleSort('gf')} style={{ cursor: 'pointer' }}>
+                                        GF {sortConfig.key === 'gf' && (sortConfig.direction === 'asc' ? '↑' : '↓')}
+                                    </th>
+                                    <th onClick={() => handleSort('ga')} style={{ cursor: 'pointer' }}>
+                                        GA {sortConfig.key === 'ga' && (sortConfig.direction === 'asc' ? '↑' : '↓')}
+                                    </th>
+                                    <th onClick={() => handleSort('gd')} style={{ cursor: 'pointer' }}>
+                                        GD {sortConfig.key === 'gd' && (sortConfig.direction === 'asc' ? '↑' : '↓')}
+                                    </th>
+                                    <th onClick={() => handleSort('csFor')} style={{ cursor: 'pointer' }}>
+                                        CS FOR {sortConfig.key === 'csFor' && (sortConfig.direction === 'asc' ? '↑' : '↓')}
+                                    </th>
+                                    <th onClick={() => handleSort('csAgainst')} style={{ cursor: 'pointer' }}>
+                                        CS AG {sortConfig.key === 'csAgainst' && (sortConfig.direction === 'asc' ? '↑' : '↓')}
+                                    </th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {paginatedStats.map((s, i) => {
                                     const actualIndex = (currentPage - 1) * pageSize + i;
                                     return (
                                         <tr key={s.opponent}>
@@ -237,10 +237,8 @@ export default function EgyptNTH2H({ matches }) {
                                             <td style={{ color: '#e74c3c', fontWeight: 800 }}>{s.csAgainst}</td>
                                         </tr>
                                     );
-                                })
-                            )}
-                        </tbody>
-                        {filteredStats.length > 0 && (
+                                })}
+                            </tbody>
                             <tfoot className="total-row-premium">
                                 <tr>
                                     <td colSpan="2" style={{ textAlign: 'center' }}>TOTAL</td>
@@ -256,9 +254,9 @@ export default function EgyptNTH2H({ matches }) {
                                     <td style={{ color: '#e74c3c' }}>{totals.csAgainst}</td>
                                 </tr>
                             </tfoot>
-                        )}
-                    </table>
-                </div>
+                        </table>
+                    </div>
+                )}
 
                 {totalPages > 1 && (
                     <div className="pagination-h2h">

@@ -44,23 +44,23 @@ export default function PlayerVsGksTable({ stats }) {
                     />
                 </div>
             </div>
-            <div style={{ overflowX: 'auto' }}>
-                <table className="player-match-table vs-teams-table">
-                    <thead>
-                        <tr>
-                            <th></th>
-                            <th style={{ textAlign: 'left' }}>GOALKEEPER NAME</th>
-                            <th>GOALS</th>
-                            <th>PEN GOAL</th>
-                            <th>PEN SAVED</th>
-                            <th>PEN MISSED</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {gkNames.length === 0 ? (
-                            <NoData_db isTable={true} colSpan={6} message="No goalkeeper data available." />
-                        ) : (
-                            gkNames.map(name => {
+            {gkNames.length === 0 ? (
+                <NoData_db message="No goalkeeper data available." />
+            ) : (
+                <div style={{ overflowX: 'auto' }}>
+                    <table className="player-match-table vs-teams-table">
+                        <thead>
+                            <tr>
+                                <th></th>
+                                <th style={{ textAlign: 'left' }}>GOALKEEPER NAME</th>
+                                <th>GOALS</th>
+                                <th>PEN GOAL</th>
+                                <th>PEN SAVED</th>
+                                <th>PEN MISSED</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {gkNames.map(name => {
                                 const s = gkStore[name];
                                 const teamNames = Object.keys(s.teams);
                                 const isExpanded = expandedGk === name;
@@ -101,9 +101,7 @@ export default function PlayerVsGksTable({ stats }) {
                                         })}
                                     </Fragment>
                                 );
-                            })
-                        )}
-                        {gkNames.length > 0 && (
+                            })}
                             <tr style={{ background: 'rgba(201, 168, 76, 0.05)', borderTop: '2px solid var(--player-gold)' }}>
                                 <td></td>
                                 <td style={{ textAlign: 'left', fontWeight: '950', color: 'var(--player-gold)', textTransform: 'uppercase', letterSpacing: '2px', fontSize: '15px' }}>TOTAL</td>
@@ -112,10 +110,10 @@ export default function PlayerVsGksTable({ stats }) {
                                 <td style={{ color: totals.penS > 0 ? '#e67e22' : 'inherit', fontWeight: '900', fontSize: '20px' }}>{totals.penS || "-"}</td>
                                 <td style={{ color: totals.penM > 0 ? '#e74c3c' : 'inherit', fontWeight: '900', fontSize: '20px' }}>{totals.penM || "-"}</td>
                             </tr>
-                        )}
-                    </tbody>
-                </table>
-            </div>
+                        </tbody>
+                    </table>
+                </div>
+            )}
             <style jsx>{`
                 .row-expanded { background: rgba(201, 168, 76, 0.03); }
                 .sub-row-gk td { padding: 12px 18px !important; }

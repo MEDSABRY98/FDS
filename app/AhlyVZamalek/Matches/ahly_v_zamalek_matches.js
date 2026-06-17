@@ -320,7 +320,7 @@ export default function AhlyVZamalekMatches({ derbyData, onSelectMatch }) {
                                             </div>
                                             <div className="match-meta-divider"></div>
                                             <div className="match-season">
-                                                📅 {m.CHAMPION ? `${m.CHAMPION} | ` : ""}{m["SEASON - NAME"]}
+                                                📅 {m["SEASON - NAME"]}
                                             </div>
                                             {m.ROUND && (
                                                 <>

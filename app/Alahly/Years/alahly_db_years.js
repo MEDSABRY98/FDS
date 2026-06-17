@@ -123,26 +123,26 @@ export default function AlAhlyYears({ matches }) {
                 <div className="gold-line"></div>
 
                 <div className="table-responsive" style={{ marginTop: '20px' }}>
-                    <table className="seasons-data-table">
-                        <thead>
-                            <tr>
-                                <th style={{ textAlign: 'center' }}>YEAR</th>
-                                <th>MP</th>
-                                <th>W</th>
-                                <th title="Positive Draws">D(+)</th>
-                                <th title="Negative Draws">D(-)</th>
-                                <th>L</th>
-                                <th>GF</th>
-                                <th>GA</th>
-                                <th title="Clean Sheet For">CS(F)</th>
-                                <th title="Clean Sheet Against">CS(A)</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {sortedYears.length === 0 ? (
-                                <NoData_db isTable={true} colSpan={10} message="No data found." />
-                            ) : (
-                                sortedYears.map(year => {
+                    {sortedYears.length === 0 ? (
+                        <NoData_db message="No data found." />
+                    ) : (
+                        <table className="seasons-data-table">
+                            <thead>
+                                <tr>
+                                    <th style={{ textAlign: 'center' }}>YEAR</th>
+                                    <th>MP</th>
+                                    <th>W</th>
+                                    <th title="Positive Draws">D(+)</th>
+                                    <th title="Negative Draws">D(-)</th>
+                                    <th>L</th>
+                                    <th>GF</th>
+                                    <th>GA</th>
+                                    <th title="Clean Sheet For">CS(F)</th>
+                                    <th title="Clean Sheet Against">CS(A)</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {sortedYears.map(year => {
                                     const s = statsByYear[year];
                                     return (
                                         <tr key={year}>
@@ -158,24 +158,24 @@ export default function AlAhlyYears({ matches }) {
                                             <td>{s.CSA}</td>
                                         </tr>
                                     );
-                                })
-                            )}
-                        </tbody>
-                        <tfoot>
-                            <tr className="grand-total-row" style={{ background: '#000', color: '#fff' }}>
-                                <td className="total-label">G. TOTAL</td>
-                                <td>{grandTotals.MP}</td>
-                                <td className="w-cell" style={{ color: '#5ef193' }}>{grandTotals.W}</td>
-                                <td>{grandTotals.DP}</td>
-                                <td>{grandTotals.DN}</td>
-                                <td className="l-cell" style={{ color: '#ff6b6b' }}>{grandTotals.L}</td>
-                                <td>{grandTotals.GF}</td>
-                                <td>{grandTotals.GA}</td>
-                                <td className="cs-cell" style={{ color: 'var(--gold)' }}>{grandTotals.CSF}</td>
-                                <td>{grandTotals.CSA}</td>
-                            </tr>
-                        </tfoot>
-                    </table>
+                                })}
+                            </tbody>
+                            <tfoot>
+                                <tr className="grand-total-row" style={{ background: '#000', color: '#fff' }}>
+                                    <td className="total-label">G. TOTAL</td>
+                                    <td>{grandTotals.MP}</td>
+                                    <td className="w-cell" style={{ color: '#5ef193' }}>{grandTotals.W}</td>
+                                    <td>{grandTotals.DP}</td>
+                                    <td>{grandTotals.DN}</td>
+                                    <td className="l-cell" style={{ color: '#ff6b6b' }}>{grandTotals.L}</td>
+                                    <td>{grandTotals.GF}</td>
+                                    <td>{grandTotals.GA}</td>
+                                    <td className="cs-cell" style={{ color: 'var(--gold)' }}>{grandTotals.CSF}</td>
+                                    <td>{grandTotals.CSA}</td>
+                                </tr>
+                            </tfoot>
+                        </table>
+                    )}
                 </div>
             </div>
         </div>

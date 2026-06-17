@@ -3,6 +3,7 @@
 import { useState, useEffect, useMemo } from "react";
 import { supabase } from "../../lib/supabase";
 import DropDownList_db from "../../lib/DropDownList_db";
+import NoData_db from "../../lib/NoData_db";
 import { GripVertical, ArrowUp, ArrowDown, Save, RotateCcw, Sparkles } from "lucide-react";
 
 export default function ColumnSortView({ addNotification }) {
@@ -316,9 +317,10 @@ export default function ColumnSortView({ addNotification }) {
                     ))}
 
                     {columns.length === 0 && (
-                        <div className="no-columns-placeholder">
-                            No columns found or table is empty.
-                        </div>
+                        <NoData_db
+                            message="NO COLUMNS FOUND OR TABLE IS EMPTY"
+                            height="240px"
+                        />
                     )}
                 </div>
             )}

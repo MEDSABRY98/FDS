@@ -30,25 +30,25 @@ export default function Manager_Championships_Module({ stats }) {
             <div className="history-title" style={{ marginBottom: '25px' }}>PERFORMANCE BY CHAMPIONSHIP</div>
 
             <div style={{ overflowX: 'auto' }}>
-                <table className="player-match-table">
-                    <thead>
-                        <tr>
-                            <th style={{ textAlign: 'center', fontFamily: 'Space Mono', fontSize: '15px', letterSpacing: '2px', color: '#666', padding: '20px 10px', textTransform: 'uppercase', fontWeight: '800' }}>CHAMPIONSHIP NAME</th>
-                            <th style={{ textAlign: 'center', fontFamily: 'Space Mono', fontSize: '15px', letterSpacing: '2px', color: '#666', padding: '20px 10px', textTransform: 'uppercase', fontWeight: '800' }}>MP</th>
-                            <th style={{ textAlign: 'center', fontFamily: 'Space Mono', fontSize: '15px', letterSpacing: '2px', color: '#666', padding: '20px 10px', textTransform: 'uppercase', fontWeight: '800' }}>W</th>
-                            <th style={{ textAlign: 'center', fontFamily: 'Space Mono', fontSize: '15px', letterSpacing: '2px', color: '#666', padding: '20px 10px', textTransform: 'uppercase', fontWeight: '800' }}>D</th>
-                            <th style={{ textAlign: 'center', fontFamily: 'Space Mono', fontSize: '15px', letterSpacing: '2px', color: '#666', padding: '20px 10px', textTransform: 'uppercase', fontWeight: '800' }}>L</th>
-                            <th style={{ textAlign: 'center', fontFamily: 'Space Mono', fontSize: '15px', letterSpacing: '2px', color: '#666', padding: '20px 10px', textTransform: 'uppercase', fontWeight: '800' }}>WIN %</th>
-                            <th style={{ textAlign: 'center', fontFamily: 'Space Mono', fontSize: '15px', letterSpacing: '2px', color: '#666', padding: '20px 10px', textTransform: 'uppercase', fontWeight: '800' }}>GS-GA</th>
-                            <th style={{ textAlign: 'center', fontFamily: 'Space Mono', fontSize: '15px', letterSpacing: '2px', color: '#666', padding: '20px 10px', textTransform: 'uppercase', fontWeight: '800' }}>CS FOR</th>
-                            <th style={{ textAlign: 'center', fontFamily: 'Space Mono', fontSize: '15px', letterSpacing: '2px', color: '#666', padding: '20px 10px', textTransform: 'uppercase', fontWeight: '800' }}>CS AGAINST</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {comps.length === 0 ? (
-                            <NoData_db isTable={true} colSpan={9} message="No championship data available." />
-                        ) : (
-                            comps.map(name => {
+                {comps.length === 0 ? (
+                    <NoData_db message="No championship data available." />
+                ) : (
+                    <table className="player-match-table">
+                        <thead>
+                            <tr>
+                                <th style={{ textAlign: 'center', fontFamily: 'Space Mono', fontSize: '15px', letterSpacing: '2px', color: '#666', padding: '20px 10px', textTransform: 'uppercase', fontWeight: '800' }}>CHAMPIONSHIP NAME</th>
+                                <th style={{ textAlign: 'center', fontFamily: 'Space Mono', fontSize: '15px', letterSpacing: '2px', color: '#666', padding: '20px 10px', textTransform: 'uppercase', fontWeight: '800' }}>MP</th>
+                                <th style={{ textAlign: 'center', fontFamily: 'Space Mono', fontSize: '15px', letterSpacing: '2px', color: '#666', padding: '20px 10px', textTransform: 'uppercase', fontWeight: '800' }}>W</th>
+                                <th style={{ textAlign: 'center', fontFamily: 'Space Mono', fontSize: '15px', letterSpacing: '2px', color: '#666', padding: '20px 10px', textTransform: 'uppercase', fontWeight: '800' }}>D</th>
+                                <th style={{ textAlign: 'center', fontFamily: 'Space Mono', fontSize: '15px', letterSpacing: '2px', color: '#666', padding: '20px 10px', textTransform: 'uppercase', fontWeight: '800' }}>L</th>
+                                <th style={{ textAlign: 'center', fontFamily: 'Space Mono', fontSize: '15px', letterSpacing: '2px', color: '#666', padding: '20px 10px', textTransform: 'uppercase', fontWeight: '800' }}>WIN %</th>
+                                <th style={{ textAlign: 'center', fontFamily: 'Space Mono', fontSize: '15px', letterSpacing: '2px', color: '#666', padding: '20px 10px', textTransform: 'uppercase', fontWeight: '800' }}>GS-GA</th>
+                                <th style={{ textAlign: 'center', fontFamily: 'Space Mono', fontSize: '15px', letterSpacing: '2px', color: '#666', padding: '20px 10px', textTransform: 'uppercase', fontWeight: '800' }}>CS FOR</th>
+                                <th style={{ textAlign: 'center', fontFamily: 'Space Mono', fontSize: '15px', letterSpacing: '2px', color: '#666', padding: '20px 10px', textTransform: 'uppercase', fontWeight: '800' }}>CS AGAINST</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {comps.map(name => {
                                 const s = compStore[name];
                                 const wr = s.matches > 0 ? ((s.wins / s.matches) * 100).toFixed(1) : 0;
                                 return (
@@ -64,9 +64,7 @@ export default function Manager_Championships_Module({ stats }) {
                                         <td style={{ textAlign: 'center', color: '#e74c3c', fontWeight: '900', fontSize: '18px', fontFamily: 'Outfit' }}>{s.csAgainst || "-"}</td>
                                     </tr>
                                 );
-                            })
-                        )}
-                        {comps.length > 0 && (
+                            })}
                             <tr style={{ background: 'rgba(201, 168, 76, 0.05)', borderTop: '2px solid var(--player-gold)' }}>
                                 <td style={{ fontWeight: '900', color: 'var(--player-gold)', textTransform: 'uppercase', letterSpacing: '2px', fontSize: '14px', fontFamily: 'Outfit' }}>TOTAL</td>
                                 <td style={{ textAlign: 'center', fontFamily: 'Outfit', fontWeight: '900', fontSize: '20px' }}>{totals.matches || "-"}</td>
@@ -80,9 +78,9 @@ export default function Manager_Championships_Module({ stats }) {
                                 <td style={{ textAlign: 'center', color: '#2ecc71', fontWeight: '900', fontSize: '20px', fontFamily: 'Outfit' }}>{totals.csFor || "-"}</td>
                                 <td style={{ textAlign: 'center', color: '#ff6b6b', fontWeight: '900', fontSize: '20px', fontFamily: 'Outfit' }}>{totals.csAgainst || "-"}</td>
                             </tr>
-                        )}
-                    </tbody>
-                </table>
+                        </tbody>
+                    </table>
+                )}
             </div>
         </div>
     );

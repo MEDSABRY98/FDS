@@ -157,38 +157,40 @@ export default function AlAhlyManagers({ matches, playerDetails, lineupDetails }
                 </div>
 
                 <div className="mgr-table-container">
-                    <table className="mgr-table fade-in" style={{ tableLayout: 'fixed' }}>
-                        <colgroup>
-                            <col style={{ width: '5%' }} />
-                            <col style={{ width: '25%' }} />
-                            <col style={{ width: '7.7%' }} />
-                            <col style={{ width: '7.7%' }} />
-                            <col style={{ width: '7.7%' }} />
-                            <col style={{ width: '7.7%' }} />
-                            <col style={{ width: '7.7%' }} />
-                            <col style={{ width: '7.7%' }} />
-                            <col style={{ width: '7.7%' }} />
-                            <col style={{ width: '7.7%' }} />
-                            <col style={{ width: '7.7%' }} />
-                        </colgroup>
-                        <thead>
-                            <tr>
-                                <th>#</th>
-                                <th>MANAGER NAME</th>
-                                <th>MP</th>
-                                <th>W</th>
-                                <th>D(+)</th>
-                                <th>D(-)</th>
-                                <th>L</th>
-                                <th>GS</th>
-                                <th>GA</th>
-                                <th>CS(+)</th>
-                                <th>CS(-)</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {managerStats.length > 0 ? (
-                                managerStats.map((s, idx) => (
+                    {managerStats.length === 0 ? (
+                        <NoData_db message="No managers found matching your criteria." />
+                    ) : (
+                        <table className="mgr-table fade-in" style={{ tableLayout: 'fixed' }}>
+                            <colgroup>
+                                <col style={{ width: '5%' }} />
+                                <col style={{ width: '25%' }} />
+                                <col style={{ width: '7.7%' }} />
+                                <col style={{ width: '7.7%' }} />
+                                <col style={{ width: '7.7%' }} />
+                                <col style={{ width: '7.7%' }} />
+                                <col style={{ width: '7.7%' }} />
+                                <col style={{ width: '7.7%' }} />
+                                <col style={{ width: '7.7%' }} />
+                                <col style={{ width: '7.7%' }} />
+                                <col style={{ width: '7.7%' }} />
+                            </colgroup>
+                            <thead>
+                                <tr>
+                                    <th>#</th>
+                                    <th>MANAGER NAME</th>
+                                    <th>MP</th>
+                                    <th>W</th>
+                                    <th>D(+)</th>
+                                    <th>D(-)</th>
+                                    <th>L</th>
+                                    <th>GS</th>
+                                    <th>GA</th>
+                                    <th>CS(+)</th>
+                                    <th>CS(-)</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {managerStats.map((s, idx) => (
                                     <tr key={s.name} onClick={() => setSelectedManager(s.name)} style={{ cursor: 'pointer' }}>
                                         <td><span className={`rank-badge-premium ${idx < 3 ? 'rank-gold' : ''}`}>{idx + 1}</span></td>
                                         <td className="p-name" style={{ textAlign: 'center' }}>{s.name}</td>
@@ -202,30 +204,24 @@ export default function AlAhlyManagers({ matches, playerDetails, lineupDetails }
                                         <td className="cs-cell" style={{ color: 'var(--gold)', fontWeight: 800 }}>{s.csFor}</td>
                                         <td>{s.csAgainst}</td>
                                     </tr>
-                                ))
-                            ) : (
-                            <NoData_db 
-                                isTable={true} 
-                                colSpan={11} 
-                                message="No managers found matching your criteria." 
-                            />
-                            )}
-                        </tbody>
-                        <tfoot>
-                            <tr className="total-row-premium">
-                                <td colSpan="2" style={{ textAlign: 'center' }}>TOTAL</td>
-                                <td>{grandTotals.matches}</td>
-                                <td className="w-cell">{grandTotals.wins}</td>
-                                <td>{grandTotals.pDraws}</td>
-                                <td>{grandTotals.nDraws}</td>
-                                <td className="l-cell">{grandTotals.losses}</td>
-                                <td>{grandTotals.gs}</td>
-                                <td>{grandTotals.ga}</td>
-                                <td className="cs-cell" style={{ color: 'var(--gold)', fontWeight: 800 }}>{grandTotals.csFor}</td>
-                                <td style={{ color: '#fff' }}>{grandTotals.csAgainst}</td>
-                            </tr>
-                        </tfoot>
-                    </table>
+                                ))}
+                            </tbody>
+                            <tfoot>
+                                <tr className="total-row-premium">
+                                    <td colSpan="2" style={{ textAlign: 'center' }}>TOTAL</td>
+                                    <td>{grandTotals.matches}</td>
+                                    <td className="w-cell">{grandTotals.wins}</td>
+                                    <td>{grandTotals.pDraws}</td>
+                                    <td>{grandTotals.nDraws}</td>
+                                    <td className="l-cell">{grandTotals.losses}</td>
+                                    <td>{grandTotals.gs}</td>
+                                    <td>{grandTotals.ga}</td>
+                                    <td className="cs-cell" style={{ color: 'var(--gold)', fontWeight: 800 }}>{grandTotals.csFor}</td>
+                                    <td style={{ color: '#fff' }}>{grandTotals.csAgainst}</td>
+                                </tr>
+                            </tfoot>
+                        </table>
+                    )}
                 </div>
             </div>
         </div>

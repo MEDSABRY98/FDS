@@ -43,7 +43,10 @@ export default function PlayerSeasonNumberTable({ stats }) {
                 <div className="gold-line" style={{ height: '2px', background: 'var(--player-gold)', width: '60px', marginBottom: '30px' }}></div>
 
                 <div className="table-responsive" style={{ background: '#fff', borderRadius: '12px', overflow: 'hidden', border: '1px solid #ebebeb', boxShadow: '0 4px 20px rgba(0,0,0,0.05)' }}>
-                    <table className="analysis-table" style={{ width: '100%', borderCollapse: 'collapse', color: '#333' }}>
+                    {sortedSYs.length === 0 ? (
+                        <NoData_db message="No data found for this player." />
+                    ) : (
+                        <table className="analysis-table" style={{ width: '100%', borderCollapse: 'collapse', color: '#333' }}>
                         <thead>
                             <tr style={{ background: '#0a0a0a' }}>
                                 <th style={{ padding: '20px', textAlign: 'center', fontSize: '14px', fontFamily: 'Space Mono', color: '#fff', textTransform: 'uppercase', letterSpacing: '1px' }}>S. NUMBER (SY)</th>
@@ -57,10 +60,7 @@ export default function PlayerSeasonNumberTable({ stats }) {
                             </tr>
                         </thead>
                         <tbody>
-                            {sortedSYs.length === 0 ? (
-                                <NoData_db isTable={true} colSpan={8} message="No data found for this player." />
-                            ) : (
-                                sortedSYs.map((sy, idx) => {
+                            {sortedSYs.map((sy, idx) => {
                                     const s = statsBySY[sy];
                                     return (
                                         <tr key={sy} style={{ background: idx % 2 === 0 ? '#fff' : '#fafafa', borderBottom: '1px solid #f0f0f0' }}>
@@ -74,8 +74,7 @@ export default function PlayerSeasonNumberTable({ stats }) {
                                             <td style={{ padding: '22px 20px', textAlign: 'center', fontSize: '20px', color: '#e74c3c', fontFamily: 'Space Mono' }}>{s.penMissed || "-"}</td>
                                         </tr>
                                     );
-                                })
-                            )}
+                            })}
                         </tbody>
                         <tfoot>
                             <tr style={{ background: '#000', color: '#fff', fontWeight: '700' }}>
@@ -89,7 +88,8 @@ export default function PlayerSeasonNumberTable({ stats }) {
                                 <td style={{ padding: '25px 20px', textAlign: 'center', color: '#ff6b6b', fontSize: '22px', fontFamily: 'Bebas Neue' }}>{grandTotals.PM || "-"}</td>
                             </tr>
                         </tfoot>
-                    </table>
+                        </table>
+                    )}
                 </div>
             </div>
         </div>

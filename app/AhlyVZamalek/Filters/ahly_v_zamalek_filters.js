@@ -6,7 +6,7 @@ import { AhlyVZamalekService } from "../Service/ahly_v_zamalek_service";
 import { UseColumnOrder, SortFilterFields } from "../../lib/ColumnOrder";
 import "./ahly_v_zamalek_filters.css";
 
-const TABLE_NAME = "alahly_vs_zamalek_MATCHDETAILS";
+const TABLE_NAME = "alahly_MATCHDETAILS";
 
 // Custom Searchable Dropdown Component (AVZ Version)
 function SearchableDropdown({ label, options, value, onChange }) {
@@ -179,8 +179,8 @@ export default function AhlyVZamalekFilters({ data, onFilter, isOpen, onClose })
             { key: "round", label: "ROUND", options: filterOptions.rounds, dbColumn: "ROUND" },
             { key: "stad", label: "STADIUM", options: filterOptions.stads, dbColumn: "STAD" },
             { key: "ahly_manager", label: "AHLY MANAGER", options: filterOptions.ahly_managers, dbColumn: "AHLY MANAGER" },
-            { key: "zamalek_manager", label: "ZAMALEK MANAGER", options: filterOptions.zamalek_managers, dbColumn: "ZAMALEK MANAGER" },
-            { key: "referee", label: "REFEREE", options: filterOptions.referees, dbColumn: "REFEREE" },
+            { key: "zamalek_manager", label: "ZAMALEK MANAGER", options: filterOptions.zamalek_managers, dbColumn: "OPPONENT MANAGER" },
+            { key: "referee", label: "REFEREE", options: filterOptions.referees, dbColumn: "REFREE" },
             { key: "han", label: "H-A-N", options: filterOptions.han, dbColumn: "H-A-N" },
             { key: "wdl", label: "W-D-L", options: filterOptions.wdl, dbColumn: "W-D-L" },
             { key: "clean_sheet", label: "CLEAN SHEET", options: filterOptions.clean_sheets, dbColumn: "CLEAN SHEET" }

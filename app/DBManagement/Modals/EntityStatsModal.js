@@ -25,10 +25,12 @@ export default function EntityStatsModal({
                 });
 
                 if (error) throw error;
+                if (data?.error) throw new Error(data.error);
                 setStats(data);
             } catch (err) {
-                console.error("Failed to fetch entity stats:", err);
-                setError(err.message);
+                const message = err?.message || err?.details || err?.hint || "Unknown error";
+                console.error("Failed to fetch entity stats:", message);
+                setError(message);
             } finally {
                 setLoading(false);
             }

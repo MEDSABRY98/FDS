@@ -276,24 +276,24 @@ export default function AhlyVZamalekPlayers({ playersData, matchesData, lineupsD
             </div>
 
             <div className="avz-table-wrapper">
-                <table className="avz-data-table">
-                    <thead>
-                        <tr>
-                            <th onClick={() => handleSort(null)} style={{ cursor: 'default' }}>#</th>
-                            <th onClick={() => handleSort('name')} className="sortable-header">PLAYER {getSortIcon('name')}</th>
-                            <th onClick={() => handleSort('matchesCount')} className="sortable-header">MATCHES {getSortIcon('matchesCount')}</th>
-                            <th onClick={() => handleSort('totalMinutes')} className="sortable-header">MINUTES {getSortIcon('totalMinutes')}</th>
-                            <th onClick={() => handleSort('gPlusA')} className="sortable-header">G + A {getSortIcon('gPlusA')}</th>
-                            <th onClick={() => handleSort('goals')} className="sortable-header">GOALS {getSortIcon('goals')}</th>
-                            <th onClick={() => handleSort('penGoals')} className="sortable-header">PENALTIES {getSortIcon('penGoals')}</th>
-                            <th onClick={() => handleSort('assists')} className="sortable-header">ASSISTS {getSortIcon('assists')}</th>
-                        </tr>
-                    </thead>
-
-
-                    <tbody>
-                        {paginatedPlayers.length > 0 ? (
-                            paginatedPlayers.map((p, idx) => (
+                {paginatedPlayers.length === 0 ? (
+                    <NoData_db message="NO PLAYERS LOGGED FOR THIS FILTER" />
+                ) : (
+                    <table className="avz-data-table">
+                        <thead>
+                            <tr>
+                                <th onClick={() => handleSort(null)} style={{ cursor: 'default' }}>#</th>
+                                <th onClick={() => handleSort('name')} className="sortable-header">PLAYER {getSortIcon('name')}</th>
+                                <th onClick={() => handleSort('matchesCount')} className="sortable-header">MATCHES {getSortIcon('matchesCount')}</th>
+                                <th onClick={() => handleSort('totalMinutes')} className="sortable-header">MINUTES {getSortIcon('totalMinutes')}</th>
+                                <th onClick={() => handleSort('gPlusA')} className="sortable-header">G + A {getSortIcon('gPlusA')}</th>
+                                <th onClick={() => handleSort('goals')} className="sortable-header">GOALS {getSortIcon('goals')}</th>
+                                <th onClick={() => handleSort('penGoals')} className="sortable-header">PENALTIES {getSortIcon('penGoals')}</th>
+                                <th onClick={() => handleSort('assists')} className="sortable-header">ASSISTS {getSortIcon('assists')}</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {paginatedPlayers.map((p, idx) => (
                                 <tr key={idx} onClick={() => onSelectPlayer && onSelectPlayer(p.name)} style={{ cursor: 'pointer' }}>
                                     <td>{(currentPage - 1) * pageSize + idx + 1}</td>
                                     <td className="avz-text-bold clickable-player-name">{p.name}</td>
@@ -304,13 +304,10 @@ export default function AhlyVZamalekPlayers({ playersData, matchesData, lineupsD
                                     <td>{p.penGoals > 0 ? p.penGoals : "-"}</td>
                                     <td>{p.assists > 0 ? p.assists : "-"}</td>
                                 </tr>
-                            ))
-                        ) : (
-                            <NoData_db message="NO PLAYERS LOGGED FOR THIS FILTER" isTable={true} colSpan={8} />
-                        )}
-                    </tbody>
-
-                </table>
+                            ))}
+                        </tbody>
+                    </table>
+                )}
             </div>
 
             {totalPages > 1 && (

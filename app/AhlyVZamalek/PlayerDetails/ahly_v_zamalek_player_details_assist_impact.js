@@ -86,21 +86,23 @@ export default function PlayerAssistImpactTable({ playerName, filteredMatches = 
             </div>
 
             <div style={{ overflowX: 'auto' }}>
-                <table className="player-match-table impact-table">
-                    <thead>
-                        <tr>
-                            <th>DATE</th>
-                            <th>SEASON NAME</th>
-                            <th>OPPONENT</th>
-                            <th>SCORE</th>
-                            <th>ASSIST MIN</th>
-                            <th>IMPACT TYPE</th>
-                            <th>RESULT</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {displayMatches.length > 0 ? (
-                            displayMatches.map((item, idx) => (
+                {displayMatches.length === 0 ? (
+                    <NoData_db message="NO RECORDED ASSIST IMPACTS FOR THIS PLAYER" />
+                ) : (
+                    <table className="player-match-table impact-table">
+                        <thead>
+                            <tr>
+                                <th>DATE</th>
+                                <th>SEASON NAME</th>
+                                <th>OPPONENT</th>
+                                <th>SCORE</th>
+                                <th>ASSIST MIN</th>
+                                <th>IMPACT TYPE</th>
+                                <th>RESULT</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {displayMatches.map((item, idx) => (
                                 <tr key={idx}>
                                     <td style={{ fontSize: '14px', opacity: 0.8 }}>{item.match.DATE}</td>
                                     <td style={{ fontSize: '14px', opacity: 0.8 }}>{item.match["SEASON - NAME"]}</td>
@@ -116,12 +118,10 @@ export default function PlayerAssistImpactTable({ playerName, filteredMatches = 
                                         {item.match["W-D-L"] === 'W' ? 'WIN' : 'DRAW'}
                                     </td>
                                 </tr>
-                            ))
-                        ) : (
-                            <NoData_db isTable={true} colSpan={7} message="NO RECORDED ASSIST IMPACTS FOR THIS PLAYER" />
-                        )}
-                    </tbody>
-                </table>
+                            ))}
+                        </tbody>
+                    </table>
+                )}
             </div>
 
             <style jsx>{`

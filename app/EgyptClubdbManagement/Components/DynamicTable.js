@@ -1,4 +1,5 @@
 import { Edit, Trash2 } from "lucide-react";
+import NoData_db from "../../lib/NoData_db";
 
 const ACTIONS_COL = {
     width: '140px',
@@ -8,19 +9,21 @@ const ACTIONS_COL = {
     zIndex: 5
 };
 
-export function DynamicTable({ 
-    columns, 
-    paginatedData, 
-    handleEditClick, 
-    handleDelete 
+export function DynamicTable({
+    columns,
+    paginatedData,
+    handleEditClick,
+    handleDelete
 }) {
-    if (!paginatedData || paginatedData.length === 0) return null;
+    if (!paginatedData?.length) {
+        return <NoData_db message="NO DATA RECORDS FOUND" height="280px" />;
+    }
 
     return (
         <div className="table-overflow">
-            <table className="db-table" style={{ 
-                width: columns.length > 7 ? 'max-content' : '100%', 
-                tableLayout: columns.length > 7 ? 'auto' : 'fixed' 
+            <table className="db-table" style={{
+                width: columns.length > 7 ? 'max-content' : '100%',
+                tableLayout: columns.length > 7 ? 'auto' : 'fixed'
             }}>
                 <thead>
                     <tr style={{ height: '54px' }}>

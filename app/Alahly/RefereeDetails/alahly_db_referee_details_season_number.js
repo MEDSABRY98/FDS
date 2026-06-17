@@ -33,7 +33,10 @@ export default function Referee_SeasonNumber_Module({ stats }) {
                 <div className="gold-line" style={{ height: '2px', background: 'var(--player-gold)', width: '60px', marginBottom: '30px' }}></div>
 
                 <div className="table-responsive" style={{ background: '#fff', borderRadius: '12px', overflow: 'hidden', border: '1px solid #ebebeb', boxShadow: '0 4px 20px rgba(0,0,0,0.05)' }}>
-                    <table className="analysis-table" style={{ width: '100%', borderCollapse: 'collapse', color: '#333' }}>
+                    {sortedSYs.length === 0 ? (
+                        <NoData_db message="No data found for this referee." />
+                    ) : (
+                        <table className="analysis-table" style={{ width: '100%', borderCollapse: 'collapse', color: '#333' }}>
                         <thead>
                             <tr style={{ background: '#0a0a0a' }}>
                                 <th style={{ padding: '16px 20px', textAlign: 'center', fontSize: '13px', fontFamily: 'Space Mono', color: '#fff', textTransform: 'uppercase', letterSpacing: '2px', fontWeight: '700' }}>S. NUMBER (SY)</th>
@@ -48,10 +51,7 @@ export default function Referee_SeasonNumber_Module({ stats }) {
                             </tr>
                         </thead>
                         <tbody>
-                            {sortedSYs.length === 0 ? (
-                                <NoData_db isTable={true} colSpan={9} message="No data found for this referee." />
-                            ) : (
-                                sortedSYs.map((sy, idx) => {
+                            {sortedSYs.map((sy, idx) => {
                                     const s = statsBySY[sy];
                                     const wr = s.matches > 0 ? ((s.wins / s.matches) * 100).toFixed(1) : 0;
                                     return (
@@ -67,8 +67,7 @@ export default function Referee_SeasonNumber_Module({ stats }) {
                                             <td style={{ padding: '18px 20px', textAlign: 'center', fontSize: '18px', color: '#2ecc71', fontFamily: 'Outfit', fontWeight: '900' }}>{s.csFor} / <span style={{ color: '#e74c3c' }}>{s.csAgainst}</span></td>
                                         </tr>
                                     );
-                                })
-                            )}
+                            })}
                         </tbody>
                         <tfoot>
                             <tr style={{ background: '#0a0a0a', color: '#fff', fontWeight: '700' }}>
@@ -85,7 +84,8 @@ export default function Referee_SeasonNumber_Module({ stats }) {
                                 <td style={{ padding: '20px', textAlign: 'center', color: '#2ecc71', fontSize: '20px', fontFamily: 'Outfit', fontWeight: '900' }}>{grandTotals.CS_FOR} / <span style={{ color: '#e74c3c' }}>{grandTotals.CS_AGN}</span></td>
                             </tr>
                         </tfoot>
-                    </table>
+                        </table>
+                    )}
                 </div>
             </div>
         </div>

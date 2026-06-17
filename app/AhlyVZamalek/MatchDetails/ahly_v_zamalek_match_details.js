@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo, useState, useEffect } from "react";
+import { isAhlyDerbyTeam, isZamalekDerbyTeam } from "../Service/ahly_v_zamalek_service";
 import "./ahly_v_zamalek_match_details.css";
 import NoData_db from "../../lib/NoData_db";
 
@@ -20,15 +21,13 @@ export default function AhlyVZamalekMatchDetails({
     // Core data extraction
     const matchInfo = useMemo(() => (matches || []).find(m => String(m.MATCH_ID) === String(matchId)), [matchId, matches]);
 
-    const checkIfAhly = (teamName) => {
-        if (!teamName) return true;
-        const name = String(teamName).trim().toUpperCase();
-        return name === 'AHLY' || name === 'الأهلي';
-    };
-
     const squads = useMemo(() => {
-        const ahlyLineup = (lineupDetails || []).filter(l => String(l.MATCH_ID) === String(matchId) && checkIfAhly(l.TEAM));
-        const zamalekLineup = (lineupDetails || []).filter(l => String(l.MATCH_ID) === String(matchId) && !checkIfAhly(l.TEAM));
+        const ahlyLineup = (lineupDetails || []).filter(
+            (l) => String(l.MATCH_ID) === String(matchId) && isAhlyDerbyTeam(l.TEAM)
+        );
+        const zamalekLineup = (lineupDetails || []).filter(
+            (l) => String(l.MATCH_ID) === String(matchId) && isZamalekDerbyTeam(l.TEAM)
+        );
 
         const sortLineup = (a, b) => {
             const numA = parseInt(String(a.ROW_ID || '').replace(/[^0-9]/g, '')) || 0;
@@ -62,8 +61,8 @@ export default function AhlyVZamalekMatchDetails({
             });
 
         return {
-            ahly: allEvents.filter(e => checkIfAhly(e.TEAM)),
-            zamalek: allEvents.filter(e => !checkIfAhly(e.TEAM)),
+            ahly: allEvents.filter((e) => isAhlyDerbyTeam(e.TEAM)),
+            zamalek: allEvents.filter((e) => isZamalekDerbyTeam(e.TEAM)),
             chronological: allEvents
         };
     }, [matchId, playerDetails]);
@@ -431,7 +430,7 @@ export default function AhlyVZamalekMatchDetails({
                             ) : (
                                 <div className="timeline-track">
                                     {events.chronological.map((e, i) => {
-                                        const isAhly = checkIfAhly(e.TEAM);
+                                        const isAhly = isAhlyDerbyTeam(e.TEAM);
                                         return (
                                             <div key={i} className={`timeline-entry ${isAhly ? 'left' : 'right'}`}>
                                                 <div className="entry-content">
@@ -462,8 +461,8 @@ export default function AhlyVZamalekMatchDetails({
                         <div className="timeline-container">
                             {(() => {
                                 const subEvents = [
-                                    ...squads.ahly.subs.map(s => ({ ...s, isAhly: true })),
-                                    ...squads.zamalek.subs.map(s => ({ ...s, isAhly: false }))
+                                    ...squads.ahly.subs.map((s) => ({ ...s, isAhly: true })),
+                                    ...squads.zamalek.subs.map((s) => ({ ...s, isAhly: false }))
                                 ].map(s => {
                                     const rawMin = s["IN MINUTE"] || s["MINUTE IN"] || s["OUT MINUTE"] || s["MINUTE OUT"] || "0";
                                     const minute = parseInt(String(rawMin).replace(/[^0-9]/g, '')) || 0;

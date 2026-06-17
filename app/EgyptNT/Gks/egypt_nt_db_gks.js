@@ -223,24 +223,24 @@ export default function EgyptNTGKs({ gkDetails, howPenMissed, filteredMatches, p
                             className="custom-dropdown-wrap"
                         />
                     </div>
-                    <div className="player-table-container">
-                        <table className="modern-player-table fade-in">
-                            <thead>
-                                <tr>
-                                    <th>#</th>
-                                    <th className="name-th">GOALKEEPER NAME</th>
-                                    <th>MATCHES</th>
-                                    <th>GOALS CONCEDED</th>
-                                    <th>CLEAN SHEETS</th>
-                                    <th>PENALTIES RECEIVED</th>
-                                    <th>PENALTIES SAVED</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {paginatedStats.length === 0 ? (
-                                    <NoData_db isTable={true} colSpan={7} message="No keeper data recorded for these matches." />
-                                ) : (
-                                    paginatedStats.map((g, i) => {
+                    {paginatedStats.length === 0 ? (
+                        <NoData_db message="No keeper data recorded for these matches." />
+                    ) : (
+                        <div className="player-table-container">
+                            <table className="modern-player-table fade-in">
+                                <thead>
+                                    <tr>
+                                        <th>#</th>
+                                        <th className="name-th">GOALKEEPER NAME</th>
+                                        <th>MATCHES</th>
+                                        <th>GOALS CONCEDED</th>
+                                        <th>CLEAN SHEETS</th>
+                                        <th>PENALTIES RECEIVED</th>
+                                        <th>PENALTIES SAVED</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {paginatedStats.map((g, i) => {
                                         const actualIndex = (currentPage - 1) * pageSize + i;
                                         return (
                                             <tr key={g.name} style={{ opacity: g.name === '?' ? 0.4 : 1 }}>
@@ -253,10 +253,8 @@ export default function EgyptNTGKs({ gkDetails, howPenMissed, filteredMatches, p
                                                 <td style={{ color: '#3498db', fontWeight: 800 }}>{g.penaltiesSaved}</td>
                                             </tr>
                                         );
-                                    })
-                                )}
-                            </tbody>
-                            {(paginatedStats.length > 0 || gkStats.length > 0) && (
+                                    })}
+                                </tbody>
                                 <tfoot className="total-row-premium">
                                     <tr>
                                         <td colSpan="2" style={{ textAlign: 'center' }}>TOTAL</td>
@@ -267,9 +265,9 @@ export default function EgyptNTGKs({ gkDetails, howPenMissed, filteredMatches, p
                                         <td style={{ color: '#3498db' }}>{totals.penaltiesSaved}</td>
                                     </tr>
                                 </tfoot>
-                            )}
-                        </table>
-                    </div>
+                            </table>
+                        </div>
+                    )}
 
                     {totalPages > 1 && (
                         <div className="pagination-gks">

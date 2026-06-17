@@ -30,7 +30,10 @@ export default function GK_Championships_Module({ stats }) {
             <div className="history-title" style={{ marginBottom: '25px' }}>GOALKEEPER PERFORMANCE BY CHAMPIONSHIP</div>
 
             <div style={{ overflowX: 'auto' }}>
-                <table className="player-match-table">
+                {comps.length === 0 ? (
+                    <NoData_db message="No championship data available." />
+                ) : (
+                    <table className="player-match-table">
                     <thead>
                         <tr>
                             <th style={{ textAlign: 'center', fontFamily: 'Space Mono', fontSize: '15px', letterSpacing: '2px', color: '#666', padding: '20px 10px', textTransform: 'uppercase', fontWeight: '800' }}>CHAMPIONSHIP NAME</th>
@@ -42,10 +45,7 @@ export default function GK_Championships_Module({ stats }) {
                         </tr>
                     </thead>
                     <tbody>
-                        {comps.length === 0 ? (
-                            <NoData_db isTable={true} colSpan={6} message="No championship data available." />
-                        ) : (
-                            comps.map(name => {
+                        {comps.map(name => {
                                 const s = compStore[name];
                                 const wr = s.matches > 0 ? ((s.wins / s.matches) * 100).toFixed(1) : 0;
                                 const csr = s.matches > 0 ? ((s.cs / s.matches) * 100).toFixed(1) : 0;
@@ -60,11 +60,9 @@ export default function GK_Championships_Module({ stats }) {
                                             <span style={{ color: '#2ecc71' }}>{s.ps}</span> / <span style={{ color: '#999' }}>{s.pr}</span>
                                         </td>
                                     </tr>
-                                );
-                            })
-                        )}
-                        {comps.length > 0 && (
-                            <tr style={{ background: 'rgba(201, 168, 76, 0.05)', borderTop: '2px solid var(--player-gold)' }}>
+                            );
+                        })}
+                        <tr style={{ background: 'rgba(201, 168, 76, 0.05)', borderTop: '2px solid var(--player-gold)' }}>
                                 <td style={{ fontWeight: '900', color: 'var(--player-gold)', textTransform: 'uppercase', letterSpacing: '2px', fontSize: '14px', fontFamily: 'Outfit' }}>TOTAL</td>
                                 <td style={{ textAlign: 'center', fontFamily: 'Outfit', fontWeight: '900', fontSize: '20px' }}>{totals.matches || "-"}</td>
                                 <td style={{ textAlign: 'center', color: '#ff6b6b', fontWeight: '900', fontSize: '20px', fontFamily: 'Outfit' }}>{totals.gc}</td>
@@ -76,9 +74,9 @@ export default function GK_Championships_Module({ stats }) {
                                     <span style={{ color: '#2ecc71' }}>{totals.ps}</span> / <span style={{ color: '#999' }}>{totals.pr}</span>
                                 </td>
                             </tr>
-                        )}
                     </tbody>
                 </table>
+                )}
             </div>
         </div>
     );

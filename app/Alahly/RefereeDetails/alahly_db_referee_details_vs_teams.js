@@ -47,7 +47,10 @@ export default function Referee_VsTeams_Module({ stats }) {
             </div>
 
             <div style={{ overflowX: 'auto', maxWidth: '1400px', width: '95%', margin: '0 auto' }}>
-                <table className="player-match-table vs-teams-table">
+                {oppNames.length === 0 ? (
+                    <NoData_db message="No opponent data found matching filters." />
+                ) : (
+                    <table className="player-match-table vs-teams-table">
                     <thead>
                         <tr>
                             <th style={{ textAlign: 'center', fontFamily: 'Space Mono', fontSize: '13px', letterSpacing: '2px', color: '#999', padding: '15px 10px', textTransform: 'uppercase', fontWeight: '700' }}>OPPONENT TEAM</th>
@@ -62,10 +65,7 @@ export default function Referee_VsTeams_Module({ stats }) {
                         </tr>
                     </thead>
                     <tbody>
-                        {oppNames.length === 0 ? (
-                            <NoData_db isTable={true} colSpan={9} message="No opponent data found matching filters." />
-                        ) : (
-                            oppNames.map(name => {
+                        {oppNames.map(name => {
                                 const s = oppStore[name];
                                 const wr = s.matches > 0 ? ((s.wins / s.matches) * 100).toFixed(1) : 0;
                                 return (
@@ -80,11 +80,9 @@ export default function Referee_VsTeams_Module({ stats }) {
                                         <td style={{ textAlign: 'center', color: '#000', fontWeight: '900', fontSize: '16px', fontFamily: 'Outfit' }}>{s.penFor} - {s.penAgainst}</td>
                                         <td style={{ textAlign: 'center', color: '#2ecc71', fontWeight: '900', fontSize: '16px', fontFamily: 'Outfit' }}>{s.csFor} / <span style={{ color: '#ff6b6b' }}>{s.csAgainst}</span></td>
                                     </tr>
-                                );
-                            })
-                        )}
-                        {oppNames.length > 0 && (
-                            <tr style={{ background: 'rgba(201, 168, 76, 0.05)', borderTop: '2px solid var(--player-gold)' }}>
+                            );
+                        })}
+                        <tr style={{ background: 'rgba(201, 168, 76, 0.05)', borderTop: '2px solid var(--player-gold)' }}>
                                 <td style={{ fontWeight: '900', color: 'var(--player-gold)', textTransform: 'uppercase', letterSpacing: '2px', fontSize: '14px', fontFamily: 'Outfit', textAlign: 'center' }}>TOTAL</td>
                                 <td style={{ textAlign: 'center', fontFamily: 'Outfit', fontWeight: '900', fontSize: '20px', color: 'var(--player-gold)' }}>{totals.matches || "-"}</td>
                                 <td style={{ textAlign: 'center', color: '#2ecc71', fontWeight: '900', fontSize: '20px', fontFamily: 'Outfit' }}>{totals.wins || "-"}</td>
@@ -97,9 +95,9 @@ export default function Referee_VsTeams_Module({ stats }) {
                                 <td style={{ textAlign: 'center', color: '#000', fontWeight: '900', fontSize: '18px', fontFamily: 'Outfit' }}>{totals.penFor} - {totals.penAgainst}</td>
                                 <td style={{ textAlign: 'center', color: '#2ecc71', fontWeight: '900', fontSize: '18px', fontFamily: 'Outfit' }}>{totals.csFor} / <span style={{ color: '#ff6b6b' }}>{totals.csAgainst}</span></td>
                             </tr>
-                        )}
                     </tbody>
                 </table>
+                )}
             </div>
         </div>
     );

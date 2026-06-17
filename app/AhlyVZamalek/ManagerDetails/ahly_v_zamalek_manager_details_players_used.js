@@ -71,55 +71,55 @@ export default function ManagerPlayersUsed({ stats }) {
             </div>
 
             <div style={{ overflowX: 'auto' }}>
-                <table className="player-match-table">
-                    <thead>
-                        <tr>
-                            <th style={{ textAlign: 'center', fontFamily: 'Space Mono', fontSize: '13px', letterSpacing: '2px', color: '#999', padding: '15px 10px', textTransform: 'uppercase', fontWeight: '700' }}>
-                                #
-                            </th>
-                            <th
-                                onClick={() => requestSort('name')}
-                                style={{ textAlign: 'center', fontFamily: 'Space Mono', fontSize: '13px', letterSpacing: '2px', color: '#999', padding: '15px 10px', textTransform: 'uppercase', fontWeight: '700', cursor: 'pointer' }}
-                            >
-                                PLAYER NAME <SortIndicator columnKey="name" />
-                            </th>
-                            <th
-                                onClick={() => requestSort('apps')}
-                                style={{ textAlign: 'center', fontFamily: 'Space Mono', fontSize: '13px', letterSpacing: '2px', color: '#999', padding: '15px 10px', textTransform: 'uppercase', fontWeight: '700', cursor: 'pointer' }}
-                            >
-                                APPS <SortIndicator columnKey="apps" />
-                            </th>
-                            <th
-                                onClick={() => requestSort('mins')}
-                                style={{ textAlign: 'center', fontFamily: 'Space Mono', fontSize: '13px', letterSpacing: '2px', color: '#999', padding: '15px 10px', textTransform: 'uppercase', fontWeight: '700', cursor: 'pointer' }}
-                            >
-                                MINUTES <SortIndicator columnKey="mins" />
-                            </th>
-                            <th
-                                onClick={() => requestSort('ga')}
-                                style={{ textAlign: 'center', fontFamily: 'Space Mono', fontSize: '13px', letterSpacing: '2px', color: '#999', padding: '15px 10px', textTransform: 'uppercase', fontWeight: '700', cursor: 'pointer' }}
-                            >
-                                G + A <SortIndicator columnKey="ga" />
-                            </th>
-                            <th
-                                onClick={() => requestSort('goals')}
-                                style={{ textAlign: 'center', fontFamily: 'Space Mono', fontSize: '13px', letterSpacing: '2px', color: '#999', padding: '15px 10px', textTransform: 'uppercase', fontWeight: '700', cursor: 'pointer' }}
-                            >
-                                GOALS <SortIndicator columnKey="goals" />
-                            </th>
-                            <th
-                                onClick={() => requestSort('assists')}
-                                style={{ textAlign: 'center', fontFamily: 'Space Mono', fontSize: '13px', letterSpacing: '2px', color: '#999', padding: '15px 10px', textTransform: 'uppercase', fontWeight: '700', cursor: 'pointer' }}
-                            >
-                                ASSISTS <SortIndicator columnKey="assists" />
-                            </th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {playersList.length === 0 ? (
-                            <NoData_db isTable={true} colSpan={7} message="No players found for this manager." />
-                        ) : (
-                            playersList.map((p, idx) => (
+                {playersList.length === 0 ? (
+                    <NoData_db message="No players found for this manager." />
+                ) : (
+                    <table className="player-match-table">
+                        <thead>
+                            <tr>
+                                <th style={{ textAlign: 'center', fontFamily: 'Space Mono', fontSize: '13px', letterSpacing: '2px', color: '#999', padding: '15px 10px', textTransform: 'uppercase', fontWeight: '700' }}>
+                                    #
+                                </th>
+                                <th
+                                    onClick={() => requestSort('name')}
+                                    style={{ textAlign: 'center', fontFamily: 'Space Mono', fontSize: '13px', letterSpacing: '2px', color: '#999', padding: '15px 10px', textTransform: 'uppercase', fontWeight: '700', cursor: 'pointer' }}
+                                >
+                                    PLAYER NAME <SortIndicator columnKey="name" />
+                                </th>
+                                <th
+                                    onClick={() => requestSort('apps')}
+                                    style={{ textAlign: 'center', fontFamily: 'Space Mono', fontSize: '13px', letterSpacing: '2px', color: '#999', padding: '15px 10px', textTransform: 'uppercase', fontWeight: '700', cursor: 'pointer' }}
+                                >
+                                    APPS <SortIndicator columnKey="apps" />
+                                </th>
+                                <th
+                                    onClick={() => requestSort('mins')}
+                                    style={{ textAlign: 'center', fontFamily: 'Space Mono', fontSize: '13px', letterSpacing: '2px', color: '#999', padding: '15px 10px', textTransform: 'uppercase', fontWeight: '700', cursor: 'pointer' }}
+                                >
+                                    MINUTES <SortIndicator columnKey="mins" />
+                                </th>
+                                <th
+                                    onClick={() => requestSort('ga')}
+                                    style={{ textAlign: 'center', fontFamily: 'Space Mono', fontSize: '13px', letterSpacing: '2px', color: '#999', padding: '15px 10px', textTransform: 'uppercase', fontWeight: '700', cursor: 'pointer' }}
+                                >
+                                    G + A <SortIndicator columnKey="ga" />
+                                </th>
+                                <th
+                                    onClick={() => requestSort('goals')}
+                                    style={{ textAlign: 'center', fontFamily: 'Space Mono', fontSize: '13px', letterSpacing: '2px', color: '#999', padding: '15px 10px', textTransform: 'uppercase', fontWeight: '700', cursor: 'pointer' }}
+                                >
+                                    GOALS <SortIndicator columnKey="goals" />
+                                </th>
+                                <th
+                                    onClick={() => requestSort('assists')}
+                                    style={{ textAlign: 'center', fontFamily: 'Space Mono', fontSize: '13px', letterSpacing: '2px', color: '#999', padding: '15px 10px', textTransform: 'uppercase', fontWeight: '700', cursor: 'pointer' }}
+                                >
+                                    ASSISTS <SortIndicator columnKey="assists" />
+                                </th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {playersList.map((p, idx) => (
                                 <tr key={p.name}>
                                     <td style={{ textAlign: 'center', fontFamily: 'Space Mono', fontWeight: '800', fontSize: '14px', color: '#ccc' }}>
                                         {idx + 1}
@@ -143,9 +143,7 @@ export default function ManagerPlayersUsed({ stats }) {
                                         {p.assists || "-"}
                                     </td>
                                 </tr>
-                            ))
-                        )}
-                        {playersList.length > 0 && (
+                            ))}
                             <tr style={{ background: 'rgba(201, 168, 76, 0.05)', borderTop: '2px solid var(--mgr-gold)' }}>
                                 <td style={{ textAlign: 'center', color: '#ccc' }}>
                                     -
@@ -169,9 +167,9 @@ export default function ManagerPlayersUsed({ stats }) {
                                     {totals.assists || "-"}
                                 </td>
                             </tr>
-                        )}
-                    </tbody>
-                </table>
+                        </tbody>
+                    </table>
+                )}
             </div>
         </div>
     );

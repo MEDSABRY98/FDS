@@ -135,7 +135,10 @@ export default function AlAhlyPKsManagers({ pksData }) {
             </div>
 
             <div className="h2h-table-wrapper">
-                <table className="h2h-main-table">
+                {filteredStats.length === 0 ? (
+                    <NoData_db message="NO MANAGER RECORDS FOUND" />
+                ) : (
+                    <table className="h2h-main-table">
                     <thead>
                         <tr>
                             <th rowSpan="2" className="sticky-col">MANAGER NAME</th>
@@ -159,47 +162,42 @@ export default function AlAhlyPKsManagers({ pksData }) {
                         </tr>
                     </thead>
                     <tbody>
-                        {filteredStats.length === 0 ? (
-                            <NoData_db isTable={true} colSpan={11} message="NO MANAGER RECORDS FOUND" />
-                        ) : (
-                            filteredStats.map((st, i) => (
-                                <tr key={i} className="h2h-row">
-                                    <td className="team-name sticky-col">
-                                        {st.name}
-                                    </td>
-                                    
-                                    <td className="stat-num played">{st.played}</td>
-                                    <td className="stat-num win">{st.won}</td>
-                                    <td className="stat-num loss">{st.lost}</td>
-                                    <td className="stat-num rate">{st.winRate}%</td>
-                                    
-                                    <td className="stat-num">{st.shotsFor}</td>
-                                    <td className="stat-num goals">{st.goalsFor}</td>
-                                    <td className="stat-num misses">{st.missesFor}</td>
-                                    
-                                    <td className="stat-num">{st.shotsAgainst}</td>
-                                    <td className="stat-num goals">{st.goalsAgainst}</td>
-                                    <td className="stat-num misses">{st.missesAgainst}</td>
-                                </tr>
-                            ))
-                        )}
-                        {filteredStats.length > 0 && (
-                            <tr className="total-h2h-row">
-                                <td className="team-name sticky-col">TOTAL</td>
-                                <td className="stat-num">{filteredStats.reduce((a, b) => a + b.played, 0)}</td>
-                                <td className="stat-num">{filteredStats.reduce((a, b) => a + b.won, 0)}</td>
-                                <td className="stat-num">{filteredStats.reduce((a, b) => a + b.lost, 0)}</td>
-                                <td className="stat-num">—</td>
-                                <td className="stat-num">{filteredStats.reduce((a, b) => a + b.shotsFor, 0)}</td>
-                                <td className="stat-num">{filteredStats.reduce((a, b) => a + b.goalsFor, 0)}</td>
-                                <td className="stat-num">{filteredStats.reduce((a, b) => a + b.missesFor, 0)}</td>
-                                <td className="stat-num">{filteredStats.reduce((a, b) => a + b.shotsAgainst, 0)}</td>
-                                <td className="stat-num">{filteredStats.reduce((a, b) => a + b.goalsAgainst, 0)}</td>
-                                <td className="stat-num">{filteredStats.reduce((a, b) => a + b.missesAgainst, 0)}</td>
+                        {filteredStats.map((st, i) => (
+                            <tr key={i} className="h2h-row">
+                                <td className="team-name sticky-col">
+                                    {st.name}
+                                </td>
+                                
+                                <td className="stat-num played">{st.played}</td>
+                                <td className="stat-num win">{st.won}</td>
+                                <td className="stat-num loss">{st.lost}</td>
+                                <td className="stat-num rate">{st.winRate}%</td>
+                                
+                                <td className="stat-num">{st.shotsFor}</td>
+                                <td className="stat-num goals">{st.goalsFor}</td>
+                                <td className="stat-num misses">{st.missesFor}</td>
+                                
+                                <td className="stat-num">{st.shotsAgainst}</td>
+                                <td className="stat-num goals">{st.goalsAgainst}</td>
+                                <td className="stat-num misses">{st.missesAgainst}</td>
                             </tr>
-                        )}
+                        ))}
+                        <tr className="total-h2h-row">
+                            <td className="team-name sticky-col">TOTAL</td>
+                            <td className="stat-num">{filteredStats.reduce((a, b) => a + b.played, 0)}</td>
+                            <td className="stat-num">{filteredStats.reduce((a, b) => a + b.won, 0)}</td>
+                            <td className="stat-num">{filteredStats.reduce((a, b) => a + b.lost, 0)}</td>
+                            <td className="stat-num">—</td>
+                            <td className="stat-num">{filteredStats.reduce((a, b) => a + b.shotsFor, 0)}</td>
+                            <td className="stat-num">{filteredStats.reduce((a, b) => a + b.goalsFor, 0)}</td>
+                            <td className="stat-num">{filteredStats.reduce((a, b) => a + b.missesFor, 0)}</td>
+                            <td className="stat-num">{filteredStats.reduce((a, b) => a + b.shotsAgainst, 0)}</td>
+                            <td className="stat-num">{filteredStats.reduce((a, b) => a + b.goalsAgainst, 0)}</td>
+                            <td className="stat-num">{filteredStats.reduce((a, b) => a + b.missesAgainst, 0)}</td>
+                        </tr>
                     </tbody>
-                </table>
+                    </table>
+                )}
             </div>
 
             <div className="h2h-legend">

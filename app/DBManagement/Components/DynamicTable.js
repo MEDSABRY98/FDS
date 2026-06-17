@@ -1,5 +1,6 @@
 import React from 'react';
 import { Edit3, Trash2 } from 'lucide-react';
+import NoData_db from '../../lib/NoData_db';
 
 const SELECT_COL = {
     width: '90px',
@@ -29,12 +30,8 @@ export default function DynamicTable({
     getName,
     onNameClick
 }) {
-    if (paginatedData.length === 0) {
-        return (
-            <div className="db-loader" style={{ animation: 'none', color: '#888' }}>
-                NO DATA AVAILABLE
-            </div>
-        );
+    if (!paginatedData?.length) {
+        return <NoData_db message="NO DATA RECORDS FOUND" height="280px" />;
     }
 
     return (
@@ -66,7 +63,7 @@ export default function DynamicTable({
                     {paginatedData.map((row, idx) => {
                         const nameKey = getName(row);
                         const isSelected = selectedRows.some(r => getName(r) === nameKey);
-                        
+
                         return (
                             <tr key={row.ROW_ID || idx} className={isSelected ? 'selected-row' : ''}>
                                 <td className="select-cell" style={{ ...SELECT_COL, textAlign: 'center' }}>
@@ -101,7 +98,7 @@ export default function DynamicTable({
                                     return (
                                         <td key={col} title={val || ''}>
                                             {isNameCol && val ? (
-                                                <span 
+                                                <span
                                                     onClick={() => onNameClick && onNameClick(val)}
                                                     style={{ cursor: 'pointer' }}
                                                 >

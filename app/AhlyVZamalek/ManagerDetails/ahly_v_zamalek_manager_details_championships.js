@@ -30,7 +30,10 @@ export default function ManagerChampionships({ stats }) {
             <div className="history-title" style={{ marginBottom: '25px' }}>PERFORMANCE BY CHAMPIONSHIP</div>
 
             <div style={{ overflowX: 'auto' }}>
-                <table className="player-match-table">
+                {comps.length === 0 ? (
+                    <NoData_db message="No championship data available." />
+                ) : (
+                    <table className="player-match-table">
                     <thead>
                         <tr>
                             <th style={{ textAlign: 'center', fontFamily: 'Space Mono', fontSize: '15px', letterSpacing: '2px', color: '#666', padding: '20px 10px', textTransform: 'uppercase', fontWeight: '800' }}>CHAMPIONSHIP NAME</th>
@@ -45,44 +48,39 @@ export default function ManagerChampionships({ stats }) {
                         </tr>
                     </thead>
                     <tbody>
-                        {comps.length === 0 ? (
-                            <NoData_db isTable={true} colSpan={9} message="No championship data available." />
-                        ) : (
-                            comps.map(name => {
-                                const s = compStore[name];
-                                const wr = s.matches > 0 ? ((s.wins / s.matches) * 100).toFixed(1) : 0;
-                                return (
-                                    <tr key={name}>
-                                        <td style={{ fontWeight: '800', color: 'var(--mgr-dark)', fontSize: '15px', fontFamily: 'Outfit' }}>{name}</td>
-                                        <td style={{ textAlign: 'center', fontFamily: 'Outfit', fontWeight: '900', fontSize: '18px', color: 'var(--mgr-gold)' }}>{s.matches || "-"}</td>
-                                        <td style={{ textAlign: 'center', color: '#2ecc71', fontWeight: '900', fontSize: '18px', fontFamily: 'Outfit' }}>{s.wins || "-"}</td>
-                                        <td style={{ textAlign: 'center', color: '#e67e22', fontWeight: '900', fontSize: '18px', fontFamily: 'Outfit' }}>{s.draws || "-"}</td>
-                                        <td style={{ textAlign: 'center', color: '#e74c3c', fontWeight: '900', fontSize: '18px', fontFamily: 'Outfit' }}>{s.losses || "-"}</td>
-                                        <td style={{ textAlign: 'center', color: 'var(--mgr-dark)', fontWeight: '900', fontSize: '18px', fontFamily: 'Outfit' }}>{wr}%</td>
-                                        <td style={{ textAlign: 'center', fontFamily: 'Space Mono', fontWeight: '800', fontSize: '14px' }}>{s.gs} - {s.ga}</td>
-                                        <td style={{ textAlign: 'center', color: '#2ecc71', fontWeight: '900', fontSize: '18px', fontFamily: 'Outfit' }}>{s.csFor || "-"}</td>
-                                        <td style={{ textAlign: 'center', color: '#e74c3c', fontWeight: '900', fontSize: '18px', fontFamily: 'Outfit' }}>{s.csAgainst || "-"}</td>
-                                    </tr>
-                                );
-                            })
-                        )}
-                        {comps.length > 0 && (
-                            <tr style={{ background: 'rgba(201, 168, 76, 0.05)', borderTop: '2px solid var(--mgr-gold)' }}>
-                                <td style={{ fontWeight: '900', color: 'var(--mgr-gold)', textTransform: 'uppercase', letterSpacing: '2px', fontSize: '14px', fontFamily: 'Outfit' }}>TOTAL</td>
-                                <td style={{ textAlign: 'center', fontFamily: 'Outfit', fontWeight: '900', fontSize: '20px' }}>{totals.matches || "-"}</td>
-                                <td style={{ textAlign: 'center', color: '#2ecc71', fontWeight: '900', fontSize: '20px', fontFamily: 'Outfit' }}>{totals.wins || "-"}</td>
-                                <td style={{ textAlign: 'center', color: '#e67e22', fontWeight: '900', fontSize: '20px', fontFamily: 'Outfit' }}>{totals.draws || "-"}</td>
-                                <td style={{ textAlign: 'center', color: '#ff6b6b', fontWeight: '900', fontSize: '20px', fontFamily: 'Outfit' }}>{totals.losses || "-"}</td>
-                                <td style={{ textAlign: 'center', color: 'var(--mgr-gold)', fontWeight: '900', fontSize: '20px', fontFamily: 'Outfit' }}>
-                                    {totals.matches > 0 ? ((totals.wins / totals.matches) * 100).toFixed(1) : 0}%
-                                </td>
-                                <td style={{ textAlign: 'center', fontFamily: 'Space Mono', fontWeight: '900', fontSize: '15px' }}>{totals.gs} - {totals.ga}</td>
-                                <td style={{ textAlign: 'center', color: '#2ecc71', fontWeight: '900', fontSize: '20px', fontFamily: 'Outfit' }}>{totals.csFor || "-"}</td>
-                                <td style={{ textAlign: 'center', color: '#ff6b6b', fontWeight: '900', fontSize: '20px', fontFamily: 'Outfit' }}>{totals.csAgainst || "-"}</td>
-                            </tr>
-                        )}
+                        {comps.map(name => {
+                            const s = compStore[name];
+                            const wr = s.matches > 0 ? ((s.wins / s.matches) * 100).toFixed(1) : 0;
+                            return (
+                                <tr key={name}>
+                                    <td style={{ fontWeight: '800', color: 'var(--mgr-dark)', fontSize: '15px', fontFamily: 'Outfit' }}>{name}</td>
+                                    <td style={{ textAlign: 'center', fontFamily: 'Outfit', fontWeight: '900', fontSize: '18px', color: 'var(--mgr-gold)' }}>{s.matches || "-"}</td>
+                                    <td style={{ textAlign: 'center', color: '#2ecc71', fontWeight: '900', fontSize: '18px', fontFamily: 'Outfit' }}>{s.wins || "-"}</td>
+                                    <td style={{ textAlign: 'center', color: '#e67e22', fontWeight: '900', fontSize: '18px', fontFamily: 'Outfit' }}>{s.draws || "-"}</td>
+                                    <td style={{ textAlign: 'center', color: '#e74c3c', fontWeight: '900', fontSize: '18px', fontFamily: 'Outfit' }}>{s.losses || "-"}</td>
+                                    <td style={{ textAlign: 'center', color: 'var(--mgr-dark)', fontWeight: '900', fontSize: '18px', fontFamily: 'Outfit' }}>{wr}%</td>
+                                    <td style={{ textAlign: 'center', fontFamily: 'Space Mono', fontWeight: '800', fontSize: '14px' }}>{s.gs} - {s.ga}</td>
+                                    <td style={{ textAlign: 'center', color: '#2ecc71', fontWeight: '900', fontSize: '18px', fontFamily: 'Outfit' }}>{s.csFor || "-"}</td>
+                                    <td style={{ textAlign: 'center', color: '#e74c3c', fontWeight: '900', fontSize: '18px', fontFamily: 'Outfit' }}>{s.csAgainst || "-"}</td>
+                                </tr>
+                            );
+                        })}
+                        <tr style={{ background: 'rgba(201, 168, 76, 0.05)', borderTop: '2px solid var(--mgr-gold)' }}>
+                            <td style={{ fontWeight: '900', color: 'var(--mgr-gold)', textTransform: 'uppercase', letterSpacing: '2px', fontSize: '14px', fontFamily: 'Outfit' }}>TOTAL</td>
+                            <td style={{ textAlign: 'center', fontFamily: 'Outfit', fontWeight: '900', fontSize: '20px' }}>{totals.matches || "-"}</td>
+                            <td style={{ textAlign: 'center', color: '#2ecc71', fontWeight: '900', fontSize: '20px', fontFamily: 'Outfit' }}>{totals.wins || "-"}</td>
+                            <td style={{ textAlign: 'center', color: '#e67e22', fontWeight: '900', fontSize: '20px', fontFamily: 'Outfit' }}>{totals.draws || "-"}</td>
+                            <td style={{ textAlign: 'center', color: '#ff6b6b', fontWeight: '900', fontSize: '20px', fontFamily: 'Outfit' }}>{totals.losses || "-"}</td>
+                            <td style={{ textAlign: 'center', color: 'var(--mgr-gold)', fontWeight: '900', fontSize: '20px', fontFamily: 'Outfit' }}>
+                                {totals.matches > 0 ? ((totals.wins / totals.matches) * 100).toFixed(1) : 0}%
+                            </td>
+                            <td style={{ textAlign: 'center', fontFamily: 'Space Mono', fontWeight: '900', fontSize: '15px' }}>{totals.gs} - {totals.ga}</td>
+                            <td style={{ textAlign: 'center', color: '#2ecc71', fontWeight: '900', fontSize: '20px', fontFamily: 'Outfit' }}>{totals.csFor || "-"}</td>
+                            <td style={{ textAlign: 'center', color: '#ff6b6b', fontWeight: '900', fontSize: '20px', fontFamily: 'Outfit' }}>{totals.csAgainst || "-"}</td>
+                        </tr>
                     </tbody>
-                </table>
+                    </table>
+                )}
             </div>
         </div>
     );

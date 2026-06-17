@@ -52,6 +52,7 @@ const NoData_db = ({
             
             <div className="nodata-content">
                 <div className="nodata-title">Empty Results</div>
+                {message ? <div className="nodata-message">{message}</div> : null}
             </div>
 
             

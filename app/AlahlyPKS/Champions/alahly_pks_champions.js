@@ -87,7 +87,10 @@ export default function AlAhlyPKsChampions({ pksData }) {
             </div>
 
             <div className="champs-table-wrapper">
-                <table className="champs-main-table">
+                {filteredStats.length === 0 ? (
+                    <NoData_db message="NO CHAMPION RECORDS FOUND" />
+                ) : (
+                    <table className="champs-main-table">
                     <thead>
                         <tr>
                             <th rowSpan="2" className="sticky-col">TOURNAMENT</th>
@@ -111,48 +114,43 @@ export default function AlAhlyPKsChampions({ pksData }) {
                         </tr>
                     </thead>
                     <tbody>
-                        {filteredStats.length === 0 ? (
-                            <NoData_db isTable={true} colSpan={11} message="NO CHAMPION RECORDS FOUND" />
-                        ) : (
-                            filteredStats.map((st, i) => (
-                                <tr key={i} className="champs-row">
-                                    <td className="champ-name sticky-col">{st.name}</td>
-                                    
-                                    {/* Shootout Aggregate */}
-                                    <td className="stat-num played">{st.played}</td>
-                                    <td className="stat-num win">{st.won}</td>
-                                    <td className="stat-num loss">{st.lost}</td>
-                                    <td className="stat-num rate">{st.winRate}%</td>
-                                    
-                                    {/* Ahly Shots */}
-                                    <td className="stat-num">{st.shotsAhly}</td>
-                                    <td className="stat-num goals">{st.goalsAhly}</td>
-                                    <td className="stat-num misses">{st.missesAhly}</td>
-                                    
-                                    {/* Opponent Shots */}
-                                    <td className="stat-num">{st.shotsOpp}</td>
-                                    <td className="stat-num goals">{st.goalsOpp}</td>
-                                    <td className="stat-num misses">{st.missesOpp}</td>
-                                </tr>
-                            ))
-                        )}
-                        {filteredStats.length > 0 && (
-                            <tr className="total-champs-row">
-                                <td className="champ-name sticky-col">TOTAL CAREER</td>
-                                <td className="stat-num">{filteredStats.reduce((a, b) => a + b.played, 0)}</td>
-                                <td className="stat-num">{filteredStats.reduce((a, b) => a + b.won, 0)}</td>
-                                <td className="stat-num">{filteredStats.reduce((a, b) => a + b.lost, 0)}</td>
-                                <td className="stat-num">—</td>
-                                <td className="stat-num">{filteredStats.reduce((a, b) => a + b.shotsAhly, 0)}</td>
-                                <td className="stat-num">{filteredStats.reduce((a, b) => a + b.goalsAhly, 0)}</td>
-                                <td className="stat-num">{filteredStats.reduce((a, b) => a + b.missesAhly, 0)}</td>
-                                <td className="stat-num">{filteredStats.reduce((a, b) => a + b.shotsOpp, 0)}</td>
-                                <td className="stat-num">{filteredStats.reduce((a, b) => a + b.goalsOpp, 0)}</td>
-                                <td className="stat-num">{filteredStats.reduce((a, b) => a + b.missesOpp, 0)}</td>
+                        {filteredStats.map((st, i) => (
+                            <tr key={i} className="champs-row">
+                                <td className="champ-name sticky-col">{st.name}</td>
+                                
+                                {/* Shootout Aggregate */}
+                                <td className="stat-num played">{st.played}</td>
+                                <td className="stat-num win">{st.won}</td>
+                                <td className="stat-num loss">{st.lost}</td>
+                                <td className="stat-num rate">{st.winRate}%</td>
+                                
+                                {/* Ahly Shots */}
+                                <td className="stat-num">{st.shotsAhly}</td>
+                                <td className="stat-num goals">{st.goalsAhly}</td>
+                                <td className="stat-num misses">{st.missesAhly}</td>
+                                
+                                {/* Opponent Shots */}
+                                <td className="stat-num">{st.shotsOpp}</td>
+                                <td className="stat-num goals">{st.goalsOpp}</td>
+                                <td className="stat-num misses">{st.missesOpp}</td>
                             </tr>
-                        )}
+                        ))}
+                        <tr className="total-champs-row">
+                            <td className="champ-name sticky-col">TOTAL CAREER</td>
+                            <td className="stat-num">{filteredStats.reduce((a, b) => a + b.played, 0)}</td>
+                            <td className="stat-num">{filteredStats.reduce((a, b) => a + b.won, 0)}</td>
+                            <td className="stat-num">{filteredStats.reduce((a, b) => a + b.lost, 0)}</td>
+                            <td className="stat-num">—</td>
+                            <td className="stat-num">{filteredStats.reduce((a, b) => a + b.shotsAhly, 0)}</td>
+                            <td className="stat-num">{filteredStats.reduce((a, b) => a + b.goalsAhly, 0)}</td>
+                            <td className="stat-num">{filteredStats.reduce((a, b) => a + b.missesAhly, 0)}</td>
+                            <td className="stat-num">{filteredStats.reduce((a, b) => a + b.shotsOpp, 0)}</td>
+                            <td className="stat-num">{filteredStats.reduce((a, b) => a + b.goalsOpp, 0)}</td>
+                            <td className="stat-num">{filteredStats.reduce((a, b) => a + b.missesOpp, 0)}</td>
+                        </tr>
                     </tbody>
-                </table>
+                    </table>
+                )}
             </div>
             
             <div className="champs-legend">

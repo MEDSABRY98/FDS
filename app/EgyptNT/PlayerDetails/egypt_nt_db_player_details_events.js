@@ -128,23 +128,25 @@ export default function PlayerEventsTable({
                 </div>
             </div>
 
-            <div style={{ overflowX: 'auto' }}>
-                <table className="player-match-table">
-                    <thead>
-                        <tr>
-                            <th>#</th>
-                            <th>MATCH ID</th>
-                            <th>DATE</th>
-                            <th>SEASON</th>
-                            <th>OPPONENT TEAM</th>
-                            <th>STATUS</th>
-                            <th>TIME</th>
-                            <th>EVENTS</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {currentEvents.length > 0 ? (
-                            currentEvents.map((m, idx) => (
+            {filteredEvents.length === 0 ? (
+                <NoData_db message="NO PERFORMANCE EVENTS FOUND FOR THIS PLAYER" />
+            ) : (
+                <div style={{ overflowX: 'auto' }}>
+                    <table className="player-match-table">
+                        <thead>
+                            <tr>
+                                <th>#</th>
+                                <th>MATCH ID</th>
+                                <th>DATE</th>
+                                <th>SEASON</th>
+                                <th>OPPONENT TEAM</th>
+                                <th>STATUS</th>
+                                <th>TIME</th>
+                                <th>EVENTS</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {currentEvents.map((m, idx) => (
                                 <tr key={startIdx + idx}>
                                     <td style={{ color: '#ccc', fontSize: '11px' }}>{startIdx + idx + 1}</td>
                                     <td className="m-id-cell">{m.id}</td>
@@ -159,13 +161,11 @@ export default function PlayerEventsTable({
                                     <td style={{ fontWeight: 800 }}>{m.mins && m.mins !== '—' ? `${m.mins}'` : '—'}</td>
                                     <td>{renderEventsCell(m)}</td>
                                 </tr>
-                            ))
-                        ) : (
-                            <NoData_db isTable={true} colSpan={8} message="NO PERFORMANCE EVENTS FOUND FOR THIS PLAYER" />
-                        )}
-                    </tbody>
-                </table>
-            </div>
+                            ))}
+                        </tbody>
+                    </table>
+                </div>
+            )}
 
             {totalPages > 1 && (
                 <div className="p-pagination" style={{ marginTop: '20px', justifyContent: 'center' }}>

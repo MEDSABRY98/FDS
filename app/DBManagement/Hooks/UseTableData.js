@@ -1,5 +1,6 @@
 import { useState, useEffect, useMemo, useCallback } from 'react';
 import { supabase, sortGlobalDbManagementTableData } from "../../lib/supabase";
+import { FetchTableSortSetting, appendSettingsTab, SETTINGS_TAB_ID } from "../../lib/supabase";
 
 export function useTableData(addNotification) {
     const [availableTables, setAvailableTables] = useState([]);
@@ -20,15 +21,17 @@ export function useTableData(addNotification) {
                 if (error) throw error;
                 if (data && data.length > 0) {
                     const sorted = data
-                        .filter(t => t.table_name.toUpperCase() !== "DB_COLUMN_ORDERS")
+                        .filter(t => {
+                            const name = t.table_name.toUpperCase();
+                            return name !== "DB_COLUMN_ORDERS" && name !== "DB_SETTINGS";
+                        })
                         .map(t => {
                             const label = t.table_name.replace('db_', '').toUpperCase();
                             return { name: t.table_name, label };
                         }).sort((a, b) => a.label.localeCompare(b.label));
                     
                     sorted.push({ name: "COLUMN_SORT", label: "COLUMN SORT" });
-                    
-                    setAvailableTables(sorted);
+                    setAvailableTables(appendSettingsTab(sorted));
                     setSelectedTable(sorted[0].name);
                 }
             } catch (err) {
@@ -40,7 +43,7 @@ export function useTableData(addNotification) {
     }, [addNotification]);
 
     const fetchTableData = useCallback(async () => {
-        if (!selectedTable) return;
+        if (!selectedTable || selectedTable === SETTINGS_TAB_ID || selectedTable === "COLUMN_SORT") return;
         setLoading(true);
         try {
             let allData = [];
@@ -111,7 +114,8 @@ export function useTableData(addNotification) {
                 }
 
                 setColumns(cols);
-                setTableData(sortGlobalDbManagementTableData(allData, cols));
+                const sortSetting = await FetchTableSortSetting(selectedTable);
+                setTableData(sortGlobalDbManagementTableData(allData, cols, sortSetting));
             } else {
                 setTableData([]);
                 setColumns([]);
@@ -125,14 +129,14 @@ export function useTableData(addNotification) {
     }, [selectedTable, addNotification]);
 
     useEffect(() => {
-        if (selectedTable && selectedTable !== "COLUMN_SORT") {
+        if (selectedTable && selectedTable !== SETTINGS_TAB_ID && selectedTable !== "COLUMN_SORT") {
             fetchTableData();
         }
     }, [selectedTable, fetchTableData]);
 
     const changeSelectedTable = (newTable) => {
         if (newTable !== selectedTable) {
-            if (newTable !== "COLUMN_SORT") {
+            if (newTable !== SETTINGS_TAB_ID && newTable !== "COLUMN_SORT") {
                 setLoading(true);
             }
             setTableData([]);

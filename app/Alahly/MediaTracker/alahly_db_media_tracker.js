@@ -203,7 +203,10 @@ export default function AlAhlyMediaTracker({ matches, mediaTrackerData, onDataCh
                 </div>
 
                 <div className="mt-table-container">
-                    <table className="mt-modern-table mt-fade-in">
+                    {combinedData.length === 0 ? (
+                        <NoData_db message="No media tracker records found." />
+                    ) : (
+                        <table className="mt-modern-table mt-fade-in">
                         <thead>
                             <tr>
                                 <th style={{ width: '40px' }}>#</th>
@@ -219,10 +222,7 @@ export default function AlAhlyMediaTracker({ matches, mediaTrackerData, onDataCh
                             </tr>
                         </thead>
                         <tbody>
-                            {paginatedData.length === 0 ? (
-                                <NoData_db isTable={true} colSpan={10} message="No media tracker records found." />
-                            ) : (
-                                paginatedData.map((item, i) => {
+                            {paginatedData.map((item, i) => {
                                     const actualIndex = (currentPage - 1) * pageSize + i;
                                     const isEditing = editingId === item.ROW_ID;
                                     
@@ -332,10 +332,10 @@ export default function AlAhlyMediaTracker({ matches, mediaTrackerData, onDataCh
                                             </td>
                                         </tr>
                                     );
-                                })
-                            )}
+                            })}
                         </tbody>
-                    </table>
+                        </table>
+                    )}
                 </div>
 
                 {totalPages > 1 && (

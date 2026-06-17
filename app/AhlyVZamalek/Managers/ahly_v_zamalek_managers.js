@@ -213,32 +213,30 @@ export default function AhlyVZamalekManagers({ derbyData, lineupDetails, playerD
             </div>
 
             <div className="avz-table-wrapper">
-                <table className="avz-data-table">
-                    <thead>
-                        <tr>
-                            <th onClick={() => handleSort(null)} style={{ cursor: 'default' }}>#</th>
-                            <th onClick={() => handleSort('name')} className="sortable-header">MANAGER {getSortIcon('name')}</th>
-
-                            <th onClick={() => handleSort('matches')} className="sortable-header">MATCHES {getSortIcon('matches')}</th>
-                            <th onClick={() => handleSort('wins')} className="sortable-header">WINS {getSortIcon('wins')}</th>
-                            <th onClick={() => handleSort('winRate')} className="sortable-header">WIN % {getSortIcon('winRate')}</th>
-                            <th onClick={() => handleSort('draws')} className="sortable-header">DRAWS {getSortIcon('draws')}</th>
-                            <th onClick={() => handleSort('losses')} className="sortable-header">LOSSES {getSortIcon('losses')}</th>
-                            <th onClick={() => handleSort('gf')} className="sortable-header">GF {getSortIcon('gf')}</th>
-                            <th onClick={() => handleSort('ga')} className="sortable-header">GA {getSortIcon('ga')}</th>
-                            <th onClick={() => handleSort('csa')} className="sortable-header">CSA {getSortIcon('csa')}</th>
-                            <th onClick={() => handleSort('csf')} className="sortable-header">CSF {getSortIcon('csf')}</th>
-                        </tr>
-                    </thead>
-
-
-                    <tbody>
-                        {displayedManagers.length > 0 ? (
-                            displayedManagers.map((m, idx) => (
+                {displayedManagers.length === 0 ? (
+                    <NoData_db message="NO MANAGERS FOUND" />
+                ) : (
+                    <table className="avz-data-table">
+                        <thead>
+                            <tr>
+                                <th onClick={() => handleSort(null)} style={{ cursor: 'default' }}>#</th>
+                                <th onClick={() => handleSort('name')} className="sortable-header">MANAGER {getSortIcon('name')}</th>
+                                <th onClick={() => handleSort('matches')} className="sortable-header">MATCHES {getSortIcon('matches')}</th>
+                                <th onClick={() => handleSort('wins')} className="sortable-header">WINS {getSortIcon('wins')}</th>
+                                <th onClick={() => handleSort('winRate')} className="sortable-header">WIN % {getSortIcon('winRate')}</th>
+                                <th onClick={() => handleSort('draws')} className="sortable-header">DRAWS {getSortIcon('draws')}</th>
+                                <th onClick={() => handleSort('losses')} className="sortable-header">LOSSES {getSortIcon('losses')}</th>
+                                <th onClick={() => handleSort('gf')} className="sortable-header">GF {getSortIcon('gf')}</th>
+                                <th onClick={() => handleSort('ga')} className="sortable-header">GA {getSortIcon('ga')}</th>
+                                <th onClick={() => handleSort('csa')} className="sortable-header">CSA {getSortIcon('csa')}</th>
+                                <th onClick={() => handleSort('csf')} className="sortable-header">CSF {getSortIcon('csf')}</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {displayedManagers.map((m, idx) => (
                                 <tr key={idx} onClick={() => onSelectManager && onSelectManager(m.name, m.team)} style={{ cursor: 'pointer' }}>
                                     <td>{idx + 1}</td>
                                     <td className="avz-text-bold">{m.name}</td>
-
                                     <td className="avz-highlight-stat">{m.matches}</td>
                                     <td className="avz-success-text">{m.wins > 0 ? m.wins : "-"}</td>
                                     <td><span className="avz-rate-badge">{m.winRate}%</span></td>
@@ -249,19 +247,10 @@ export default function AhlyVZamalekManagers({ derbyData, lineupDetails, playerD
                                     <td>{m.csa > 0 ? m.csa : "-"}</td>
                                     <td>{m.csf > 0 ? m.csf : "-"}</td>
                                 </tr>
-
-
-                            ))
-                        ) : (
-                            <NoData_db message="NO MANAGERS FOUND" isTable={true} colSpan={11} />
-
-
-
-
-                        )}
-                    </tbody>
-
-                </table>
+                            ))}
+                        </tbody>
+                    </table>
+                )}
             </div>
         </div>
     );

@@ -222,6 +222,12 @@ function EditableTable({ title, color, rows, setRows, columns, matchId, emptyRow
                 </button>
             </div>
 
+            {rows.length === 0 ? (
+                <NoData_db
+                    message={`NO ${title.toUpperCase()} RECORDS FOUND`}
+                    height="240px"
+                />
+            ) : (
             <div className="table-wrap">
                 <table className="data-table">
                     <thead>
@@ -305,16 +311,10 @@ function EditableTable({ title, color, rows, setRows, columns, matchId, emptyRow
                                 </td>
                             </tr>
                         ))}
-                        {rows.length === 0 && (
-                            <NoData_db
-                                isTable={true}
-                                colSpan={columns.length + 1}
-                                message={`NO ${title.toUpperCase()} RECORDS FOUND`}
-                            />
-                        )}
                     </tbody>
                 </table>
             </div>
+            )}
         </div>
     );
 }

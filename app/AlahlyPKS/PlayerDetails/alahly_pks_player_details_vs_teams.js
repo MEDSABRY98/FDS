@@ -29,21 +29,21 @@ export default function AlAhlyPKsPlayerDetailsVsTeams({ pksData, playerName }) {
             <div className="history-title">PERFORMANCE AGAINST TEAMS</div>
             
             <div style={{ overflowX: 'auto' }}>
-                <table className="player-match-table vs-teams-table">
-                    <thead>
-                        <tr style={{ height: '70px' }}>
-                            <th style={{ fontSize: '15px' }}>OPPONENT TEAM</th>
-                            <th style={{ fontSize: '15px' }}>TOTAL PKs</th>
-                            <th style={{ fontSize: '15px' }}>GOALS</th>
-                            <th style={{ fontSize: '15px' }}>MISSES</th>
-                            <th style={{ fontSize: '15px' }}>SUCCESS %</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {teamStats.length === 0 ? (
-                            <NoData_db isTable={true} colSpan={5} message="No opponent data available." />
-                        ) : (
-                            teamStats.map((st, idx) => (
+                {teamStats.length === 0 ? (
+                    <NoData_db message="No opponent data available." />
+                ) : (
+                    <table className="player-match-table vs-teams-table">
+                        <thead>
+                            <tr style={{ height: '70px' }}>
+                                <th style={{ fontSize: '15px' }}>OPPONENT TEAM</th>
+                                <th style={{ fontSize: '15px' }}>TOTAL PKs</th>
+                                <th style={{ fontSize: '15px' }}>GOALS</th>
+                                <th style={{ fontSize: '15px' }}>MISSES</th>
+                                <th style={{ fontSize: '15px' }}>SUCCESS %</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {teamStats.map((st, idx) => (
                                 <tr key={idx} style={{ height: '80px' }}>
                                     <td style={{ fontWeight: '800', color: 'var(--player-dark)', fontSize: '18px' }}>{st.team}</td>
                                     <td style={{ fontFamily: 'Space Mono', fontWeight: '900', fontSize: '20px' }}>{st.total}</td>
@@ -53,9 +53,7 @@ export default function AlAhlyPKsPlayerDetailsVsTeams({ pksData, playerName }) {
                                         {Math.round((st.goals / st.total) * 100)}%
                                     </td>
                                 </tr>
-                            ))
-                        )}
-                        {teamStats.length > 0 && (
+                            ))}
                             <tr style={{ background: 'rgba(201, 168, 76, 0.05)', borderTop: '2px solid var(--player-gold)', height: '90px' }}>
                                 <td style={{ fontWeight: '950', color: 'var(--player-gold)', textTransform: 'uppercase', letterSpacing: '2px' }}>TOTAL AGAINST CAREER</td>
                                 <td style={{ fontFamily: 'Space Mono', fontWeight: '950', fontSize: '22px' }}>{teamStats.reduce((a, b) => a + b.total, 0)}</td>
@@ -63,9 +61,9 @@ export default function AlAhlyPKsPlayerDetailsVsTeams({ pksData, playerName }) {
                                 <td style={{ color: '#e74c3c', fontWeight: '950', fontSize: '26px' }}>{teamStats.reduce((a, b) => a + b.misses, 0)}</td>
                                 <td style={{ color: 'var(--player-gold)', fontWeight: '950' }}>—</td>
                             </tr>
-                        )}
-                    </tbody>
-                </table>
+                        </tbody>
+                    </table>
+                )}
             </div>
         </div>
     );

@@ -36,7 +36,10 @@ export default function GK_VsPlayers_Component_Unique({ stats }) {
             </div>
 
             <div style={{ overflowX: 'auto' }}>
-                <table className="player-match-table vs-teams-table">
+                {scorerNames.length === 0 ? (
+                    <NoData_db message="No data available." />
+                ) : (
+                    <table className="player-match-table vs-teams-table">
                     <thead>
                         <tr>
                             <th style={{ padding: '16px 20px', textAlign: 'center', fontSize: '13px', fontFamily: 'Space Mono', color: '#999', borderBottom: '2px solid #eee', textTransform: 'uppercase', letterSpacing: '2px', fontWeight: '700' }}>PLAYER NAME</th>
@@ -46,10 +49,7 @@ export default function GK_VsPlayers_Component_Unique({ stats }) {
                         </tr>
                     </thead>
                     <tbody>
-                        {scorerNames.length === 0 ? (
-                            <NoData_db isTable={true} colSpan={4} message="No data available." />
-                        ) : (
-                            scorerNames.map(name => {
+                        {scorerNames.map(name => {
                                 const s = scorerStore[name];
                                 return (
                                     <tr key={name}>
@@ -58,19 +58,17 @@ export default function GK_VsPlayers_Component_Unique({ stats }) {
                                         <td style={{ padding: '18px 20px', textAlign: 'center', fontFamily: 'Outfit', fontWeight: '900', fontSize: '18px' }}>{s.pens_scored || "-"}</td>
                                         <td style={{ padding: '18px 20px', textAlign: 'center', color: (s.pens_saved > 0 ? '#2980b9' : 'inherit'), fontWeight: '900', fontSize: '18px', fontFamily: 'Outfit' }}>{s.pens_saved || "-"}</td>
                                     </tr>
-                                );
-                            })
-                        )}
-                        {scorerNames.length > 0 && (
-                            <tr style={{ background: '#0a0a0a', color: '#fff', fontWeight: '700' }}>
+                            );
+                        })}
+                        <tr style={{ background: '#0a0a0a', color: '#fff', fontWeight: '700' }}>
                                 <td style={{ padding: '20px', textAlign: 'center', fontWeight: '900', color: 'var(--player-gold)', textTransform: 'uppercase', letterSpacing: '2px', fontSize: '14px', fontFamily: 'Outfit' }}>TOTAL</td>
                                 <td style={{ padding: '20px', textAlign: 'center', color: '#ff6b6b', fontWeight: '900', fontSize: '20px', fontFamily: 'Outfit' }}>{totals.goals || "-"}</td>
                                 <td style={{ padding: '20px', textAlign: 'center', fontFamily: 'Outfit', fontWeight: '900', fontSize: '20px' }}>{totals.pens_scored || "-"}</td>
                                 <td style={{ padding: '20px', textAlign: 'center', color: '#5dade2', fontWeight: '900', fontSize: '20px', fontFamily: 'Outfit' }}>{totals.pens_saved || "-"}</td>
                             </tr>
-                        )}
                     </tbody>
                 </table>
+                )}
             </div>
         </div>
     );

@@ -100,27 +100,27 @@ export default function EgyptNTChampions({ matchesData }) {
                 <div className="section-title">EGYPT NT <span className="accent">COMPETITIONS</span></div>
                 <div className="gold-line"></div>
 
-                <div className="egypt-table-container">
-                    <table className="egypt-table">
-                        <thead>
-                            <tr>
-                                <th style={{ width: '60px' }}>#</th>
-                                <th style={{ textAlign: 'center' }}>COMPETITION</th>
-                                <th style={{ width: '100px' }}>MP</th>
-                                <th style={{ width: '120px', color: '#16a34a' }}>W</th>
-                                <th style={{ width: '100px' }}>D</th>
-                                <th style={{ width: '120px', color: '#dc2626' }}>L</th>
-                                <th style={{ width: '120px' }}>WIN %</th>
-                                <th style={{ width: '120px' }}>GF</th>
-                                <th style={{ width: '120px' }}>GA</th>
-                                <th style={{ width: '120px', color: 'var(--gold)' }}>CS</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {championStats.length === 0 ? (
-                                <NoData_db isTable={true} colSpan={10} message="No competition records found." />
-                            ) : (
-                                championStats.map((comp, idx) => (
+                {championStats.length === 0 ? (
+                    <NoData_db message="No competition records found." />
+                ) : (
+                    <div className="egypt-table-container">
+                        <table className="egypt-table">
+                            <thead>
+                                <tr>
+                                    <th style={{ width: '60px' }}>#</th>
+                                    <th style={{ textAlign: 'center' }}>COMPETITION</th>
+                                    <th style={{ width: '100px' }}>MP</th>
+                                    <th style={{ width: '120px', color: '#16a34a' }}>W</th>
+                                    <th style={{ width: '100px' }}>D</th>
+                                    <th style={{ width: '120px', color: '#dc2626' }}>L</th>
+                                    <th style={{ width: '120px' }}>WIN %</th>
+                                    <th style={{ width: '120px' }}>GF</th>
+                                    <th style={{ width: '120px' }}>GA</th>
+                                    <th style={{ width: '120px', color: 'var(--gold)' }}>CS</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {championStats.map((comp, idx) => (
                                     <tr key={comp.name}>
                                         <td>
                                             <span className={`rank-badge-premium ${idx < 3 ? 'rank-gold' : ''}`}>
@@ -137,10 +137,8 @@ export default function EgyptNTChampions({ matchesData }) {
                                         <td className="l-cell">{comp.ga}</td>
                                         <td className="cs-cell" style={{ fontWeight: 800 }}>{comp.cs}</td>
                                     </tr>
-                                ))
-                            )}
-                        </tbody>
-                        {championStats.length > 0 && (
+                                ))}
+                            </tbody>
                             <tfoot>
                                 <tr className="total-row-premium">
                                     <td colSpan="2" style={{ textAlign: 'center' }}>TOTALS</td>
@@ -154,9 +152,9 @@ export default function EgyptNTChampions({ matchesData }) {
                                     <td className="cs-cell" style={{ fontWeight: 800 }}>{grandTotals.cs}</td>
                                 </tr>
                             </tfoot>
-                        )}
-                    </table>
-                </div>
+                        </table>
+                    </div>
+                )}
             </div>
         </div>
     );

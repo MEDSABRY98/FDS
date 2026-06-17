@@ -14,6 +14,8 @@ import DatabaseSidebar from "./Components/DatabaseSidebar";
 import DynamicTable from "./Components/DynamicTable";
 import Pagination from "./Components/Pagination";
 import EditModal from "./Modals/EditModal";
+import Settings_db from "../lib/Settings_db";
+import { appendSettingsTab, SETTINGS_TAB_ID } from "../lib/supabase";
 
 export default function DatabaseManagement() {
     const { addNotification } = useNotification();
@@ -37,7 +39,7 @@ export default function DatabaseManagement() {
                         const label = t.table_name.replace('alahly_', '').replace(/_/g, ' ');
                         return { name: t.table_name, label };
                     }).sort((a, b) => a.name.localeCompare(b.name));
-                    setAvailableTables(sorted);
+                    setAvailableTables(appendSettingsTab(sorted));
                     setSelectedTable(sorted[0].name);
                 }
             } catch (err) {
@@ -52,7 +54,9 @@ export default function DatabaseManagement() {
     
     const handleTableChange = (newTable) => {
         if (newTable !== selectedTable) {
-            setLoading(true);
+            if (newTable !== SETTINGS_TAB_ID) {
+                setLoading(true);
+            }
             setTableData([]);
             setColumns([]);
             setSelectedTable(newTable);
@@ -68,7 +72,7 @@ export default function DatabaseManagement() {
 
     // Effect triggers
     useEffect(() => {
-        if (selectedTable) {
+        if (selectedTable && selectedTable !== SETTINGS_TAB_ID) {
             fetchTableData();
             setCurrentPage(1);
             setSelectedRows([]);
@@ -127,7 +131,7 @@ export default function DatabaseManagement() {
         }
     };
 
-    const isLoading = tableLoading || editLoading;
+    const isLoading = selectedTable !== SETTINGS_TAB_ID && (tableLoading || editLoading);
 
     return (
         <Login_db title="EDITOR ACCESS" subtitle="AUTHORIZATION REQUIRED">
@@ -141,6 +145,8 @@ export default function DatabaseManagement() {
                     <main className="db-content">
                     {isLoading ? (
                         <Loading_db title="AL AHLY" subtitle="DATABASE" message="SYNCING REAL-TIME DATA..." inline={true} />
+                    ) : selectedTable === SETTINGS_TAB_ID ? (
+                        <Settings_db availableTables={availableTables} addNotification={addNotification} />
                     ) : (
                         <>
                             <div className="data-toolbar">

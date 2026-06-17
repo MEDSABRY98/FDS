@@ -18,5 +18,8 @@
     "react-dom": "^18.2.0",
     "recharts": "^3.8.1",
     "xlsx": "^0.18.5"
+  },
+  "devDependencies": {
+    "pg": "^8.21.0"
   }
 }

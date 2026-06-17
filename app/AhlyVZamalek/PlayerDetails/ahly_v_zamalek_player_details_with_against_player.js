@@ -85,35 +85,35 @@ export default function PlayerWithAgainstTable({ data = [], title, isAgainst = f
             </div>
 
             <div style={{ overflowX: 'auto' }}>
-                <table className="player-match-table vs-teams-table sortable-table">
-                    <thead>
-                        <tr>
-                            <th style={{ width: '60px', textAlign: 'center' }}>#</th>
-                            <th onClick={() => handleSort('name')} style={{ cursor: 'pointer' }}>
-                                PLAYER NAME {getSortArrow('name')}
-                            </th>
-                            <th onClick={() => handleSort('matches')} style={{ textAlign: 'center', cursor: 'pointer' }}>
-                                MATCHES {getSortArrow('matches')}
-                            </th>
-                            <th onClick={() => handleSort('wins')} style={{ textAlign: 'center', cursor: 'pointer' }}>
-                                WINS {getSortArrow('wins')}
-                            </th>
-                            <th onClick={() => handleSort('draws')} style={{ textAlign: 'center', cursor: 'pointer' }}>
-                                DRAWS {getSortArrow('draws')}
-                            </th>
-                            <th onClick={() => handleSort('losses')} style={{ textAlign: 'center', cursor: 'pointer' }}>
-                                LOSSES {getSortArrow('losses')}
-                            </th>
-                            <th onClick={() => handleSort('winRate')} style={{ textAlign: 'center', cursor: 'pointer', background: 'rgba(201, 168, 76, 0.03)' }}>
-                                WIN RATE % {getSortArrow('winRate')}
-                            </th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {filteredAndSortedList.length === 0 ? (
-                            <NoData_db isTable={true} colSpan={7} message={isAgainst ? "No opponent data available." : "No teammate data available."} />
-                        ) : (
-                            filteredAndSortedList.map((p, i) => (
+                {filteredAndSortedList.length === 0 ? (
+                    <NoData_db message={isAgainst ? "No opponent data available." : "No teammate data available."} />
+                ) : (
+                    <table className="player-match-table vs-teams-table sortable-table">
+                        <thead>
+                            <tr>
+                                <th style={{ width: '60px', textAlign: 'center' }}>#</th>
+                                <th onClick={() => handleSort('name')} style={{ cursor: 'pointer' }}>
+                                    PLAYER NAME {getSortArrow('name')}
+                                </th>
+                                <th onClick={() => handleSort('matches')} style={{ textAlign: 'center', cursor: 'pointer' }}>
+                                    MATCHES {getSortArrow('matches')}
+                                </th>
+                                <th onClick={() => handleSort('wins')} style={{ textAlign: 'center', cursor: 'pointer' }}>
+                                    WINS {getSortArrow('wins')}
+                                </th>
+                                <th onClick={() => handleSort('draws')} style={{ textAlign: 'center', cursor: 'pointer' }}>
+                                    DRAWS {getSortArrow('draws')}
+                                </th>
+                                <th onClick={() => handleSort('losses')} style={{ textAlign: 'center', cursor: 'pointer' }}>
+                                    LOSSES {getSortArrow('losses')}
+                                </th>
+                                <th onClick={() => handleSort('winRate')} style={{ textAlign: 'center', cursor: 'pointer', background: 'rgba(201, 168, 76, 0.03)' }}>
+                                    WIN RATE % {getSortArrow('winRate')}
+                                </th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {filteredAndSortedList.map((p, i) => (
                                 <tr key={p.name}>
                                     <td style={{ textAlign: 'center', fontFamily: 'Space Mono', color: '#999', fontSize: '11px' }}>{i + 1}</td>
                                     <td style={{ fontWeight: '800', color: 'var(--player-dark)' }}>{p.name}</td>
@@ -125,9 +125,7 @@ export default function PlayerWithAgainstTable({ data = [], title, isAgainst = f
                                         {p.winRate.toFixed(1)}%
                                     </td>
                                 </tr>
-                            ))
-                        )}
-                        {filteredAndSortedList.length > 0 && (
+                            ))}
                             <tr style={{ background: 'rgba(201, 168, 76, 0.05)', borderTop: '2px solid var(--player-gold)' }}>
                                 <td style={{ textAlign: 'center', fontFamily: 'Space Mono', color: 'var(--player-gold)', fontWeight: '900' }}>∑</td>
                                 <td style={{ fontWeight: '950', color: 'var(--player-gold)', textTransform: 'uppercase', letterSpacing: '2px', fontSize: '15px' }}>TOTAL</td>
@@ -137,9 +135,9 @@ export default function PlayerWithAgainstTable({ data = [], title, isAgainst = f
                                 <td style={{ textAlign: 'center', color: '#e74c3c', fontWeight: '950', fontSize: '20px' }}>{totals.losses}</td>
                                 <td style={{ textAlign: 'center', fontWeight: '950', fontSize: '22px', fontFamily: 'Bebas Neue', color: 'var(--player-gold)' }}>{overallWinRate}%</td>
                             </tr>
-                        )}
-                    </tbody>
-                </table>
+                        </tbody>
+                    </table>
+                )}
             </div>
 
             <style jsx>{`

@@ -19,21 +19,23 @@ export default function Manager_Matches_Module({ stats }) {
             </div>
 
             <div style={{ overflowX: 'auto' }}>
-                <table className="player-match-table">
-                    <thead>
-                        <tr>
-                            <th style={{ textAlign: 'center', fontFamily: 'Space Mono', fontSize: '13px', letterSpacing: '2px', color: '#999', padding: '15px 10px' }}>#</th>
-                            <th style={{ textAlign: 'center', fontFamily: 'Space Mono', fontSize: '13px', letterSpacing: '2px', color: '#999', padding: '15px 10px' }}>MATCH ID</th>
-                            <th style={{ textAlign: 'center', fontFamily: 'Space Mono', fontSize: '13px', letterSpacing: '2px', color: '#999', padding: '15px 10px' }}>DATE</th>
-                            <th style={{ textAlign: 'center', fontFamily: 'Space Mono', fontSize: '13px', letterSpacing: '2px', color: '#999', padding: '15px 10px' }}>SEASON</th>
-                            <th style={{ textAlign: 'center', fontFamily: 'Space Mono', fontSize: '13px', letterSpacing: '2px', color: '#999', padding: '15px 10px' }}>OPPONENT TEAM</th>
-                            <th style={{ textAlign: 'center', fontFamily: 'Space Mono', fontSize: '13px', letterSpacing: '2px', color: '#999', padding: '15px 10px' }}>SCORE</th>
-                            <th style={{ textAlign: 'center', fontFamily: 'Space Mono', fontSize: '13px', letterSpacing: '2px', color: '#999', padding: '15px 10px' }}>RESULT</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {currentMatches.length > 0 ? (
-                            currentMatches.map((m, idx) => (
+                {totalMatches === 0 ? (
+                    <NoData_db message="NO MATCH RECORDS FOUND FOR THIS MANAGER" />
+                ) : (
+                    <table className="player-match-table">
+                        <thead>
+                            <tr>
+                                <th style={{ textAlign: 'center', fontFamily: 'Space Mono', fontSize: '13px', letterSpacing: '2px', color: '#999', padding: '15px 10px' }}>#</th>
+                                <th style={{ textAlign: 'center', fontFamily: 'Space Mono', fontSize: '13px', letterSpacing: '2px', color: '#999', padding: '15px 10px' }}>MATCH ID</th>
+                                <th style={{ textAlign: 'center', fontFamily: 'Space Mono', fontSize: '13px', letterSpacing: '2px', color: '#999', padding: '15px 10px' }}>DATE</th>
+                                <th style={{ textAlign: 'center', fontFamily: 'Space Mono', fontSize: '13px', letterSpacing: '2px', color: '#999', padding: '15px 10px' }}>SEASON</th>
+                                <th style={{ textAlign: 'center', fontFamily: 'Space Mono', fontSize: '13px', letterSpacing: '2px', color: '#999', padding: '15px 10px' }}>OPPONENT TEAM</th>
+                                <th style={{ textAlign: 'center', fontFamily: 'Space Mono', fontSize: '13px', letterSpacing: '2px', color: '#999', padding: '15px 10px' }}>SCORE</th>
+                                <th style={{ textAlign: 'center', fontFamily: 'Space Mono', fontSize: '13px', letterSpacing: '2px', color: '#999', padding: '15px 10px' }}>RESULT</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {currentMatches.map((m, idx) => (
                                 <tr key={startIdx + idx}>
                                     <td style={{ color: '#888', fontSize: '12px', textAlign: 'center', fontFamily: 'Space Mono' }}>{startIdx + idx + 1}</td>
                                     <td className="m-id-cell" style={{ textAlign: 'center', fontFamily: 'Space Mono', color: 'var(--player-gold)', fontSize: '12px' }}>{m.idx}</td>
@@ -58,12 +60,10 @@ export default function Manager_Matches_Module({ stats }) {
                                         </span>
                                     </td>
                                 </tr>
-                            ))
-                        ) : (
-                            <NoData_db isTable={true} colSpan={7} message="NO MATCH RECORDS FOUND FOR THIS MANAGER" />
-                        )}
-                    </tbody>
-                </table>
+                            ))}
+                        </tbody>
+                    </table>
+                )}
             </div>
 
             {totalPages > 1 && (

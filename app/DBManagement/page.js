@@ -20,6 +20,8 @@ import EntityStatsModal from "./Modals/EntityStatsModal";
 import MergeToolModal from "./Modals/MergeToolModal";
 import DeleteConfirmModal from "./Modals/DeleteConfirmModal";
 import ColumnSortView from "./Components/ColumnSortView";
+import Settings_db from "../lib/Settings_db";
+import { SETTINGS_TAB_ID } from "../lib/supabase";
 
 import { Plus, GitMerge, X } from "lucide-react";
 
@@ -113,7 +115,7 @@ export default function DBManagement() {
         }
     };
 
-    const isLoading = selectedTable !== "COLUMN_SORT" && (tableLoading || saving || deleting);
+    const isLoading = selectedTable !== SETTINGS_TAB_ID && selectedTable !== "COLUMN_SORT" && (tableLoading || saving || deleting);
 
     return (
         <Login_db title="EDITOR ACCESS" subtitle="GLOBAL DATABASE MANAGEMENT">
@@ -129,6 +131,8 @@ export default function DBManagement() {
                             <Loading_db title="GLOBAL" subtitle="DATABASE" message="SYNCING REAL-TIME DATA..." inline={true} />
                         ) : selectedTable === "COLUMN_SORT" ? (
                             <ColumnSortView addNotification={addNotification} />
+                        ) : selectedTable === SETTINGS_TAB_ID ? (
+                            <Settings_db availableTables={availableTables} addNotification={addNotification} />
                         ) : (
                             <>
                                 <div className="data-toolbar">

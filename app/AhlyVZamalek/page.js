@@ -8,8 +8,7 @@ import {
     Trophy,
     Users,
     User,
-    Award,
-    FileText
+    Award
 } from "lucide-react";
 import Link from "next/link";
 import { AhlyVZamalekService } from "./Service/ahly_v_zamalek_service";
@@ -22,7 +21,6 @@ import AhlyVZamalekFilters from "./Filters/ahly_v_zamalek_filters";
 import AhlyVZamalekMatchDetails from "./MatchDetails/ahly_v_zamalek_match_details";
 import AhlyVZamalekPlayerDetails from "./PlayerDetails/ahly_v_zamalek_player_details";
 import AhlyVZamalekManagerDetails from "./ManagerDetails/ahly_v_zamalek_manager_details";
-import AhlyVZamalekEditor from "./Editor/ahly_v_zamalek_editor";
 import Login_db from "../lib/Login_db";
 import Loading_db from "../lib/Loading_db";
 import SideBar_db from "../lib/SideBar_db";
@@ -44,7 +42,6 @@ export default function AhlyVZamalekDatabase() {
     const tabs = [
         { id: 'avz_dashboard', label: 'Dashboard', icon: LayoutDashboard },
         { id: 'avz_matches', label: 'Matches', icon: Trophy },
-        { id: 'avz_editor', label: 'Editor', icon: FileText },
         { id: 'avz_champions', label: 'Champions', icon: Award },
         { id: 'avz_players', label: 'Players', icon: Users },
         { id: 'avz_managers', label: 'Managers', icon: User }
@@ -144,9 +141,6 @@ export default function AhlyVZamalekDatabase() {
                         }}
                     />
                 );
-            case "avz_editor":
-                return <AhlyVZamalekEditor />;
-
             default:
                 return null;
         }

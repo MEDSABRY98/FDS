@@ -86,7 +86,10 @@ export default function PlayerGoalImpactTable({ playerName, filteredMatches = []
             </div>
 
             <div style={{ overflowX: 'auto' }}>
-                <table className="player-match-table impact-table">
+                {displayMatches.length === 0 ? (
+                    <NoData_db message="NO RECORDED GOAL IMPACTS FOR THIS PLAYER" />
+                ) : (
+                    <table className="player-match-table impact-table">
                     <thead>
                         <tr>
                             <th>DATE</th>
@@ -99,8 +102,7 @@ export default function PlayerGoalImpactTable({ playerName, filteredMatches = []
                         </tr>
                     </thead>
                     <tbody>
-                        {displayMatches.length > 0 ? (
-                            displayMatches.map((item, idx) => (
+                        {displayMatches.map((item, idx) => (
                                 <tr key={idx}>
                                     <td style={{ fontSize: '14px', opacity: 0.8 }}>{item.match.DATE}</td>
                                     <td style={{ fontSize: '14px', opacity: 0.8 }}>{item.match["SEASON - NAME"]}</td>
@@ -116,12 +118,10 @@ export default function PlayerGoalImpactTable({ playerName, filteredMatches = []
                                         {item.match["W-D-L"] === 'W' ? 'WIN' : 'DRAW'}
                                     </td>
                                 </tr>
-                            ))
-                        ) : (
-                            <NoData_db isTable={true} colSpan={7} message="NO RECORDED GOAL IMPACTS FOR THIS PLAYER" />
-                        )}
+                            ))}
                     </tbody>
                 </table>
+                )}
             </div>
 
             <style jsx>{`
