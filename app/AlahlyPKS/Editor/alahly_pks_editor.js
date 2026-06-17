@@ -4,7 +4,26 @@ import { useState, useEffect, useMemo, useCallback } from "react";
 import { AlAhlyService } from "../../Alahly/Service/alahly_db_service";
 import { fetchCatalogDisplayNames } from "../../lib/supabase";
 import SearchBar_db from "../../lib/SearchBar_db";
+import DropDownList_db from "../../lib/DropDownList_db";
+import { useNotification } from "../../lib/Notification_db";
 import "./alahly_pks_editor.css";
+
+function toDropdownOptions(values = [], currentValue = "") {
+    const seen = new Set();
+    const options = [];
+
+    const addValue = (raw) => {
+        const value = String(raw || "").trim();
+        if (!value || seen.has(value)) return;
+        seen.add(value);
+        options.push({ value, label: value });
+    };
+
+    addValue(currentValue);
+    values.forEach(addValue);
+
+    return options.sort((a, b) => a.label.localeCompare(b.label, undefined, { sensitivity: "base" }));
+}
 
 function toDateInputValue(value) {
     const raw = String(value || "").trim();
@@ -50,12 +69,13 @@ function loadShootoutFromKicks(kicks, setCommonData, setKickRows, setFoundKicks,
 }
 
 export default function AlAhlyPKsEditor({ pksData, onDataSaved }) {
+    const { addNotification } = useNotification();
     const [mode, setMode] = useState("SEARCH"); // SEARCH or CREATE
     const [searchId, setSearchId] = useState("");
     const [foundKicks, setFoundKicks] = useState([]);
     const [editingKick, setEditingKick] = useState(null);
-    const [loading, setLoading] = useState(false);
-    const [message, setMessage] = useState({ text: "", type: "" });
+    const [isSearching, setIsSearching] = useState(false);
+    const [isSaving, setIsSaving] = useState(false);
 
     // Auto-generate next PKS ID
     const getNextPksId = useCallback(() => {
@@ -134,7 +154,7 @@ export default function AlAhlyPKsEditor({ pksData, onDataSaved }) {
         }
     }, [mode, initialCommonData]);
 
-    // Generate unique suggestions for datalists
+    // Dropdown option sources (merged with catalog names where relevant)
     const suggestions = useMemo(() => {
         const getUnique = (key) => [...new Set((pksData || []).map(item => item[key]).filter(Boolean))].sort();
         const mergeUnique = (...lists) => [...new Set(lists.flat().filter(Boolean))].sort();
@@ -162,9 +182,8 @@ export default function AlAhlyPKsEditor({ pksData, onDataSaved }) {
     }, [pksData, catalogNames]);
 
     const handleSearch = async () => {
-        if (!searchId.trim()) return;
-        setLoading(true);
-        setMessage({ text: "", type: "" });
+        if (!searchId.trim() || isSearching) return;
+        setIsSearching(true);
         try {
             let kicks = (pksData || []).filter(k => String(k.PKS_ID).toUpperCase() === searchId.toUpperCase().trim());
 
@@ -175,14 +194,14 @@ export default function AlAhlyPKsEditor({ pksData, onDataSaved }) {
             if (kicks.length === 0) {
                 setFoundKicks([]);
                 setEditingKick(null);
-                setMessage({ text: "No shootout found with this ID.", type: "error" });
+                addNotification("No shootout found with this ID.", "error");
             } else {
                 loadShootoutFromKicks(kicks, setCommonData, setKickRows, setFoundKicks, setEditingKick);
             }
         } catch (err) {
-            setMessage({ text: err?.message || "Error searching for shootout.", type: "error" });
+            addNotification(err?.message || "Error searching for shootout.", "error");
         } finally {
-            setLoading(false);
+            setIsSearching(false);
         }
     };
 
@@ -202,8 +221,8 @@ export default function AlAhlyPKsEditor({ pksData, onDataSaved }) {
 
     const handleSaveShootout = async (e) => {
         e.preventDefault();
-        setLoading(true);
-        setMessage({ text: "Saving Shootout...", type: "info" });
+        if (isSaving) return;
+        setIsSaving(true);
         try {
             const keptOriginalIds = new Set(
                 kickRows.map(row => row.ORIGINAL_ROW_ID).filter(Boolean)
@@ -244,9 +263,9 @@ export default function AlAhlyPKsEditor({ pksData, onDataSaved }) {
                 ? await AlAhlyService.getPKsByPksId(savedPksId)
                 : [];
 
-            setMessage({ text: `Success! Saved shootout ${savedPksId}`, type: "success" });
             setSearchId(savedPksId || "");
             setMode("SEARCH");
+            addNotification(`Shootout ${savedPksId} saved successfully.`, "success");
 
             if (freshKicks.length > 0) {
                 loadShootoutFromKicks(
@@ -261,17 +280,18 @@ export default function AlAhlyPKsEditor({ pksData, onDataSaved }) {
                 setFoundKicks([]);
             }
         } catch (err) {
-            setMessage({
-                text: err?.message || "Failed to save shootout records.",
-                type: "error"
-            });
+            addNotification(err?.message || "Failed to save shootout records.", "error");
             console.error(err);
         } finally {
-            setLoading(false);
+            setIsSaving(false);
         }
     };
 
     const renderShootoutBuilder = () => {
+        const setCommonField = (field, value) => {
+            setCommonData((prev) => ({ ...prev, [field]: value }));
+        };
+
         return (
             <div className="shootout-builder fade-in">
                 <div className="builder-section common-info">
@@ -280,21 +300,48 @@ export default function AlAhlyPKsEditor({ pksData, onDataSaved }) {
                         <h3>GENERAL MATCH DETAILS</h3>
                     </div>
                     <div className="form-grid">
-                        <div className="form-group"><label>PKS ID</label><input type="text" value={commonData.PKS_ID || ""} onChange={(e) => setCommonData({...commonData, PKS_ID: e.target.value})} /></div>
-                        <div className="form-group"><label>MATCH ID</label><input type="text" value={commonData.MATCH_ID || ""} onChange={(e) => setCommonData({...commonData, MATCH_ID: e.target.value})} /></div>
-                        <div className="form-group"><label>DATE</label><input type="date" value={commonData.DATE || ""} onChange={(e) => setCommonData({...commonData, DATE: e.target.value})} /></div>
-                        <div className="form-group"><label>PKS SYSTEM</label><input list="list-pks-system" value={commonData["PKS SYSTEM"] || ""} onChange={(e) => setCommonData({...commonData, "PKS SYSTEM": e.target.value})} /></div>
-                        <div className="form-group"><label>CHAMPION SYSTEM</label><input list="list-champ-system" value={commonData["CHAMPION SYSTEM"] || ""} onChange={(e) => setCommonData({...commonData, "CHAMPION SYSTEM": e.target.value})} /></div>
-                        <div className="form-group"><label>CHAMPION</label><input list="list-champion" value={commonData.CHAMPION || ""} onChange={(e) => setCommonData({...commonData, CHAMPION: e.target.value})} /></div>
-                        <div className="form-group"><label>SEASON</label><input list="list-season" value={commonData.SEASON || ""} onChange={(e) => setCommonData({...commonData, SEASON: e.target.value})} /></div>
-                        <div className="form-group"><label>ROUND</label><input list="list-round" value={commonData.ROUND || ""} onChange={(e) => setCommonData({...commonData, ROUND: e.target.value})} /></div>
-                        <div className="form-group"><label>WHO START?</label><input list="list-who-start" value={commonData["WHO START?"] || ""} onChange={(e) => setCommonData({...commonData, "WHO START?": e.target.value})} /></div>
-                        <div className="form-group"><label>AHLY TEAM</label><input list="list-ahly-team" value={commonData["AHLY TEAM"] || ""} onChange={(e) => setCommonData({...commonData, "AHLY TEAM": e.target.value})} /></div>
-                        <div className="form-group"><label>OPPONENT TEAM</label><input list="list-opp-team" value={commonData["OPPONENT TEAM"] || ""} onChange={(e) => setCommonData({...commonData, "OPPONENT TEAM": e.target.value})} /></div>
-                        <div className="form-group"><label>MATCH RESULT</label><input type="text" value={commonData["MATCH RESULT"] || ""} onChange={(e) => setCommonData({...commonData, "MATCH RESULT": e.target.value})} /></div>
-                        <div className="form-group"><label>PKS W-L</label><input list="list-pks-wl" value={commonData["PKS W-L"] || ""} onChange={(e) => setCommonData({...commonData, "PKS W-L": e.target.value})} /></div>
-                        <div className="form-group"><label>G-AHLY</label><input type="number" value={commonData["G-AHLY"] || 0} onChange={(e) => setCommonData({...commonData, "G-AHLY": parseInt(e.target.value) || 0})} /></div>
-                        <div className="form-group"><label>G-OPPONENT</label><input type="number" value={commonData["G-OPPONENT"] || 0} onChange={(e) => setCommonData({...commonData, "G-OPPONENT": parseInt(e.target.value) || 0})} /></div>
+                        <div className="form-group"><label>PKS ID</label><input type="text" value={commonData.PKS_ID || ""} onChange={(e) => setCommonField("PKS_ID", e.target.value)} /></div>
+                        <div className="form-group"><label>MATCH ID</label><input type="text" value={commonData.MATCH_ID || ""} onChange={(e) => setCommonField("MATCH_ID", e.target.value)} /></div>
+                        <div className="form-group"><label>DATE</label><input type="date" value={commonData.DATE || ""} onChange={(e) => setCommonField("DATE", e.target.value)} /></div>
+                        <div className="form-group">
+                            <label>PKS SYSTEM</label>
+                            <DropDownList_db options={toDropdownOptions(suggestions.pksSystem, commonData["PKS SYSTEM"])} value={commonData["PKS SYSTEM"] || ""} onChange={(v) => setCommonField("PKS SYSTEM", v)} placeholder="Select PKS System" searchable />
+                        </div>
+                        <div className="form-group">
+                            <label>CHAMPION SYSTEM</label>
+                            <DropDownList_db options={toDropdownOptions(suggestions.champSystem, commonData["CHAMPION SYSTEM"])} value={commonData["CHAMPION SYSTEM"] || ""} onChange={(v) => setCommonField("CHAMPION SYSTEM", v)} placeholder="Select Champion System" searchable />
+                        </div>
+                        <div className="form-group">
+                            <label>CHAMPION</label>
+                            <DropDownList_db options={toDropdownOptions(suggestions.champion, commonData.CHAMPION)} value={commonData.CHAMPION || ""} onChange={(v) => setCommonField("CHAMPION", v)} placeholder="Select Champion" searchable />
+                        </div>
+                        <div className="form-group">
+                            <label>SEASON</label>
+                            <DropDownList_db options={toDropdownOptions(suggestions.season, commonData.SEASON)} value={commonData.SEASON || ""} onChange={(v) => setCommonField("SEASON", v)} placeholder="Select Season" searchable />
+                        </div>
+                        <div className="form-group">
+                            <label>ROUND</label>
+                            <DropDownList_db options={toDropdownOptions(suggestions.round, commonData.ROUND)} value={commonData.ROUND || ""} onChange={(v) => setCommonField("ROUND", v)} placeholder="Select Round" searchable />
+                        </div>
+                        <div className="form-group">
+                            <label>WHO START?</label>
+                            <DropDownList_db options={toDropdownOptions(suggestions.whoStart, commonData["WHO START?"])} value={commonData["WHO START?"] || ""} onChange={(v) => setCommonField("WHO START?", v)} placeholder="Who starts?" />
+                        </div>
+                        <div className="form-group">
+                            <label>AHLY TEAM</label>
+                            <DropDownList_db options={toDropdownOptions(suggestions.ahlyTeam, commonData["AHLY TEAM"])} value={commonData["AHLY TEAM"] || ""} onChange={(v) => setCommonField("AHLY TEAM", v)} placeholder="Select Ahly Team" searchable />
+                        </div>
+                        <div className="form-group">
+                            <label>OPPONENT TEAM</label>
+                            <DropDownList_db options={toDropdownOptions(suggestions.oppTeam, commonData["OPPONENT TEAM"])} value={commonData["OPPONENT TEAM"] || ""} onChange={(v) => setCommonField("OPPONENT TEAM", v)} placeholder="Select Opponent Team" searchable />
+                        </div>
+                        <div className="form-group"><label>MATCH RESULT</label><input type="text" value={commonData["MATCH RESULT"] || ""} onChange={(e) => setCommonField("MATCH RESULT", e.target.value)} /></div>
+                        <div className="form-group">
+                            <label>PKS W-L</label>
+                            <DropDownList_db options={toDropdownOptions(suggestions.pksWL, commonData["PKS W-L"])} value={commonData["PKS W-L"] || ""} onChange={(v) => setCommonField("PKS W-L", v)} placeholder="Select Result" />
+                        </div>
+                        <div className="form-group"><label>G-AHLY</label><input type="number" value={commonData["G-AHLY"] || 0} onChange={(e) => setCommonField("G-AHLY", parseInt(e.target.value, 10) || 0)} /></div>
+                        <div className="form-group"><label>G-OPPONENT</label><input type="number" value={commonData["G-OPPONENT"] || 0} onChange={(e) => setCommonField("G-OPPONENT", parseInt(e.target.value, 10) || 0)} /></div>
                     </div>
                 </div>
 
@@ -314,17 +361,17 @@ export default function AlAhlyPKsEditor({ pksData, onDataSaved }) {
                                 <div className="builder-grid-compact">
                                     <div className="side-box ahly-side">
                                         <label>AL AHLY KICKER</label>
-                                        <input list="list-ahly-player" placeholder="Player Name" value={row["AHLY PLAYER"] || ""} onChange={(e) => handleKickChange(idx, "AHLY PLAYER", e.target.value)} />
-                                        <input list="list-ahly-status" placeholder="Status" value={row["AHLY STATUS"] || ""} onChange={(e) => handleKickChange(idx, "AHLY STATUS", e.target.value)} />
-                                        <input list="list-how-miss" placeholder="How Missed?" value={row["HOWMISS AHLY"] || ""} onChange={(e) => handleKickChange(idx, "HOWMISS AHLY", e.target.value)} />
-                                        <input list="list-opp-gk" placeholder="Opponent GK" value={row["OPPONENT GK"] || ""} onChange={(e) => handleKickChange(idx, "OPPONENT GK", e.target.value)} />
+                                        <DropDownList_db className="pks-dropdown-compact" options={toDropdownOptions(suggestions.ahlyPlayer, row["AHLY PLAYER"])} value={row["AHLY PLAYER"] || ""} onChange={(v) => handleKickChange(idx, "AHLY PLAYER", v)} placeholder="Player Name" searchable />
+                                        <DropDownList_db className="pks-dropdown-compact" options={toDropdownOptions(suggestions.ahlyStatus, row["AHLY STATUS"])} value={row["AHLY STATUS"] || ""} onChange={(v) => handleKickChange(idx, "AHLY STATUS", v)} placeholder="Status" />
+                                        <DropDownList_db className="pks-dropdown-compact" options={toDropdownOptions(suggestions.howMiss, row["HOWMISS AHLY"])} value={row["HOWMISS AHLY"] || ""} onChange={(v) => handleKickChange(idx, "HOWMISS AHLY", v)} placeholder="How Missed?" searchable />
+                                        <DropDownList_db className="pks-dropdown-compact" options={toDropdownOptions(suggestions.oppGK, row["OPPONENT GK"])} value={row["OPPONENT GK"] || ""} onChange={(v) => handleKickChange(idx, "OPPONENT GK", v)} placeholder="Opponent GK" searchable />
                                     </div>
                                     <div className="side-box opp-side">
                                         <label>OPPONENT KICKER</label>
-                                        <input list="list-opp-player" placeholder="Player Name" value={row["OPPONENT PLAYER"] || ""} onChange={(e) => handleKickChange(idx, "OPPONENT PLAYER", e.target.value)} />
-                                        <input list="list-opp-status" placeholder="Status" value={row["OPPONENT STATUS"] || ""} onChange={(e) => handleKickChange(idx, "OPPONENT STATUS", e.target.value)} />
-                                        <input list="list-how-miss" placeholder="How Missed?" value={row["HOWMISS OPPONENT"] || ""} onChange={(e) => handleKickChange(idx, "HOWMISS OPPONENT", e.target.value)} />
-                                        <input list="list-ahly-gk" placeholder="Ahly GK" value={row["AHLY GK"] || ""} onChange={(e) => handleKickChange(idx, "AHLY GK", e.target.value)} />
+                                        <DropDownList_db className="pks-dropdown-compact" options={toDropdownOptions(suggestions.oppPlayer, row["OPPONENT PLAYER"])} value={row["OPPONENT PLAYER"] || ""} onChange={(v) => handleKickChange(idx, "OPPONENT PLAYER", v)} placeholder="Player Name" searchable />
+                                        <DropDownList_db className="pks-dropdown-compact" options={toDropdownOptions(suggestions.oppStatus, row["OPPONENT STATUS"])} value={row["OPPONENT STATUS"] || ""} onChange={(v) => handleKickChange(idx, "OPPONENT STATUS", v)} placeholder="Status" />
+                                        <DropDownList_db className="pks-dropdown-compact" options={toDropdownOptions(suggestions.howMiss, row["HOWMISS OPPONENT"])} value={row["HOWMISS OPPONENT"] || ""} onChange={(v) => handleKickChange(idx, "HOWMISS OPPONENT", v)} placeholder="How Missed?" searchable />
+                                        <DropDownList_db className="pks-dropdown-compact" options={toDropdownOptions(suggestions.ahlyGk, row["AHLY GK"])} value={row["AHLY GK"] || ""} onChange={(v) => handleKickChange(idx, "AHLY GK", v)} placeholder="Ahly GK" searchable />
                                     </div>
                                 </div>
                             </div>
@@ -335,8 +382,17 @@ export default function AlAhlyPKsEditor({ pksData, onDataSaved }) {
                 </div>
 
                 <div className="builder-actions">
-                    <button className="save-all-btn" onClick={handleSaveShootout} disabled={loading}>
-                        {editingKick ? `UPDATE SHOOTOUT (${kickRows.length} KICKS)` : `SAVE SHOOTOUT (${kickRows.length} KICKS)`}
+                    <button className="save-all-btn" onClick={handleSaveShootout} disabled={isSaving}>
+                        {isSaving ? (
+                            <span className="btn-loader-wrap">
+                                <span className="btn-spinner" />
+                                {editingKick ? "Updating..." : "Saving..."}
+                            </span>
+                        ) : (
+                            editingKick
+                                ? `UPDATE SHOOTOUT (${kickRows.length} KICKS)`
+                                : `SAVE SHOOTOUT (${kickRows.length} KICKS)`
+                        )}
                     </button>
                 </div>
             </div>
@@ -345,46 +401,25 @@ export default function AlAhlyPKsEditor({ pksData, onDataSaved }) {
 
     return (
         <div className="pks-editor-container fade-in">
-            <datalist id="list-pks-system">{suggestions.pksSystem.map(v => <option key={v} value={v} />)}</datalist>
-            <datalist id="list-champ-system">{suggestions.champSystem.map(v => <option key={v} value={v} />)}</datalist>
-            <datalist id="list-champion">{suggestions.champion.map(v => <option key={v} value={v} />)}</datalist>
-            <datalist id="list-season">{suggestions.season.map(v => <option key={v} value={v} />)}</datalist>
-            <datalist id="list-round">{suggestions.round.map(v => <option key={v} value={v} />)}</datalist>
-            <datalist id="list-who-start">{suggestions.whoStart.map(v => <option key={v} value={v} />)}</datalist>
-            <datalist id="list-ahly-team">{suggestions.ahlyTeam.map(v => <option key={v} value={v} />)}</datalist>
-            <datalist id="list-opp-team">{suggestions.oppTeam.map(v => <option key={v} value={v} />)}</datalist>
-            <datalist id="list-opp-player">{suggestions.oppPlayer.map(v => <option key={v} value={v} />)}</datalist>
-            <datalist id="list-opp-gk">{suggestions.oppGK.map(v => <option key={v} value={v} />)}</datalist>
-            <datalist id="list-ahly-gk">{suggestions.ahlyGk.map(v => <option key={v} value={v} />)}</datalist>
-            <datalist id="list-ahly-player">{suggestions.ahlyPlayer.map(v => <option key={v} value={v} />)}</datalist>
-            <datalist id="list-how-miss">{suggestions.howMiss.map(v => <option key={v} value={v} />)}</datalist>
-            <datalist id="list-opp-status">{suggestions.oppStatus.map(v => <option key={v} value={v} />)}</datalist>
-            <datalist id="list-ahly-status">{suggestions.ahlyStatus.map(v => <option key={v} value={v} />)}</datalist>
-            <datalist id="list-pks-wl">{suggestions.pksWL.map(v => <option key={v} value={v} />)}</datalist>
-
             {/* ── Header ── */}
             <div className="mode-switch-wrap">
                 <div className="mode-switch">
                     <button
                         type="button"
-                        onClick={() => { setMode('SEARCH'); setEditingKick(null); setFoundKicks([]); setMessage({ text: "", type: "" }); }}
+                        onClick={() => { setMode('SEARCH'); setEditingKick(null); setFoundKicks([]); }}
                         className={`mode-switch-btn ${(mode === 'SEARCH' || editingKick) ? 'active' : ''}`}
                     >
                         SEARCH PKS
                     </button>
                     <button
                         type="button"
-                        onClick={() => { setMode('CREATE'); setEditingKick(null); setCommonData(initialCommonData); setKickRows([initialKickRow]); setMessage({ text: "", type: "" }); }}
+                        onClick={() => { setMode('CREATE'); setEditingKick(null); setCommonData(initialCommonData); setKickRows([initialKickRow]); }}
                         className={`mode-switch-btn ${mode === 'CREATE' && !editingKick ? 'active' : ''}`}
                     >
                         ADD PKS
                     </button>
                 </div>
             </div>
-
-            {message.text && (
-                <div className={`editor-message ${message.type}`}>{message.text}</div>
-            )}
 
             {mode === "SEARCH" && (
                 <div className="search-section">
@@ -407,9 +442,14 @@ export default function AlAhlyPKsEditor({ pksData, onDataSaved }) {
                                 />
                                 <button
                                     onClick={handleSearch}
-                                    disabled={loading}
+                                    disabled={isSearching}
                                     className="load-btn">
-                                    {loading ? 'Loading...' : 'LOAD →'}
+                                    {isSearching ? (
+                                        <span className="btn-loader-wrap">
+                                            <span className="btn-spinner btn-spinner--light" />
+                                            Loading...
+                                        </span>
+                                    ) : 'LOAD →'}
                                 </button>
                             </div>
                         </div>
