@@ -54,12 +54,25 @@
         font-weight: 700;
     }
 
-    .table-overflow {
+    .table-overflow,
+    .db-view-panel {
         overflow-x: auto;
         border: 1px solid #eee;
         border-radius: 20px;
         background: #fff;
         box-shadow: 0 20px 60px rgba(0,0,0,0.04);
+        width: 100%;
+    }
+
+    .db-view-panel .column-sorter-container,
+    .db-view-panel .settings-db-container {
+        border: none;
+        box-shadow: none;
+        border-radius: 0;
+        margin: 0;
+        max-width: none;
+        background: transparent;
+        padding: 40px;
     }
 
     .db-table {
@@ -426,12 +439,7 @@
 
     /* Column Sorter Styles */
     .column-sorter-container {
-        background: #fff;
-        border-radius: 24px;
         padding: 40px;
-        box-shadow: 0 20px 60px rgba(0,0,0,0.04);
-        border: 1px solid #eee;
-        margin-top: 20px;
     }
 
     .sorter-header {

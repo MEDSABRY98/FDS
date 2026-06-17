@@ -1,8 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import Link from "next/link";
-import { LayoutDashboard, Trophy, Edit, Award, Users, UserCheck, Download, Filter } from "lucide-react";
+import { LayoutDashboard, Trophy, Award, Users, UserCheck, Download, Filter } from "lucide-react";
 import SideBar_db from "../lib/SideBar_db";
 import { AlAhlyFinalsService } from "./Service/alahly_finals_service";
 import AlAhlyFinalsDashboard from "./Dashboard/alahly_finals_dashboard";
@@ -10,7 +9,6 @@ import AlAhlyFinalsMatches from "./Matches/alahly_finals_matches";
 import AlAhlyFinalsPlayers from "./Players/alahly_finals_players";
 import AlAhlyFinalsChampions from "./Champions/alahly_finals_champions";
 import AlAhlyFinalsManagers from "./Managers/alahly_finals_managers";
-import AlAhlyFinalsEditor from "./Editor/alahly_finals_editor";
 import AlAhlyFinalsFilter from "./Filters/alahly_finals_filters";
 import Loading_db from "../lib/Loading_db";
 import AlAhlyFinalsMatchDetails from "./MatchDetails/alahly_finals_match_details";
@@ -80,14 +78,6 @@ export default function AlAhlyFinalsDatabase() {
                 return <AlAhlyFinalsChampions finalsData={filteredData} />;
             case "finals_managers":
                 return <AlAhlyFinalsManagers finalsData={filteredData} />;
-            case "finals_editor":
-                return (
-                    <AlAhlyFinalsEditor
-                        matchesData={matchesData}
-                        lineupsData={lineupsData}
-                        playersData={playersData}
-                    />
-                );
             default:
                 return null;
         }
@@ -106,7 +96,6 @@ export default function AlAhlyFinalsDatabase() {
             menuItems={[
                 { id: 'finals_dashboard', label: 'Dashboard', icon: LayoutDashboard },
                 { id: 'finals_matches', label: 'Matches', icon: Trophy },
-                { id: 'finals_editor', label: 'Editor', icon: Edit },
                 { id: 'finals_champions', label: 'Champions', icon: Award },
                 { id: 'finals_players', label: 'Players', icon: Users },
                 { id: 'finals_managers', label: 'Managers', icon: UserCheck }

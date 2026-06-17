@@ -1,154 +1,131 @@
 import { supabase } from "../../lib/supabase";
 
+const MATCH_TABLE = "alahly_MATCHDETAILS";
+const LINEUP_TABLE = "alahly_LINEUPDETAILS";
+const PLAYER_TABLE = "alahly_PLAYERDETAILS";
+
+const FINALS_ROUND_OR = "ROUND.ilike.%نهائي%,ROUND.ilike.%final%";
+const MATCH_ID_CHUNK = 100;
+
+async function fetchPaginated(buildQuery) {
+    let allData = [];
+    let from = 0;
+    const step = 1000;
+    let finished = false;
+
+    while (!finished) {
+        const { data, error } = await buildQuery().range(from, from + step - 1);
+        if (error) throw error;
+        if (data && data.length > 0) {
+            allData = [...allData, ...data];
+            from += step;
+            if (data.length < step) finished = true;
+        } else {
+            finished = true;
+        }
+    }
+    return allData;
+}
+
+async function fetchByMatchIds(table, matchIds, orderCol = "ROW_ID") {
+    const ids = [...new Set(matchIds.map((id) => String(id || "").trim()).filter(Boolean))];
+    if (ids.length === 0) return [];
+
+    let allData = [];
+    for (let i = 0; i < ids.length; i += MATCH_ID_CHUNK) {
+        const chunk = ids.slice(i, i + MATCH_ID_CHUNK);
+        const { data, error } = await supabase
+            .from(table)
+            .select("*")
+            .in("MATCH_ID", chunk)
+            .order(orderCol, { ascending: true });
+        if (error) throw error;
+        if (data?.length) allData = [...allData, ...data];
+    }
+    return allData;
+}
+
 /**
- * Service to handle all Al Ahly Finals Database operations.
- * Exclusively uses the alahly_FINALS_* tables.
+ * Service for Al Ahly finals data stored in unified alahly_* tables.
  */
 export const AlAhlyFinalsService = {
-    /**
-     * Fetch all finals match details.
-     */
     async getAllFinalsMatches() {
         try {
-            let allData = [];
-            let from = 0;
-            const step = 1000;
-            let finished = false;
-
-            while (!finished) {
-                const { data, error } = await supabase
-                    .from('alahly_FINALS_MATCHDETAILS')
-                    .select('*')
-                    .order('DATE', { ascending: false })
-                    .order('ROW_ID', { ascending: true })
-                    .range(from, from + step - 1);
-
-                if (error) throw error;
-                if (data && data.length > 0) {
-                    allData = [...allData, ...data];
-                    from += step;
-                    if (data.length < step) finished = true;
-                } else {
-                    finished = true;
-                }
-            }
-            return allData;
+            return await fetchPaginated(() =>
+                supabase
+                    .from(MATCH_TABLE)
+                    .select("*")
+                    .or(FINALS_ROUND_OR)
+                    .order("DATE", { ascending: false })
+                    .order("ROW_ID", { ascending: true })
+            );
         } catch (error) {
             console.error("Error in AlAhlyFinalsService.getAllFinalsMatches:", error.message);
             return [];
         }
     },
 
-    /**
-     * Fetch all finals lineup details.
-     */
     async getAllFinalsLineups() {
         try {
-            let allData = [];
-            let from = 0;
-            const step = 1000;
-            let finished = false;
-
-            while (!finished) {
-                const { data, error } = await supabase
-                    .from('alahly_FINALS_LINEUPDETAILS')
-                    .select('*')
-                    .order('ROW_ID', { ascending: true })
-                    .range(from, from + step - 1);
-
-                if (error) throw error;
-                if (data && data.length > 0) {
-                    allData = [...allData, ...data];
-                    from += step;
-                    if (data.length < step) finished = true;
-                } else {
-                    finished = true;
-                }
-            }
-            return allData;
+            const matches = await this.getAllFinalsMatches();
+            const matchIds = matches.map((m) => m.MATCH_ID).filter(Boolean);
+            return await fetchByMatchIds(LINEUP_TABLE, matchIds);
         } catch (error) {
             console.error("Error in AlAhlyFinalsService.getAllFinalsLineups:", error.message);
             return [];
         }
     },
 
-    /**
-     * Fetch all finals player details (event details).
-     */
     async getAllFinalsPlayerDetails() {
         try {
-            let allData = [];
-            let from = 0;
-            const step = 1000;
-            let finished = false;
-
-            while (!finished) {
-                const { data, error } = await supabase
-                    .from('alahly_FINALS_PLAYERDETAILS')
-                    .select('*')
-                    .order('ROW_ID', { ascending: true })
-                    .range(from, from + step - 1);
-
-                if (error) throw error;
-                if (data && data.length > 0) {
-                    allData = [...allData, ...data];
-                    from += step;
-                    if (data.length < step) finished = true;
-                } else {
-                    finished = true;
-                }
-            }
-            return allData;
+            const matches = await this.getAllFinalsMatches();
+            const matchIds = matches.map((m) => m.MATCH_ID).filter(Boolean);
+            return await fetchByMatchIds(PLAYER_TABLE, matchIds);
         } catch (error) {
             console.error("Error in AlAhlyFinalsService.getAllFinalsPlayerDetails:", error.message);
             return [];
         }
     },
 
-    /**
-     * Get unique filter options for finals matches.
-     */
     getUniqueFilters(matches) {
         const getUnique = (col, reverse = false) => {
-            const uniqueValues = [...new Set(matches.map(m => m[col]).filter(Boolean))].sort();
+            const uniqueValues = [...new Set(matches.map((m) => m[col]).filter(Boolean))].sort();
             if (reverse) uniqueValues.reverse();
             return ["All", ...uniqueValues];
         };
 
-        const years = [...new Set(matches.map(m => {
+        const years = [...new Set(matches.map((m) => {
             if (!m.DATE) return null;
-            const parts = m.DATE.split('/');
-            if (parts.length === 3) return parts[2]; // Handle DD/MM/YYYY
+            const parts = m.DATE.split("/");
+            if (parts.length === 3) return parts[2];
             const date = new Date(m.DATE);
             return isNaN(date.getFullYear()) ? null : String(date.getFullYear());
         }).filter(Boolean))].sort().reverse();
 
         return {
-            champion_systems: getUnique('CHAMPION SYSTEM'),
+            champion_systems: getUnique("CHAMPION SYSTEM"),
             years: ["All", ...years],
-            champions: getUnique('CHAMPION'),
-            seasons: getUnique('SEASON - NAME', true),
-            ahly_managers: getUnique('AHLY MANAGER'),
-            opponent_managers: getUnique('OPPONENT MANAGER'),
-            referees: getUnique('REFREE'),
-            rounds: getUnique('ROUND'),
-            han: getUnique('H-A-N'),
-            opponent_teams: getUnique('OPPONENT TEAM'),
-            wdl_match: getUnique('W-D-L MATCH'),
-            wdl_final: getUnique('W-D-L FINAL')
+            champions: getUnique("CHAMPION"),
+            seasons: getUnique("SEASON - NAME", true),
+            ahly_managers: getUnique("AHLY MANAGER"),
+            opponent_managers: getUnique("OPPONENT MANAGER"),
+            referees: getUnique("REFREE"),
+            rounds: getUnique("ROUND"),
+            han: getUnique("H-A-N"),
+            opponent_teams: getUnique("OPPONENT TEAM"),
+            wdl_final: getUnique("W-D-L FINAL"),
         };
     },
 
-
-
-    /**
-     * CRUD: Upsert Match Details record
-     */
     async upsertMatchDetails(record) {
         try {
+            const payload = {
+                ...record,
+                ROUND: record.ROUND || "النهائي",
+            };
             const { data, error } = await supabase
-                .from('alahly_FINALS_MATCHDETAILS')
-                .upsert(record)
+                .from(MATCH_TABLE)
+                .upsert(payload)
                 .select();
             if (error) throw error;
             return data;
@@ -158,15 +135,12 @@ export const AlAhlyFinalsService = {
         }
     },
 
-    /**
-     * CRUD: Delete Match Details record
-     */
     async deleteMatchDetails(rowId) {
         try {
             const { error } = await supabase
-                .from('alahly_FINALS_MATCHDETAILS')
+                .from(MATCH_TABLE)
                 .delete()
-                .eq('ROW_ID', rowId);
+                .eq("ROW_ID", rowId);
             if (error) throw error;
             return true;
         } catch (error) {
@@ -175,22 +149,17 @@ export const AlAhlyFinalsService = {
         }
     },
 
-    /**
-     * CRUD: Bulk update Lineups for a specific match/date
-     */
-    async updateMatchLineups(finalId, date, lineupRows) {
+    async updateMatchLineups(matchId, finalId, lineupRows) {
         try {
-            // First clear existing lineups for this specific match+date combo
-            await supabase
-                .from('alahly_FINALS_LINEUPDETAILS')
-                .delete()
-                .eq('FINAL_ID', finalId)
-                .eq('DATE', date);
+            await supabase.from(LINEUP_TABLE).delete().eq("MATCH_ID", matchId);
 
             if (lineupRows.length > 0) {
-                const { error } = await supabase
-                    .from('alahly_FINALS_LINEUPDETAILS')
-                    .insert(lineupRows);
+                const rows = lineupRows.map((row) => ({
+                    ...row,
+                    MATCH_ID: matchId,
+                    FINAL_ID: finalId,
+                }));
+                const { error } = await supabase.from(LINEUP_TABLE).insert(rows);
                 if (error) throw error;
             }
             return true;
@@ -200,22 +169,17 @@ export const AlAhlyFinalsService = {
         }
     },
 
-    /**
-     * CRUD: Bulk update Player Events for a specific match/date
-     */
-    async updateMatchEvents(finalId, date, eventRows) {
+    async updateMatchEvents(matchId, finalId, eventRows) {
         try {
-            // First clear existing events for this specific match+date combo
-            await supabase
-                .from('alahly_FINALS_PLAYERDETAILS')
-                .delete()
-                .eq('FINAL ID', finalId) // Note the space in column name
-                .eq('DATE', date);
+            await supabase.from(PLAYER_TABLE).delete().eq("MATCH_ID", matchId);
 
             if (eventRows.length > 0) {
-                const { error } = await supabase
-                    .from('alahly_FINALS_PLAYERDETAILS')
-                    .insert(eventRows);
+                const rows = eventRows.map((row) => ({
+                    ...row,
+                    MATCH_ID: matchId,
+                    FINAL_ID: finalId,
+                }));
+                const { error } = await supabase.from(PLAYER_TABLE).insert(rows);
                 if (error) throw error;
             }
             return true;
@@ -223,5 +187,5 @@ export const AlAhlyFinalsService = {
             console.error("Error updating match events:", error.message);
             throw error;
         }
-    }
+    },
 };

@@ -23,8 +23,6 @@ let countriesNameToId = {};
 let cachesPromise = null;
 
 const playerColumnsMap = {
-    'alahly_FINALS_LINEUPDETAILS': ['PLAYER NAME', 'PLAYER NAME OUT'],
-    'alahly_FINALS_PLAYERDETAILS': ['PLAYER NAME'],
     'alahly_GKSDETAILS': ['PLAYER NAME'],
     'alahly_LINEUPDETAILS': ['PLAYER NAME', 'PLAYER NAME OUT'],
     'alahly_PKS': ['AHLY GK', 'AHLY PLAYER', 'OPPONENT GK', 'OPPONENT PLAYER'],
@@ -37,9 +35,6 @@ const playerColumnsMap = {
 };
 
 const teamColumnsMap = {
-    'alahly_FINALS_LINEUPDETAILS': ['TEAM'],
-    'alahly_FINALS_MATCHDETAILS': ['AHLY TEAM', 'OPPONENT TEAM'],
-    'alahly_FINALS_PLAYERDETAILS': ['TEAM'],
     'alahly_GKSDETAILS': ['TEAM'],
     'alahly_HOWPENMISSED': ['TEAM'],
     'alahly_LINEUPDETAILS': ['TEAM'],
@@ -698,7 +693,6 @@ function wrapQueryBuilder(target, tableName, calls = []) {
                         // 5. Map returned data back to names
                         const isStadiumsOrManagersTable = [
                             'alahly_MATCHDETAILS',
-                            'alahly_FINALS_MATCHDETAILS',
                             'egy_NT_MATCHDETAILS',
                             'egy_CLUB_MATCHDETAILS'
                         ].includes(tableName);
@@ -1091,7 +1085,7 @@ export function formatManagementTableLabel(tableName = "") {
 
 export function appendSettingsTab(tables = []) {
     const filtered = (tables || []).filter(
-        (table) => table.name !== SETTINGS_TAB_ID && table.name !== "COLUMN_SORT"
+        (table) => table.name !== SETTINGS_TAB_ID
     );
     return [...filtered, { name: SETTINGS_TAB_ID, label: "Settings" }];
 }

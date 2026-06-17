@@ -19,7 +19,7 @@ import EditModal from "./Modals/EditModal";
 import EntityStatsModal from "./Modals/EntityStatsModal";
 import MergeToolModal from "./Modals/MergeToolModal";
 import DeleteConfirmModal from "./Modals/DeleteConfirmModal";
-import ColumnSortView from "./Components/ColumnSortView";
+import { ColumnSortView } from "../lib/ColumnOrder";
 import Settings_db from "../lib/Settings_db";
 import { SETTINGS_TAB_ID } from "../lib/supabase";
 
@@ -130,9 +130,13 @@ export default function DBManagement() {
                         {isLoading && tableData.length === 0 ? (
                             <Loading_db title="GLOBAL" subtitle="DATABASE" message="SYNCING REAL-TIME DATA..." inline={true} />
                         ) : selectedTable === "COLUMN_SORT" ? (
-                            <ColumnSortView addNotification={addNotification} />
+                            <div className="db-view-panel">
+                                <ColumnSortView addNotification={addNotification} />
+                            </div>
                         ) : selectedTable === SETTINGS_TAB_ID ? (
-                            <Settings_db availableTables={availableTables} addNotification={addNotification} />
+                            <div className="db-view-panel">
+                                <Settings_db availableTables={availableTables} addNotification={addNotification} />
+                            </div>
                         ) : (
                             <>
                                 <div className="data-toolbar">

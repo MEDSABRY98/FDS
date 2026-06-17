@@ -92,23 +92,6 @@ BEGIN
             INSERT INTO temp_entity_occurrences VALUES ('alahly_PKS', 'Al Ahly Penalty Shootouts', v_temp_min, v_temp_max, v_temp_count);
         END IF;
 
-        SELECT MIN(to_date(NULLIF(m."DATE", ''), 'DD/MM/YYYY')), MAX(to_date(NULLIF(m."DATE", ''), 'DD/MM/YYYY')), COUNT(*)
-        INTO v_temp_min, v_temp_max, v_temp_count
-        FROM "alahly_FINALS_LINEUPDETAILS" d
-        JOIN "alahly_FINALS_MATCHDETAILS" m ON d."MATCH_ID" = m."MATCH_ID"
-        WHERE d."PLAYER NAME" = v_id OR d."PLAYER NAME OUT" = v_id;
-        IF v_temp_count > 0 THEN
-            INSERT INTO temp_entity_occurrences VALUES ('alahly_FINALS_LINEUPDETAILS', 'Al Ahly Finals Lineups', v_temp_min, v_temp_max, v_temp_count);
-        END IF;
-
-        SELECT MIN(to_date(NULLIF(m."DATE", ''), 'DD/MM/YYYY')), MAX(to_date(NULLIF(m."DATE", ''), 'DD/MM/YYYY')), COUNT(*)
-        INTO v_temp_min, v_temp_max, v_temp_count
-        FROM "alahly_FINALS_PLAYERDETAILS" d
-        JOIN "alahly_FINALS_MATCHDETAILS" m ON d."MATCH_ID" = m."MATCH_ID"
-        WHERE d."PLAYER NAME" = v_id;
-        IF v_temp_count > 0 THEN
-            INSERT INTO temp_entity_occurrences VALUES ('alahly_FINALS_PLAYERDETAILS', 'Al Ahly Finals Player Details', v_temp_min, v_temp_max, v_temp_count);
-        END IF;
 
         SELECT MIN(m."DATE"), MAX(m."DATE"), COUNT(*)
         INTO v_temp_min, v_temp_max, v_temp_count
@@ -160,13 +143,6 @@ BEGIN
             INSERT INTO temp_entity_occurrences VALUES ('alahly_MATCHDETAILS', 'Al Ahly Matches', v_temp_min, v_temp_max, v_temp_count);
         END IF;
 
-        SELECT MIN(to_date(NULLIF("DATE", ''), 'DD/MM/YYYY')), MAX(to_date(NULLIF("DATE", ''), 'DD/MM/YYYY')), COUNT(*)
-        INTO v_temp_min, v_temp_max, v_temp_count
-        FROM "alahly_FINALS_MATCHDETAILS"
-        WHERE "AHLY MANAGER" = v_id OR "OPPONENT MANAGER" = v_id;
-        IF v_temp_count > 0 THEN
-            INSERT INTO temp_entity_occurrences VALUES ('alahly_FINALS_MATCHDETAILS', 'Al Ahly Finals Matches', v_temp_min, v_temp_max, v_temp_count);
-        END IF;
 
         SELECT MIN("DATE"), MAX("DATE"), COUNT(*)
         INTO v_temp_min, v_temp_max, v_temp_count
@@ -202,13 +178,6 @@ BEGIN
             INSERT INTO temp_entity_occurrences VALUES ('alahly_MATCHDETAILS', 'Al Ahly Matches', v_temp_min, v_temp_max, v_temp_count);
         END IF;
 
-        SELECT MIN(to_date(NULLIF("DATE", ''), 'DD/MM/YYYY')), MAX(to_date(NULLIF("DATE", ''), 'DD/MM/YYYY')), COUNT(*)
-        INTO v_temp_min, v_temp_max, v_temp_count
-        FROM "alahly_FINALS_MATCHDETAILS"
-        WHERE "REFREE" = v_id;
-        IF v_temp_count > 0 THEN
-            INSERT INTO temp_entity_occurrences VALUES ('alahly_FINALS_MATCHDETAILS', 'Al Ahly Finals Matches', v_temp_min, v_temp_max, v_temp_count);
-        END IF;
 
         SELECT MIN("DATE"), MAX("DATE"), COUNT(*)
         INTO v_temp_min, v_temp_max, v_temp_count
@@ -227,13 +196,6 @@ BEGIN
             INSERT INTO temp_entity_occurrences VALUES ('alahly_MATCHDETAILS', 'Al Ahly Matches', v_temp_min, v_temp_max, v_temp_count);
         END IF;
 
-        SELECT MIN(to_date(NULLIF("DATE", ''), 'DD/MM/YYYY')), MAX(to_date(NULLIF("DATE", ''), 'DD/MM/YYYY')), COUNT(*)
-        INTO v_temp_min, v_temp_max, v_temp_count
-        FROM "alahly_FINALS_MATCHDETAILS"
-        WHERE "AHLY TEAM" = v_id OR "OPPONENT TEAM" = v_id;
-        IF v_temp_count > 0 THEN
-            INSERT INTO temp_entity_occurrences VALUES ('alahly_FINALS_MATCHDETAILS', 'Al Ahly Finals Matches', v_temp_min, v_temp_max, v_temp_count);
-        END IF;
 
         SELECT MIN("DATE"), MAX("DATE"), COUNT(*)
         INTO v_temp_min, v_temp_max, v_temp_count

@@ -28,9 +28,6 @@ export const DBManagementService = {
                     supabase.from('alahly_PKS').update({ "OPPONENT GK": targetName }).in('OPPONENT GK', sources),
 
                     // Al Ahly Finals
-                    supabase.from('alahly_FINALS_LINEUPDETAILS').update({ "PLAYER NAME": targetName }).in('PLAYER NAME', sources),
-                    supabase.from('alahly_FINALS_LINEUPDETAILS').update({ "PLAYER NAME OUT": targetName }).in('PLAYER NAME OUT', sources),
-                    supabase.from('alahly_FINALS_PLAYERDETAILS').update({ "PLAYER NAME": targetName }).in('PLAYER NAME', sources),
 
                     // Egypt NT Tables
                     supabase.from('egy_NT_LINEUPDETAILS').update({ "PLAYER NAME": targetName }).in('PLAYER NAME', sources),
@@ -52,8 +49,6 @@ export const DBManagementService = {
                     supabase.from('alahly_MATCHDETAILS').update({ "OPPONENT MANAGER": targetName }).in('OPPONENT MANAGER', sources),
 
                     // Al Ahly Finals Match Details
-                    supabase.from('alahly_FINALS_MATCHDETAILS').update({ "AHLY MANAGER": targetName }).in('AHLY MANAGER', sources),
-                    supabase.from('alahly_FINALS_MATCHDETAILS').update({ "OPPONENT MANAGER": targetName }).in('OPPONENT MANAGER', sources),
 
                     // Egypt NT Match Details
                     supabase.from('egy_NT_MATCHDETAILS').update({ "EGYPT MANAGER": targetName }).in('EGYPT MANAGER', sources),
@@ -80,7 +75,6 @@ export const DBManagementService = {
                     supabase.from('alahly_MATCHDETAILS').update({ "REFREE": targetName }).in('REFREE', sources),
 
                     // Al Ahly Finals Match Details
-                    supabase.from('alahly_FINALS_MATCHDETAILS').update({ "REFREE": targetName }).in('REFREE', sources),
 
                     // Egypt NT Match Details
                     supabase.from('egy_NT_MATCHDETAILS').update({ "REFREE": targetName }).in('REFREE', sources)
@@ -90,10 +84,6 @@ export const DBManagementService = {
             else if (table === "db_TEAMS") {
                 updatePromises = [
                     // Al Ahly Finals
-                    supabase.from('alahly_FINALS_LINEUPDETAILS').update({ "TEAM": targetName }).in('TEAM', sources),
-                    supabase.from('alahly_FINALS_MATCHDETAILS').update({ "AHLY TEAM": targetName }).in('AHLY TEAM', sources),
-                    supabase.from('alahly_FINALS_MATCHDETAILS').update({ "OPPONENT TEAM": targetName }).in('OPPONENT TEAM', sources),
-                    supabase.from('alahly_FINALS_PLAYERDETAILS').update({ "TEAM": targetName }).in('TEAM', sources),
 
                     // Al Ahly
                     supabase.from('alahly_GKSDETAILS').update({ "TEAM": targetName }).in('TEAM', sources),

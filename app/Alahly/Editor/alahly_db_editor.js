@@ -19,6 +19,8 @@ const EMPTY_PLAYER = { "MATCH_ID": "", "EVENT_ID": "", "PARENT_EVENT_ID": "", "P
 const EMPTY_GK = { "MATCH_ID": "", "EVENT_ID": "", "TEAM": "", "PLAYER NAME": "", "STATU": "", "OUT MINUTE": "", "GOALS CONCEDED": "" };
 const EMPTY_PEN = { "MATCH_ID": "", "PARENT_EVENT_ID": "", "HOW MISSED?": "", "TEAM": "", "MINUTE": "" };
 
+const isFinalRound = (round) => String(round || "").trim() === "النهائي";
+
 
 // ── Editable Table ───────────────────────────────────────────────────────────
 function EditableTable({ title, color, rows, setRows, columns, matchId, emptyRow, tableName, onSave, onDelete, isSaving, autoFields = {}, columnOptions = {} }) {
@@ -182,6 +184,7 @@ export default function AlAhlyEditor() {
     const [eventTypes, setEventTypes] = useState([]);
     const [eventSubTypes, setEventSubTypes] = useState([]);
     const [howMissedOptions, setHowMissedOptions] = useState([]);
+    const [wdlFinalOptions, setWdlFinalOptions] = useState([]);
 
     // Fields that use autocomplete (not date/number/auto)
     const AUTOCOMPLETE_FIELDS = [
@@ -228,12 +231,14 @@ export default function AlAhlyEditor() {
             setEventSubTypes(ts);
             const hm = await fetchUniqueCol('alahly_HOWPENMISSED', 'HOW MISSED?');
             setHowMissedOptions(hm);
+            const wdlFinal = await fetchUniqueCol('alahly_MATCHDETAILS', 'W-D-L FINAL');
+            setWdlFinalOptions(wdlFinal);
         })();
     }, []);
 
-    // Fetch max number + unique column values when entering 'new' mode
+    // Fetch max number + unique column values when entering 'new' or 'edit' mode
     useEffect(() => {
-        if (mode !== 'new') return;
+        if (mode !== 'new' && mode !== 'edit') return;
         (async () => {
             const { data } = await supabase.from('alahly_MATCHDETAILS').select('*');
             if (!data) return;
@@ -279,6 +284,99 @@ export default function AlAhlyEditor() {
         const opp = newMatchData['OPPONENT TEAM'] || '';
         setNewMatchData(prev => ({ ...prev, MATCH_ID: opp ? `${opp}${nextMatchNum}` : '' }));
     }, [newMatchData['OPPONENT TEAM'], nextMatchNum]);
+
+    // Auto-suggest FINAL_ID for new final matches
+    useEffect(() => {
+        if (mode !== 'new' || !isFinalRound(newMatchData.ROUND) || newMatchData.FINAL_ID) return;
+        (async () => {
+            const { data } = await supabase.from('alahly_MATCHDETAILS').select('FINAL_ID');
+            const nums = (data || []).map(r => {
+                const m = String(r.FINAL_ID || '').match(/FINAL-(\d+)$/i);
+                return m ? parseInt(m[1], 10) : 0;
+            });
+            const next = Math.max(0, ...nums, 0) + 1;
+            setNewMatchData(prev => ({ ...prev, FINAL_ID: `FINAL-${String(next).padStart(4, '0')}` }));
+        })();
+    }, [mode, newMatchData.ROUND, newMatchData.FINAL_ID]);
+
+    const renderFinalIdField = (formData, setFormData) => (
+        <div key="FINAL_ID">
+            <div className="field-label">FINAL_ID</div>
+            <input
+                type="text"
+                value={formData.FINAL_ID ?? ''}
+                onChange={e => setFormData(prev => ({ ...prev, FINAL_ID: e.target.value }))}
+                className="field-input"
+                onFocus={e => { e.target.style.borderColor = '#c9a84c'; }}
+                onBlur={e => { e.target.style.borderColor = '#e8e8e8'; }}
+            />
+        </div>
+    );
+
+    const renderWdlFinalField = (formData, setFormData) => (
+        <div key="W-D-L FINAL">
+            <div className="field-label">W-D-L FINAL</div>
+            <AutocompleteInput
+                value={formData["W-D-L FINAL"] ?? ''}
+                options={wdlFinalOptions}
+                onChange={val => setFormData(prev => ({ ...prev, "W-D-L FINAL": val }))}
+                className="field-input"
+                accentColor="#c9a84c"
+            />
+        </div>
+    );
+
+    const renderMatchField = (field, formData, setFormData, { matchIdAuto = false } = {}) => (
+        <div key={field}>
+            <div className="field-label" style={{ color: field === 'MATCH_ID' && matchIdAuto ? '#22c55e' : '#999' }}>
+                {field} {field === 'MATCH_ID' && matchIdAuto && <span style={{ color: '#aaa', fontWeight: 400, letterSpacing: 0 }}>(auto)</span>}
+            </div>
+            {AUTOCOMPLETE_FIELDS.includes(field) ? (
+                <AutocompleteInput
+                    value={formData[field] ?? ''}
+                    options={matchFieldOptions[field] || []}
+                    onChange={val => setFormData(prev => ({ ...prev, [field]: val }))}
+                    className="field-input"
+                    accentColor="#c9a84c"
+                />
+            ) : (
+                <input
+                    type={field === 'DATE' ? 'date' : 'text'}
+                    value={formData[field] ?? ''}
+                    disabled={field === 'MATCH_ID'}
+                    onChange={e => {
+                        if (field === 'MATCH_ID') return;
+                        setFormData(prev => ({ ...prev, [field]: e.target.value }));
+                    }}
+                    className="field-input"
+                    style={{
+                        border: field === 'MATCH_ID' && matchIdAuto ? '2px solid #22c55e' : '1.5px solid #e8e8e8',
+                        background: field === 'MATCH_ID' && matchIdAuto ? 'rgba(34,197,94,0.05)' : '#fff',
+                    }}
+                    onFocus={e => { if (field !== 'MATCH_ID') e.target.style.borderColor = '#c9a84c'; }}
+                    onBlur={e => { if (field !== 'MATCH_ID') e.target.style.borderColor = field === 'MATCH_ID' && matchIdAuto ? '#22c55e' : '#e8e8e8'; }}
+                />
+            )}
+        </div>
+    );
+
+    const renderMatchFieldsGrid = (formData, setFormData, { matchIdAuto = false } = {}) =>
+        Object.keys(EMPTY_MATCH).flatMap(field => {
+            const showFinal = isFinalRound(formData.ROUND);
+            if (field === 'MATCH_ID') {
+                return [
+                    renderMatchField(field, formData, setFormData, { matchIdAuto }),
+                    ...(showFinal ? [renderFinalIdField(formData, setFormData)] : []),
+                ];
+            }
+            if (field === 'NOTE') {
+                return [
+                    ...(showFinal ? [renderWdlFinalField(formData, setFormData)] : []),
+                    renderMatchField(field, formData, setFormData, { matchIdAuto }),
+                ];
+            }
+            return [renderMatchField(field, formData, setFormData, { matchIdAuto })];
+        });
 
     const applyLineupLogic = (prev, action) => {
         const next = typeof action === 'function' ? action(prev) : action;
@@ -701,38 +799,7 @@ export default function AlAhlyEditor() {
                                 </div>
                             </div>
                             <div className="grid-fields" style={{ marginBottom: 30 }}>
-                                {matchInfoFields.map(field => (
-                                    <div key={field}>
-                                        <div className="field-label" style={{ color: field === 'MATCH_ID' ? '#22c55e' : '#999' }}>
-                                            {field} {field === 'MATCH_ID' && <span style={{ color: '#aaa', fontWeight: 400, letterSpacing: 0 }}>(auto)</span>}
-                                        </div>
-                                        {AUTOCOMPLETE_FIELDS.includes(field) ? (
-                                            <AutocompleteInput
-                                                value={newMatchData[field] ?? ''}
-                                                options={matchFieldOptions[field] || []}
-                                                onChange={val => setNewMatchData(prev => ({ ...prev, [field]: val }))}
-                                                className="field-input"
-                                            />
-                                        ) : (
-                                            <input
-                                                type={field === 'DATE' ? 'date' : 'text'}
-                                                value={newMatchData[field] ?? ''}
-                                                disabled={field === 'MATCH_ID'}
-                                                onChange={e => {
-                                                    if (field === 'MATCH_ID') return;
-                                                    setNewMatchData(prev => ({ ...prev, [field]: e.target.value }));
-                                                }}
-                                                className="field-input"
-                                                style={{
-                                                    border: field === 'MATCH_ID' ? '2px solid #22c55e' : '1.5px solid #e8e8e8',
-                                                    background: field === 'MATCH_ID' ? 'rgba(34,197,94,0.05)' : '#fff',
-                                                }}
-                                                onFocus={e => { if (field !== 'MATCH_ID') e.target.style.borderColor = '#c9a84c'; }}
-                                                onBlur={e => { if (field !== 'MATCH_ID') e.target.style.borderColor = '#e8e8e8'; }}
-                                            />
-                                        )}
-                                    </div>
-                                ))}
+                                {renderMatchFieldsGrid(newMatchData, setNewMatchData, { matchIdAuto: true })}
                             </div>
                             <div style={{ display: 'flex', justifyContent: 'center' }}>
                                 <button
@@ -852,20 +919,7 @@ export default function AlAhlyEditor() {
                             </div>
 
                             <div className="grid-fields">
-                                {matchInfoFields.map(field => (
-                                    <div key={field}>
-                                        <div className="field-label">{field}</div>
-                                        <input
-                                            type={field === 'DATE' ? 'date' : 'text'}
-                                            value={matchData[field] ?? ''}
-                                            disabled={field === 'MATCH_ID'}
-                                            onChange={e => setMatchData(prev => ({ ...prev, [field]: e.target.value }))}
-                                            className="field-input"
-                                            onFocus={e => { if (field !== 'MATCH_ID') e.target.style.borderColor = '#c9a84c'; }}
-                                            onBlur={e => { if (field !== 'MATCH_ID') e.target.style.borderColor = '#e8e8e8'; }}
-                                        />
-                                    </div>
-                                ))}
+                                {renderMatchFieldsGrid(matchData, setMatchData)}
                             </div>
                         </div>
 

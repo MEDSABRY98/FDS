@@ -5,7 +5,7 @@ import { X } from "lucide-react";
 import { UseColumnOrder, SortColumnNames } from "../../lib/ColumnOrder";
 import "./alahly_finals_filters.css";
 
-const TABLE_NAME = "alahly_FINALS_MATCHDETAILS";
+const TABLE_NAME = "alahly_MATCHDETAILS";
 
 // Custom Searchable Dropdown Component
 function SearchableDropdown({ label, options, value, onChange }) {
