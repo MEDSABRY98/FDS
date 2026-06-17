@@ -1,0 +1,93 @@
+{
+  "stats": {
+    "total": 472,
+    "arabic_only": 197,
+    "mixed": 273,
+    "unique_used_in_matches": 475
+  },
+  "arabic_vs_english": [
+    {
+      "score": 86,
+      "confidence": "medium",
+      "reasons": [
+        "last 86%",
+        "full 69%"
+      ],
+      "country": "الجزائر",
+      "arabic_id": "REF-0501",
+      "arabic_name": "مصطفى غربال - الجزائر",
+      "english_id": "REF-0238",
+      "english_name": "Mustapha Ghorbal - الجزائر",
+      "arabic_usage": "unused",
+      "english_usage": "unused",
+      "suggested_target": "Mustapha Ghorbal - الجزائر"
+    }
+  ],
+  "english_spelling_variants": [
+    {
+      "type": "similar",
+      "confidence": "high",
+      "score": 100,
+      "country": "جنوب أفريقيا",
+      "name_a": "Abongile Tom - جنوب أفريقيا",
+      "id_a": "REF-0010",
+      "name_b": "Tom Abongile - جنوب أفريقيا",
+      "id_b": "REF-0300",
+      "usage_a": "unused",
+      "usage_b": "unused",
+      "suggested_target": "Abongile Tom - جنوب أفريقيا"
+    },
+    {
+      "type": "similar",
+      "confidence": "high",
+      "score": 100,
+      "country": "موريتانيا",
+      "name_a": "Beida Dahane - موريتانيا",
+      "id_a": "REF-0044",
+      "name_b": "Dahane Beida - موريتانيا",
+      "id_b": "REF-0071",
+      "usage_a": "unused",
+      "usage_b": "unused",
+      "suggested_target": "Beida Dahane - موريتانيا"
+    },
+    {
+      "type": "similar",
+      "confidence": "medium",
+      "score": 75,
+      "country": "موريشيوس",
+      "name_a": "An Yan Lim Kee Chong - موريشيوس",
+      "id_a": "REF-0031",
+      "name_b": "Lim Kee Chong - موريشيوس",
+      "id_b": "REF-0188",
+      "usage_a": "unused",
+      "usage_b": "unused",
+      "suggested_target": "An Yan Lim Kee Chong - موريشيوس"
+    },
+    {
+      "type": "similar",
+      "confidence": "medium",
+      "score": 67,
+      "country": "الجابون",
+      "name_a": "Patrice Tanguy Mebiame - الجابون",
+      "id_a": "REF-0251",
+      "name_b": "Patrice Mebiame - الجابون",
+      "id_b": "REF-0249",
+      "usage_a": "unused",
+      "usage_b": "unused",
+      "suggested_target": "Patrice Tanguy Mebiame - الجابون"
+    },
+    {
+      "type": "similar",
+      "confidence": "medium",
+      "score": 67,
+      "country": "مصر",
+      "name_a": "Mohamed Foad Hafez - مصر",
+      "id_a": "REF-0230",
+      "name_b": "Mohamed Hafez - مصر",
+      "id_b": "REF-0232",
+      "usage_a": "unused",
+      "usage_b": "unused",
+      "suggested_target": "Mohamed Foad Hafez - مصر"
+    }
+  ]
+}

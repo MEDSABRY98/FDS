@@ -835,3 +835,218 @@
     box-shadow: 0 8px 20px rgba(207, 19, 34, 0.2) !important;
 }
 
+.catalog-view-tabs {
+    display: flex;
+    justify-content: center;
+    gap: 10px;
+    margin-bottom: 24px;
+}
+
+.catalog-view-tab {
+    background: #fff;
+    border: 2px solid #eee;
+    color: #666;
+    padding: 10px 22px;
+    border-radius: 100px;
+    font-size: 11px;
+    font-weight: 800;
+    letter-spacing: 1.5px;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    transition: all 0.2s ease;
+}
+
+.catalog-view-tab:hover {
+    border-color: #c9a84c;
+    color: #000;
+}
+
+.catalog-view-tab.active {
+    background: #0a0a0a;
+    border-color: #0a0a0a;
+    color: #c9a84c;
+}
+
+.catalog-view-badge {
+    background: #c9a84c;
+    color: #000;
+    min-width: 20px;
+    height: 20px;
+    padding: 0 6px;
+    border-radius: 100px;
+    font-size: 10px;
+    font-weight: 900;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.catalog-view-tab.active .catalog-view-badge {
+    background: #fff;
+    color: #000;
+}
+
+.duplicates-toolbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    margin-bottom: 20px;
+    flex-wrap: wrap;
+}
+
+.duplicates-summary {
+    font-size: 12px;
+    font-family: 'Space Mono', monospace;
+    color: #888;
+    letter-spacing: 1px;
+    font-weight: 700;
+}
+
+.duplicates-merge-tool-btn {
+    background: #fff;
+    border: 2px solid #cf1322;
+    color: #cf1322;
+    padding: 8px 14px;
+    border-radius: 8px;
+    font-size: 11px;
+    font-weight: 800;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.duplicates-merge-tool-btn:hover {
+    background: #cf1322;
+    color: #fff;
+}
+
+.duplicates-panel {
+    margin-bottom: 24px;
+}
+
+.duplicates-table th,
+.duplicates-table td {
+    min-width: 120px;
+    white-space: normal;
+    text-align: center !important;
+}
+
+.dup-name-cell {
+    max-width: 280px;
+}
+
+.dup-name {
+    font-weight: 700;
+    color: #111;
+    line-height: 1.35;
+    text-align: center;
+}
+
+.dup-id {
+    font-size: 10px;
+    color: #999;
+    font-family: 'Space Mono', monospace;
+    margin-top: 4px;
+    text-align: center;
+}
+
+.dup-score {
+    font-size: 10px;
+    color: #aaa;
+    margin-top: 4px;
+    font-family: 'Space Mono', monospace;
+}
+
+.dup-confidence {
+    display: inline-block;
+    padding: 4px 8px;
+    border-radius: 6px;
+    font-size: 10px;
+    font-weight: 800;
+    letter-spacing: 0.5px;
+}
+
+.dup-confidence-high {
+    background: #f6ffed;
+    color: #389e0d;
+    border: 1px solid #b7eb8f;
+}
+
+.dup-confidence-medium {
+    background: #fffbe6;
+    color: #d48806;
+    border: 1px solid #ffe58f;
+}
+
+.dup-confidence-review {
+    background: #fff1f0;
+    color: #cf1322;
+    border: 1px solid #ffa39e;
+}
+
+.dup-keep-select {
+    width: 100%;
+    max-width: 260px;
+    padding: 8px 10px;
+    border: 2px solid #eee;
+    border-radius: 8px;
+    font-size: 12px;
+    font-weight: 600;
+    background: #fff;
+    margin: 0 auto;
+    display: block;
+    text-align: center;
+}
+
+.dup-actions {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    align-items: center;
+    justify-content: center;
+}
+
+.dup-merge-btn,
+.dup-ignore-btn {
+    border: none;
+    border-radius: 8px;
+    padding: 8px 12px;
+    font-size: 10px;
+    font-weight: 800;
+    letter-spacing: 0.5px;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+}
+
+.dup-merge-btn {
+    background: #cf1322;
+    color: #fff;
+}
+
+.dup-merge-btn:hover:not(:disabled) {
+    background: #a8071a;
+}
+
+.dup-ignore-btn {
+    background: #f5f5f5;
+    color: #666;
+}
+
+.dup-ignore-btn:hover:not(:disabled) {
+    background: #eee;
+    color: #333;
+}
+
+.dup-merge-btn:disabled,
+.dup-ignore-btn:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+

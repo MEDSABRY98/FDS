@@ -19,9 +19,11 @@ import EditModal from "./Modals/EditModal";
 import EntityStatsModal from "./Modals/EntityStatsModal";
 import MergeToolModal from "./Modals/MergeToolModal";
 import DeleteConfirmModal from "./Modals/DeleteConfirmModal";
+import DuplicatesPanel from "./Components/DuplicatesPanel";
 import { ColumnSortView } from "../lib/ColumnOrder";
 import Settings_db from "../lib/Settings_db";
 import { SETTINGS_TAB_ID } from "../lib/supabase";
+import { useDuplicateSuggestions } from "./Hooks/UseDuplicateSuggestions";
 
 import { Plus, GitMerge, X } from "lucide-react";
 
@@ -82,11 +84,35 @@ export default function DBManagement() {
 
     const [statsEntityName, setStatsEntityName] = useState(null);
     const [showMergeTool, setShowMergeTool] = useState(false);
+    const [catalogView, setCatalogView] = useState("normal");
+
+    const {
+        isDuplicateTable,
+        duplicatePairs,
+        totalSuggestions,
+        hiddenCount,
+        computing,
+        mergingKey,
+        getKeepTarget,
+        setKeepTarget,
+        handleIgnore,
+        handleMergePair,
+    } = useDuplicateSuggestions(
+        selectedTable,
+        tableData,
+        fetchTableData,
+        addNotification,
+        catalogView === 'duplicates'
+    );
 
     // Clear selected rows when changing table
     useEffect(() => {
         setSelectedRows([]);
     }, [selectedTable, setSelectedRows]);
+
+    useEffect(() => {
+        setCatalogView("normal");
+    }, [selectedTable]);
 
     const handleDownloadExcel = () => {
         if (!filteredData || filteredData.length === 0) {
@@ -139,102 +165,156 @@ export default function DBManagement() {
                             </div>
                         ) : (
                             <>
-                                <div className="data-toolbar">
-                                    <div className="search-wrap">
-                                        <input
-                                            type="text"
-                                            placeholder="SEARCH RECORD..."
-                                            value={searchTerm}
-                                            onChange={(e) => setSearchTerm(e.target.value)}
+                                {isDuplicateTable && (
+                                    <div className="catalog-view-tabs">
+                                        <button
+                                            type="button"
+                                            className={`catalog-view-tab ${catalogView === 'normal' ? 'active' : ''}`}
+                                            onClick={() => setCatalogView('normal')}
+                                        >
+                                            NORMAL
+                                        </button>
+                                        <button
+                                            type="button"
+                                            className={`catalog-view-tab ${catalogView === 'duplicates' ? 'active' : ''}`}
+                                            onClick={() => setCatalogView('duplicates')}
+                                        >
+                                            DUPLICATES
+                                            {!computing && duplicatePairs.length > 0 && (
+                                                <span className="catalog-view-badge">{duplicatePairs.length}</span>
+                                            )}
+                                        </button>
+                                    </div>
+                                )}
+
+                                {catalogView === 'normal' && (
+                                    <>
+                                        <div className="data-toolbar">
+                                            <div className="search-wrap">
+                                                <input
+                                                    type="text"
+                                                    placeholder="SEARCH RECORD..."
+                                                    value={searchTerm}
+                                                    onChange={(e) => setSearchTerm(e.target.value)}
+                                                />
+                                            </div>
+
+                                            <div className="record-count" style={{ display: 'flex', alignItems: 'center', gap: '15px', justifyContent: 'center', flexWrap: 'wrap' }}>
+                                                <span>{filteredData.length} RECORDS FOUND (PAGE {currentPage} OF {totalPages || 1})</span>
+
+                                                <button
+                                                    onClick={handleAddClick}
+                                                    style={{
+                                                        background: '#c9a84c',
+                                                        color: '#000',
+                                                        padding: '8px 16px',
+                                                        borderRadius: '8px',
+                                                        border: 'none',
+                                                        fontWeight: '800',
+                                                        cursor: 'pointer',
+                                                        fontSize: '11px',
+                                                        display: 'flex',
+                                                        alignItems: 'center',
+                                                        gap: '6px',
+                                                        boxShadow: '0 4px 10px rgba(201,168,76,0.2)'
+                                                    }}
+                                                >
+                                                    <Plus size={14} />
+                                                    ADD RECORD
+                                                </button>
+
+                                                <button
+                                                    onClick={() => setShowMergeTool(true)}
+                                                    style={{
+                                                        background: '#cf1322',
+                                                        color: '#fff',
+                                                        padding: '8px 16px',
+                                                        borderRadius: '8px',
+                                                        border: 'none',
+                                                        fontWeight: '800',
+                                                        cursor: 'pointer',
+                                                        fontSize: '11px',
+                                                        display: 'flex',
+                                                        alignItems: 'center',
+                                                        gap: '6px',
+                                                        boxShadow: '0 4px 10px rgba(207,19,34,0.2)'
+                                                    }}
+                                                >
+                                                    <GitMerge size={14} />
+                                                    MERGE RECORDS
+                                                </button>
+
+                                                {selectedRows.length > 1 && (
+                                                    <button
+                                                        onClick={handleMergeTrigger}
+                                                        disabled={isMerging}
+                                                        style={{
+                                                            background: '#cf1322',
+                                                            color: '#fff',
+                                                            padding: '8px 16px',
+                                                            borderRadius: '8px',
+                                                            border: 'none',
+                                                            fontWeight: '800',
+                                                            cursor: 'pointer',
+                                                            fontSize: '11px',
+                                                            boxShadow: '0 4px 10px rgba(207,19,34,0.2)'
+                                                        }}
+                                                    >
+                                                        {isMerging ? "MERGING..." : `MERGE ${selectedRows.length} RECORDS`}
+                                                    </button>
+                                                )}
+                                            </div>
+                                        </div>
+
+                                        <DynamicTable
+                                            columns={columns}
+                                            paginatedData={paginatedData}
+                                            selectedRows={selectedRows}
+                                            onToggleSelect={handleToggleSelect}
+                                            onEdit={handleEditClick}
+                                            onDelete={handleDelete}
+                                            getName={getName}
+                                            onNameClick={(name) => setStatsEntityName(name)}
                                         />
-                                    </div>
 
-                                    <div className="record-count" style={{ display: 'flex', alignItems: 'center', gap: '15px', justifyContent: 'center', flexWrap: 'wrap' }}>
-                                        <span>{filteredData.length} RECORDS FOUND (PAGE {currentPage} OF {totalPages || 1})</span>
-                                        
-                                        {/* Add New Record Button */}
-                                        <button
-                                            onClick={handleAddClick}
-                                            style={{
-                                                background: '#c9a84c',
-                                                color: '#000',
-                                                padding: '8px 16px',
-                                                borderRadius: '8px',
-                                                border: 'none',
-                                                fontWeight: '800',
-                                                cursor: 'pointer',
-                                                fontSize: '11px',
-                                                display: 'flex',
-                                                alignItems: 'center',
-                                                gap: '6px',
-                                                boxShadow: '0 4px 10px rgba(201,168,76,0.2)'
-                                            }}
-                                        >
-                                            <Plus size={14} />
-                                            ADD RECORD
-                                        </button>
+                                        <Pagination
+                                            currentPage={currentPage}
+                                            totalPages={totalPages}
+                                            onPageChange={setCurrentPage}
+                                        />
+                                    </>
+                                )}
 
-                                        {/* Always Visible Merge Tool Button */}
-                                        <button
-                                            onClick={() => setShowMergeTool(true)}
-                                            style={{
-                                                background: '#cf1322',
-                                                color: '#fff',
-                                                padding: '8px 16px',
-                                                borderRadius: '8px',
-                                                border: 'none',
-                                                fontWeight: '800',
-                                                cursor: 'pointer',
-                                                fontSize: '11px',
-                                                display: 'flex',
-                                                alignItems: 'center',
-                                                gap: '6px',
-                                                boxShadow: '0 4px 10px rgba(207,19,34,0.2)'
-                                            }}
-                                        >
-                                            <GitMerge size={14} />
-                                            MERGE RECORDS
-                                        </button>
-
-                                        {/* Merge Buttons */}
-                                        {selectedRows.length > 1 && (
+                                {catalogView === 'duplicates' && isDuplicateTable && (
+                                    <>
+                                        <div className="duplicates-toolbar">
+                                            <span className="duplicates-summary">
+                                                {computing
+                                                    ? 'SCANNING FOR DUPLICATES...'
+                                                    : `${duplicatePairs.length} SUGGESTED PAIRS${totalSuggestions > duplicatePairs.length ? ` · ${hiddenCount} HIDDEN` : ''}`}
+                                            </span>
                                             <button
-                                                onClick={handleMergeTrigger}
-                                                disabled={isMerging}
-                                                style={{
-                                                    background: '#cf1322',
-                                                    color: '#fff',
-                                                    padding: '8px 16px',
-                                                    borderRadius: '8px',
-                                                    border: 'none',
-                                                    fontWeight: '800',
-                                                    cursor: 'pointer',
-                                                    fontSize: '11px',
-                                                    boxShadow: '0 4px 10px rgba(207,19,34,0.2)'
-                                                }}
+                                                type="button"
+                                                onClick={() => setShowMergeTool(true)}
+                                                className="duplicates-merge-tool-btn"
                                             >
-                                                {isMerging ? "MERGING..." : `MERGE ${selectedRows.length} RECORDS`}
+                                                <GitMerge size={14} />
+                                                OPEN MERGE TOOL
                                             </button>
-                                        )}
-                                    </div>
-                                </div>
+                                        </div>
 
-                                <DynamicTable
-                                    columns={columns}
-                                    paginatedData={paginatedData}
-                                    selectedRows={selectedRows}
-                                    onToggleSelect={handleToggleSelect}
-                                    onEdit={handleEditClick}
-                                    onDelete={handleDelete}
-                                    getName={getName}
-                                    onNameClick={(name) => setStatsEntityName(name)}
-                                />
-
-                                <Pagination
-                                    currentPage={currentPage}
-                                    totalPages={totalPages}
-                                    onPageChange={setCurrentPage}
-                                />
+                                        <DuplicatesPanel
+                                            duplicatePairs={duplicatePairs}
+                                            hiddenCount={hiddenCount}
+                                            computing={computing}
+                                            mergingKey={mergingKey}
+                                            getKeepTarget={getKeepTarget}
+                                            setKeepTarget={setKeepTarget}
+                                            onIgnore={handleIgnore}
+                                            onMerge={handleMergePair}
+                                        />
+                                    </>
+                                )}
                             </>
                         )}
                     </main>
@@ -294,7 +374,7 @@ export default function DBManagement() {
                     />
                 )}
                 {/* Floating Merge Widget */}
-                {selectedRows.length > 1 && (
+                {catalogView === 'normal' && selectedRows.length > 1 && (
                     <div className="floating-merge-widget">
                         <button
                             className="floating-merge-btn"
