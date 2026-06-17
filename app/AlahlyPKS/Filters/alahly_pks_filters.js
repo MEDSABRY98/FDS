@@ -2,7 +2,7 @@
 
 import { useState, useMemo, useEffect, useRef } from "react";
 import { Filter, X, RotateCcw, Search, ChevronDown, Check } from "lucide-react";
-import { UseColumnOrder, SortColumnNames } from "../../lib/ColumnOrder";
+import { UseColumnOrder, SortColumnNames } from "../../lib/Settings_db";
 import "./alahly_pks_filters.css";
 
 const TABLE_NAME = "alahly_PKS";

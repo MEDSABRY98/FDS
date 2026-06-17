@@ -3,8 +3,12 @@
 .dropdown-db {
     position: relative;
     width: 100%;
-    z-index: 1001;
+    z-index: 1;
     box-sizing: border-box;
+}
+
+.dropdown-db.is-open {
+    z-index: 2;
 }
 
 .dropdown-trigger-db {
@@ -57,6 +61,19 @@
     overflow: hidden;
     z-index: 1002;
     animation: db-fade-in 0.3s ease-out;
+}
+
+.dropdown-menu-db--portal {
+    position: fixed;
+    top: auto;
+    left: auto;
+    right: auto;
+    z-index: 10051;
+    animation: db-fade-in 0.2s ease-out;
+}
+
+.dropdown-menu-db--portal.open-upward {
+    animation: db-fade-in-up 0.2s ease-out;
 }
 
 .dropdown-db.open-upward .dropdown-menu-db {
@@ -128,6 +145,10 @@
     inset: 0;
     background: transparent;
     z-index: 1000;
+}
+
+.dropdown-overlay-db--portal {
+    z-index: 10050;
 }
 
 @keyframes db-fade-in {

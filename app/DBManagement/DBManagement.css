@@ -11,6 +11,11 @@
         margin: 0 auto;
     }
 
+    .db-content:has(.settings-db-unified) {
+        width: 75%;
+        max-width: 1350px;
+    }
+
     .data-toolbar {
         display: flex;
         flex-direction: column;
@@ -65,7 +70,8 @@
     }
 
     .db-view-panel .column-sorter-container,
-    .db-view-panel .settings-db-container {
+    .db-view-panel .settings-shell,
+    .db-view-panel .table-sort-container {
         border: none;
         box-shadow: none;
         border-radius: 0;
@@ -647,6 +653,30 @@
         color: #1a1a1a;
         flex: 1;
         text-align: left;
+    }
+
+    .table-sort-list {
+        max-width: 980px;
+    }
+
+    .table-sort-item {
+        gap: 16px;
+    }
+
+    .table-sort-item.is-active {
+        border-color: #ead9a5;
+        background: #fffdf5;
+    }
+
+    .table-sort-item .item-sort-dropdown {
+        width: 280px;
+        min-width: 220px;
+        position: relative;
+        z-index: 1;
+    }
+
+    .table-sort-item .item-sort-dropdown.dropdown-db.is-open {
+        z-index: 201;
     }
 
     .item-quick-actions {

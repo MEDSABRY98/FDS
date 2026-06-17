@@ -52,11 +52,22 @@ export const CATALOG_COLUMN_LABELS = {
 export const NAME_DISPLAY_LANG_KEY = "__GLOBAL_NAME_DISPLAY__";
 
 export const NAME_DISPLAY_LANG_OPTIONS = [
+    { value: "auto", label: "Automatic / تلقائي (available data)" },
     { value: "ar", label: "Arabic / عربي" },
     { value: "en", label: "English" },
 ];
 
-export const NAME_DISPLAY_LANGUAGE_HINT = "Players, Managers, Referees, Teams, and Stadiums";
+export const NAME_DISPLAY_LANGUAGE_HINT =
+    "Players, Managers, Referees, Teams, and Stadiums — Automatic shows whichever name is filled in each row";
+
+export const CATALOG_NAME_COLUMN_PAIRS = Object.values(CATALOG_BILINGUAL_TABLES).map(
+    ({ nameColAr, nameColEn }) => [nameColAr, nameColEn]
+);
+
+export function normalizeNameDisplayLang(lang) {
+    if (lang === "en" || lang === "auto" || lang === "ar") return lang;
+    return "auto";
+}
 
 function titleCaseWords(text = "") {
     return String(text)
@@ -96,20 +107,28 @@ export function splitNameCountry(name) {
     return { core: String(name || ""), country: null };
 }
 
-export function pickBilingualDisplayName(names, lang = "ar") {
+export function pickBilingualDisplayName(names, lang = "auto") {
     if (!names) return "";
     const ar = String(names.ar || "").trim();
     const en = String(names.en || "").trim();
     if (lang === "en") return en || ar;
+    if (lang === "ar") return ar || en;
     return ar || en;
 }
 
-export function sortCatalogNames(values = [], lang = "ar") {
-    const locale = lang === "en" ? "en" : "ar";
-    return [...values].filter(Boolean).sort((a, b) => a.localeCompare(b, locale));
+export function sortCatalogNames(values = [], lang = "auto") {
+    if (lang === "en") {
+        return [...values].filter(Boolean).sort((a, b) => a.localeCompare(b, "en"));
+    }
+    if (lang === "ar") {
+        return [...values].filter(Boolean).sort((a, b) => a.localeCompare(b, "ar"));
+    }
+    return [...values]
+        .filter(Boolean)
+        .sort((a, b) => a.localeCompare(b, undefined, { sensitivity: "base", numeric: true }));
 }
 
-export function buildCatalogOptions(rows, config, lang = "ar") {
+export function buildCatalogOptions(rows, config, lang = "auto") {
     const { idCol, nameColAr, nameColEn } = config;
     const seen = new Set();
     const options = [];

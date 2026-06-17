@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useRef, useEffect, useMemo } from "react";
-import { UseColumnOrder, SortFilterFields } from "../../lib/ColumnOrder";
+import { UseColumnOrder, SortFilterFields } from "../../lib/Settings_db";
 import "../../lib/Filters_db.css";
 
 const TABLE_NAME = "egy_CLUB_MATCHDETAILS";

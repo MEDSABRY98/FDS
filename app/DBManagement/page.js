@@ -20,7 +20,6 @@ import EntityStatsModal from "./Modals/EntityStatsModal";
 import MergeToolModal from "./Modals/MergeToolModal";
 import DeleteConfirmModal from "./Modals/DeleteConfirmModal";
 import DuplicatesPanel from "./Components/DuplicatesPanel";
-import { ColumnSortView } from "../lib/ColumnOrder";
 import Settings_db from "../lib/Settings_db";
 import { SETTINGS_TAB_ID } from "../lib/supabase";
 import { useDuplicateSuggestions } from "./Hooks/UseDuplicateSuggestions";
@@ -87,6 +86,8 @@ export default function DBManagement() {
     const [showMergeTool, setShowMergeTool] = useState(false);
     const [catalogView, setCatalogView] = useState("normal");
 
+    const isUtilityTab = selectedTable === SETTINGS_TAB_ID;
+
     const {
         isDuplicateTable,
         duplicatePairs,
@@ -142,7 +143,7 @@ export default function DBManagement() {
         }
     };
 
-    const isLoading = selectedTable !== SETTINGS_TAB_ID && selectedTable !== "COLUMN_SORT" && (tableLoading || saving || deleting);
+    const showFullLoading = !isUtilityTab && (tableLoading || saving || deleting) && tableData.length === 0;
 
     return (
         <Login_db title="EDITOR ACCESS" subtitle="GLOBAL DATABASE MANAGEMENT">
@@ -154,16 +155,10 @@ export default function DBManagement() {
             >
                 <div className="global-db-page">
                     <main className="db-content">
-                        {isLoading && tableData.length === 0 ? (
-                            <Loading_db title="GLOBAL" subtitle="DATABASE" message="SYNCING REAL-TIME DATA..." inline={true} />
-                        ) : selectedTable === "COLUMN_SORT" ? (
-                            <div className="db-view-panel">
-                                <ColumnSortView addNotification={addNotification} />
-                            </div>
+                        {showFullLoading ? (
+                            <Loading_db inline={true} />
                         ) : selectedTable === SETTINGS_TAB_ID ? (
-                            <div className="db-view-panel">
-                                <Settings_db availableTables={availableTables} addNotification={addNotification} />
-                            </div>
+                            <Settings_db addNotification={addNotification} />
                         ) : (
                             <>
                                 {isDuplicateTable && (

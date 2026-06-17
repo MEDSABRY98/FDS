@@ -3,7 +3,7 @@
 import { useState, useMemo, useEffect, useRef } from "react";
 import { X } from "lucide-react";
 import { AhlyVZamalekService } from "../Service/ahly_v_zamalek_service";
-import { UseColumnOrder, SortFilterFields } from "../../lib/ColumnOrder";
+import { UseColumnOrder, SortFilterFields } from "../../lib/Settings_db";
 import "./ahly_v_zamalek_filters.css";
 
 const TABLE_NAME = "alahly_MATCHDETAILS";

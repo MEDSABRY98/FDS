@@ -7,11 +7,21 @@ import {
     NAME_DISPLAY_LANG_OPTIONS,
     NAME_DISPLAY_LANGUAGE_HINT,
     CATALOG_BILINGUAL_TABLES,
+    CATALOG_NAME_COLUMN_PAIRS,
     formatCatalogColumnLabel,
+    normalizeNameDisplayLang,
     pickBilingualDisplayName,
     buildCatalogOptions,
     sortCatalogNames,
 } from "./catalogBilingual";
+import {
+    getActiveTableSortRules,
+    parseTableSortSetting,
+    serializeTableSortSetting,
+    sortRowsByTableSortRules,
+    parseColumnOrderFromSetting,
+    serializeTableSettings,
+} from "./Settings_db";
 
 const supabaseUrl = 'https://wsygeerxfdaavdtvogvy.supabase.co'
 const supabaseAnonKey = 'sb_publishable_Y2kr-reraWveea23ykKViw_8Z3AbtOk'
@@ -36,7 +46,7 @@ let refereesNamesById = {};
 let teamsNamesById = {};
 let stadiumsNamesById = {};
 let countriesNamesById = {};
-let nameDisplayLang = "ar";
+let nameDisplayLang = "auto";
 let cachesPromise = null;
 
 const playerColumnsMap = {
@@ -304,10 +314,25 @@ function describeSupabaseError(error) {
         error.details,
         error.hint,
         error.code,
+        error.name,
     ].filter(Boolean).join(" | ") || JSON.stringify(error);
 }
 
-async function fetchAllRows(tableName, selectColumns) {
+function isTransientFetchError(error) {
+    const details = describeSupabaseError(error).toLowerCase();
+    return (
+        error?.name === "AbortError" ||
+        details.includes("abort") ||
+        details.includes("lock broken") ||
+        details.includes("request was aborted")
+    );
+}
+
+async function sleep(ms) {
+    return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+async function fetchAllRows(tableName, selectColumns, attempt = 1) {
     let allData = [];
     let from = 0;
     const step = 1000;
@@ -320,6 +345,10 @@ async function fetchAllRows(tableName, selectColumns) {
             .range(from, from + step - 1);
             
         if (error) {
+            if (isTransientFetchError(error) && attempt < 4) {
+                await sleep(150 * attempt);
+                return fetchAllRows(tableName, selectColumns, attempt + 1);
+            }
             const details = describeSupabaseError(error);
             console.error(`Error fetching all rows from ${tableName}: ${details}`);
             throw new Error(details);
@@ -340,6 +369,7 @@ async function fetchCatalogRows(tableName, selectWithEn, selectWithoutEn) {
     try {
         return await fetchAllRows(tableName, selectWithEn);
     } catch (error) {
+        if (isTransientFetchError(error)) throw error;
         if (!selectWithoutEn) throw error;
         console.warn(
             `Falling back to legacy catalog columns for ${tableName}: ${describeSupabaseError(error)}`
@@ -349,12 +379,19 @@ async function fetchCatalogRows(tableName, selectWithEn, selectWithoutEn) {
 }
 
 async function safeFetchCatalogRows(tableName, selectWithEn, selectWithoutEn) {
-    try {
-        return await fetchCatalogRows(tableName, selectWithEn, selectWithoutEn);
-    } catch (error) {
-        console.error(`Failed to load catalog table ${tableName}: ${describeSupabaseError(error)}`);
-        return [];
+    for (let attempt = 1; attempt <= 3; attempt += 1) {
+        try {
+            return await fetchCatalogRows(tableName, selectWithEn, selectWithoutEn);
+        } catch (error) {
+            if (isTransientFetchError(error) && attempt < 3) {
+                await sleep(200 * attempt);
+                continue;
+            }
+            console.error(`Failed to load catalog table ${tableName}: ${describeSupabaseError(error)}`);
+            return [];
+        }
     }
+    return [];
 }
 
 async function fetchNameDisplayLangSetting() {
@@ -365,10 +402,10 @@ async function fetchNameDisplayLangSetting() {
             .eq("TABLE_NAME", NAME_DISPLAY_LANG_KEY)
             .maybeSingle();
 
-        if (error) return "ar";
-        return data?.SORTING === "en" ? "en" : "ar";
+        if (error) return "auto";
+        return normalizeNameDisplayLang(data?.SORTING);
     } catch {
-        return "ar";
+        return "auto";
     }
 }
 
@@ -376,25 +413,15 @@ async function loadCaches() {
     if (cachesPromise) return cachesPromise;
     cachesPromise = (async () => {
         try {
-            const [
-                stadsData,
-                mgrsData,
-                playersData,
-                refsData,
-                teamsData,
-                countriesData,
-                displayLang,
-            ] = await Promise.all([
-                safeFetchCatalogRows('db_STADIUMS', 'STADIUM_ID, STADIUM_NAME, STADIUM_NAME_EN', 'STADIUM_ID, STADIUM_NAME'),
-                safeFetchCatalogRows('db_MANAGERS', 'MANAGER_ID, MANAGER_NAME, MANAGER_NAME_EN', 'MANAGER_ID, MANAGER_NAME'),
-                safeFetchCatalogRows('db_PLAYERS', 'PLAYER_ID, PLAYER_NAME, PLAYER_NAME_EN', 'PLAYER_ID, PLAYER_NAME'),
-                safeFetchCatalogRows('db_REFEREES', 'REFEREE_ID, REFEREE_NAME, REFEREE_NAME_EN', 'REFEREE_ID, REFEREE_NAME'),
-                safeFetchCatalogRows('db_TEAMS', 'TEAM_ID, TEAM_NAME, TEAM_NAME_EN', 'TEAM_ID, TEAM_NAME'),
-                safeFetchCatalogRows('db_COUNTRIES', 'COUNTRY_ID, COUNTRY_NAME, COUNTRY_NAME_EN', 'COUNTRY_ID, COUNTRY_NAME'),
-                fetchNameDisplayLangSetting(),
-            ]);
+            const stadsData = await safeFetchCatalogRows('db_STADIUMS', 'STADIUM_ID, STADIUM_NAME, STADIUM_NAME_EN', 'STADIUM_ID, STADIUM_NAME');
+            const mgrsData = await safeFetchCatalogRows('db_MANAGERS', 'MANAGER_ID, MANAGER_NAME, MANAGER_NAME_EN', 'MANAGER_ID, MANAGER_NAME');
+            const playersData = await safeFetchCatalogRows('db_PLAYERS', 'PLAYER_ID, PLAYER_NAME, PLAYER_NAME_EN', 'PLAYER_ID, PLAYER_NAME');
+            const refsData = await safeFetchCatalogRows('db_REFEREES', 'REFEREE_ID, REFEREE_NAME, REFEREE_NAME_EN', 'REFEREE_ID, REFEREE_NAME');
+            const teamsData = await safeFetchCatalogRows('db_TEAMS', 'TEAM_ID, TEAM_NAME, TEAM_NAME_EN', 'TEAM_ID, TEAM_NAME');
+            const countriesData = await safeFetchCatalogRows('db_COUNTRIES', 'COUNTRY_ID, COUNTRY_NAME, COUNTRY_NAME_EN', 'COUNTRY_ID, COUNTRY_NAME');
+            const displayLang = await fetchNameDisplayLangSetting();
 
-            nameDisplayLang = displayLang === "en" ? "en" : "ar";
+            nameDisplayLang = normalizeNameDisplayLang(displayLang);
             
             stadiumsIdToName = {};
             stadiumsNameToId = {};
@@ -676,6 +703,14 @@ async function resolveStrictCatalogValue(catalog, val) {
     return resolvedId;
 }
 
+async function resolveSoftCatalogValue(catalog, val) {
+    try {
+        return await resolveStrictCatalogValue(catalog, val);
+    } catch {
+        return val;
+    }
+}
+
 function isCatalogReferenceColumn(col, tableName) {
     if (CATALOG_TABLES.includes(tableName)) return false;
 
@@ -741,6 +776,9 @@ async function resolveAndRegisterPayload(payload, tableName) {
 
         const catalog = getCatalogForColumn(col);
         if (catalog) {
+            if (PKS_TABLES.has(tableName)) {
+                return await resolveSoftCatalogValue(catalog, val);
+            }
             return await resolveStrictCatalogValue(catalog, val);
         }
 
@@ -771,6 +809,8 @@ function parseTrailingIdNumber(value) {
     const asNum = parseInt(raw, 10);
     return Number.isFinite(asNum) ? asNum : 0;
 }
+
+const PKS_TABLES = new Set(["alahly_PKS", "egy_NT_PKS"]);
 
 const ROW_ID_AUTO_TABLE_PATTERN = /_(LINEUPDETAILS|PLAYERDETAILS|GKSDETAILS|HOWPENMISSED|SQUAD)$/i;
 
@@ -984,72 +1024,6 @@ export async function resolveCatalogFieldsInForm(selectedTable, form) {
 
 const parseManagementIdSortValue = (value) => parseTrailingIdNumber(value);
 
-const findColumnByName = (columns = [], name) => {
-    const target = String(name || "").toUpperCase();
-    return columns.find((column) => String(column).toUpperCase() === target) || null;
-};
-
-const parseManagementDateSortValue = (value) => {
-    const raw = String(value ?? "").trim();
-    if (!raw) return 0;
-
-    const timestamp = Date.parse(raw);
-    if (Number.isFinite(timestamp)) return timestamp;
-
-    const parts = raw.match(/^(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{2,4})$/);
-    if (parts) {
-        const day = parseInt(parts[1], 10);
-        const month = parseInt(parts[2], 10) - 1;
-        let year = parseInt(parts[3], 10);
-        if (year < 100) year += 2000;
-        const parsed = new Date(year, month, day).getTime();
-        return Number.isFinite(parsed) ? parsed : 0;
-    }
-
-    return 0;
-};
-
-const compareRowsByConfiguredSort = (a, b, columns, sorting) => {
-    const rowIdCol = findColumnByName(columns, "ROW_ID");
-    const eventIdCol = findColumnByName(columns, "EVENT_ID");
-    const matchIdCol = findColumnByName(columns, "MATCH_ID");
-    const dateCol = findColumnByName(columns, "DATE");
-    const fallbackKey = findManagementSortKey(columns);
-    const mode = String(sorting || "ROW_ID").trim().toUpperCase();
-
-    if (mode === "DATE" && dateCol) {
-        const diff = parseManagementDateSortValue(b?.[dateCol]) - parseManagementDateSortValue(a?.[dateCol]);
-        if (diff !== 0) return diff;
-        return compareManagementRowsByIdDesc(a, b, rowIdCol || fallbackKey);
-    }
-
-    if (mode === "EVENT_ID") {
-        return compareManagementRowsByIdDesc(a, b, eventIdCol || fallbackKey);
-    }
-
-    if (mode === "DATE_ASC_EVENT_ID") {
-        if (dateCol) {
-            const diff = parseManagementDateSortValue(a?.[dateCol]) - parseManagementDateSortValue(b?.[dateCol]);
-            if (diff !== 0) return diff;
-        }
-        if (matchIdCol) {
-            const matchDiff = compareManagementRowsByIdDesc(a, b, matchIdCol);
-            if (matchDiff !== 0) return matchDiff;
-        }
-        return compareManagementRowsByIdDesc(a, b, eventIdCol || fallbackKey);
-    }
-
-    if (mode === "DATE_DESC_ROW_ID") {
-        if (dateCol) {
-            const diff = parseManagementDateSortValue(b?.[dateCol]) - parseManagementDateSortValue(a?.[dateCol]);
-            if (diff !== 0) return diff;
-        }
-        return compareManagementRowsByIdDesc(a, b, rowIdCol || fallbackKey);
-    }
-
-    return compareManagementRowsByIdDesc(a, b, rowIdCol || fallbackKey);
-};
-
 const findManagementSortKey = (columns = []) => {
     const cols = columns.map((column) => String(column));
     const upperCols = cols.map((column) => column.toUpperCase());
@@ -1086,7 +1060,10 @@ export function sortManagementTableData(rows, columns, sorting = null) {
     if (!Array.isArray(rows) || rows.length === 0) return rows;
 
     if (sorting) {
-        return [...rows].sort((a, b) => compareRowsByConfiguredSort(a, b, columns, sorting));
+        const rules = parseTableSortSetting(sorting, columns);
+        if (getActiveTableSortRules(rules).length > 0) {
+            return sortRowsByTableSortRules(rows, columns, rules);
+        }
     }
 
     const sortKey = findManagementSortKey(columns);
@@ -1113,11 +1090,32 @@ const GLOBAL_DB_NAME_SORT_COLUMNS_EN = [
     "COUNTRY_NAME_EN"
 ];
 
+function findCatalogNamePairInColumns(columns = []) {
+    const colSet = new Set(columns);
+    return CATALOG_NAME_COLUMN_PAIRS.find(([arCol, enCol]) => colSet.has(arCol) || colSet.has(enCol));
+}
+
+function sortRowsByResolvedCatalogName(rows, columns, lang) {
+    const pair = findCatalogNamePairInColumns(columns);
+    if (!pair) return rows;
+
+    const [arCol, enCol] = pair;
+    return [...rows].sort((a, b) => {
+        const nameA = pickBilingualDisplayName({ ar: a[arCol], en: a[enCol] }, lang);
+        const nameB = pickBilingualDisplayName({ ar: b[arCol], en: b[enCol] }, lang);
+        return nameA.localeCompare(nameB, undefined, { sensitivity: "base", numeric: true });
+    });
+}
+
 export function sortGlobalDbManagementTableData(rows, columns = [], sorting = null) {
     if (!Array.isArray(rows) || rows.length === 0) return rows;
 
     if (sorting) {
         return sortManagementTableData(rows, columns, sorting);
+    }
+
+    if (nameDisplayLang === "auto") {
+        return sortRowsByResolvedCatalogName(rows, columns, "auto");
     }
 
     const sortColumns = nameDisplayLang === "en"
@@ -1142,14 +1140,6 @@ export function sortGlobalDbManagementTableData(rows, columns = [], sorting = nu
 }
 
 export const SETTINGS_TAB_ID = "SETTINGS";
-
-export const TABLE_SORT_OPTIONS = [
-    { value: "ROW_ID", label: "ROW_ID" },
-    { value: "DATE", label: "Date (newest first)" },
-    { value: "EVENT_ID", label: "EVENT_ID" },
-    { value: "DATE_ASC_EVENT_ID", label: "Date oldest → newest, then MATCH_ID, then EVENT_ID" },
-    { value: "DATE_DESC_ROW_ID", label: "Date newest → oldest, then ROW_ID" },
-];
 
 const SETTINGS_TABLE = "db_Settings";
 
@@ -1245,11 +1235,67 @@ export async function FetchAllTableSortSettings() {
     }
 }
 
-export async function SaveTableSortSetting(tableName, sorting) {
+export async function SaveTableSettings(tableName, { columnOrder = [], sortRules = [] } = {}) {
     const normalizedTableName = String(tableName || "").trim();
-    const normalizedSorting = String(sorting || "ROW_ID").trim();
     if (!normalizedTableName) {
         throw new Error("TABLE_NAME is required.");
+    }
+
+    const payload = serializeTableSettings({ columnOrder, sortRules });
+
+    const { data: existing, error: fetchError } = await rawSupabase
+        .from(SETTINGS_TABLE)
+        .select("ROW_ID")
+        .eq("TABLE_NAME", normalizedTableName)
+        .maybeSingle();
+
+    if (fetchError) {
+        if (isSettingsTableMissing(fetchError)) {
+            throw new Error("db_Settings table is missing. Run scripts/setup-db-settings.mjs first.");
+        }
+        throw fetchError;
+    }
+
+    if (existing?.ROW_ID) {
+        const { error } = await rawSupabase
+            .from(SETTINGS_TABLE)
+            .update({ SORTING: payload })
+            .eq("TABLE_NAME", normalizedTableName);
+        if (error) throw error;
+        return existing.ROW_ID;
+    }
+
+    const rowId = await allocateNextSettingsRowId();
+    const { error } = await rawSupabase
+        .from(SETTINGS_TABLE)
+        .insert({
+            ROW_ID: rowId,
+            TABLE_NAME: normalizedTableName,
+            SORTING: payload,
+        });
+
+    if (error) throw error;
+    return rowId;
+}
+
+export async function SaveTableSortSetting(tableName, sorting) {
+    const normalizedTableName = String(tableName || "").trim();
+    if (!normalizedTableName) {
+        throw new Error("TABLE_NAME is required.");
+    }
+
+    if (Array.isArray(sorting)) {
+        const existingRaw = await FetchTableSortSetting(normalizedTableName);
+        const existingOrder = parseColumnOrderFromSetting(existingRaw) || [];
+        return SaveTableSettings(normalizedTableName, {
+            columnOrder: existingOrder,
+            sortRules: sorting,
+        });
+    }
+
+    const normalizedSorting = String(sorting || "").trim();
+    if (!normalizedSorting) {
+        throw new Error("Sort configuration is required.");
     }
 
     const { data: existing, error: fetchError } = await rawSupabase
@@ -1287,12 +1333,31 @@ export async function SaveTableSortSetting(tableName, sorting) {
     return rowId;
 }
 
+export async function ClearTableSortSetting(tableName) {
+    const normalizedTableName = String(tableName || "").trim();
+    if (!normalizedTableName) {
+        throw new Error("TABLE_NAME is required.");
+    }
+
+    const { error } = await rawSupabase
+        .from(SETTINGS_TABLE)
+        .delete()
+        .eq("TABLE_NAME", normalizedTableName);
+
+    if (error) {
+        if (isSettingsTableMissing(error)) {
+            throw new Error("db_Settings table is missing. Run scripts/setup-db-settings.mjs first.");
+        }
+        throw error;
+    }
+}
+
 export async function FetchNameDisplayLang() {
     return fetchNameDisplayLangSetting();
 }
 
 export async function SaveNameDisplayLang(lang) {
-    const normalizedLang = lang === "en" ? "en" : "ar";
+    const normalizedLang = normalizeNameDisplayLang(lang);
 
     const { data: existing, error: fetchError } = await rawSupabase
         .from(SETTINGS_TABLE)
@@ -1341,11 +1406,12 @@ export async function fetchCatalogDisplayNames(tableName) {
 
     await loadCaches();
     const { idCol, nameColAr, nameColEn } = config;
-    const rows = await safeFetchCatalogRows(
-        tableName,
-        `${idCol}, ${nameColAr}, ${nameColEn}`,
-        `${idCol}, ${nameColAr}`
-    );
+    const namesMap = getCatalogNamesByIdMap(tableName) || {};
+    const rows = Object.entries(namesMap).map(([id, names]) => ({
+        [idCol]: id,
+        [nameColAr]: names?.ar ?? "",
+        [nameColEn]: names?.en ?? "",
+    }));
     return buildCatalogOptions(rows, config, nameDisplayLang);
 }
 

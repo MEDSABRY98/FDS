@@ -1,6 +1,7 @@
 import { useState, useEffect, useMemo } from 'react';
 import { supabase, sortManagementTableData } from "../../lib/supabase";
-import { FetchTableSortSetting, appendSettingsTab, SETTINGS_TAB_ID } from "../../lib/supabase";
+import { FetchTableSortSetting } from "../../lib/supabase";
+import { resolveTableColumnOrder } from "../../lib/Settings_db";
 
 export function useTableData(addNotification) {
     const [availableTables, setAvailableTables] = useState([]);
@@ -24,7 +25,7 @@ export function useTableData(addNotification) {
                         const label = t.table_name.replace('egy_CLUB_', '').replace(/_/g, ' ');
                         return { name: t.table_name, label };
                     }).sort((a, b) => a.name.localeCompare(b.name));
-                    setAvailableTables(appendSettingsTab(sorted));
+                    setAvailableTables(sorted);
                     setSelectedTable(sorted[0].name);
                 }
             } catch (err) {
@@ -35,16 +36,14 @@ export function useTableData(addNotification) {
     }, []);
 
     useEffect(() => {
-        if (selectedTable && selectedTable !== SETTINGS_TAB_ID) {
+        if (selectedTable) {
             fetchTableData();
         }
     }, [selectedTable]);
 
     const changeSelectedTable = (newTable) => {
         if (newTable !== selectedTable) {
-            if (newTable !== SETTINGS_TAB_ID) {
-                setLoading(true);
-            }
+            setLoading(true);
             setTableData([]);
             setColumns([]);
             setSelectedTable(newTable);
@@ -82,41 +81,7 @@ export function useTableData(addNotification) {
 
             if (allData.length > 0) {
                 let cols = Object.keys(allData[0]);
-                
-                // Fetch saved order from db_COLUMN_ORDERS
-                let dbOrder = null;
-                try {
-                    const { data: orderData } = await supabase
-                        .from("db_COLUMN_ORDERS")
-                        .select("COLUMN_ORDER")
-                        .eq("TABLE_NAME", selectedTable)
-                        .maybeSingle();
-                    if (orderData && orderData.COLUMN_ORDER) {
-                        dbOrder = orderData.COLUMN_ORDER;
-                    }
-                } catch (err) {
-                    console.error("Failed to fetch column order from database:", err);
-                }
-
-                const preferredOrder = dbOrder;
-                if (preferredOrder) {
-                    const normalizedOrder = preferredOrder.map(c => c.toUpperCase());
-                    cols.sort((a, b) => {
-                        const idxA = normalizedOrder.indexOf(a.toUpperCase());
-                        const idxB = normalizedOrder.indexOf(b.toUpperCase());
-                        if (idxA === -1 && idxB === -1) return 0;
-                        if (idxA === -1) return 1;
-                        if (idxB === -1) return -1;
-                        return idxA - idxB;
-                    });
-                } else {
-                    const rowIdIdx = cols.findIndex(c => c.toUpperCase() === "ROW_ID");
-                    if (rowIdIdx > -1) {
-                        const rowIdKey = cols[rowIdIdx];
-                        cols.splice(rowIdIdx, 1);
-                        cols.unshift(rowIdKey);
-                    }
-                }
+                cols = await resolveTableColumnOrder(selectedTable, cols);
                 setColumns(cols);
                 const sortSetting = await FetchTableSortSetting(selectedTable);
                 setTableData(sortManagementTableData(allData, cols, sortSetting));

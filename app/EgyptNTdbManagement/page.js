@@ -22,8 +22,6 @@ import { Pagination } from "./Components/Pagination";
 
 // Import Modals
 import { EditRecordModal } from "./Modals/EditRecordModal";
-import Settings_db from "../lib/Settings_db";
-import { SETTINGS_TAB_ID } from "../lib/supabase";
 
 export default function EgyptDatabaseManagement() {
     const { addNotification } = useNotification();
@@ -139,9 +137,7 @@ export default function EgyptDatabaseManagement() {
                     </header>
 
                     <main className="db-content">
-                        {selectedTable === SETTINGS_TAB_ID ? (
-                            <Settings_db availableTables={availableTables} addNotification={addNotification} />
-                        ) : loading ? (
+                        {loading ? (
                             <Loading_db title="EGYPT NATIONAL TEAM" subtitle="DATABASE" message="SYNCING WITH DATABASE..." inline={true} />
                         ) : (
                             <>

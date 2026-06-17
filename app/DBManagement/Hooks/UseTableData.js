@@ -1,6 +1,7 @@
 import { useState, useEffect, useMemo, useCallback } from 'react';
 import { supabase, sortGlobalDbManagementTableData } from "../../lib/supabase";
 import { FetchTableSortSetting, appendSettingsTab, SETTINGS_TAB_ID } from "../../lib/supabase";
+import { resolveTableColumnOrder } from "../../lib/Settings_db";
 
 export function useTableData(addNotification) {
     const [availableTables, setAvailableTables] = useState([]);
@@ -23,14 +24,13 @@ export function useTableData(addNotification) {
                     const sorted = data
                         .filter(t => {
                             const name = t.table_name.toUpperCase();
-                            return name !== "DB_COLUMN_ORDERS" && name !== "DB_SETTINGS";
+                            return name !== "DB_SETTINGS";
                         })
                         .map(t => {
                             const label = t.table_name.replace('db_', '').toUpperCase();
                             return { name: t.table_name, label };
                         }).sort((a, b) => a.label.localeCompare(b.label));
                     
-                    sorted.push({ name: "COLUMN_SORT", label: "COLUMN SORT" });
                     setAvailableTables(appendSettingsTab(sorted));
                     setSelectedTable(sorted[0].name);
                 }
@@ -43,7 +43,7 @@ export function useTableData(addNotification) {
     }, [addNotification]);
 
     const fetchTableData = useCallback(async () => {
-        if (!selectedTable || selectedTable === SETTINGS_TAB_ID || selectedTable === "COLUMN_SORT") return;
+        if (!selectedTable || selectedTable === SETTINGS_TAB_ID) return;
         setLoading(true);
         try {
             let allData = [];
@@ -69,49 +69,7 @@ export function useTableData(addNotification) {
 
             if (allData.length > 0) {
                 let cols = Object.keys(allData[0]);
-                
-                // Fetch saved order from db_COLUMN_ORDERS
-                let dbOrder = null;
-                try {
-                    const { data: orderData } = await supabase
-                        .from("db_COLUMN_ORDERS")
-                        .select("COLUMN_ORDER")
-                        .eq("TABLE_NAME", selectedTable)
-                        .maybeSingle();
-                    if (orderData && orderData.COLUMN_ORDER) {
-                        dbOrder = orderData.COLUMN_ORDER;
-                    }
-                } catch (err) {
-                    console.error("Failed to fetch column order from database:", err);
-                }
-
-                if (dbOrder && dbOrder.length > 0) {
-                    const normalizedOrder = dbOrder.map(c => c.toUpperCase());
-                    cols.sort((a, b) => {
-                        const idxA = normalizedOrder.indexOf(a.toUpperCase());
-                        const idxB = normalizedOrder.indexOf(b.toUpperCase());
-                        if (idxA === -1 && idxB === -1) return 0;
-                        if (idxA === -1) return 1;
-                        if (idxB === -1) return -1;
-                        return idxA - idxB;
-                    });
-                } else {
-                    // Keep ROW_ID at the very beginning
-                    const rowIdIdx = cols.findIndex(c => c.toUpperCase() === "ROW_ID");
-                    if (rowIdIdx > -1) {
-                        const rowIdKey = cols[rowIdIdx];
-                        cols.splice(rowIdIdx, 1);
-                        cols.unshift(rowIdKey);
-                    }
-                    
-                    // Keep Entity ID (PLAYER_ID, MANAGER_ID, STADIUM_ID) in the second position
-                    const entityIdIdx = cols.findIndex(c => c.endsWith("_ID") && c.toUpperCase() !== "ROW_ID");
-                    if (entityIdIdx > -1) {
-                        const entityIdKey = cols[entityIdIdx];
-                        cols.splice(entityIdIdx, 1);
-                        cols.splice(1, 0, entityIdKey);
-                    }
-                }
+                cols = await resolveTableColumnOrder(selectedTable, cols);
 
                 setColumns(cols);
                 const sortSetting = await FetchTableSortSetting(selectedTable);
@@ -129,14 +87,14 @@ export function useTableData(addNotification) {
     }, [selectedTable, addNotification]);
 
     useEffect(() => {
-        if (selectedTable && selectedTable !== SETTINGS_TAB_ID && selectedTable !== "COLUMN_SORT") {
+        if (selectedTable && selectedTable !== SETTINGS_TAB_ID) {
             fetchTableData();
         }
     }, [selectedTable, fetchTableData]);
 
     const changeSelectedTable = (newTable) => {
         if (newTable !== selectedTable) {
-            if (newTable !== SETTINGS_TAB_ID && newTable !== "COLUMN_SORT") {
+            if (newTable !== SETTINGS_TAB_ID) {
                 setLoading(true);
             }
             setTableData([]);
