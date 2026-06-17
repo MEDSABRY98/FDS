@@ -988,18 +988,45 @@
     border: 1px solid #ffa39e;
 }
 
-.dup-keep-select {
-    width: 100%;
-    max-width: 260px;
-    padding: 8px 10px;
-    border: 2px solid #eee;
-    border-radius: 8px;
-    font-size: 12px;
-    font-weight: 600;
-    background: #fff;
+.dup-keep-picks {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    max-width: 280px;
     margin: 0 auto;
-    display: block;
+}
+
+.dup-keep-pick {
+    width: 100%;
+    border: 2px solid #eee;
+    border-radius: 10px;
+    background: #fff;
+    color: #555;
+    font-size: 12px;
+    font-weight: 700;
+    padding: 8px 10px;
+    cursor: pointer;
+    transition: all 0.2s ease;
     text-align: center;
+    line-height: 1.35;
+}
+
+.dup-keep-pick:hover:not(:disabled) {
+    border-color: #c9a84c;
+    background: #fdfaf0;
+    color: #000;
+}
+
+.dup-keep-pick.active {
+    background: #0a0a0a;
+    border-color: #0a0a0a;
+    color: #c9a84c;
+    box-shadow: 0 6px 14px rgba(0, 0, 0, 0.12);
+}
+
+.dup-keep-pick:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
 }
 
 .dup-actions {

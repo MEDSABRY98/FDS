@@ -72,15 +72,24 @@ export default function DuplicatesPanel({
                                     <div className="dup-score">{pair.score}%</div>
                                 </td>
                                 <td>
-                                    <select
-                                        className="dup-keep-select"
-                                        value={keepTarget}
-                                        onChange={(e) => setKeepTarget(pair.pairKey, e.target.value)}
-                                        disabled={isMerging}
-                                    >
-                                        <option value={pair.nameA}>{pair.nameA}</option>
-                                        <option value={pair.nameB}>{pair.nameB}</option>
-                                    </select>
+                                    <div className="dup-keep-picks">
+                                        <button
+                                            type="button"
+                                            className={`dup-keep-pick ${keepTarget === pair.nameA ? 'active' : ''}`}
+                                            onClick={() => setKeepTarget(pair.pairKey, pair.nameA)}
+                                            disabled={isMerging}
+                                        >
+                                            {pair.nameA}
+                                        </button>
+                                        <button
+                                            type="button"
+                                            className={`dup-keep-pick ${keepTarget === pair.nameB ? 'active' : ''}`}
+                                            onClick={() => setKeepTarget(pair.pairKey, pair.nameB)}
+                                            disabled={isMerging}
+                                        >
+                                            {pair.nameB}
+                                        </button>
+                                    </div>
                                 </td>
                                 <td>
                                     <div className="dup-actions">
