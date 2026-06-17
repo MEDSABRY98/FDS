@@ -973,7 +973,7 @@ export default function Settings_db({ addNotification }) {
                     ) : (
                         <div className="settings-card settings-card--empty">
                             <div className="settings-db-empty">No tables available for column settings.</div>
-                        </div>
+                </div>
                     )
                 )}
 
@@ -989,7 +989,7 @@ export default function Settings_db({ addNotification }) {
                         </div>
                     )
                 )}
-            </div>
+                </div>
         </div>
     );
 }

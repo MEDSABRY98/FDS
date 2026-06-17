@@ -6,14 +6,15 @@ export default function EntityStatsModal({
     isOpen,
     onClose,
     entityTable,
-    entityName
+    entityId,
+    entityLabel = ''
 }) {
     const [loading, setLoading] = useState(false);
     const [stats, setStats] = useState(null);
     const [error, setError] = useState(null);
 
     useEffect(() => {
-        if (!isOpen || !entityTable || !entityName) return;
+        if (!isOpen || !entityTable || !entityId) return;
 
         const fetchStats = async () => {
             setLoading(true);
@@ -21,7 +22,7 @@ export default function EntityStatsModal({
             try {
                 const { data, error } = await supabase.rpc('get_entity_timeline_and_tables', {
                     p_table: entityTable,
-                    p_name: entityName
+                    p_entity_id: entityId
                 });
 
                 if (error) throw error;
@@ -37,7 +38,7 @@ export default function EntityStatsModal({
         };
 
         fetchStats();
-    }, [isOpen, entityTable, entityName]);
+    }, [isOpen, entityTable, entityId]);
 
     if (!isOpen) return null;
 
@@ -50,12 +51,14 @@ export default function EntityStatsModal({
         return 'STADIUM';
     };
 
+    const displayName = stats?.entity_name || entityLabel || entityId;
+
     return (
         <div className="edit-modal-wrap" onClick={onClose} style={{ background: 'rgba(0, 0, 0, 0.4)', backdropFilter: 'none' }}>
             <div className="edit-modal" onClick={e => e.stopPropagation()} style={{ maxWidth: '650px', width: '90%' }}>
                 <h3>
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '100%', paddingRight: '20px' }}>
-                        <span>{getEntityTypeLabel()}: {entityName}</span>
+                        <span>{getEntityTypeLabel()}: {displayName}</span>
                         <span style={{ fontSize: '11px', color: '#c9a84c', letterSpacing: '1px', fontWeight: '800' }}>STATISTICS & HISTORY</span>
                     </div>
                 </h3>

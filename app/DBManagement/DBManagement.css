@@ -147,9 +147,10 @@
     }
 
     .select-cell, .select-header {
-        min-width: 90px;
-        width: 90px;
-        max-width: 90px;
+        min-width: 90px !important;
+        width: 90px !important;
+        max-width: 90px !important;
+        box-sizing: border-box;
     }
 
     .select-header {
@@ -180,15 +181,17 @@
     }
 
     .actions-cell {
-        min-width: 140px;
-        width: 140px;
-        max-width: 140px;
+        min-width: 140px !important;
+        width: 140px !important;
+        max-width: 140px !important;
+        box-sizing: border-box;
     }
 
     .actions-header {
-        min-width: 140px;
-        width: 140px;
-        max-width: 140px;
+        min-width: 140px !important;
+        width: 140px !important;
+        max-width: 140px !important;
+        box-sizing: border-box;
     }
 
     .actions-flex {
@@ -331,10 +334,94 @@
         font-family: 'Outfit', sans-serif;
     }
 
+    .db-table th.catalog-id-col,
+    .db-table td.catalog-id-col,
+    .db-table th.catalog-row-id-col,
+    .db-table td.catalog-row-id-col {
+        min-width: 82px;
+        width: 82px;
+        max-width: 94px;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        font-family: 'Space Mono', monospace;
+        font-size: 11px;
+        letter-spacing: 0;
+        padding-left: 9px;
+        padding-right: 9px;
+    }
+
+    .db-table th.catalog-id-col,
+    .db-table th.catalog-row-id-col {
+        letter-spacing: 0.5px;
+        font-size: 9px;
+    }
+
+    .catalog-id-link {
+        background: transparent;
+        border: none;
+        padding: 0;
+        margin: 0;
+        font: inherit;
+        color: #1565c0;
+        cursor: pointer;
+        text-decoration: underline;
+        text-underline-offset: 2px;
+        white-space: nowrap;
+        max-width: 100%;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        display: inline-block;
+        vertical-align: middle;
+    }
+
+    .catalog-id-link:hover {
+        color: #c9a84c;
+    }
+
+    .db-table th.catalog-name-col,
+    .db-table td.catalog-name-col,
+    .db-table th.catalog-name-en-col,
+    .db-table td.catalog-name-en-col {
+        min-width: 260px;
+        max-width: 480px;
+        white-space: normal;
+        word-break: break-word;
+        overflow: visible;
+        text-overflow: unset;
+        line-height: 1.45;
+        vertical-align: middle;
+    }
+
+    .catalog-name-text {
+        display: inline-block;
+        white-space: normal;
+        word-break: break-word;
+        line-height: 1.45;
+    }
+
     .db-table th.catalog-name-en-col {
         background: #1a3352;
         color: #b8d4f0;
         border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+    }
+
+    .db-table col.col-select {
+        width: 90px;
+    }
+
+    .db-table col.col-actions {
+        width: 140px;
+    }
+
+    .db-table col.catalog-id-col,
+    .db-table col.catalog-row-id-col {
+        width: 82px;
+    }
+
+    .db-table col.catalog-name-col,
+    .db-table col.catalog-name-en-col {
+        width: 320px;
     }
 
     .modal-actions {

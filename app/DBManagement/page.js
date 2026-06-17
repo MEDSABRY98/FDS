@@ -82,7 +82,7 @@ export default function DBManagement() {
         handleConfirmMerge
     } = useMergeRecords(selectedTable, fetchTableData, addNotification);
 
-    const [statsEntityName, setStatsEntityName] = useState(null);
+    const [statsEntity, setStatsEntity] = useState(null);
     const [showMergeTool, setShowMergeTool] = useState(false);
     const [catalogView, setCatalogView] = useState("normal");
 
@@ -271,7 +271,7 @@ export default function DBManagement() {
                                             onDelete={handleDelete}
                                             getName={getName}
                                             getRowKey={getRowKey}
-                                            onNameClick={(name) => setStatsEntityName(name)}
+                                            onEntityClick={(entityId, row) => setStatsEntity({ id: entityId, row })}
                                         />
 
                                         <Pagination
@@ -344,10 +344,11 @@ export default function DBManagement() {
                 )}
 
                 <EntityStatsModal
-                    isOpen={!!statsEntityName}
-                    onClose={() => setStatsEntityName(null)}
+                    isOpen={!!statsEntity}
+                    onClose={() => setStatsEntity(null)}
                     entityTable={selectedTable}
-                    entityName={statsEntityName}
+                    entityId={statsEntity?.id}
+                    entityLabel={statsEntity ? getName(statsEntity.row) : ''}
                 />
 
                 {showMergeTool && (
