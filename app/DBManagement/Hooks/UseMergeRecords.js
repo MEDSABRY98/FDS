@@ -13,12 +13,17 @@ export function useMergeRecords(selectedTable, fetchTableData, addNotification) 
         return row.PLAYER_NAME || row.MANAGER_NAME || row.STADIUM_NAME || row.REFEREE_NAME || row.TEAM_NAME || row.COUNTRY_NAME || "";
     };
 
+    const getRowKey = (row) => {
+        if (!row) return "";
+        return row.PLAYER_ID || row.MANAGER_ID || row.STADIUM_ID || row.REFEREE_ID || row.TEAM_ID || row.COUNTRY_ID || getName(row);
+    };
+
     const handleToggleSelect = (row) => {
-        const key = getName(row);
+        const key = getRowKey(row);
         if (!key) return;
 
-        if (selectedRows.some(r => getName(r) === key)) {
-            setSelectedRows(selectedRows.filter(r => getName(r) !== key));
+        if (selectedRows.some(r => getRowKey(r) === key)) {
+            setSelectedRows(selectedRows.filter(r => getRowKey(r) !== key));
         } else {
             setSelectedRows([...selectedRows, row]);
         }
@@ -72,6 +77,7 @@ export function useMergeRecords(selectedTable, fetchTableData, addNotification) 
         mergeTargetName,
         setMergeTargetName,
         getName,
+        getRowKey,
         handleToggleSelect,
         handleMergeTrigger,
         handleConfirmMerge

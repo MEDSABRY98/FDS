@@ -7,14 +7,20 @@ import {
     TABLE_SORT_OPTIONS,
     FetchAllTableSortSettings,
     SaveTableSortSetting,
+    FetchNameDisplayLang,
+    SaveNameDisplayLang,
+    NAME_DISPLAY_LANG_OPTIONS,
+    NAME_DISPLAY_LANGUAGE_HINT,
     formatManagementTableLabel,
 } from "./supabase";
 import "./Settings_db.css";
 
 export default function Settings_db({ availableTables = [], addNotification }) {
     const [sortSettings, setSortSettings] = useState({});
+    const [nameDisplayLang, setNameDisplayLang] = useState("ar");
     const [loading, setLoading] = useState(true);
     const [savingTable, setSavingTable] = useState("");
+    const [savingLang, setSavingLang] = useState(false);
 
     const tableRows = useMemo(() => {
         return [...availableTables]
@@ -32,8 +38,14 @@ export default function Settings_db({ availableTables = [], addNotification }) {
         const loadSettings = async () => {
             setLoading(true);
             try {
-                const settings = await FetchAllTableSortSettings();
-                if (!cancelled) setSortSettings(settings);
+                const [settings, displayLang] = await Promise.all([
+                    FetchAllTableSortSettings(),
+                    FetchNameDisplayLang(),
+                ]);
+                if (!cancelled) {
+                    setSortSettings(settings);
+                    setNameDisplayLang(displayLang);
+                }
             } catch (err) {
                 if (!cancelled) {
                     addNotification?.("Failed to load settings: " + err.message, "error");
@@ -69,6 +81,26 @@ export default function Settings_db({ availableTables = [], addNotification }) {
         }
     };
 
+    const handleNameLangChange = async (lang) => {
+        setSavingLang(true);
+        setNameDisplayLang(lang);
+
+        try {
+            await SaveNameDisplayLang(lang);
+            addNotification?.(
+                lang === "en"
+                    ? "Name display set to English across the app."
+                    : "تم تعيين عرض الأسماء بالعربية في التطبيق.",
+                "success"
+            );
+        } catch (err) {
+            setNameDisplayLang(await FetchNameDisplayLang());
+            addNotification?.("Failed to save name display language: " + err.message, "error");
+        } finally {
+            setSavingLang(false);
+        }
+    };
+
     if (loading) {
         return (
             <Loading_db
@@ -83,8 +115,27 @@ export default function Settings_db({ availableTables = [], addNotification }) {
     return (
         <div className="settings-db-container">
             <header className="settings-db-header">
-                <h2>Table Sort Settings</h2>
-                <p>Choose how each management table is sorted when loaded.</p>
+                <h2>Global Settings</h2>
+            </header>
+
+            <section className="settings-db-section">
+                <div className="settings-db-row settings-db-row-global">
+                    <div className="settings-db-row-copy">
+                        <span className="settings-db-table-name">Name Display Language</span>
+                        <span className="settings-db-row-hint">{NAME_DISPLAY_LANGUAGE_HINT}</span>
+                    </div>
+                    <DropDownList_db
+                        className="settings-db-dropdown"
+                        options={NAME_DISPLAY_LANG_OPTIONS}
+                        value={nameDisplayLang}
+                        onChange={handleNameLangChange}
+                        placeholder="Select display language..."
+                    />
+                </div>
+            </section>
+
+            <header className="settings-db-subheader">
+                <h3>Table Sort Settings</h3>
             </header>
 
             {tableRows.length === 0 ? (

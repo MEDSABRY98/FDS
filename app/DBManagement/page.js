@@ -77,6 +77,7 @@ export default function DBManagement() {
         mergeTargetName,
         setMergeTargetName,
         getName,
+        getRowKey,
         handleToggleSelect,
         handleMergeTrigger,
         handleConfirmMerge
@@ -274,6 +275,7 @@ export default function DBManagement() {
                                             onEdit={handleEditClick}
                                             onDelete={handleDelete}
                                             getName={getName}
+                                            getRowKey={getRowKey}
                                             onNameClick={(name) => setStatsEntityName(name)}
                                         />
 

@@ -2,6 +2,16 @@
 
 import { useState, useEffect, useLayoutEffect, useRef, useMemo } from "react";
 import { createClient } from '@supabase/supabase-js'
+import {
+    NAME_DISPLAY_LANG_KEY,
+    NAME_DISPLAY_LANG_OPTIONS,
+    NAME_DISPLAY_LANGUAGE_HINT,
+    CATALOG_BILINGUAL_TABLES,
+    formatCatalogColumnLabel,
+    pickBilingualDisplayName,
+    buildCatalogOptions,
+    sortCatalogNames,
+} from "./catalogBilingual";
 
 const supabaseUrl = 'https://wsygeerxfdaavdtvogvy.supabase.co'
 const supabaseAnonKey = 'sb_publishable_Y2kr-reraWveea23ykKViw_8Z3AbtOk'
@@ -20,6 +30,13 @@ let teamsIdToName = {};
 let teamsNameToId = {};
 let countriesIdToName = {};
 let countriesNameToId = {};
+let playersNamesById = {};
+let managersNamesById = {};
+let refereesNamesById = {};
+let teamsNamesById = {};
+let stadiumsNamesById = {};
+let countriesNamesById = {};
+let nameDisplayLang = "ar";
 let cachesPromise = null;
 
 const playerColumnsMap = {
@@ -54,27 +71,33 @@ const teamColumnsMap = {
 const CATALOG_CONFIG = {
     db_PLAYERS: {
         idCol: "PLAYER_ID",
-        nameCols: ["PLAYER_NAME"],
+        nameCols: ["PLAYER_NAME", "PLAYER_NAME_EN"],
         idPrefix: "P-",
         labelAr: "اللاعب"
     },
     db_MANAGERS: {
         idCol: "MANAGER_ID",
-        nameCols: ["MANAGER_NAME"],
+        nameCols: ["MANAGER_NAME", "MANAGER_NAME_EN"],
         idPrefix: "M-",
         labelAr: "المدرب"
     },
     db_REFEREES: {
         idCol: "REFEREE_ID",
-        nameCols: ["REFEREE_NAME"],
+        nameCols: ["REFEREE_NAME", "REFEREE_NAME_EN"],
         idPrefix: "REF-",
         labelAr: "الحكم"
     },
     db_TEAMS: {
         idCol: "TEAM_ID",
-        nameCols: ["TEAM_NAME"],
+        nameCols: ["TEAM_NAME", "TEAM_NAME_EN"],
         idPrefix: "T-",
         labelAr: "الفريق"
+    },
+    db_STADIUMS: {
+        idCol: "STADIUM_ID",
+        nameCols: ["STADIUM_NAME", "STADIUM_NAME_EN"],
+        idPrefix: "S-",
+        labelAr: "الاستاد"
     },
     db_COUNTRIES: {
         idCol: "COUNTRY_ID",
@@ -132,6 +155,81 @@ function buildCatalogError(catalog, value) {
 
 function normalizeCatalogName(val) {
     return String(val || "").trim().replace(/\s+/g, " ").toLowerCase();
+}
+
+function getCatalogNamesByIdMap(catalog) {
+    switch (catalog) {
+        case "db_PLAYERS": return playersNamesById;
+        case "db_MANAGERS": return managersNamesById;
+        case "db_REFEREES": return refereesNamesById;
+        case "db_TEAMS": return teamsNamesById;
+        case "db_STADIUMS": return stadiumsNamesById;
+        case "db_COUNTRIES": return countriesNamesById;
+        default: return null;
+    }
+}
+
+function getLegacyIdToNameMap(catalog) {
+    switch (catalog) {
+        case "db_PLAYERS": return playersIdToName;
+        case "db_MANAGERS": return managersIdToName;
+        case "db_REFEREES": return refereesIdToName;
+        case "db_TEAMS": return teamsIdToName;
+        case "db_STADIUMS": return stadiumsIdToName;
+        case "db_COUNTRIES": return countriesIdToName;
+        default: return null;
+    }
+}
+
+function getLegacyNameToIdMap(catalog) {
+    switch (catalog) {
+        case "db_PLAYERS": return playersNameToId;
+        case "db_MANAGERS": return managersNameToId;
+        case "db_REFEREES": return refereesNameToId;
+        case "db_TEAMS": return teamsNameToId;
+        case "db_STADIUMS": return stadiumsNameToId;
+        case "db_COUNTRIES": return countriesNameToId;
+        default: return null;
+    }
+}
+
+export function getNameDisplayLang() {
+    return nameDisplayLang;
+}
+
+export function getCatalogDisplayName(catalog, id, lang = nameDisplayLang) {
+    if (!id) return "";
+    const names = getCatalogNamesByIdMap(catalog)?.[id];
+    return pickBilingualDisplayName(names, lang);
+}
+
+function syncLegacyDisplayMap(catalog, id) {
+    const names = getCatalogNamesByIdMap(catalog)?.[id];
+    const legacyMap = getLegacyIdToNameMap(catalog);
+    if (!legacyMap || !names) return;
+    legacyMap[id] = pickBilingualDisplayName(names, nameDisplayLang);
+}
+
+function registerBilingualCatalogEntry(catalog, id, ar, en) {
+    if (!id) return;
+    const namesMap = getCatalogNamesByIdMap(catalog);
+    const nameToId = getLegacyNameToIdMap(catalog);
+    if (!namesMap || !nameToId) return;
+
+    const arName = String(ar || "").trim();
+    const enName = String(en || "").trim();
+    namesMap[id] = { ar: arName, en: enName };
+
+    if (arName) nameToId[normalizeCatalogName(arName)] = id;
+    if (enName) nameToId[normalizeCatalogName(enName)] = id;
+    syncLegacyDisplayMap(catalog, id);
+}
+
+function rebuildAllLegacyDisplayMaps() {
+    Object.keys(CATALOG_CONFIG).forEach((catalog) => {
+        const namesMap = getCatalogNamesByIdMap(catalog) || {};
+        Object.keys(namesMap).forEach((id) => syncLegacyDisplayMap(catalog, id));
+    });
 }
 
 async function lookupCatalogIdByText(catalog, value, rawClient, caches = null) {
@@ -198,6 +296,17 @@ async function lookupCatalogIdByText(catalog, value, rawClient, caches = null) {
     throw new Error(buildCatalogError(catalog, raw));
 }
 
+function describeSupabaseError(error) {
+    if (!error) return "Unknown error";
+    if (typeof error === "string") return error;
+    return [
+        error.message,
+        error.details,
+        error.hint,
+        error.code,
+    ].filter(Boolean).join(" | ") || JSON.stringify(error);
+}
+
 async function fetchAllRows(tableName, selectColumns) {
     let allData = [];
     let from = 0;
@@ -211,8 +320,9 @@ async function fetchAllRows(tableName, selectColumns) {
             .range(from, from + step - 1);
             
         if (error) {
-            console.error(`Error fetching all rows from ${tableName}:`, error);
-            throw error;
+            const details = describeSupabaseError(error);
+            console.error(`Error fetching all rows from ${tableName}: ${details}`);
+            throw new Error(details);
         }
         
         if (data && data.length > 0) {
@@ -226,18 +336,65 @@ async function fetchAllRows(tableName, selectColumns) {
     return allData;
 }
 
+async function fetchCatalogRows(tableName, selectWithEn, selectWithoutEn) {
+    try {
+        return await fetchAllRows(tableName, selectWithEn);
+    } catch (error) {
+        if (!selectWithoutEn) throw error;
+        console.warn(
+            `Falling back to legacy catalog columns for ${tableName}: ${describeSupabaseError(error)}`
+        );
+        return fetchAllRows(tableName, selectWithoutEn);
+    }
+}
+
+async function safeFetchCatalogRows(tableName, selectWithEn, selectWithoutEn) {
+    try {
+        return await fetchCatalogRows(tableName, selectWithEn, selectWithoutEn);
+    } catch (error) {
+        console.error(`Failed to load catalog table ${tableName}: ${describeSupabaseError(error)}`);
+        return [];
+    }
+}
+
+async function fetchNameDisplayLangSetting() {
+    try {
+        const { data, error } = await rawSupabase
+            .from("db_Settings")
+            .select("SORTING")
+            .eq("TABLE_NAME", NAME_DISPLAY_LANG_KEY)
+            .maybeSingle();
+
+        if (error) return "ar";
+        return data?.SORTING === "en" ? "en" : "ar";
+    } catch {
+        return "ar";
+    }
+}
+
 async function loadCaches() {
     if (cachesPromise) return cachesPromise;
     cachesPromise = (async () => {
         try {
-            const [stadsData, mgrsData, playersData, refsData, teamsData, countriesData] = await Promise.all([
-                fetchAllRows('db_STADIUMS', 'STADIUM_ID, STADIUM_NAME'),
-                fetchAllRows('db_MANAGERS', 'MANAGER_ID, MANAGER_NAME'),
-                fetchAllRows('db_PLAYERS', 'PLAYER_ID, PLAYER_NAME'),
-                fetchAllRows('db_REFEREES', 'REFEREE_ID, REFEREE_NAME'),
-                fetchAllRows('db_TEAMS', 'TEAM_ID, TEAM_NAME'),
-                fetchAllRows('db_COUNTRIES', 'COUNTRY_ID, COUNTRY_NAME, COUNTRY_NAME_EN')
+            const [
+                stadsData,
+                mgrsData,
+                playersData,
+                refsData,
+                teamsData,
+                countriesData,
+                displayLang,
+            ] = await Promise.all([
+                safeFetchCatalogRows('db_STADIUMS', 'STADIUM_ID, STADIUM_NAME, STADIUM_NAME_EN', 'STADIUM_ID, STADIUM_NAME'),
+                safeFetchCatalogRows('db_MANAGERS', 'MANAGER_ID, MANAGER_NAME, MANAGER_NAME_EN', 'MANAGER_ID, MANAGER_NAME'),
+                safeFetchCatalogRows('db_PLAYERS', 'PLAYER_ID, PLAYER_NAME, PLAYER_NAME_EN', 'PLAYER_ID, PLAYER_NAME'),
+                safeFetchCatalogRows('db_REFEREES', 'REFEREE_ID, REFEREE_NAME, REFEREE_NAME_EN', 'REFEREE_ID, REFEREE_NAME'),
+                safeFetchCatalogRows('db_TEAMS', 'TEAM_ID, TEAM_NAME, TEAM_NAME_EN', 'TEAM_ID, TEAM_NAME'),
+                safeFetchCatalogRows('db_COUNTRIES', 'COUNTRY_ID, COUNTRY_NAME, COUNTRY_NAME_EN', 'COUNTRY_ID, COUNTRY_NAME'),
+                fetchNameDisplayLangSetting(),
             ]);
+
+            nameDisplayLang = displayLang === "en" ? "en" : "ar";
             
             stadiumsIdToName = {};
             stadiumsNameToId = {};
@@ -251,57 +408,82 @@ async function loadCaches() {
             teamsNameToId = {};
             countriesIdToName = {};
             countriesNameToId = {};
+            playersNamesById = {};
+            managersNamesById = {};
+            refereesNamesById = {};
+            teamsNamesById = {};
+            stadiumsNamesById = {};
+            countriesNamesById = {};
 
             if (stadsData) {
                 stadsData.forEach(r => {
-                    if (r.STADIUM_ID && r.STADIUM_NAME) {
-                        stadiumsIdToName[r.STADIUM_ID] = r.STADIUM_NAME;
-                        stadiumsNameToId[normalizeCatalogName(r.STADIUM_NAME)] = r.STADIUM_ID;
+                    if (r.STADIUM_ID) {
+                        registerBilingualCatalogEntry(
+                            "db_STADIUMS",
+                            r.STADIUM_ID,
+                            r.STADIUM_NAME,
+                            r.STADIUM_NAME_EN
+                        );
                     }
                 });
             }
             if (mgrsData) {
                 mgrsData.forEach(r => {
-                    if (r.MANAGER_ID && r.MANAGER_NAME) {
-                        managersIdToName[r.MANAGER_ID] = r.MANAGER_NAME;
-                        managersNameToId[normalizeCatalogName(r.MANAGER_NAME)] = r.MANAGER_ID;
+                    if (r.MANAGER_ID) {
+                        registerBilingualCatalogEntry(
+                            "db_MANAGERS",
+                            r.MANAGER_ID,
+                            r.MANAGER_NAME,
+                            r.MANAGER_NAME_EN
+                        );
                     }
                 });
             }
             if (playersData) {
                 playersData.forEach(r => {
-                    if (r.PLAYER_ID && r.PLAYER_NAME) {
-                        playersIdToName[r.PLAYER_ID] = r.PLAYER_NAME;
-                        playersNameToId[normalizeCatalogName(r.PLAYER_NAME)] = r.PLAYER_ID;
+                    if (r.PLAYER_ID) {
+                        registerBilingualCatalogEntry(
+                            "db_PLAYERS",
+                            r.PLAYER_ID,
+                            r.PLAYER_NAME,
+                            r.PLAYER_NAME_EN
+                        );
                     }
                 });
             }
             if (refsData) {
                 refsData.forEach(r => {
-                    if (r.REFEREE_ID && r.REFEREE_NAME) {
-                        refereesIdToName[r.REFEREE_ID] = r.REFEREE_NAME;
-                        refereesNameToId[normalizeCatalogName(r.REFEREE_NAME)] = r.REFEREE_ID;
+                    if (r.REFEREE_ID) {
+                        registerBilingualCatalogEntry(
+                            "db_REFEREES",
+                            r.REFEREE_ID,
+                            r.REFEREE_NAME,
+                            r.REFEREE_NAME_EN
+                        );
                     }
                 });
             }
             if (teamsData) {
                 teamsData.forEach(r => {
-                    if (r.TEAM_ID && r.TEAM_NAME) {
-                        teamsIdToName[r.TEAM_ID] = r.TEAM_NAME;
-                        teamsNameToId[normalizeCatalogName(r.TEAM_NAME)] = r.TEAM_ID;
+                    if (r.TEAM_ID) {
+                        registerBilingualCatalogEntry(
+                            "db_TEAMS",
+                            r.TEAM_ID,
+                            r.TEAM_NAME,
+                            r.TEAM_NAME_EN
+                        );
                     }
                 });
             }
             if (countriesData) {
                 countriesData.forEach(r => {
                     if (r.COUNTRY_ID) {
-                        countriesIdToName[r.COUNTRY_ID] = r.COUNTRY_NAME || r.COUNTRY_NAME_EN;
-                        if (r.COUNTRY_NAME) {
-                            countriesNameToId[normalizeCatalogName(r.COUNTRY_NAME)] = r.COUNTRY_ID;
-                        }
-                        if (r.COUNTRY_NAME_EN) {
-                            countriesNameToId[normalizeCatalogName(r.COUNTRY_NAME_EN)] = r.COUNTRY_ID;
-                        }
+                        registerBilingualCatalogEntry(
+                            "db_COUNTRIES",
+                            r.COUNTRY_ID,
+                            r.COUNTRY_NAME,
+                            r.COUNTRY_NAME_EN
+                        );
                     }
                 });
             }
@@ -460,11 +642,28 @@ function getCatalogCaches() {
 
 function registerCacheEntry(catalog, id, name) {
     if (!id || !name) return;
-    const idToName = getIdToNameMap(catalog);
-    const nameToId = getNameToIdMap(catalog);
-    if (!idToName || !nameToId) return;
-    idToName[id] = String(name).trim();
-    nameToId[normalizeCatalogName(name)] = id;
+    const existing = getCatalogNamesByIdMap(catalog)?.[id] || { ar: "", en: "" };
+    const value = String(name).trim();
+    const cfg = CATALOG_CONFIG[catalog];
+    if (!cfg) return;
+
+    const enCol = cfg.nameCols.find((col) => col.endsWith("_EN"));
+    const arCol = cfg.nameCols.find((col) => !col.endsWith("_EN"));
+    const matchedCol = cfg.nameCols.find((col) => {
+        const current = col === enCol ? existing.en : existing.ar;
+        return normalizeCatalogName(current) === normalizeCatalogName(value);
+    });
+
+    if (matchedCol === enCol) {
+        registerBilingualCatalogEntry(catalog, id, existing.ar, value);
+        return;
+    }
+    if (matchedCol === arCol) {
+        registerBilingualCatalogEntry(catalog, id, value, existing.en);
+        return;
+    }
+
+    registerBilingualCatalogEntry(catalog, id, value, existing.en);
 }
 
 async function resolveStrictCatalogValue(catalog, val) {
@@ -526,11 +725,11 @@ async function resolveAndRegisterPayload(payload, tableName) {
                 await rawSupabase.from('db_STADIUMS').insert({
                     ROW_ID: nextRowId,
                     STADIUM_ID: nextId,
-                    STADIUM_NAME: String(val).trim()
+                    STADIUM_NAME: String(val).trim(),
+                    STADIUM_NAME_EN: null
                 });
 
-                stadiumsIdToName[nextId] = String(val).trim();
-                stadiumsNameToId[clean] = nextId;
+                registerBilingualCatalogEntry("db_STADIUMS", nextId, String(val).trim(), "");
                 return nextId;
             } catch (e) {
                 console.error("Auto-register stadium failed:", e);
@@ -905,6 +1104,15 @@ const GLOBAL_DB_NAME_SORT_COLUMNS = [
     "COUNTRY_NAME"
 ];
 
+const GLOBAL_DB_NAME_SORT_COLUMNS_EN = [
+    "PLAYER_NAME_EN",
+    "MANAGER_NAME_EN",
+    "STADIUM_NAME_EN",
+    "REFEREE_NAME_EN",
+    "TEAM_NAME_EN",
+    "COUNTRY_NAME_EN"
+];
+
 export function sortGlobalDbManagementTableData(rows, columns = [], sorting = null) {
     if (!Array.isArray(rows) || rows.length === 0) return rows;
 
@@ -912,10 +1120,16 @@ export function sortGlobalDbManagementTableData(rows, columns = [], sorting = nu
         return sortManagementTableData(rows, columns, sorting);
     }
 
-    const nameColumn = GLOBAL_DB_NAME_SORT_COLUMNS.find((col) => columns.includes(col));
+    const sortColumns = nameDisplayLang === "en"
+        ? GLOBAL_DB_NAME_SORT_COLUMNS_EN
+        : GLOBAL_DB_NAME_SORT_COLUMNS;
+    const locale = nameDisplayLang === "en" ? "en" : "ar";
+    const nameColumn = sortColumns.find((col) => columns.includes(col))
+        || GLOBAL_DB_NAME_SORT_COLUMNS.find((col) => columns.includes(col));
+
     if (nameColumn) {
         return [...rows].sort((a, b) =>
-            String(a[nameColumn] || "").localeCompare(String(b[nameColumn] || ""), "ar")
+            String(a[nameColumn] || "").localeCompare(String(b[nameColumn] || ""), locale)
         );
     }
 
@@ -1020,7 +1234,9 @@ export async function FetchAllTableSortSettings() {
 
         const settings = {};
         (data || []).forEach((row) => {
-            settings[String(row.TABLE_NAME)] = String(row.SORTING || "ROW_ID");
+            const tableName = String(row.TABLE_NAME);
+            if (tableName === NAME_DISPLAY_LANG_KEY) return;
+            settings[tableName] = String(row.SORTING || "ROW_ID");
         });
         return settings;
     } catch (err) {
@@ -1070,6 +1286,70 @@ export async function SaveTableSortSetting(tableName, sorting) {
     if (error) throw error;
     return rowId;
 }
+
+export async function FetchNameDisplayLang() {
+    return fetchNameDisplayLangSetting();
+}
+
+export async function SaveNameDisplayLang(lang) {
+    const normalizedLang = lang === "en" ? "en" : "ar";
+
+    const { data: existing, error: fetchError } = await rawSupabase
+        .from(SETTINGS_TABLE)
+        .select("ROW_ID")
+        .eq("TABLE_NAME", NAME_DISPLAY_LANG_KEY)
+        .maybeSingle();
+
+    if (fetchError) {
+        if (isSettingsTableMissing(fetchError)) {
+            throw new Error("db_Settings table is missing. Run scripts/setup-db-settings.mjs first.");
+        }
+        throw fetchError;
+    }
+
+    if (existing?.ROW_ID) {
+        const { error } = await rawSupabase
+            .from(SETTINGS_TABLE)
+            .update({ SORTING: normalizedLang })
+            .eq("TABLE_NAME", NAME_DISPLAY_LANG_KEY);
+        if (error) throw error;
+    } else {
+        const rowId = await allocateNextSettingsRowId();
+        const { error } = await rawSupabase
+            .from(SETTINGS_TABLE)
+            .insert({
+                ROW_ID: rowId,
+                TABLE_NAME: NAME_DISPLAY_LANG_KEY,
+                SORTING: normalizedLang,
+            });
+        if (error) throw error;
+    }
+
+    nameDisplayLang = normalizedLang;
+    cachesPromise = null;
+    rebuildAllLegacyDisplayMaps();
+    await loadCaches();
+    if (typeof window !== "undefined") {
+        window.dispatchEvent(new CustomEvent("nameDisplayLangChanged", { detail: normalizedLang }));
+    }
+    return normalizedLang;
+}
+
+export async function fetchCatalogDisplayNames(tableName) {
+    const config = CATALOG_BILINGUAL_TABLES[tableName];
+    if (!config) return [];
+
+    await loadCaches();
+    const { idCol, nameColAr, nameColEn } = config;
+    const rows = await safeFetchCatalogRows(
+        tableName,
+        `${idCol}, ${nameColAr}, ${nameColEn}`,
+        `${idCol}, ${nameColAr}`
+    );
+    return buildCatalogOptions(rows, config, nameDisplayLang);
+}
+
+export { formatCatalogColumnLabel, NAME_DISPLAY_LANG_OPTIONS, NAME_DISPLAY_LANG_KEY, NAME_DISPLAY_LANGUAGE_HINT };
 
 export function formatManagementTableLabel(tableName = "") {
     return String(tableName)

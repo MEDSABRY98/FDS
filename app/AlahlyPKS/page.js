@@ -55,8 +55,9 @@ export default function AlAhlyPKsDatabase() {
         window.scrollTo(0, 0);
     }, [selectedPksId, activeTab]);
 
-    async function fetchPKData() {
-        setLoading(true);
+    async function fetchPKData(options = {}) {
+        const { silent = false } = options;
+        if (!silent) setLoading(true);
         // Fetch both PKs and Matches to join manager info
         const [pks, matches] = await Promise.all([
             AlAhlyService.getAllPKs(),
@@ -88,7 +89,7 @@ export default function AlAhlyPKsDatabase() {
 
         setPksData(enrichedData);
         setFilteredData(enrichedData);
-        setLoading(false);
+        if (!silent) setLoading(false);
     }
 
     const renderAppContent = () => {
@@ -105,7 +106,7 @@ export default function AlAhlyPKsDatabase() {
             case "alahly_pks_editor":
                 return (
                     <Login_db title="EDITOR ACCESS" subtitle="AUTHORIZATION REQUIRED">
-                        <AlAhlyPKsEditor pksData={pksData} />
+                        <AlAhlyPKsEditor pksData={pksData} onDataSaved={() => fetchPKData({ silent: true })} />
                     </Login_db>
                 );
             case "alahly_pks_champions":

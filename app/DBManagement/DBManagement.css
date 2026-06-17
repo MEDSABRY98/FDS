@@ -316,6 +316,21 @@
         outline: none;
     }
 
+    .form-group-name-en input {
+        font-family: 'Outfit', sans-serif;
+    }
+
+    .catalog-name-en-col {
+        color: #2f4a6b;
+        font-family: 'Outfit', sans-serif;
+    }
+
+    .db-table th.catalog-name-en-col {
+        background: #1a3352;
+        color: #b8d4f0;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+    }
+
     .modal-actions {
         padding: 30px 40px;
         display: flex;

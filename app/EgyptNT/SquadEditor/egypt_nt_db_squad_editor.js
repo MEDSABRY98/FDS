@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { createPortal } from "react-dom";
-import { supabase } from "../../lib/supabase";
+import { supabase, fetchCatalogDisplayNames } from "../../lib/supabase";
 import { useNotification } from "../../lib/Notification_db";
 import { Save, Plus, Trash2 } from "lucide-react";
 import "./egypt_nt_db_squad_editor.css";
@@ -136,25 +136,13 @@ export default function EgyptNTSquadEditor() {
     useEffect(() => {
         const fetchSuggestions = async () => {
             try {
-                // Fetch squad metadata options
                 const { data: squadData, error: sErr } = await supabase.from('egy_NT_SQUAD').select('POSITION, CLUB, SEASON, CHAMPION');
                 if (sErr) throw sErr;
 
-                // Fetch all players from db_PLAYERS using pagination
-                let allPlayers = [];
-                let from = 0;
-                const limit = 1000;
-                while (true) {
-                    const { data: pData, error: pErr } = await supabase.from('db_PLAYERS').select('PLAYER_NAME').range(from, from + limit - 1);
-                    if (pErr) throw pErr;
-                    if (!pData || pData.length === 0) break;
-                    allPlayers.push(...pData.map(d => d.PLAYER_NAME).filter(Boolean));
-                    if (pData.length < limit) break;
-                    from += limit;
-                }
+                const players = await fetchCatalogDisplayNames('db_PLAYERS');
 
                 setSuggestions({
-                    players: [...new Set(allPlayers)].sort(),
+                    players,
                     positions: [...new Set(squadData.map(d => d.POSITION).filter(Boolean))].sort(),
                     clubs: [...new Set(squadData.map(d => d.CLUB).filter(Boolean))].sort(),
                     seasons: [...new Set(squadData.map(d => d.SEASON).filter(Boolean))].sort(),
@@ -164,7 +152,10 @@ export default function EgyptNTSquadEditor() {
                 console.error("Error fetching suggestions:", err);
             }
         };
+
         fetchSuggestions();
+        window.addEventListener("nameDisplayLangChanged", fetchSuggestions);
+        return () => window.removeEventListener("nameDisplayLangChanged", fetchSuggestions);
     }, []);
 
     const handleAddRow = () => {

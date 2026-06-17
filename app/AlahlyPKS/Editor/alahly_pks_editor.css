@@ -2,6 +2,45 @@
     padding: 30px;
     background: #ffffff;
     min-height: 100vh;
+    font-family: 'Outfit', sans-serif;
+    max-width: 1610px;
+    margin: 0 auto;
+    padding-bottom: 100px;
+}
+
+.mode-switch-wrap {
+    display: flex;
+    justify-content: center;
+    margin-top: 30px;
+    margin-bottom: 30px;
+}
+
+.mode-switch {
+    display: flex;
+    width: 400px;
+    background: #f8f8f8;
+    border-radius: 12px;
+    padding: 4px;
+}
+
+.mode-switch-btn {
+    flex: 1;
+    padding: 12px 0;
+    border: none;
+    background: transparent;
+    color: #888;
+    font-weight: 800;
+    font-family: 'Outfit', sans-serif;
+    cursor: pointer;
+    border-radius: 10px;
+    transition: all 0.2s;
+    font-size: 13px;
+    letter-spacing: 1px;
+}
+
+.mode-switch-btn.active {
+    background: #c9a84c;
+    color: #000;
 }
 
 .editor-header {

@@ -1,4 +1,36 @@
 import React from 'react';
+import { formatCatalogColumnLabel } from '../../lib/supabase';
+
+const NAME_EN_COLUMNS = new Set([
+    'PLAYER_NAME_EN',
+    'MANAGER_NAME_EN',
+    'REFEREE_NAME_EN',
+    'TEAM_NAME_EN',
+    'STADIUM_NAME_EN',
+    'COUNTRY_NAME_EN',
+]);
+
+function sortFormColumns(columns = []) {
+    const regular = [];
+    const english = [];
+
+    columns.forEach((col) => {
+        if (NAME_EN_COLUMNS.has(col)) english.push(col);
+        else regular.push(col);
+    });
+
+    const ordered = [];
+    regular.forEach((col) => {
+        ordered.push(col);
+        const enCol = `${col}_EN`;
+        if (english.includes(enCol)) {
+            ordered.push(enCol);
+            english.splice(english.indexOf(enCol), 1);
+        }
+    });
+
+    return [...ordered, ...english];
+}
 
 export default function EditModal({
     editingRow,
@@ -13,17 +45,15 @@ export default function EditModal({
 
     const isNew = editingRow.isNew;
 
-    // Determine form columns to render
-    const renderColumns = columns.filter(col => {
+    const renderColumns = sortFormColumns(columns.filter(col => {
         if (isNew) {
             const upper = col.toUpperCase();
-            // In new mode, hide auto-generated columns entirely
             if (upper === 'ROW_ID' || col.endsWith('_ID')) {
                 return false;
             }
         }
         return true;
-    });
+    }));
 
     const isReadOnly = (col) => {
         const upper = col.toUpperCase();
@@ -44,15 +74,23 @@ export default function EditModal({
                 <div className="modal-form">
                     {renderColumns.map(col => {
                         const disabled = isReadOnly(col);
+                        const isEnglishName = NAME_EN_COLUMNS.has(col);
                         return (
-                            <div className="form-group" key={col} style={{ gridColumn: 'span 2' }}>
-                                <label>{col.toUpperCase().replace('_', ' ')} {disabled && '(READ ONLY)'}</label>
+                            <div
+                                className={`form-group ${isEnglishName ? 'form-group-name-en' : ''}`}
+                                key={col}
+                                style={{ gridColumn: 'span 2' }}
+                            >
+                                <label>
+                                    {formatCatalogColumnLabel(col)} {disabled && '(READ ONLY)'}
+                                </label>
                                 <input
                                     type="text"
                                     value={editForm[col] || ''}
                                     disabled={disabled}
+                                    dir={isEnglishName ? 'ltr' : 'auto'}
                                     onChange={e => handleInputChange(col, e.target.value)}
-                                    placeholder={disabled ? '(Auto-generated)' : `Enter ${col.toLowerCase().replace('_', ' ')}`}
+                                    placeholder={disabled ? '(Auto-generated)' : `Enter ${formatCatalogColumnLabel(col)}`}
                                 />
                             </div>
                         );

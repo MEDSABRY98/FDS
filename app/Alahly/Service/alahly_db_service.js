@@ -279,6 +279,61 @@ export const AlAhlyService = {
     },
 
     /**
+     * Allocate the next sequential ROW_ID values for alahly_PKS.
+     */
+    async allocatePksRowIds(count = 1) {
+        const total = Math.max(1, Number(count) || 1);
+        let maxNum = 0;
+        let from = 0;
+
+        while (true) {
+            const { data, error } = await supabase
+                .from('alahly_PKS')
+                .select('ROW_ID')
+                .range(from, from + 999);
+
+            if (error) throw error;
+            if (!data?.length) break;
+
+            data.forEach((row) => {
+                const raw = String(row?.ROW_ID ?? "").trim();
+                const trailingNumber = raw.match(/(\d+)(?!.*\d)/);
+                const num = trailingNumber
+                    ? parseInt(trailingNumber[1], 10)
+                    : parseInt(raw, 10);
+                if (Number.isFinite(num)) maxNum = Math.max(maxNum, num);
+            });
+
+            if (data.length < 1000) break;
+            from += 1000;
+        }
+
+        return Array.from({ length: total }, (_, index) =>
+            `R-${String(maxNum + 1 + index).padStart(4, "0")}`
+        );
+    },
+
+    /**
+     * Fetch all kick rows for a single shootout PKS_ID.
+     */
+    async getPKsByPksId(pksId) {
+        if (!pksId) return [];
+        try {
+            const { data, error } = await supabase
+                .from('alahly_PKS')
+                .select('*')
+                .eq('PKS_ID', String(pksId).trim())
+                .order('ROW_ID', { ascending: true });
+
+            if (error) throw error;
+            return data || [];
+        } catch (error) {
+            console.error("Error fetching PKs by PKS_ID:", error.message);
+            throw error;
+        }
+    },
+
+    /**
      * Fetch ALL penalty kick details from alahly_PKS.
      */
     async getAllPKs() {

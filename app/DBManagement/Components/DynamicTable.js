@@ -1,6 +1,16 @@
 import React from 'react';
 import { Edit3, Trash2 } from 'lucide-react';
 import NoData_db from '../../lib/NoData_db';
+import { formatCatalogColumnLabel } from '../../lib/supabase';
+
+const NAME_EN_COLUMNS = new Set([
+    'PLAYER_NAME_EN',
+    'MANAGER_NAME_EN',
+    'REFEREE_NAME_EN',
+    'TEAM_NAME_EN',
+    'STADIUM_NAME_EN',
+    'COUNTRY_NAME_EN',
+]);
 
 const SELECT_COL = {
     width: '90px',
@@ -28,6 +38,7 @@ export default function DynamicTable({
     onEdit,
     onDelete,
     getName,
+    getRowKey = getName,
     onNameClick
 }) {
     if (!paginatedData?.length) {
@@ -55,14 +66,19 @@ export default function DynamicTable({
                             ACTIONS
                         </th>
                         {columns.map(col => (
-                            <th key={col}>{col.toUpperCase().replace('_', ' ')}</th>
+                            <th
+                                key={col}
+                                className={NAME_EN_COLUMNS.has(col) ? 'catalog-name-en-col' : ''}
+                            >
+                                {formatCatalogColumnLabel(col)}
+                            </th>
                         ))}
                     </tr>
                 </thead>
                 <tbody>
                     {paginatedData.map((row, idx) => {
-                        const nameKey = getName(row);
-                        const isSelected = selectedRows.some(r => getName(r) === nameKey);
+                        const rowKey = getRowKey(row);
+                        const isSelected = selectedRows.some(r => getRowKey(r) === rowKey);
 
                         return (
                             <tr key={row.ROW_ID || idx} className={isSelected ? 'selected-row' : ''}>
@@ -95,8 +111,14 @@ export default function DynamicTable({
                                 {columns.map(col => {
                                     const val = row[col];
                                     const isNameCol = col.endsWith('_NAME');
+                                    const isEnglishNameCol = NAME_EN_COLUMNS.has(col);
                                     return (
-                                        <td key={col} title={val || ''}>
+                                        <td
+                                            key={col}
+                                            title={val || ''}
+                                            className={isEnglishNameCol ? 'catalog-name-en-col' : ''}
+                                            dir={isEnglishNameCol ? 'ltr' : 'auto'}
+                                        >
                                             {isNameCol && val ? (
                                                 <span
                                                     onClick={() => onNameClick && onNameClick(val)}

@@ -36,6 +36,14 @@ const TABLE_NAME_COL = {
     db_STADIUMS: 'STADIUM_NAME',
 };
 
+const TABLE_NAME_COL_EN = {
+    db_PLAYERS: 'PLAYER_NAME_EN',
+    db_MANAGERS: 'MANAGER_NAME_EN',
+    db_TEAMS: 'TEAM_NAME_EN',
+    db_REFEREES: 'REFEREE_NAME_EN',
+    db_STADIUMS: 'STADIUM_NAME_EN',
+};
+
 function scriptType(name) {
     const a = AR.test(name);
     const l = LAT.test(name);
@@ -236,6 +244,7 @@ function scoreNamePair(nameA, nameB, isTeam = false) {
 function tryAddPair(candidates, seenPairKeys, a, b, isTeam, isExact = false) {
     const key = [a.id, b.id].sort().join('|');
     if (seenPairKeys.has(key)) return;
+    if (a.id === b.id) return;
     if (a.name === b.name) {
         seenPairKeys.add(key);
         candidates.push(buildPair(a, b, null, true));
@@ -320,9 +329,20 @@ export function findDuplicatePairs(tableName, rows = []) {
     if (!isDuplicateCatalogTable(tableName) || !rows.length) return [];
 
     const isTeam = tableName === 'db_TEAMS';
-    const entries = rows
-        .map(row => prepareEntry(getEntityId(tableName, row), getEntityName(tableName, row)))
-        .filter(entry => entry.id && entry.name);
+    const arCol = TABLE_NAME_COL[tableName];
+    const enCol = TABLE_NAME_COL_EN[tableName];
+    const entries = [];
+
+    rows.forEach((row) => {
+        const id = getEntityId(tableName, row);
+        if (!id) return;
+
+        const arName = arCol ? String(row?.[arCol] || '').trim() : '';
+        const enName = enCol ? String(row?.[enCol] || '').trim() : '';
+
+        if (arName) entries.push(prepareEntry(id, arName));
+        if (enName && enName !== arName) entries.push(prepareEntry(id, enName));
+    });
 
     const candidates = [];
     const seenPairKeys = new Set();

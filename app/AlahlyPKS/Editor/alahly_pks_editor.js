@@ -2,10 +2,54 @@
 
 import { useState, useEffect, useMemo, useCallback } from "react";
 import { AlAhlyService } from "../../Alahly/Service/alahly_db_service";
+import { fetchCatalogDisplayNames } from "../../lib/supabase";
 import SearchBar_db from "../../lib/SearchBar_db";
 import "./alahly_pks_editor.css";
 
-export default function AlAhlyPKsEditor({ pksData }) {
+function toDateInputValue(value) {
+    const raw = String(value || "").trim();
+    if (!raw) return "";
+    if (/^\d{4}-\d{2}-\d{2}$/.test(raw)) return raw;
+    const parsed = new Date(raw);
+    if (Number.isNaN(parsed.getTime())) return "";
+    return parsed.toISOString().slice(0, 10);
+}
+
+function loadShootoutFromKicks(kicks, setCommonData, setKickRows, setFoundKicks, setEditingKick) {
+    const first = kicks[0];
+    setFoundKicks(kicks);
+    setCommonData({
+        PKS_ID: first.PKS_ID,
+        MATCH_ID: first.MATCH_ID,
+        DATE: toDateInputValue(first.DATE),
+        "PKS SYSTEM": first["PKS SYSTEM"],
+        "CHAMPION SYSTEM": first["CHAMPION SYSTEM"],
+        CHAMPION: first.CHAMPION,
+        SEASON: first.SEASON,
+        ROUND: first.ROUND,
+        "WHO START?": first["WHO START?"],
+        "OPPONENT TEAM": first["OPPONENT TEAM"],
+        "AHLY TEAM": first["AHLY TEAM"],
+        "MATCH RESULT": first["MATCH RESULT"],
+        "PKS W-L": first["PKS W-L"],
+        "G-OPPONENT": first["G-OPPONENT"],
+        "G-AHLY": first["G-AHLY"]
+    });
+    setKickRows(kicks.map(k => ({
+        "AHLY PLAYER": k["AHLY PLAYER"],
+        "AHLY STATUS": k["AHLY STATUS"],
+        "HOWMISS AHLY": k["HOWMISS AHLY"],
+        "OPPONENT PLAYER": k["OPPONENT PLAYER"],
+        "OPPONENT STATUS": k["OPPONENT STATUS"],
+        "HOWMISS OPPONENT": k["HOWMISS OPPONENT"],
+        "AHLY GK": k["AHLY GK"],
+        "OPPONENT GK": k["OPPONENT GK"],
+        ORIGINAL_ROW_ID: k.ROW_ID
+    })));
+    setEditingKick(true);
+}
+
+export default function AlAhlyPKsEditor({ pksData, onDataSaved }) {
     const [mode, setMode] = useState("SEARCH"); // SEARCH or CREATE
     const [searchId, setSearchId] = useState("");
     const [foundKicks, setFoundKicks] = useState([]);
@@ -37,7 +81,7 @@ export default function AlAhlyPKsEditor({ pksData }) {
         ROUND: "",
         "WHO START?": "",
         "OPPONENT TEAM": "",
-        "AHLY TEAM": "الأهلي",
+        "AHLY TEAM": "الأهلي - مصر",
         "MATCH RESULT": "",
         "PKS W-L": "",
         "G-OPPONENT": 0,
@@ -57,6 +101,30 @@ export default function AlAhlyPKsEditor({ pksData }) {
 
     const [commonData, setCommonData] = useState({});
     const [kickRows, setKickRows] = useState([initialKickRow]);
+    const [catalogNames, setCatalogNames] = useState({ players: [], teams: [] });
+
+    useEffect(() => {
+        let active = true;
+
+        async function loadCatalogNames() {
+            try {
+                const [players, teams] = await Promise.all([
+                    fetchCatalogDisplayNames("db_PLAYERS"),
+                    fetchCatalogDisplayNames("db_TEAMS"),
+                ]);
+                if (active) setCatalogNames({ players, teams });
+            } catch (err) {
+                console.error("Failed to load PKS catalog names:", err);
+            }
+        }
+
+        loadCatalogNames();
+        window.addEventListener("nameDisplayLangChanged", loadCatalogNames);
+        return () => {
+            active = false;
+            window.removeEventListener("nameDisplayLangChanged", loadCatalogNames);
+        };
+    }, []);
 
     // Update commonData when mode switches to CREATE
     useEffect(() => {
@@ -65,11 +133,11 @@ export default function AlAhlyPKsEditor({ pksData }) {
             setKickRows([initialKickRow]);
         }
     }, [mode, initialCommonData]);
-    const [editFormData, setEditFormData] = useState({});
 
     // Generate unique suggestions for datalists
     const suggestions = useMemo(() => {
         const getUnique = (key) => [...new Set((pksData || []).map(item => item[key]).filter(Boolean))].sort();
+        const mergeUnique = (...lists) => [...new Set(lists.flat().filter(Boolean))].sort();
         return {
             pksSystem: getUnique("PKS SYSTEM"),
             champSystem: getUnique("CHAMPION SYSTEM"),
@@ -77,11 +145,12 @@ export default function AlAhlyPKsEditor({ pksData }) {
             season: getUnique("SEASON"),
             round: getUnique("ROUND"),
             whoStart: getUnique("WHO START?"),
-            oppTeam: getUnique("OPPONENT TEAM"),
-            oppPlayer: getUnique("OPPONENT PLAYER"),
-            oppGK: getUnique("OPPONENT GK"),
-            ahlyGk: getUnique("AHLY GK"),
-            ahlyPlayer: getUnique("AHLY PLAYER"),
+            oppTeam: mergeUnique(catalogNames.teams, getUnique("OPPONENT TEAM")),
+            oppPlayer: mergeUnique(catalogNames.players, getUnique("OPPONENT PLAYER")),
+            oppGK: mergeUnique(catalogNames.players, getUnique("OPPONENT GK")),
+            ahlyGk: mergeUnique(catalogNames.players, getUnique("AHLY GK")),
+            ahlyPlayer: mergeUnique(catalogNames.players, getUnique("AHLY PLAYER")),
+            ahlyTeam: mergeUnique(catalogNames.teams, getUnique("AHLY TEAM")),
             oppStatus: getUnique("OPPONENT STATUS"),
             ahlyStatus: getUnique("AHLY STATUS"),
             pksWL: getUnique("PKS W-L"),
@@ -90,52 +159,28 @@ export default function AlAhlyPKsEditor({ pksData }) {
                 ...(pksData || []).map(item => item["HOWMISS OPPONENT"])
             ].filter(Boolean))].sort()
         };
-    }, [pksData]);
+    }, [pksData, catalogNames]);
 
     const handleSearch = async () => {
         if (!searchId.trim()) return;
         setLoading(true);
         setMessage({ text: "", type: "" });
         try {
-            const kicks = (pksData || []).filter(k => String(k.PKS_ID).toUpperCase() === searchId.toUpperCase().trim());
-            setFoundKicks(kicks);
+            let kicks = (pksData || []).filter(k => String(k.PKS_ID).toUpperCase() === searchId.toUpperCase().trim());
+
             if (kicks.length === 0) {
+                kicks = await AlAhlyService.getPKsByPksId(searchId.trim());
+            }
+
+            if (kicks.length === 0) {
+                setFoundKicks([]);
+                setEditingKick(null);
                 setMessage({ text: "No shootout found with this ID.", type: "error" });
             } else {
-                // Auto-load into builder for bulk edit
-                const first = kicks[0];
-                setCommonData({
-                    PKS_ID: first.PKS_ID,
-                    MATCH_ID: first.MATCH_ID,
-                    DATE: first.DATE,
-                    "PKS SYSTEM": first["PKS SYSTEM"],
-                    "CHAMPION SYSTEM": first["CHAMPION SYSTEM"],
-                    CHAMPION: first.CHAMPION,
-                    SEASON: first.SEASON,
-                    ROUND: first.ROUND,
-                    "WHO START?": first["WHO START?"],
-                    "OPPONENT TEAM": first["OPPONENT TEAM"],
-                    "AHLY TEAM": first["AHLY TEAM"],
-                    "MATCH RESULT": first["MATCH RESULT"],
-                    "PKS W-L": first["PKS W-L"],
-                    "G-OPPONENT": first["G-OPPONENT"],
-                    "G-AHLY": first["G-AHLY"]
-                });
-                setKickRows(kicks.map(k => ({
-                    "AHLY PLAYER": k["AHLY PLAYER"],
-                    "AHLY STATUS": k["AHLY STATUS"],
-                    "HOWMISS AHLY": k["HOWMISS AHLY"],
-                    "OPPONENT PLAYER": k["OPPONENT PLAYER"],
-                    "OPPONENT STATUS": k["OPPONENT STATUS"],
-                    "HOWMISS OPPONENT": k["HOWMISS OPPONENT"],
-                    "AHLY GK": k["AHLY GK"],
-                    "OPPONENT GK": k["OPPONENT GK"],
-                    ORIGINAL_ROW_ID: k.ROW_ID
-                })));
-                setEditingKick(true);
+                loadShootoutFromKicks(kicks, setCommonData, setKickRows, setFoundKicks, setEditingKick);
             }
         } catch (err) {
-            setMessage({ text: "Error searching for shootout.", type: "error" });
+            setMessage({ text: err?.message || "Error searching for shootout.", type: "error" });
         } finally {
             setLoading(false);
         }
@@ -160,29 +205,66 @@ export default function AlAhlyPKsEditor({ pksData }) {
         setLoading(true);
         setMessage({ text: "Saving Shootout...", type: "info" });
         try {
+            const keptOriginalIds = new Set(
+                kickRows.map(row => row.ORIGINAL_ROW_ID).filter(Boolean)
+            );
+
             if (editingKick) {
-                for (const k of foundKicks) {
-                    await AlAhlyService.deletePKSRecord(k.ROW_ID);
+                for (const kick of foundKicks) {
+                    if (!keptOriginalIds.has(kick.ROW_ID)) {
+                        await AlAhlyService.deletePKSRecord(kick.ROW_ID);
+                    }
                 }
             }
 
-            const finalRecords = kickRows.map(row => ({
-                ...commonData,
-                ...row,
-                ROW_ID: row.ORIGINAL_ROW_ID || ("R-" + Math.floor(Math.random() * 100000) + Date.now().toString().slice(-4))
-            }));
+            const newRows = kickRows.filter(row => !row.ORIGINAL_ROW_ID);
+            const allocatedIds = newRows.length > 0
+                ? await AlAhlyService.allocatePksRowIds(newRows.length)
+                : [];
+            let nextNewIdIndex = 0;
 
-            for (const rec of finalRecords) {
-                const { ORIGINAL_ROW_ID, ...cleanRec } = rec;
-                await AlAhlyService.createPKSRecord(cleanRec);
+            for (const row of kickRows) {
+                const { ORIGINAL_ROW_ID, ...kickFields } = row;
+                const payload = { ...commonData, ...kickFields };
+
+                if (ORIGINAL_ROW_ID && editingKick) {
+                    await AlAhlyService.updatePKSRecord(ORIGINAL_ROW_ID, payload);
+                } else {
+                    const rowId = allocatedIds[nextNewIdIndex++];
+                    await AlAhlyService.createPKSRecord({ ...payload, ROW_ID: rowId });
+                }
             }
 
-            setMessage({ text: `Success! Saved shootout ${commonData.PKS_ID}`, type: "success" });
-            setEditingKick(null);
+            if (onDataSaved) {
+                await onDataSaved();
+            }
+
+            const savedPksId = commonData.PKS_ID;
+            const freshKicks = savedPksId
+                ? await AlAhlyService.getPKsByPksId(savedPksId)
+                : [];
+
+            setMessage({ text: `Success! Saved shootout ${savedPksId}`, type: "success" });
+            setSearchId(savedPksId || "");
             setMode("SEARCH");
-            setSearchId("");
+
+            if (freshKicks.length > 0) {
+                loadShootoutFromKicks(
+                    freshKicks,
+                    setCommonData,
+                    setKickRows,
+                    setFoundKicks,
+                    setEditingKick
+                );
+            } else {
+                setEditingKick(null);
+                setFoundKicks([]);
+            }
         } catch (err) {
-            setMessage({ text: "Failed to save shootout records.", type: "error" });
+            setMessage({
+                text: err?.message || "Failed to save shootout records.",
+                type: "error"
+            });
             console.error(err);
         } finally {
             setLoading(false);
@@ -201,11 +283,15 @@ export default function AlAhlyPKsEditor({ pksData }) {
                         <div className="form-group"><label>PKS ID</label><input type="text" value={commonData.PKS_ID || ""} onChange={(e) => setCommonData({...commonData, PKS_ID: e.target.value})} /></div>
                         <div className="form-group"><label>MATCH ID</label><input type="text" value={commonData.MATCH_ID || ""} onChange={(e) => setCommonData({...commonData, MATCH_ID: e.target.value})} /></div>
                         <div className="form-group"><label>DATE</label><input type="date" value={commonData.DATE || ""} onChange={(e) => setCommonData({...commonData, DATE: e.target.value})} /></div>
+                        <div className="form-group"><label>PKS SYSTEM</label><input list="list-pks-system" value={commonData["PKS SYSTEM"] || ""} onChange={(e) => setCommonData({...commonData, "PKS SYSTEM": e.target.value})} /></div>
+                        <div className="form-group"><label>CHAMPION SYSTEM</label><input list="list-champ-system" value={commonData["CHAMPION SYSTEM"] || ""} onChange={(e) => setCommonData({...commonData, "CHAMPION SYSTEM": e.target.value})} /></div>
                         <div className="form-group"><label>CHAMPION</label><input list="list-champion" value={commonData.CHAMPION || ""} onChange={(e) => setCommonData({...commonData, CHAMPION: e.target.value})} /></div>
                         <div className="form-group"><label>SEASON</label><input list="list-season" value={commonData.SEASON || ""} onChange={(e) => setCommonData({...commonData, SEASON: e.target.value})} /></div>
                         <div className="form-group"><label>ROUND</label><input list="list-round" value={commonData.ROUND || ""} onChange={(e) => setCommonData({...commonData, ROUND: e.target.value})} /></div>
                         <div className="form-group"><label>WHO START?</label><input list="list-who-start" value={commonData["WHO START?"] || ""} onChange={(e) => setCommonData({...commonData, "WHO START?": e.target.value})} /></div>
+                        <div className="form-group"><label>AHLY TEAM</label><input list="list-ahly-team" value={commonData["AHLY TEAM"] || ""} onChange={(e) => setCommonData({...commonData, "AHLY TEAM": e.target.value})} /></div>
                         <div className="form-group"><label>OPPONENT TEAM</label><input list="list-opp-team" value={commonData["OPPONENT TEAM"] || ""} onChange={(e) => setCommonData({...commonData, "OPPONENT TEAM": e.target.value})} /></div>
+                        <div className="form-group"><label>MATCH RESULT</label><input type="text" value={commonData["MATCH RESULT"] || ""} onChange={(e) => setCommonData({...commonData, "MATCH RESULT": e.target.value})} /></div>
                         <div className="form-group"><label>PKS W-L</label><input list="list-pks-wl" value={commonData["PKS W-L"] || ""} onChange={(e) => setCommonData({...commonData, "PKS W-L": e.target.value})} /></div>
                         <div className="form-group"><label>G-AHLY</label><input type="number" value={commonData["G-AHLY"] || 0} onChange={(e) => setCommonData({...commonData, "G-AHLY": parseInt(e.target.value) || 0})} /></div>
                         <div className="form-group"><label>G-OPPONENT</label><input type="number" value={commonData["G-OPPONENT"] || 0} onChange={(e) => setCommonData({...commonData, "G-OPPONENT": parseInt(e.target.value) || 0})} /></div>
@@ -265,6 +351,7 @@ export default function AlAhlyPKsEditor({ pksData }) {
             <datalist id="list-season">{suggestions.season.map(v => <option key={v} value={v} />)}</datalist>
             <datalist id="list-round">{suggestions.round.map(v => <option key={v} value={v} />)}</datalist>
             <datalist id="list-who-start">{suggestions.whoStart.map(v => <option key={v} value={v} />)}</datalist>
+            <datalist id="list-ahly-team">{suggestions.ahlyTeam.map(v => <option key={v} value={v} />)}</datalist>
             <datalist id="list-opp-team">{suggestions.oppTeam.map(v => <option key={v} value={v} />)}</datalist>
             <datalist id="list-opp-player">{suggestions.oppPlayer.map(v => <option key={v} value={v} />)}</datalist>
             <datalist id="list-opp-gk">{suggestions.oppGK.map(v => <option key={v} value={v} />)}</datalist>
@@ -276,21 +363,22 @@ export default function AlAhlyPKsEditor({ pksData }) {
             <datalist id="list-pks-wl">{suggestions.pksWL.map(v => <option key={v} value={v} />)}</datalist>
 
             {/* ── Header ── */}
-            <div className="editor-header" style={{ justifyContent: 'flex-end' }}>
-                <div style={{ display: 'flex', gap: 10 }}>
+            <div className="mode-switch-wrap">
+                <div className="mode-switch">
                     <button
-                        onClick={() => { setMode('SEARCH'); setEditingKick(null); setFoundKicks([]); setMessage({text:"", type:""}); }}
-                        title="Search & Edit"
-                        className={`mode-toggle-btn ${(mode === 'SEARCH' || editingKick) ? 'active' : ''}`}>
-                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                            <circle cx="11" cy="11" r="7" />
-                            <line x1="17" y1="17" x2="22" y2="22" />
-                        </svg>
+                        type="button"
+                        onClick={() => { setMode('SEARCH'); setEditingKick(null); setFoundKicks([]); setMessage({ text: "", type: "" }); }}
+                        className={`mode-switch-btn ${(mode === 'SEARCH' || editingKick) ? 'active' : ''}`}
+                    >
+                        SEARCH PKS
                     </button>
                     <button
-                        onClick={() => { setMode('CREATE'); setEditingKick(null); setCommonData(initialCommonData); setKickRows([initialKickRow]); setMessage({text:"", type:""}); }}
-                        title="Add New Shootout"
-                        className={`mode-toggle-btn ${mode === 'CREATE' && !editingKick ? 'active' : ''}`}>➕</button>
+                        type="button"
+                        onClick={() => { setMode('CREATE'); setEditingKick(null); setCommonData(initialCommonData); setKickRows([initialKickRow]); setMessage({ text: "", type: "" }); }}
+                        className={`mode-switch-btn ${mode === 'CREATE' && !editingKick ? 'active' : ''}`}
+                    >
+                        ADD PKS
+                    </button>
                 </div>
             </div>
 

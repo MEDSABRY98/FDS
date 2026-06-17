@@ -2,7 +2,7 @@
 
 import { useState, useCallback, useEffect } from "react";
 import "./egypt_nt_db_editor.css";
-import { supabase, getChangedFormFields, resolveCatalogFieldsInForm, AutocompleteInput, isEditorWrapColumn, getEditorColumnMinWidth, ShrinkToFitInput } from "../../lib/supabase";
+import { supabase, getChangedFormFields, resolveCatalogFieldsInForm, AutocompleteInput, isEditorWrapColumn, getEditorColumnMinWidth, ShrinkToFitInput, fetchCatalogDisplayNames } from "../../lib/supabase";
 import Login_db from "../../lib/Login_db";
 import NoData_db from "../../lib/NoData_db";
 import SearchBar_db from "../../lib/SearchBar_db";
@@ -351,6 +351,7 @@ export default function EgyptNTEditor() {
     const [eventTypes, setEventTypes] = useState([]);
     const [eventSubTypes, setEventSubTypes] = useState([]);
     const [howMissedOptions, setHowMissedOptions] = useState([]);
+    const [catalogLists, setCatalogLists] = useState({ managers: [], stadiums: [], referees: [] });
 
     const AUTOCOMPLETE_FIELDS = [
         'AGE', 'CHAMPION_SYSTEM', 'SYSTEM_KIND', 'CHAMPION', 'SEASON', 'EGYPT MANAGER', 'OPPONENT MANAGER',
@@ -358,45 +359,53 @@ export default function EgyptNTEditor() {
     ];
 
     useEffect(() => {
-        (async () => {
-            let allNames = [];
-            let from = 0;
-            const limit = 1000;
-            while (true) {
-                const { data, error } = await supabase.from('db_PLAYERS').select('PLAYER_NAME').range(from, from + limit - 1);
-                if (error) break;
-                if (!data || data.length === 0) break;
-                allNames.push(...data.map(d => d.PLAYER_NAME).filter(Boolean));
-                if (data.length < limit) break;
-                from += limit;
+        let cancelled = false;
+
+        const loadCatalogLists = async () => {
+            try {
+                const [players, managers, stadiums, referees] = await Promise.all([
+                    fetchCatalogDisplayNames('db_PLAYERS'),
+                    fetchCatalogDisplayNames('db_MANAGERS'),
+                    fetchCatalogDisplayNames('db_STADIUMS'),
+                    fetchCatalogDisplayNames('db_REFEREES'),
+                ]);
+
+                if (cancelled) return;
+                setAllPlayersList(players);
+                setCatalogLists({ managers, stadiums, referees });
+
+                const fetchUniqueCol = async (tableName, col) => {
+                    let results = [];
+                    let from = 0;
+                    while (true) {
+                        const { data } = await supabase.from(tableName).select(`"${col}"`).range(from, from + 999);
+                        if (!data || data.length === 0) break;
+                        results.push(...data.map(d => d[col]).filter(Boolean));
+                        if (data.length < 1000) break;
+                        from += 1000;
+                    }
+                    return [...new Set(results)].sort((a, b) => a.localeCompare(b, 'ar'));
+                };
+
+                const t = await fetchUniqueCol('egy_NT_PLAYERDETAILS', 'TYPE');
+                setEventTypes(t);
+
+                const ts = await fetchUniqueCol('egy_NT_PLAYERDETAILS', 'TYPE_SUB');
+                setEventSubTypes(ts);
+
+                const hm = await fetchUniqueCol('egy_NT_HOWPENMISSED', 'HOW MISSED?');
+                setHowMissedOptions(hm);
+            } catch (error) {
+                console.error("Error fetching catalog lists for dropdown:", error);
             }
+        };
 
-            const uniquePlayers = [...new Set(allNames)];
-            uniquePlayers.sort((a, b) => a.localeCompare(b, 'ar'));
-            setAllPlayersList(uniquePlayers);
-
-            const fetchUniqueCol = async (tableName, col) => {
-                let results = [];
-                let from = 0;
-                while (true) {
-                    const { data } = await supabase.from(tableName).select(`"${col}"`).range(from, from + 999);
-                    if (!data || data.length === 0) break;
-                    results.push(...data.map(d => d[col]).filter(Boolean));
-                    if (data.length < 1000) break;
-                    from += 1000;
-                }
-                return [...new Set(results)].sort((a, b) => a.localeCompare(b, 'ar'));
-            };
-
-            const t = await fetchUniqueCol('egy_NT_PLAYERDETAILS', 'TYPE');
-            setEventTypes(t);
-
-            const ts = await fetchUniqueCol('egy_NT_PLAYERDETAILS', 'TYPE_SUB');
-            setEventSubTypes(ts);
-
-            const hm = await fetchUniqueCol('egy_NT_HOWPENMISSED', 'HOW MISSED?');
-            setHowMissedOptions(hm);
-        })();
+        loadCatalogLists();
+        window.addEventListener("nameDisplayLangChanged", loadCatalogLists);
+        return () => {
+            cancelled = true;
+            window.removeEventListener("nameDisplayLangChanged", loadCatalogLists);
+        };
     }, []);
 
     useEffect(() => {
@@ -421,20 +430,16 @@ export default function EgyptNTEditor() {
             });
             setNextMatchNum(Math.max(0, ...nums) + 1);
 
-            const [{ data: mData }, { data: sData }, { data: rData }] = await Promise.all([
-                supabase.from('db_MANAGERS').select('MANAGER_NAME'),
-                supabase.from('db_STADIUMS').select('STADIUM_NAME'),
-                supabase.from('db_REFEREES').select('REFEREE_NAME')
-            ]);
-            
-            const managerList = mData ? mData.map(r => r.MANAGER_NAME).filter(Boolean).sort() : [];
-            const stadiumList = sData ? sData.map(r => r.STADIUM_NAME).filter(Boolean).sort() : [];
-            const refereeList = rData ? rData.map(r => r.REFEREE_NAME).filter(Boolean).sort() : [];
+            const managerList = catalogLists.managers;
+            const stadiumList = catalogLists.stadiums;
+            const refereeList = catalogLists.referees;
 
             const opts = {};
             AUTOCOMPLETE_FIELDS.forEach(col => {
                 if (['EGYPT MANAGER', 'OPPONENT MANAGER'].includes(col)) {
                     opts[col] = managerList;
+                } else if (col === 'PLACE') {
+                    opts[col] = stadiumList;
                 } else if (col === 'REFREE') {
                     opts[col] = refereeList;
                 } else {
@@ -443,7 +448,7 @@ export default function EgyptNTEditor() {
             });
             setMatchFieldOptions(opts);
         })();
-    }, [mode]);
+    }, [mode, catalogLists]);
 
     useEffect(() => {
         if (mode !== 'new' || nextMatchNum === null) return;

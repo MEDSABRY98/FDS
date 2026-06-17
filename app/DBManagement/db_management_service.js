@@ -1,5 +1,41 @@
 import { supabase } from "../lib/supabase";
 
+const MERGE_BILINGUAL_CONFIG = {
+    db_PLAYERS: { idCol: "PLAYER_ID", nameCol: "PLAYER_NAME", nameColEn: "PLAYER_NAME_EN" },
+    db_MANAGERS: { idCol: "MANAGER_ID", nameCol: "MANAGER_NAME", nameColEn: "MANAGER_NAME_EN" },
+    db_REFEREES: { idCol: "REFEREE_ID", nameCol: "REFEREE_NAME", nameColEn: "REFEREE_NAME_EN" },
+    db_TEAMS: { idCol: "TEAM_ID", nameCol: "TEAM_NAME", nameColEn: "TEAM_NAME_EN" },
+    db_STADIUMS: { idCol: "STADIUM_ID", nameCol: "STADIUM_NAME", nameColEn: "STADIUM_NAME_EN" },
+};
+
+async function mergeBilingualCatalogNames(table, targetName, sourceNames) {
+    const cfg = MERGE_BILINGUAL_CONFIG[table];
+    if (!cfg || sourceNames.length === 0) return;
+
+    const lookupNames = [targetName, ...sourceNames];
+    const { data: rows, error } = await supabase
+        .from(table)
+        .select(`${cfg.idCol}, ${cfg.nameCol}, ${cfg.nameColEn}`)
+        .in(cfg.nameCol, lookupNames);
+
+    if (error || !rows?.length) return;
+
+    const targetRow = rows.find((row) => row[cfg.nameCol] === targetName);
+    if (!targetRow) return;
+
+    const mergedEn = [targetRow[cfg.nameColEn], ...sourceNames.map((name) => {
+        const row = rows.find((item) => item[cfg.nameCol] === name);
+        return row?.[cfg.nameColEn];
+    })].find((value) => String(value || "").trim());
+
+    if (!mergedEn || mergedEn === targetRow[cfg.nameColEn]) return;
+
+    await supabase
+        .from(table)
+        .update({ [cfg.nameColEn]: mergedEn })
+        .eq(cfg.idCol, targetRow[cfg.idCol]);
+}
+
 export const DBManagementService = {
     /**
      * Merge multiple entity names (Players, Managers, or Stadiums) into one.
@@ -131,7 +167,10 @@ export const DBManagementService = {
                 }
             }
 
-            // 2. Once all updates are successful, run the delete query to clear old catalog records
+            // 2. Merge English names onto the target catalog row before deleting sources
+            await mergeBilingualCatalogNames(table, targetName, sources);
+
+            // 3. Once all updates are successful, run the delete query to clear old catalog records
             if (deletePromise) {
                 const deleteResult = await deletePromise;
                 if (deleteResult && deleteResult.error) {
