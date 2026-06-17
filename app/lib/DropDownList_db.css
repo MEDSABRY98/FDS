@@ -70,6 +70,9 @@
     right: auto;
     z-index: 10051;
     animation: db-fade-in 0.2s ease-out;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
 }
 
 .dropdown-menu-db--portal.open-upward {
@@ -130,6 +133,8 @@
 .dropdown-options-container-db {
     max-height: 300px;
     overflow-y: auto;
+    flex: 1;
+    min-height: 0;
 }
 
 .dropdown-no-results-db {
@@ -138,6 +143,44 @@
     color: #999;
     font-size: 13px;
     font-family: 'DM Sans', sans-serif;
+}
+
+.dropdown-trigger-db--editable {
+    cursor: text;
+    padding: 0;
+    gap: 0;
+}
+
+.dropdown-input-db {
+    flex: 1;
+    min-width: 0;
+    height: 100%;
+    border: none;
+    background: transparent;
+    outline: none;
+    font: inherit;
+    color: inherit;
+    padding: 0 18px;
+    box-sizing: border-box;
+}
+
+.dropdown-input-db::placeholder {
+    color: #999;
+}
+
+.dropdown-chevron-btn-db {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    align-self: stretch;
+    border: none;
+    background: transparent;
+    padding: 0 16px;
+    cursor: pointer;
+}
+
+.current-label-db--fallback {
+    color: #0a0a0a;
 }
 
 .dropdown-overlay-db {

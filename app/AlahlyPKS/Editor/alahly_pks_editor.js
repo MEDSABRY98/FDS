@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useMemo, useCallback } from "react";
+import { useState, useEffect, useMemo, useCallback, useRef } from "react";
 import { AlAhlyService } from "../../Alahly/Service/alahly_db_service";
 import { fetchCatalogDisplayNames } from "../../lib/supabase";
 import SearchBar_db from "../../lib/SearchBar_db";
@@ -121,6 +121,7 @@ export default function AlAhlyPKsEditor({ pksData, onDataSaved }) {
 
     const [commonData, setCommonData] = useState({});
     const [kickRows, setKickRows] = useState([initialKickRow]);
+    const scrollToNewKickRef = useRef(false);
     const [catalogNames, setCatalogNames] = useState({ players: [], teams: [] });
 
     useEffect(() => {
@@ -154,10 +155,18 @@ export default function AlAhlyPKsEditor({ pksData, onDataSaved }) {
         }
     }, [mode, initialCommonData]);
 
-    // Dropdown option sources (merged with catalog names where relevant)
+    useEffect(() => {
+        if (!scrollToNewKickRef.current) return;
+        scrollToNewKickRef.current = false;
+        requestAnimationFrame(() => {
+            const rowBoxes = document.querySelectorAll(".pks-editor-container .builder-row-box");
+            rowBoxes[rowBoxes.length - 1]?.scrollIntoView({ behavior: "smooth", block: "nearest" });
+        });
+    }, [kickRows.length]);
+
+    // Dropdown option sources — DB catalog fields use db_* tables only; others use PKS history
     const suggestions = useMemo(() => {
         const getUnique = (key) => [...new Set((pksData || []).map(item => item[key]).filter(Boolean))].sort();
-        const mergeUnique = (...lists) => [...new Set(lists.flat().filter(Boolean))].sort();
         return {
             pksSystem: getUnique("PKS SYSTEM"),
             champSystem: getUnique("CHAMPION SYSTEM"),
@@ -165,12 +174,12 @@ export default function AlAhlyPKsEditor({ pksData, onDataSaved }) {
             season: getUnique("SEASON"),
             round: getUnique("ROUND"),
             whoStart: getUnique("WHO START?"),
-            oppTeam: mergeUnique(catalogNames.teams, getUnique("OPPONENT TEAM")),
-            oppPlayer: mergeUnique(catalogNames.players, getUnique("OPPONENT PLAYER")),
-            oppGK: mergeUnique(catalogNames.players, getUnique("OPPONENT GK")),
-            ahlyGk: mergeUnique(catalogNames.players, getUnique("AHLY GK")),
-            ahlyPlayer: mergeUnique(catalogNames.players, getUnique("AHLY PLAYER")),
-            ahlyTeam: mergeUnique(catalogNames.teams, getUnique("AHLY TEAM")),
+            oppTeam: catalogNames.teams,
+            oppPlayer: catalogNames.players,
+            oppGK: catalogNames.players,
+            ahlyGk: catalogNames.players,
+            ahlyPlayer: catalogNames.players,
+            ahlyTeam: catalogNames.teams,
             oppStatus: getUnique("OPPONENT STATUS"),
             ahlyStatus: getUnique("AHLY STATUS"),
             pksWL: getUnique("PKS W-L"),
@@ -206,6 +215,7 @@ export default function AlAhlyPKsEditor({ pksData, onDataSaved }) {
     };
 
     const handleAddRow = () => {
+        scrollToNewKickRef.current = true;
         setKickRows([...kickRows, { ...initialKickRow }]);
     };
 
@@ -305,27 +315,27 @@ export default function AlAhlyPKsEditor({ pksData, onDataSaved }) {
                         <div className="form-group"><label>DATE</label><input type="date" value={commonData.DATE || ""} onChange={(e) => setCommonField("DATE", e.target.value)} /></div>
                         <div className="form-group">
                             <label>PKS SYSTEM</label>
-                            <DropDownList_db options={toDropdownOptions(suggestions.pksSystem, commonData["PKS SYSTEM"])} value={commonData["PKS SYSTEM"] || ""} onChange={(v) => setCommonField("PKS SYSTEM", v)} placeholder="Select PKS System" searchable />
+                            <DropDownList_db allowCustom options={toDropdownOptions(suggestions.pksSystem, commonData["PKS SYSTEM"])} value={commonData["PKS SYSTEM"] || ""} onChange={(v) => setCommonField("PKS SYSTEM", v)} placeholder="Select PKS System" searchable />
                         </div>
                         <div className="form-group">
                             <label>CHAMPION SYSTEM</label>
-                            <DropDownList_db options={toDropdownOptions(suggestions.champSystem, commonData["CHAMPION SYSTEM"])} value={commonData["CHAMPION SYSTEM"] || ""} onChange={(v) => setCommonField("CHAMPION SYSTEM", v)} placeholder="Select Champion System" searchable />
+                            <DropDownList_db allowCustom options={toDropdownOptions(suggestions.champSystem, commonData["CHAMPION SYSTEM"])} value={commonData["CHAMPION SYSTEM"] || ""} onChange={(v) => setCommonField("CHAMPION SYSTEM", v)} placeholder="Select Champion System" searchable />
                         </div>
                         <div className="form-group">
                             <label>CHAMPION</label>
-                            <DropDownList_db options={toDropdownOptions(suggestions.champion, commonData.CHAMPION)} value={commonData.CHAMPION || ""} onChange={(v) => setCommonField("CHAMPION", v)} placeholder="Select Champion" searchable />
+                            <DropDownList_db allowCustom options={toDropdownOptions(suggestions.champion, commonData.CHAMPION)} value={commonData.CHAMPION || ""} onChange={(v) => setCommonField("CHAMPION", v)} placeholder="Select Champion" searchable />
                         </div>
                         <div className="form-group">
                             <label>SEASON</label>
-                            <DropDownList_db options={toDropdownOptions(suggestions.season, commonData.SEASON)} value={commonData.SEASON || ""} onChange={(v) => setCommonField("SEASON", v)} placeholder="Select Season" searchable />
+                            <DropDownList_db allowCustom options={toDropdownOptions(suggestions.season, commonData.SEASON)} value={commonData.SEASON || ""} onChange={(v) => setCommonField("SEASON", v)} placeholder="Select Season" searchable />
                         </div>
                         <div className="form-group">
                             <label>ROUND</label>
-                            <DropDownList_db options={toDropdownOptions(suggestions.round, commonData.ROUND)} value={commonData.ROUND || ""} onChange={(v) => setCommonField("ROUND", v)} placeholder="Select Round" searchable />
+                            <DropDownList_db allowCustom options={toDropdownOptions(suggestions.round, commonData.ROUND)} value={commonData.ROUND || ""} onChange={(v) => setCommonField("ROUND", v)} placeholder="Select Round" searchable />
                         </div>
                         <div className="form-group">
                             <label>WHO START?</label>
-                            <DropDownList_db options={toDropdownOptions(suggestions.whoStart, commonData["WHO START?"])} value={commonData["WHO START?"] || ""} onChange={(v) => setCommonField("WHO START?", v)} placeholder="Who starts?" />
+                            <DropDownList_db allowCustom options={toDropdownOptions(suggestions.whoStart, commonData["WHO START?"])} value={commonData["WHO START?"] || ""} onChange={(v) => setCommonField("WHO START?", v)} placeholder="Who starts?" />
                         </div>
                         <div className="form-group">
                             <label>AHLY TEAM</label>
@@ -338,7 +348,7 @@ export default function AlAhlyPKsEditor({ pksData, onDataSaved }) {
                         <div className="form-group"><label>MATCH RESULT</label><input type="text" value={commonData["MATCH RESULT"] || ""} onChange={(e) => setCommonField("MATCH RESULT", e.target.value)} /></div>
                         <div className="form-group">
                             <label>PKS W-L</label>
-                            <DropDownList_db options={toDropdownOptions(suggestions.pksWL, commonData["PKS W-L"])} value={commonData["PKS W-L"] || ""} onChange={(v) => setCommonField("PKS W-L", v)} placeholder="Select Result" />
+                            <DropDownList_db allowCustom options={toDropdownOptions(suggestions.pksWL, commonData["PKS W-L"])} value={commonData["PKS W-L"] || ""} onChange={(v) => setCommonField("PKS W-L", v)} placeholder="Select Result" />
                         </div>
                         <div className="form-group"><label>G-AHLY</label><input type="number" value={commonData["G-AHLY"] || 0} onChange={(e) => setCommonField("G-AHLY", parseInt(e.target.value, 10) || 0)} /></div>
                         <div className="form-group"><label>G-OPPONENT</label><input type="number" value={commonData["G-OPPONENT"] || 0} onChange={(e) => setCommonField("G-OPPONENT", parseInt(e.target.value, 10) || 0)} /></div>
@@ -362,15 +372,15 @@ export default function AlAhlyPKsEditor({ pksData, onDataSaved }) {
                                     <div className="side-box ahly-side">
                                         <label>AL AHLY KICKER</label>
                                         <DropDownList_db className="pks-dropdown-compact" options={toDropdownOptions(suggestions.ahlyPlayer, row["AHLY PLAYER"])} value={row["AHLY PLAYER"] || ""} onChange={(v) => handleKickChange(idx, "AHLY PLAYER", v)} placeholder="Player Name" searchable />
-                                        <DropDownList_db className="pks-dropdown-compact" options={toDropdownOptions(suggestions.ahlyStatus, row["AHLY STATUS"])} value={row["AHLY STATUS"] || ""} onChange={(v) => handleKickChange(idx, "AHLY STATUS", v)} placeholder="Status" />
-                                        <DropDownList_db className="pks-dropdown-compact" options={toDropdownOptions(suggestions.howMiss, row["HOWMISS AHLY"])} value={row["HOWMISS AHLY"] || ""} onChange={(v) => handleKickChange(idx, "HOWMISS AHLY", v)} placeholder="How Missed?" searchable />
+                                        <DropDownList_db allowCustom className="pks-dropdown-compact" options={toDropdownOptions(suggestions.ahlyStatus, row["AHLY STATUS"])} value={row["AHLY STATUS"] || ""} onChange={(v) => handleKickChange(idx, "AHLY STATUS", v)} placeholder="Status" />
+                                        <DropDownList_db allowCustom className="pks-dropdown-compact" options={toDropdownOptions(suggestions.howMiss, row["HOWMISS AHLY"])} value={row["HOWMISS AHLY"] || ""} onChange={(v) => handleKickChange(idx, "HOWMISS AHLY", v)} placeholder="How Missed?" searchable />
                                         <DropDownList_db className="pks-dropdown-compact" options={toDropdownOptions(suggestions.oppGK, row["OPPONENT GK"])} value={row["OPPONENT GK"] || ""} onChange={(v) => handleKickChange(idx, "OPPONENT GK", v)} placeholder="Opponent GK" searchable />
                                     </div>
                                     <div className="side-box opp-side">
                                         <label>OPPONENT KICKER</label>
                                         <DropDownList_db className="pks-dropdown-compact" options={toDropdownOptions(suggestions.oppPlayer, row["OPPONENT PLAYER"])} value={row["OPPONENT PLAYER"] || ""} onChange={(v) => handleKickChange(idx, "OPPONENT PLAYER", v)} placeholder="Player Name" searchable />
-                                        <DropDownList_db className="pks-dropdown-compact" options={toDropdownOptions(suggestions.oppStatus, row["OPPONENT STATUS"])} value={row["OPPONENT STATUS"] || ""} onChange={(v) => handleKickChange(idx, "OPPONENT STATUS", v)} placeholder="Status" />
-                                        <DropDownList_db className="pks-dropdown-compact" options={toDropdownOptions(suggestions.howMiss, row["HOWMISS OPPONENT"])} value={row["HOWMISS OPPONENT"] || ""} onChange={(v) => handleKickChange(idx, "HOWMISS OPPONENT", v)} placeholder="How Missed?" searchable />
+                                        <DropDownList_db allowCustom className="pks-dropdown-compact" options={toDropdownOptions(suggestions.oppStatus, row["OPPONENT STATUS"])} value={row["OPPONENT STATUS"] || ""} onChange={(v) => handleKickChange(idx, "OPPONENT STATUS", v)} placeholder="Status" />
+                                        <DropDownList_db allowCustom className="pks-dropdown-compact" options={toDropdownOptions(suggestions.howMiss, row["HOWMISS OPPONENT"])} value={row["HOWMISS OPPONENT"] || ""} onChange={(v) => handleKickChange(idx, "HOWMISS OPPONENT", v)} placeholder="How Missed?" searchable />
                                         <DropDownList_db className="pks-dropdown-compact" options={toDropdownOptions(suggestions.ahlyGk, row["AHLY GK"])} value={row["AHLY GK"] || ""} onChange={(v) => handleKickChange(idx, "AHLY GK", v)} placeholder="Ahly GK" searchable />
                                     </div>
                                 </div>

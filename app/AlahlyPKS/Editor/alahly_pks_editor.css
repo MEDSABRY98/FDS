@@ -364,6 +364,23 @@
     box-shadow: none;
 }
 
+.pks-editor-container .form-group .dropdown-trigger-db--editable {
+    padding: 0;
+}
+
+.pks-editor-container .form-group .dropdown-input-db {
+    padding: 0 12px;
+}
+
+.pks-editor-container .pks-dropdown-compact .dropdown-trigger-db--editable {
+    padding: 0;
+}
+
+.pks-editor-container .pks-dropdown-compact .dropdown-input-db {
+    padding: 0 14px;
+    font-size: 13px;
+}
+
 .pks-editor-container .pks-dropdown-compact .dropdown-trigger-db {
     height: 42px;
     padding: 0 14px;
