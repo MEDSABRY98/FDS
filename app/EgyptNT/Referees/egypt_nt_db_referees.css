@@ -67,6 +67,12 @@
     color: #000;
     font-weight: 800;
     text-align: center;
+    white-space: normal;
+    word-break: break-word;
+    overflow: visible;
+    text-overflow: unset;
+    line-height: 1.35;
+    vertical-align: middle;
 }
 .modern-referee-table td.w-cell {
     color: #27ae60;

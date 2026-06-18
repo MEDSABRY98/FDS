@@ -159,8 +159,8 @@ export default function EgyptNTReferees({ matches, playerDetails, howPenMissed }
                         <table className="modern-referee-table">
                             <colgroup>
                                 <col style={{ width: '4%' }} />
-                                <col style={{ width: '16%' }} />
-                                <col style={{ width: '8%' }} />
+                                <col style={{ width: '18%' }} />
+                                <col style={{ width: '6%' }} />
                                 <col style={{ width: '6%' }} />
                                 <col style={{ width: '8%' }} />
                                 <col style={{ width: '8%' }} />

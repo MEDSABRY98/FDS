@@ -94,3 +94,17 @@
     color: #000;
     box-shadow: 0 4px 10px rgba(201, 168, 76, 0.3);
 }
+
+.mgr-matches-table th:not(.mgr-season-col),
+.mgr-matches-table td:not(.mgr-season-col) {
+    white-space: nowrap;
+}
+
+.mgr-matches-table th.mgr-season-col,
+.mgr-matches-table td.mgr-season-col {
+    white-space: normal;
+    word-break: break-word;
+    overflow-wrap: break-word;
+    line-height: 1.35;
+    vertical-align: middle;
+}

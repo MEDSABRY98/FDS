@@ -47,16 +47,15 @@ function Manager_Overview_Module({ stats }) {
 function Manager_Matches_Module({ stats }) {
     return (
         <div style={{ overflowX: 'auto' }} className="fade-in">
-            <table className="player-match-table">
+            <table className="player-match-table mgr-matches-table">
                 <thead>
                     <tr>
                         <th>#</th>
                         <th>MATCH ID</th>
                         <th>DATE</th>
-                        <th>CHAMPIONSHIP</th>
-                        <th>SEASON</th>
+                        <th className="mgr-season-col">SEASON</th>
                         <th>OPPONENT TEAM</th>
-                        <th>COACHED</th>
+                        <th>OPPONENT MANAGER</th>
                         <th>RESULT</th>
                         <th>GF</th>
                         <th>GA</th>
@@ -68,10 +67,9 @@ function Manager_Matches_Module({ stats }) {
                             <td>{idx + 1}</td>
                             <td>{m.idx}</td>
                             <td>{m.date}</td>
-                            <td style={{ color: 'var(--gold)' }}>{m.champion}</td>
-                            <td>{m.season}</td>
+                            <td className="mgr-season-col">{m.season}</td>
                             <td style={{ fontWeight: '800' }}>{m.opponent}</td>
-                            <td>{m.managedTeam}</td>
+                            <td>{m.opponentManager}</td>
                             <td>
                                 <span className={`m-role-pill ${m.wdl === 'W' ? 'role-starter' : m.wdl === 'L' ? 'role-sub' : ''}`} style={{ fontSize: '11px', fontWeight: '800' }}>
                                     {m.wdl}
@@ -121,20 +119,9 @@ function Manager_Championships_Module({ stats }) {
     );
 }
 
-function Manager_Seasons_Module({ stats, isNumberMode }) {
-    const dataObj = isNumberMode ? stats.statsBySY : stats.statsByChampSeason;
-    const list = [];
-    if (isNumberMode) {
-        Object.keys(dataObj).forEach(sy => list.push({ key: sy, ...dataObj[sy] }));
-        list.sort((a, b) => b.key.localeCompare(a.key));
-    } else {
-        Object.keys(dataObj).forEach(comp => {
-            Object.keys(dataObj[comp]).forEach(season => {
-                list.push({ key: `${comp} - ${season}`, ...dataObj[comp][season] });
-            });
-        });
-        list.sort((a, b) => b.matches - a.matches);
-    }
+function Manager_Seasons_Module({ stats }) {
+    const list = Object.keys(stats.seasonalStats).map(season => ({ key: season, ...stats.seasonalStats[season] }));
+    list.sort((a, b) => compareSeasonLabels(a.key, b.key));
     return (
         <table className="player-match-table fade-in">
             <thead>
@@ -230,6 +217,92 @@ function Manager_PlayersUsed_Module({ stats }) {
     );
 }
 
+function parseSeasonParts(season) {
+    const raw = String(season || "").trim();
+    if (!raw) return { text: "", number: 0, raw };
+
+    const numberMatch = raw.match(/\d+/);
+    const number = numberMatch ? parseInt(numberMatch[0], 10) : 0;
+    const text = raw
+        .replace(/\d+/g, " ")
+        .replace(/[/\-–—|]+/g, " ")
+        .replace(/\s+/g, " ")
+        .trim()
+        .toLowerCase();
+
+    return { text, number, raw };
+}
+
+function compareSeasonLabels(a, b) {
+    const partA = parseSeasonParts(a);
+    const partB = parseSeasonParts(b);
+
+    const textCmp = partA.text.localeCompare(partB.text, undefined, { sensitivity: "base" });
+    if (textCmp !== 0) return textCmp;
+
+    if (partB.number !== partA.number) return partB.number - partA.number;
+
+    return partB.raw.localeCompare(partA.raw, undefined, { numeric: true });
+}
+
+function buildMatchEgyptSideResolver(matchInfo, matchLineups = []) {
+    const egyptTeamName = String(matchInfo?.["Egypt TEAM"] || matchInfo?.["EGYPT TEAM"] || "منتخب مصر").trim();
+    const opponentTeamName = String(matchInfo?.["OPPONENT TEAM"] || "").trim();
+    const norm = (value) => String(value || "").trim().toLowerCase();
+
+    const egyptIdentifiers = new Set([
+        "egypt",
+        "مصر",
+        "منتخب مصر",
+        "المنتخب المصري",
+        norm(egyptTeamName)
+    ].filter(Boolean));
+
+    const resolveTeamSide = (teamValue) => {
+        const name = String(teamValue || "").trim();
+        if (!name) return null;
+
+        const normalizedName = norm(name);
+        if (opponentTeamName && normalizedName === norm(opponentTeamName)) return false;
+        if (normalizedName === "opponent" && opponentTeamName) return false;
+        if (egyptIdentifiers.has(normalizedName)) return true;
+        return null;
+    };
+
+    const playerSideByName = new Map();
+    matchLineups.forEach((lineupRow) => {
+        const playerName = String(lineupRow["PLAYER NAME"] || "").trim();
+        if (!playerName) return;
+        const side = resolveTeamSide(lineupRow.TEAM);
+        if (side !== null) playerSideByName.set(playerName, side);
+    });
+
+    return (record) => {
+        const byTeam = resolveTeamSide(record?.TEAM);
+        if (byTeam !== null) return byTeam;
+
+        const playerName = String(record?.["PLAYER NAME"] || "").trim();
+        if (playerName && playerSideByName.has(playerName)) {
+            return playerSideByName.get(playerName);
+        }
+
+        return false;
+    };
+}
+
+function isGoalEvent(type, sub) {
+    const typeUp = String(type || "").trim().toUpperCase();
+    const subUp = String(sub || "").trim().toUpperCase();
+    const subRaw = String(sub || "").trim();
+    return ["GOAL", "هدف"].includes(typeUp) || typeUp === "PENGOAL" || subUp === "PENGOAL" || subRaw === "هدف جزاء";
+}
+
+function isAssistEvent(type) {
+    const typeUp = String(type || "").trim().toUpperCase();
+    const typeRaw = String(type || "").trim();
+    return typeUp === "ASSIST" || typeRaw === "اسيست" || typeRaw === "صنع";
+}
+
 export default function EgyptNTManagerDetails({ managerName, managerStatus, masterMatches, onBack, playerDetails, lineupDetails }) {
     const [activeTab, setActiveTab] = useState('overview');
 
@@ -241,20 +314,14 @@ export default function EgyptNTManagerDetails({ managerName, managerStatus, mast
             drawsPos: 0, drawsNeg: 0,
             gs: 0, ga: 0, csFor: 0, csAgainst: 0,
             matchHistory: [], seasonalStats: {}, compStats: {}, oppStats: {},
-            statsByChampSeason: {}, statsBySY: {}, statsByOpponent: {},
+            statsByOpponent: {},
             statsAsOpponentMgr: {},
             playerUsedStats: {}
         };
 
         if (!managerName || !masterMatches) return { stats: summary };
 
-        const isEgyptTeam = (t) => {
-            if (!t) return false;
-            const s = String(t).trim();
-            return s === "مصر" || s === "Egypt" || s === "منتخب مصر" || s === "المنتخب المصري";
-        };
-
-        const allEgyptMatches = masterMatches.filter(m => String(m["AHLY MANAGER"]).trim() === managerName);
+        const allEgyptMatches = masterMatches.filter(m => String(m["EGYPT MANAGER"]).trim() === managerName);
         const allOppMatches = masterMatches.filter(m => String(m["OPPONENT MANAGER"]).trim() === managerName);
         const allMgrMatches = [...allEgyptMatches, ...allOppMatches];
 
@@ -264,11 +331,13 @@ export default function EgyptNTManagerDetails({ managerName, managerStatus, mast
             const ga = parseInt(m["GA"]) || 0;
             const wdl = String(m["W-D-L"] || "").toUpperCase();
             const champion = String(m.CHAMPION || "Unknown").trim();
-            const season = String(m["SEASON - NAME"] || "Unknown").trim();
-            const sy = String(m["SEASON - NUMBER"] || "Unknown").trim();
+            const season = String(m.SEASON || "Unknown").trim();
 
-            const isAsEgypt = String(m["AHLY MANAGER"]).trim() === managerName;
+            const isAsEgypt = String(m["EGYPT MANAGER"]).trim() === managerName;
             const opp = isAsEgypt ? (m["OPPONENT TEAM"] || "—") : "مصر";
+            const oppManager = isAsEgypt
+                ? String(m["OPPONENT MANAGER"] || "—").trim()
+                : String(m["EGYPT MANAGER"] || "—").trim();
             const coachedTeam = isAsEgypt ? "مصر" : (m["OPPONENT TEAM"] || "—");
 
             summary.gs += isAsEgypt ? gf : ga;
@@ -292,8 +361,9 @@ export default function EgyptNTManagerDetails({ managerName, managerStatus, mast
             summary.matchHistory.push({
                 idx: m.MATCH_ID,
                 date: m.DATE,
-                champion, season, sy,
+                season,
                 opponent: opp,
+                opponentManager: oppManager,
                 managedTeam: coachedTeam,
                 gf: isAsEgypt ? gf : ga,
                 ga: isAsEgypt ? ga : gf,
@@ -317,43 +387,27 @@ export default function EgyptNTManagerDetails({ managerName, managerStatus, mast
                 if (ga === 0) s.csAgainst += 1;
             }
 
-            [sy, champion].forEach((key, i) => {
-                const target = [summary.seasonalStats, summary.compStats][i];
-                if (!target[key]) target[key] = { matches: 0, wins: 0, draws: 0, losses: 0, gs: 0, ga: 0, csFor: 0, csAgainst: 0 };
-                const s = target[key];
-                s.matches += 1; s.gs += (isAsEgypt ? gf : ga); s.ga += (isAsEgypt ? ga : gf);
-                if (result === 'W') s.wins += 1; else if (result === 'L') s.losses += 1; else s.draws += 1;
-                if ((isAsEgypt ? ga : gf) === 0) s.csFor += 1;
-                if ((isAsEgypt ? gf : ga) === 0) s.csAgainst += 1;
-            });
+            if (!summary.compStats[champion]) summary.compStats[champion] = { matches: 0, wins: 0, draws: 0, losses: 0, gs: 0, ga: 0, csFor: 0, csAgainst: 0 };
+            const comp = summary.compStats[champion];
+            comp.matches += 1; comp.gs += (isAsEgypt ? gf : ga); comp.ga += (isAsEgypt ? ga : gf);
+            if (result === 'W') comp.wins += 1; else if (result === 'L') comp.losses += 1; else comp.draws += 1;
+            if ((isAsEgypt ? ga : gf) === 0) comp.csFor += 1;
+            if ((isAsEgypt ? gf : ga) === 0) comp.csAgainst += 1;
 
-            if (!summary.statsByChampSeason[champion]) summary.statsByChampSeason[champion] = {};
-            if (!summary.statsByChampSeason[champion][season]) summary.statsByChampSeason[champion][season] = { matches: 0, wins: 0, draws: 0, losses: 0, gs: 0, ga: 0, csFor: 0, csAgainst: 0 };
-            const cs = summary.statsByChampSeason[champion][season];
-            cs.matches += 1; cs.gs += gf; cs.ga += ga;
-            if (result === 'W') cs.wins += 1; else if (result === 'L') cs.losses += 1; else cs.draws += 1;
-            if (ga === 0) cs.csFor += 1;
-            if (gf === 0) cs.csAgainst += 1;
-
-            if (!summary.statsBySY[sy]) summary.statsBySY[sy] = { matches: 0, wins: 0, draws: 0, losses: 0, gs: 0, ga: 0, csFor: 0, csAgainst: 0 };
-            const ss = summary.statsBySY[sy];
-            ss.matches += 1; ss.gs += gf; ss.ga += ga;
+            if (!summary.seasonalStats[season]) summary.seasonalStats[season] = { matches: 0, wins: 0, draws: 0, losses: 0, gs: 0, ga: 0, csFor: 0, csAgainst: 0 };
+            const ss = summary.seasonalStats[season];
+            ss.matches += 1; ss.gs += (isAsEgypt ? gf : ga); ss.ga += (isAsEgypt ? ga : gf);
             if (result === 'W') ss.wins += 1; else if (result === 'L') ss.losses += 1; else ss.draws += 1;
-            if (ga === 0) ss.csFor += 1;
-            if (gf === 0) ss.csAgainst += 1;
+            if ((isAsEgypt ? ga : gf) === 0) ss.csFor += 1;
+            if ((isAsEgypt ? gf : ga) === 0) ss.csAgainst += 1;
 
             // Player Used Statistics
             const matchLineups = (lineupDetails || []).filter(l => String(l.MATCH_ID) === String(m.MATCH_ID));
             const matchEvents = (playerDetails || []).filter(p => String(p.MATCH_ID) === String(m.MATCH_ID));
+            const isEgyptSide = buildMatchEgyptSideResolver(m, matchLineups);
 
-            const teamLineups = matchLineups.filter(l => {
-                const isLineupEgypt = isEgyptTeam(l.TEAM);
-                return isAsEgypt ? isLineupEgypt : !isLineupEgypt;
-            });
-            const teamEvents = matchEvents.filter(p => {
-                const isEventEgypt = isEgyptTeam(p.TEAM);
-                return isAsEgypt ? isEventEgypt : !isEventEgypt;
-            });
+            const teamLineups = matchLineups.filter(l => isAsEgypt ? isEgyptSide(l) : !isEgyptSide(l));
+            const teamEvents = matchEvents.filter(p => isAsEgypt ? isEgyptSide(p) : !isEgyptSide(p));
 
             teamLineups.forEach(l => {
                 const pName = String(l["PLAYER NAME"] || "Unknown").trim();
@@ -376,11 +430,8 @@ export default function EgyptNTManagerDetails({ managerName, managerStatus, mast
                 const type = String(p.TYPE || "").trim();
                 const sub = String(p.TYPE_SUB || "").trim();
 
-                const isGoal = type === "GOAL" || type === "هدف" || sub === "PENGOAL" || sub === "هدف جزاء";
-                const isAssist = type === "ASSIST" || type === "اسيست" || type === "صنع";
-
-                if (isGoal) ps.goals += 1;
-                if (isAssist) ps.assists += 1;
+                if (isGoalEvent(type, sub)) ps.goals += 1;
+                if (isAssistEvent(type)) ps.assists += 1;
             });
         });
 
@@ -408,7 +459,7 @@ export default function EgyptNTManagerDetails({ managerName, managerStatus, mast
                 break;
             case 'matches':
                 exportData = stats.matchHistory.map((m, i) => ({
-                    "#": i + 1, "DATE": m.date, "CHAMPION": m.champion, "SEASON": m.season, "SY": m.sy, "OPPONENT": m.opponent, "MANAGED TEAM": m.managedTeam, "WDL": m.wdl, "GF": m.gf, "GA": m.ga
+                    "#": i + 1, "DATE": m.date, "SEASON": m.season, "OPPONENT": m.opponent, "OPPONENT MANAGER": m.opponentManager, "WDL": m.wdl, "GF": m.gf, "GA": m.ga
                 }));
                 break;
             case 'championships':
@@ -422,19 +473,10 @@ export default function EgyptNTManagerDetails({ managerName, managerStatus, mast
                     "#": i + 1, "PLAYER": p.name, "APPS": p.apps, "MINS": p.mins, "GOALS": p.goals, "ASSISTS": p.assists
                 }));
                 break;
-            case 'season_name':
-                exportData = [];
-                Object.keys(stats.statsByChampSeason).forEach(comp => {
-                    Object.keys(stats.statsByChampSeason[comp]).forEach(season => {
-                        const s = stats.statsByChampSeason[comp][season];
-                        exportData.push({ "CHAMPION": comp, "SEASON": season, "MP": s.matches, "W": s.wins, "D": s.draws, "L": s.losses, "GF": s.gs, "GA": s.ga });
-                    });
-                });
-                break;
-            case 'season_number':
-                exportData = Object.keys(stats.statsBySY).sort((a, b) => b.localeCompare(a)).map((sy, i) => {
-                    const s = stats.statsBySY[sy];
-                    return { "#": i + 1, "SY": sy, "MP": s.matches, "W": s.wins, "D": s.draws, "L": s.losses, "GF": s.gs, "GA": s.ga };
+            case 'seasons':
+                exportData = Object.keys(stats.seasonalStats).sort(compareSeasonLabels).map((season, i) => {
+                    const s = stats.seasonalStats[season];
+                    return { "#": i + 1, "SEASON": season, "MP": s.matches, "W": s.wins, "D": s.draws, "L": s.losses, "GF": s.gs, "GA": s.ga, "CS-F": s.csFor };
                 });
                 break;
             case 'vs_teams':
@@ -470,8 +512,7 @@ export default function EgyptNTManagerDetails({ managerName, managerStatus, mast
                     { id: 'overview', label: 'Overview' },
                     { id: 'matches', label: 'Matches' },
                     { id: 'championships', label: 'Championships' },
-                    { id: 'season_name', label: 'Season Name' },
-                    { id: 'season_number', label: 'Season Number' },
+                    { id: 'seasons', label: 'Seasons' },
                     { id: 'vs_teams', label: 'Vs Teams' },
                     { id: 'players_used', label: 'Players Used' }
                 ].map(t => (
@@ -485,8 +526,7 @@ export default function EgyptNTManagerDetails({ managerName, managerStatus, mast
                 {activeTab === 'overview' && <Manager_Overview_Module stats={stats} />}
                 {activeTab === 'matches' && <Manager_Matches_Module stats={stats} />}
                 {activeTab === 'championships' && <Manager_Championships_Module stats={stats} />}
-                {activeTab === 'season_name' && <Manager_Seasons_Module stats={stats} isNumberMode={false} />}
-                {activeTab === 'season_number' && <Manager_Seasons_Module stats={stats} isNumberMode={true} />}
+                {activeTab === 'seasons' && <Manager_Seasons_Module stats={stats} />}
                 {activeTab === 'vs_teams' && <Manager_VsTeams_Module stats={stats} managerStatus={managerStatus} />}
                 {activeTab === 'players_used' && <Manager_PlayersUsed_Module stats={stats} />}
             </div>

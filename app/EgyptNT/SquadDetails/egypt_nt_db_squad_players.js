@@ -3,7 +3,6 @@
 import { useState, useMemo } from "react";
 import SearchBar_db from "../../lib/SearchBar_db";
 import NoData_db from "../../lib/NoData_db";
-import "./egypt_nt_db_squad_players.css";
 
 export default function EgyptNTSquadPlayers({ squadData }) {
     const [searchTerm, setSearchTerm] = useState("");

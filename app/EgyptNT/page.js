@@ -551,7 +551,15 @@ export default function EgyptNTDatabase() {
                                     />
                                 )
                             )}
-                            {activeTab === 'squad' && <EgyptNTSquad squadData={squadData} />}
+                            {activeTab === 'squad' && (
+                                <EgyptNTSquad
+                                    squadData={squadData}
+                                    matches={matches}
+                                    lineupDetails={lineupDetails}
+                                    playerDetails={playerDetails}
+                                    gkDetails={gkDetails}
+                                />
+                            )}
                             {activeTab === 'add_squad' && <EgyptNTSquadEditor />}
                             {activeTab === 'seasons' && <EgyptNTSeasons matches={filteredMatches} />}
                             {activeTab === 'years' && <EgyptNTYears matches={filteredMatches} />}

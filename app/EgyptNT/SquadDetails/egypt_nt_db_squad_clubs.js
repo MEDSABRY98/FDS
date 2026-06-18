@@ -1,14 +1,20 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useEffect, useMemo } from "react";
 import SearchBar_db from "../../lib/SearchBar_db";
 import NoData_db from "../../lib/NoData_db";
-import "./egypt_nt_db_squad_clubs.css";
+import EgyptNTSquadClubDetails from "./egypt_nt_db_squad_club_details";
 
-export default function EgyptNTSquadClubs({ squadData }) {
+export default function EgyptNTSquadClubs({ squadData, matches, lineupDetails, playerDetails, gkDetails, onDetailsViewChange }) {
+    const [selectedClub, setSelectedClub] = useState(null);
     const [searchTerm, setSearchTerm] = useState("");
     const [currentPage, setCurrentPage] = useState(1);
     const pageSize = 50;
+
+    useEffect(() => {
+        onDetailsViewChange?.(Boolean(selectedClub));
+        return () => onDetailsViewChange?.(false);
+    }, [selectedClub, onDetailsViewChange]);
 
     // Process club statistics
     const clubStats = useMemo(() => {
@@ -65,6 +71,20 @@ export default function EgyptNTSquadClubs({ squadData }) {
         setCurrentPage(1);
     };
 
+    if (selectedClub) {
+        return (
+            <EgyptNTSquadClubDetails
+                clubName={selectedClub}
+                squadData={squadData}
+                matches={matches}
+                lineupDetails={lineupDetails}
+                playerDetails={playerDetails}
+                gkDetails={gkDetails}
+                onBack={() => setSelectedClub(null)}
+            />
+        );
+    }
+
     return (
         <div className="squad-subtab-container fade-in">
             <div className="squad-search-wrap">
@@ -103,7 +123,16 @@ export default function EgyptNTSquadClubs({ squadData }) {
                             paginatedClubs.map((club, idx) => (
                                 <tr key={club.name}>
                                     <td className="row-num">{(currentPage - 1) * pageSize + idx + 1}</td>
-                                    <td className="club-name-cell">{club.name}</td>
+                                    <td className="club-name-cell">
+                                        <button
+                                            type="button"
+                                            className="club-name-link"
+                                            onClick={() => setSelectedClub(club.name)}
+                                            title={`View ${club.name} details`}
+                                        >
+                                            {club.name}
+                                        </button>
+                                    </td>
                                     <td className="count-cell highlight-blue">{club.playerCount} Players</td>
                                     <td className="count-cell highlight-gold">{club.championCount} Tournaments</td>
                                 </tr>

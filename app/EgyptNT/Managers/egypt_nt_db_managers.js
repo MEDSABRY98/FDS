@@ -19,8 +19,8 @@ export default function EgyptNTManagers({ matches, playerDetails, lineupDetails 
 
     const statusLabels = { egypt: "Egypt NT Managers", opponent: "Opponent Managers" };
 
-    const managerColumn = managerStatus === "egypt" ? "AHLY MANAGER" : "OPPONENT MANAGER";
-    const teamColumn = managerStatus === "egypt" ? "AHLY TEAM" : "OPPONENT TEAM";
+    const managerColumn = managerStatus === "egypt" ? "EGYPT MANAGER" : "OPPONENT MANAGER";
+    const teamColumn = managerStatus === "egypt" ? "Egypt TEAM" : "OPPONENT TEAM";
 
     const teams = useMemo(() => {
         const set = new Set((matches || []).map(m => m[teamColumn]).filter(Boolean));
