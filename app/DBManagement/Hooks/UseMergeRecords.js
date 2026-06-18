@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { DBManagementService } from "../db_management_service";
+import { collectCatalogMergeNames, getCatalogRowMergeName } from "../../lib/catalogBilingual";
 
 export function useMergeRecords(selectedTable, fetchTableData, addNotification) {
     const [selectedRows, setSelectedRows] = useState([]);
@@ -8,10 +9,7 @@ export function useMergeRecords(selectedTable, fetchTableData, addNotification) 
     const [isConfirmingMerge, setIsConfirmingMerge] = useState(false);
     const [mergeTargetName, setMergeTargetName] = useState("");
 
-    const getName = (row) => {
-        if (!row) return "";
-        return row.PLAYER_NAME || row.MANAGER_NAME || row.STADIUM_NAME || row.REFEREE_NAME || row.TEAM_NAME || row.COUNTRY_NAME || "";
-    };
+    const getName = (row) => getCatalogRowMergeName(row, selectedTable);
 
     const getRowKey = (row) => {
         if (!row) return "";
@@ -30,17 +28,23 @@ export function useMergeRecords(selectedTable, fetchTableData, addNotification) 
     };
 
     const handleMergeTrigger = () => {
-        const names = [...new Set(selectedRows.map(r => getName(r)).filter(Boolean))];
-        if (names.length < 2) {
-            if (addNotification) addNotification("Please select at least two DIFFERENT records to merge.", "warn");
+        if (selectedRows.length < 2) {
+            if (addNotification) addNotification("Please select at least two records to merge.", "warn");
             return;
         }
-        setMergeTargetName(names[0]);
+
+        const names = collectCatalogMergeNames(selectedRows, selectedTable);
+        if (names.length < 2) {
+            if (addNotification) addNotification("Please select records with different Arabic or English names to merge.", "warn");
+            return;
+        }
+
+        setMergeTargetName(getName(selectedRows[0]) || names[0]);
         setShowMergeModal(true);
     };
 
     const handleConfirmMerge = async () => {
-        const names = [...new Set(selectedRows.map(r => getName(r)).filter(Boolean))];
+        const names = collectCatalogMergeNames(selectedRows, selectedTable);
         if (!mergeTargetName.trim()) {
             if (addNotification) addNotification("Please enter a valid target name.", "warn");
             return;

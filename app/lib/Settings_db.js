@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { GripVertical, Save, RotateCcw, Languages, Columns3, ArrowDownUp } from "lucide-react";
+import { GripVertical, Save, RotateCcw, Languages, Columns3, ArrowDownUp, ChevronLeft, ChevronRight } from "lucide-react";
 import DropDownList_db from "./DropDownList_db";
 import Loading_db from "./Loading_db";
 import NoData_db from "./NoData_db";
@@ -15,21 +15,26 @@ import {
 } from "./supabase";
 import "./Settings_db.css";
 
+function notifyTableSettingsSaved(tableName) {
+    if (typeof window === "undefined" || !tableName) return;
+    window.dispatchEvent(
+        new CustomEvent("fdbase-table-settings-saved", { detail: { tableName } })
+    );
+}
+
 // --- Table column order + data sort logic (stored in db_Settings.SORTING) ---
 
-export const SORT_DIRECTION_OPTIONS = [
-    { value: "off", label: "Not used" },
-    { value: "asc", label: "Ascending (A → Z / Low → High)" },
-    { value: "desc", label: "Descending (Z → A / High → Low)" },
-];
-
-export const DATA_SORT_PRESET_OPTIONS = [
+const DATA_SORT_PRESET_OPTIONS = [
     { value: "ROW_ID", label: "ROW_ID" },
     { value: "DATE", label: "Date (newest first)" },
     { value: "EVENT_ID", label: "EVENT_ID" },
     {
         value: "DATE_ASC_EVENT_ID",
         label: "Date oldest → newest, then MATCH_ID, then EVENT_ID",
+    },
+    {
+        value: "DATE_DESC_EVENT_ID",
+        label: "Date newest → oldest, then MATCH_ID, then EVENT_ID",
     },
     {
         value: "DATE_DESC_ROW_ID",
@@ -55,10 +60,23 @@ const LEGACY_SORT_MAP = {
         { column: "MATCH_ID", direction: "desc" },
         { column: "EVENT_ID", direction: "desc" },
     ],
+    DATE_DESC_EVENT_ID: [
+        { column: "DATE", direction: "desc" },
+        { column: "MATCH_ID", direction: "desc" },
+        { column: "EVENT_ID", direction: "desc" },
+    ],
     DATE_DESC_ROW_ID: [
         { column: "DATE", direction: "desc" },
         { column: "ROW_ID", direction: "desc" },
     ],
+};
+
+const SORT_COLUMN_FALLBACKS = {
+    ROW_ID: ["ROW_ID", "MATCH_ID", "EVENT_ID", "FINAL_ID"],
+    DATE: ["DATE"],
+    EVENT_ID: ["EVENT_ID", "MATCH_ID"],
+    MATCH_ID: ["MATCH_ID", "EVENT_ID"],
+    FINAL_ID: ["FINAL_ID", "MATCH_ID"],
 };
 
 const ID_SORT_COLUMNS = new Set([
@@ -73,7 +91,7 @@ const ID_SORT_COLUMNS = new Set([
     "COUNTRY_ID",
 ]);
 
-export function normalizeDirection(direction) {
+function normalizeDirection(direction) {
     const value = String(direction || "off").toLowerCase();
     if (value === "asc" || value === "desc") return value;
     return "off";
@@ -97,7 +115,7 @@ function findDefaultSortColumn(columns = []) {
     return entityId || columns[0] || null;
 }
 
-export function buildDefaultTableSortRules(columns = []) {
+function buildDefaultTableSortRules(columns = []) {
     const defaultColumn = findDefaultSortColumn(columns);
     return columns.map((column) => ({
         column,
@@ -105,16 +123,61 @@ export function buildDefaultTableSortRules(columns = []) {
     }));
 }
 
+function resolveSortColumn(requestedColumn, columns = []) {
+    const key = String(requestedColumn || "").toUpperCase();
+    const candidates = SORT_COLUMN_FALLBACKS[key] || [key];
+
+    for (const candidate of candidates) {
+        const match = findSchemaColumn(columns, candidate);
+        if (match) return match;
+    }
+
+    return findDefaultSortColumn(columns);
+}
+
+function parseJsonSettingsPayload(raw) {
+    if (raw == null) return null;
+    if (typeof raw === "object") return raw;
+
+    const trimmed = String(raw).trim();
+    if (!trimmed || trimmed === "[object Object]") return null;
+
+    if (trimmed.startsWith("{") || trimmed.startsWith("[")) {
+        try {
+            return JSON.parse(trimmed);
+        } catch {
+            return null;
+        }
+    }
+
+    return null;
+}
+
+function parseDataSortPresetFromSetting(raw) {
+    const stored = parseJsonSettingsPayload(raw);
+    const preset = String(stored?.dataSortPreset || "").trim().toUpperCase();
+    return LEGACY_SORT_MAP[preset] ? preset : null;
+}
+
+function extractSortRulesFromPayload(payload) {
+    if (!payload) return null;
+    if (Array.isArray(payload?.sortRules) && payload.sortRules.length > 0) {
+        return payload.sortRules;
+    }
+    const rules = Array.isArray(payload) ? payload : payload?.rules;
+    if (Array.isArray(rules) && rules.length > 0) return rules;
+    return null;
+}
+
 function mergeSortRulesWithColumns(savedRules = [], columns = []) {
     const directionByColumn = new Map();
     const orderedColumns = [];
 
     savedRules.forEach((rule) => {
-        const column = String(rule?.column || "").trim();
-        if (!column || !columns.includes(column)) return;
-        if (orderedColumns.includes(column)) return;
-        orderedColumns.push(column);
-        directionByColumn.set(column, normalizeDirection(rule?.direction));
+        const match = findSchemaColumn(columns, rule?.column);
+        if (!match || orderedColumns.includes(match)) return;
+        orderedColumns.push(match);
+        directionByColumn.set(match, normalizeDirection(rule?.direction));
     });
 
     columns.forEach((column) => {
@@ -131,30 +194,14 @@ function mergeSortRulesWithColumns(savedRules = [], columns = []) {
 }
 
 export function parseTableSortSetting(raw, columns = []) {
-    if (!raw) return buildDefaultTableSortRules(columns);
+    if (raw == null) return buildDefaultTableSortRules(columns);
+
+    const rules = extractSortRulesFromPayload(parseJsonSettingsPayload(raw));
+    if (rules) return mergeSortRulesWithColumns(rules, columns);
 
     const trimmed = String(raw).trim();
-    if (!trimmed) return buildDefaultTableSortRules(columns);
-
-    if (trimmed.startsWith("[") || trimmed.startsWith("{")) {
-        try {
-            const parsed = JSON.parse(trimmed);
-            if (Array.isArray(parsed?.sortRules) && parsed.sortRules.length > 0) {
-                return mergeSortRulesWithColumns(parsed.sortRules, columns);
-            }
-            const rules = Array.isArray(parsed) ? parsed : parsed?.rules;
-            if (Array.isArray(rules) && rules.length > 0) {
-                return mergeSortRulesWithColumns(rules, columns);
-            }
-        } catch {
-            // fall through to legacy parsing
-        }
-    }
-
     const legacyRules = LEGACY_SORT_MAP[trimmed.toUpperCase()];
-    if (legacyRules) {
-        return mergeSortRulesWithColumns(legacyRules, columns);
-    }
+    if (legacyRules) return mergeSortRulesWithColumns(legacyRules, columns);
 
     return buildDefaultTableSortRules(columns);
 }
@@ -167,7 +214,10 @@ function getActiveRulesSignature(raw, columns = []) {
     }));
 }
 
-export function detectDataSortPresetKey(raw, columns = []) {
+function detectDataSortPresetKey(raw, columns = []) {
+    const storedPreset = parseDataSortPresetFromSetting(raw);
+    if (storedPreset) return storedPreset;
+
     const trimmed = String(raw ?? "").trim();
     if (LEGACY_SORT_MAP[trimmed.toUpperCase()]) {
         return trimmed.toUpperCase();
@@ -189,28 +239,43 @@ export function detectDataSortPresetKey(raw, columns = []) {
 
 function getPresetSortRules(presetKey, columns = []) {
     const legacyRules = LEGACY_SORT_MAP[presetKey] || LEGACY_SORT_MAP.ROW_ID;
-    return mergeSortRulesWithColumns(legacyRules, columns);
+    const resolvedRules = [];
+    const usedColumns = new Set();
+
+    legacyRules.forEach((rule) => {
+        const column = resolveSortColumn(rule.column, columns);
+        if (!column || usedColumns.has(column)) return;
+        usedColumns.add(column);
+        resolvedRules.push({ column, direction: rule.direction });
+    });
+
+    if (resolvedRules.length === 0) {
+        const fallbackColumn = findDefaultSortColumn(columns);
+        if (fallbackColumn) {
+            resolvedRules.push({ column: fallbackColumn, direction: "desc" });
+        }
+    }
+
+    return mergeSortRulesWithColumns(resolvedRules, columns);
 }
 
 async function getExistingSettingsBundle(tableName) {
     const dbCols = await fetchTableColumnNames(tableName);
-    const orderedColumns = await resolveTableColumnOrder(tableName, dbCols);
     const raw = await FetchTableSortSetting(tableName);
+    const orderedColumns = await resolveTableColumnOrder(tableName, dbCols, raw);
     const sortRules = parseTableSortSetting(raw, orderedColumns);
-    return { dbCols, orderedColumns, raw, sortRules };
-}
-
-export function serializeTableSortSetting(rules = []) {
-    return JSON.stringify(
-        (rules || []).map((rule) => ({
-            column: rule.column,
-            direction: normalizeDirection(rule.direction),
-        }))
-    );
+    const dataSortPreset = detectDataSortPresetKey(raw, orderedColumns);
+    return { dbCols, orderedColumns, raw, sortRules, dataSortPreset };
 }
 
 export function getActiveTableSortRules(rules = []) {
     return (rules || []).filter((rule) => normalizeDirection(rule.direction) !== "off");
+}
+
+function findSchemaColumn(schemaColumns = [], name) {
+    const target = String(name || "").trim().toUpperCase();
+    if (!target) return null;
+    return schemaColumns.find((column) => String(column).toUpperCase() === target) || null;
 }
 
 function mergeColumnOrderWithSchema(savedOrder = [], schemaColumns = []) {
@@ -218,10 +283,10 @@ function mergeColumnOrderWithSchema(savedOrder = [], schemaColumns = []) {
     const seen = new Set();
 
     savedOrder.forEach((column) => {
-        const name = String(column || "").trim();
-        if (!name || !schemaColumns.includes(name) || seen.has(name)) return;
-        seen.add(name);
-        ordered.push(name);
+        const match = findSchemaColumn(schemaColumns, column);
+        if (!match || seen.has(match)) return;
+        seen.add(match);
+        ordered.push(match);
     });
 
     schemaColumns.forEach((column) => {
@@ -234,31 +299,28 @@ function mergeColumnOrderWithSchema(savedOrder = [], schemaColumns = []) {
 }
 
 export function parseColumnOrderFromSetting(raw, schemaColumns = []) {
-    const trimmed = String(raw ?? "").trim();
-    if (!trimmed) return null;
-
-    if (trimmed.startsWith("{")) {
-        try {
-            const parsed = JSON.parse(trimmed);
-            if (Array.isArray(parsed?.columnOrder) && parsed.columnOrder.length > 0) {
-                return mergeColumnOrderWithSchema(parsed.columnOrder, schemaColumns);
-            }
-        } catch {
-            return null;
-        }
+    const payload = parseJsonSettingsPayload(raw);
+    if (Array.isArray(payload?.columnOrder) && payload.columnOrder.length > 0) {
+        return mergeColumnOrderWithSchema(payload.columnOrder, schemaColumns);
     }
-
     return null;
 }
 
-export function serializeTableSettings({ columnOrder = [], sortRules = [] } = {}) {
-    return JSON.stringify({
+export function serializeTableSettings({ columnOrder = [], sortRules = [], dataSortPreset = null } = {}) {
+    const payload = {
         columnOrder: (columnOrder || []).map((column) => String(column).toUpperCase()),
         sortRules: (sortRules || []).map((rule) => ({
             column: rule.column,
             direction: normalizeDirection(rule.direction),
         })),
-    });
+    };
+
+    const preset = String(dataSortPreset || "").trim().toUpperCase();
+    if (LEGACY_SORT_MAP[preset]) {
+        payload.dataSortPreset = preset;
+    }
+
+    return JSON.stringify(payload);
 }
 
 function parseTrailingIdNumber(value) {
@@ -288,11 +350,6 @@ function parseDateSortValue(value) {
     }
 
     return 0;
-}
-
-function findColumnByName(columns = [], name) {
-    const target = String(name || "").toUpperCase();
-    return columns.find((column) => String(column).toUpperCase() === target) || null;
 }
 
 function compareCellValues(aValue, bValue, columnName) {
@@ -326,7 +383,7 @@ export function sortRowsByTableSortRules(rows, columns = [], rules = []) {
 
     return [...rows].sort((rowA, rowB) => {
         for (const rule of activeRules) {
-            const column = findColumnByName(columns, rule.column);
+            const column = findSchemaColumn(columns, rule.column);
             if (!column) continue;
 
             const diff = compareCellValues(rowA?.[column], rowB?.[column], column);
@@ -336,12 +393,6 @@ export function sortRowsByTableSortRules(rows, columns = [], rules = []) {
         }
         return 0;
     });
-}
-
-export function sortManagementRowsBySetting(rows, columns = [], sorting = null) {
-    if (!sorting) return rows;
-    const rules = parseTableSortSetting(sorting, columns);
-    return sortRowsByTableSortRules(rows, columns, rules);
 }
 
 export async function FetchColumnOrder(tableName) {
@@ -366,11 +417,11 @@ export function applyDefaultColumnOrder(columns) {
     return sortedCols;
 }
 
-export async function resolveTableColumnOrder(tableName, columns) {
-    const raw = await FetchTableSortSetting(tableName);
+export async function resolveTableColumnOrder(tableName, columns, rawSetting = undefined) {
+    const raw = rawSetting !== undefined ? rawSetting : await FetchTableSortSetting(tableName);
     const savedOrder = parseColumnOrderFromSetting(raw, columns);
     if (savedOrder?.length) {
-        return SortColumnNames(columns, savedOrder);
+        return savedOrder;
     }
     return applyDefaultColumnOrder(columns);
 }
@@ -490,6 +541,23 @@ function formatTableLabel(tableName) {
         .toUpperCase();
 }
 
+function useSettingsTableSelection(tablesList) {
+    const [selectedTable, setSelectedTable] = useState("");
+
+    useEffect(() => {
+        if (tablesList.length > 0 && !selectedTable) {
+            setSelectedTable(tablesList[0].name);
+        }
+    }, [tablesList, selectedTable]);
+
+    const tableOptions = useMemo(
+        () => tablesList.map((table) => ({ value: table.name, label: table.label })),
+        [tablesList]
+    );
+
+    return { selectedTable, setSelectedTable, tableOptions };
+}
+
 function SettingsTableToolbar({
     tableOptions,
     selectedTable,
@@ -500,18 +568,61 @@ function SettingsTableToolbar({
     loading,
     saveDisabled,
 }) {
+    const currentIndex = useMemo(() => {
+        const index = tableOptions.findIndex((option) => option.value === selectedTable);
+        return index >= 0 ? index : 0;
+    }, [tableOptions, selectedTable]);
+
+    const canGoPrev = tableOptions.length > 1 && currentIndex > 0;
+    const canGoNext = tableOptions.length > 1 && currentIndex < tableOptions.length - 1;
+    const isDisabled = loading || saving || tableOptions.length === 0;
+
+    const goToAdjacentTable = (delta) => {
+        const nextOption = tableOptions[currentIndex + delta];
+        if (nextOption) onTableChange(nextOption.value);
+    };
+
     return (
         <div className="settings-columns-toolbar">
-            <div className={`settings-toolbar-field ${loading || saving ? "is-disabled" : ""}`}>
+            <div className={`settings-toolbar-field ${isDisabled ? "is-disabled" : ""}`}>
                 <label>Target table</label>
-                <DropDownList_db
-                    className="settings-table-dropdown"
-                    options={tableOptions}
-                    value={selectedTable}
-                    onChange={onTableChange}
-                    placeholder="Select table..."
-                    searchable={true}
-                />
+                <div className="settings-table-picker">
+                    <DropDownList_db
+                        className="settings-table-dropdown"
+                        options={tableOptions}
+                        value={selectedTable}
+                        onChange={onTableChange}
+                        placeholder="Select table..."
+                        searchable={true}
+                    />
+                    <div className="settings-table-nav-group">
+                        {tableOptions.length > 0 && (
+                            <span className="settings-table-nav-count" aria-live="polite">
+                                {currentIndex + 1} / {tableOptions.length}
+                            </span>
+                        )}
+                        <button
+                            type="button"
+                            className="settings-table-nav-btn"
+                            onClick={() => goToAdjacentTable(-1)}
+                            disabled={isDisabled || !canGoPrev}
+                            title="Previous table"
+                            aria-label="Previous table"
+                        >
+                            <ChevronLeft size={18} strokeWidth={2.5} />
+                        </button>
+                        <button
+                            type="button"
+                            className="settings-table-nav-btn"
+                            onClick={() => goToAdjacentTable(1)}
+                            disabled={isDisabled || !canGoNext}
+                            title="Next table"
+                            aria-label="Next table"
+                        >
+                            <ChevronRight size={18} strokeWidth={2.5} />
+                        </button>
+                    </div>
+                </div>
             </div>
 
             <div className="settings-toolbar-actions">
@@ -541,17 +652,11 @@ function SettingsTableToolbar({
 }
 
 function SettingsColumnOrderSection({ addNotification, tablesList }) {
-    const [selectedTable, setSelectedTable] = useState("");
+    const { selectedTable, setSelectedTable, tableOptions } = useSettingsTableSelection(tablesList);
     const [rows, setRows] = useState([]);
     const [loading, setLoading] = useState(false);
     const [saving, setSaving] = useState(false);
     const [draggingIndex, setDraggingIndex] = useState(null);
-
-    useEffect(() => {
-        if (tablesList.length > 0 && !selectedTable) {
-            setSelectedTable(tablesList[0].name);
-        }
-    }, [tablesList, selectedTable]);
 
     const loadColumnOrder = async (tableName) => {
         if (!tableName) return;
@@ -571,11 +676,6 @@ function SettingsColumnOrderSection({ addNotification, tablesList }) {
         if (selectedTable) loadColumnOrder(selectedTable);
     }, [selectedTable]);
 
-    const tableOptions = useMemo(
-        () => tablesList.map((table) => ({ value: table.name, label: table.label })),
-        [tablesList]
-    );
-
     const moveRow = (fromIndex, toIndex) => {
         if (fromIndex === toIndex || fromIndex < 0 || toIndex < 0) return;
         setRows((prev) => {
@@ -590,9 +690,10 @@ function SettingsColumnOrderSection({ addNotification, tablesList }) {
         if (!selectedTable || rows.length === 0) return;
         setSaving(true);
         try {
-            const { sortRules } = await getExistingSettingsBundle(selectedTable);
+            const { sortRules, dataSortPreset } = await getExistingSettingsBundle(selectedTable);
             const columnOrder = rows.map((row) => row.column.toUpperCase());
-            await SaveTableSettings(selectedTable, { columnOrder, sortRules });
+            await SaveTableSettings(selectedTable, { columnOrder, sortRules, dataSortPreset });
+            notifyTableSettingsSaved(selectedTable);
             addNotification?.(`Column order saved for ${formatTableLabel(selectedTable)}`, "success");
         } catch (err) {
             addNotification?.("Failed to save column order: " + err.message, "error");
@@ -606,9 +707,10 @@ function SettingsColumnOrderSection({ addNotification, tablesList }) {
         if (!confirm("Reset column display order to defaults for this table?")) return;
         setSaving(true);
         try {
-            const { dbCols, sortRules } = await getExistingSettingsBundle(selectedTable);
+            const { dbCols, sortRules, dataSortPreset } = await getExistingSettingsBundle(selectedTable);
             const columnOrder = applyDefaultColumnOrder(dbCols).map((column) => column.toUpperCase());
-            await SaveTableSettings(selectedTable, { columnOrder, sortRules });
+            await SaveTableSettings(selectedTable, { columnOrder, sortRules, dataSortPreset });
+            notifyTableSettingsSaved(selectedTable);
             await loadColumnOrder(selectedTable);
             addNotification?.("Column order reset to defaults.", "success");
         } catch (err) {
@@ -716,23 +818,17 @@ function SettingsOptionGrid({ options, value, onChange, disabled = false, stacke
 }
 
 function SettingsDataSortSection({ addNotification, tablesList }) {
-    const [selectedTable, setSelectedTable] = useState("");
+    const { selectedTable, setSelectedTable, tableOptions } = useSettingsTableSelection(tablesList);
     const [dataSortPreset, setDataSortPreset] = useState("ROW_ID");
     const [loading, setLoading] = useState(false);
     const [saving, setSaving] = useState(false);
-
-    useEffect(() => {
-        if (tablesList.length > 0 && !selectedTable) {
-            setSelectedTable(tablesList[0].name);
-        }
-    }, [tablesList, selectedTable]);
 
     const loadDataSort = async (tableName) => {
         if (!tableName) return;
         setLoading(true);
         try {
-            const { orderedColumns, raw } = await getExistingSettingsBundle(tableName);
-            setDataSortPreset(detectDataSortPresetKey(raw, orderedColumns));
+            const { dataSortPreset: savedPreset } = await getExistingSettingsBundle(tableName);
+            setDataSortPreset(savedPreset);
         } catch (err) {
             addNotification?.("Failed to load data sort: " + err.message, "error");
         } finally {
@@ -743,11 +839,6 @@ function SettingsDataSortSection({ addNotification, tablesList }) {
     useEffect(() => {
         if (selectedTable) loadDataSort(selectedTable);
     }, [selectedTable]);
-
-    const tableOptions = useMemo(
-        () => tablesList.map((table) => ({ value: table.name, label: table.label })),
-        [tablesList]
-    );
 
     const selectedPresetLabel = useMemo(
         () => DATA_SORT_PRESET_OPTIONS.find((option) => option.value === dataSortPreset)?.label || dataSortPreset,
@@ -761,7 +852,12 @@ function SettingsDataSortSection({ addNotification, tablesList }) {
             const { orderedColumns } = await getExistingSettingsBundle(selectedTable);
             const sortRules = getPresetSortRules(dataSortPreset, orderedColumns);
             const columnOrder = orderedColumns.map((column) => column.toUpperCase());
-            await SaveTableSettings(selectedTable, { columnOrder, sortRules });
+            await SaveTableSettings(selectedTable, {
+                columnOrder,
+                sortRules,
+                dataSortPreset,
+            });
+            notifyTableSettingsSaved(selectedTable);
             addNotification?.(`Data sort saved for ${formatTableLabel(selectedTable)}`, "success");
         } catch (err) {
             addNotification?.("Failed to save data sort: " + err.message, "error");
@@ -778,7 +874,12 @@ function SettingsDataSortSection({ addNotification, tablesList }) {
             const { orderedColumns } = await getExistingSettingsBundle(selectedTable);
             const sortRules = getPresetSortRules("ROW_ID", orderedColumns);
             const columnOrder = orderedColumns.map((column) => column.toUpperCase());
-            await SaveTableSettings(selectedTable, { columnOrder, sortRules });
+            await SaveTableSettings(selectedTable, {
+                columnOrder,
+                sortRules,
+                dataSortPreset: "ROW_ID",
+            });
+            notifyTableSettingsSaved(selectedTable);
             setDataSortPreset("ROW_ID");
             addNotification?.("Data sort reset to ROW_ID.", "success");
         } catch (err) {
@@ -973,7 +1074,7 @@ export default function Settings_db({ addNotification }) {
                     ) : (
                         <div className="settings-card settings-card--empty">
                             <div className="settings-db-empty">No tables available for column settings.</div>
-                </div>
+                        </div>
                     )
                 )}
 
@@ -989,7 +1090,7 @@ export default function Settings_db({ addNotification }) {
                         </div>
                     )
                 )}
-                </div>
+            </div>
         </div>
     );
 }

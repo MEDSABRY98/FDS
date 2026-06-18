@@ -92,6 +92,17 @@ export function useTableData(addNotification) {
         }
     }, [selectedTable, fetchTableData]);
 
+    useEffect(() => {
+        const onSettingsSaved = (event) => {
+            const savedTable = event.detail?.tableName;
+            if (!savedTable || savedTable === selectedTable) {
+                fetchTableData();
+            }
+        };
+        window.addEventListener("fdbase-table-settings-saved", onSettingsSaved);
+        return () => window.removeEventListener("fdbase-table-settings-saved", onSettingsSaved);
+    }, [selectedTable, fetchTableData]);
+
     const changeSelectedTable = (newTable) => {
         if (newTable !== selectedTable) {
             if (newTable !== SETTINGS_TAB_ID) {

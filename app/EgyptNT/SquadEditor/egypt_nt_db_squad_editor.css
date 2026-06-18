@@ -28,15 +28,23 @@
 }
 
 .squad-editor-table thead th {
-    background: #fdfdfd;
-    color: #444;
+    background: #000;
+    color: #fff;
     padding: 16px 20px;
     font-size: 13px;
     text-transform: uppercase;
     letter-spacing: 1.5px;
     font-weight: 700;
-    border-bottom: 2px solid #eaeaea;
+    border: none;
     position: relative;
+}
+
+.squad-editor-table thead th:first-child {
+    border-radius: 12px 0 0 12px;
+}
+
+.squad-editor-table thead th:last-child {
+    border-radius: 0 12px 12px 0;
 }
 
 .squad-editor-table thead th::after {
@@ -46,7 +54,7 @@
     left: 0;
     height: 2px;
     width: 0%;
-    background: #C8102E;
+    background: var(--gold, #c9a84c);
     transition: width 0.3s ease;
 }
 .squad-editor-table thead th:hover::after {

@@ -147,3 +147,40 @@ export function buildCatalogOptions(rows, config, lang = "auto") {
 
     return sortCatalogNames(options, lang);
 }
+
+export function getCatalogRowMergeName(row, tableName) {
+    if (!row) return "";
+    const cfg = CATALOG_BILINGUAL_TABLES[tableName];
+    if (!cfg) {
+        return String(
+            row.PLAYER_NAME || row.MANAGER_NAME || row.STADIUM_NAME ||
+            row.REFEREE_NAME || row.TEAM_NAME || row.COUNTRY_NAME || ""
+        ).trim();
+    }
+    const ar = String(row[cfg.nameColAr] || "").trim();
+    if (ar) return ar;
+    return String(row[cfg.nameColEn] || "").trim();
+}
+
+export function getCatalogRowSearchNames(row, tableName) {
+    if (!row) return [];
+    const cfg = CATALOG_BILINGUAL_TABLES[tableName];
+    if (!cfg) {
+        const legacy = getCatalogRowMergeName(row, tableName);
+        return legacy ? [legacy] : [];
+    }
+    const names = [];
+    const ar = String(row[cfg.nameColAr] || "").trim();
+    const en = String(row[cfg.nameColEn] || "").trim();
+    if (ar) names.push(ar);
+    if (en) names.push(en);
+    return names;
+}
+
+export function collectCatalogMergeNames(rows, tableName) {
+    const names = new Set();
+    (rows || []).forEach((row) => {
+        getCatalogRowSearchNames(row, tableName).forEach((name) => names.add(name));
+    });
+    return [...names];
+}

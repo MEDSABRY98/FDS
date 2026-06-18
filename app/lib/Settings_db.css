@@ -56,16 +56,6 @@
     line-height: 1;
 }
 
-.settings-hero-desc {
-    margin: 0;
-    max-width: 420px;
-    font-size: 13px;
-    font-weight: 500;
-    line-height: 1.5;
-    color: rgba(255, 255, 255, 0.55);
-    text-align: right;
-}
-
 .settings-layout {
     display: flex;
     flex-direction: column;
@@ -307,11 +297,6 @@
     border-radius: 0 0 18px 18px;
 }
 
-.settings-lang-dropdown.is-saving {
-    opacity: 0.6;
-    pointer-events: none;
-}
-
 .settings-columns-toolbar {
     display: flex;
     align-items: flex-end;
@@ -345,7 +330,62 @@
 }
 
 .settings-table-dropdown {
+    flex: 1;
+    min-width: 0;
+    width: auto;
+}
+
+.settings-table-picker {
+    display: flex;
+    align-items: center;
+    gap: 8px;
     width: 100%;
+}
+
+.settings-table-nav-group {
+    display: inline-flex;
+    align-items: center;
+    flex-shrink: 0;
+    gap: 6px;
+}
+
+.settings-table-nav-count {
+    flex-shrink: 0;
+    min-width: 52px;
+    padding: 0 4px;
+    font-size: 11px;
+    font-weight: 800;
+    letter-spacing: 0.5px;
+    font-variant-numeric: tabular-nums;
+    color: #666;
+    text-align: center;
+    white-space: nowrap;
+}
+
+.settings-table-nav-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    width: 38px;
+    height: 42px;
+    border: 1px solid #e0e0e0;
+    border-radius: 12px;
+    background: #fff;
+    color: #444;
+    cursor: pointer;
+    transition: background 0.15s ease, border-color 0.15s ease, color 0.15s ease;
+}
+
+.settings-table-nav-btn:hover:not(:disabled) {
+    background: #f3f3f3;
+    border-color: #cfcfcf;
+    color: #111;
+}
+
+.settings-table-nav-btn:disabled {
+    opacity: 0.35;
+    cursor: not-allowed;
 }
 
 .settings-toolbar-actions {
@@ -564,7 +604,6 @@
     color: #c9a84c;
 }
 
-.settings-lang-dropdown .dropdown-trigger-db,
 .settings-table-dropdown .dropdown-trigger-db {
     height: 44px;
     padding: 0 16px;
@@ -576,8 +615,6 @@
     transition: all 0.2s ease;
 }
 
-.settings-lang-dropdown .dropdown-trigger-db:hover,
-.settings-lang-dropdown .dropdown-db.is-open .dropdown-trigger-db,
 .settings-table-dropdown .dropdown-trigger-db:hover,
 .settings-table-dropdown .dropdown-db.is-open .dropdown-trigger-db {
     border-color: #c9a84c;
@@ -607,11 +644,6 @@
         flex-direction: column;
         align-items: flex-start;
         padding: 18px 20px;
-    }
-
-    .settings-hero-desc {
-        text-align: left;
-        max-width: none;
     }
 
     .settings-columns-toolbar {

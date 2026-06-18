@@ -8,23 +8,55 @@ const MERGE_BILINGUAL_CONFIG = {
     db_STADIUMS: { idCol: "STADIUM_ID", nameCol: "STADIUM_NAME", nameColEn: "STADIUM_NAME_EN" },
 };
 
+async function fetchCatalogRowsByNames(table, names) {
+    const cfg = MERGE_BILINGUAL_CONFIG[table];
+    if (!cfg) return [];
+
+    const rowsById = new Map();
+    for (const name of names) {
+        const trimmed = String(name || "").trim();
+        if (!trimmed) continue;
+
+        for (const col of [cfg.nameCol, cfg.nameColEn]) {
+            const { data } = await supabase
+                .from(table)
+                .select(`${cfg.idCol}, ${cfg.nameCol}, ${cfg.nameColEn}`)
+                .eq(col, trimmed);
+            (data || []).forEach((row) => rowsById.set(row[cfg.idCol], row));
+        }
+    }
+
+    return [...rowsById.values()];
+}
+
+async function deleteMergedCatalogRows(table, sources) {
+    const cfg = MERGE_BILINGUAL_CONFIG[table];
+    if (!cfg || sources.length === 0) return { error: null };
+
+    const rows = await fetchCatalogRowsByNames(table, sources);
+    const ids = rows.map((row) => row[cfg.idCol]).filter(Boolean);
+    if (!ids.length) return { error: null };
+
+    return supabase.from(table).delete().in(cfg.idCol, ids);
+}
+
 async function mergeBilingualCatalogNames(table, targetName, sourceNames) {
     const cfg = MERGE_BILINGUAL_CONFIG[table];
     if (!cfg || sourceNames.length === 0) return;
 
     const lookupNames = [targetName, ...sourceNames];
-    const { data: rows, error } = await supabase
-        .from(table)
-        .select(`${cfg.idCol}, ${cfg.nameCol}, ${cfg.nameColEn}`)
-        .in(cfg.nameCol, lookupNames);
+    const rows = await fetchCatalogRowsByNames(table, lookupNames);
+    if (!rows.length) return;
 
-    if (error || !rows?.length) return;
-
-    const targetRow = rows.find((row) => row[cfg.nameCol] === targetName);
+    const targetRow = rows.find(
+        (row) => row[cfg.nameCol] === targetName || row[cfg.nameColEn] === targetName
+    );
     if (!targetRow) return;
 
     const mergedEn = [targetRow[cfg.nameColEn], ...sourceNames.map((name) => {
-        const row = rows.find((item) => item[cfg.nameCol] === name);
+        const row = rows.find(
+            (item) => item[cfg.nameCol] === name || item[cfg.nameColEn] === name
+        );
         return row?.[cfg.nameColEn];
     })].find((value) => String(value || "").trim());
 
@@ -49,7 +81,7 @@ export const DBManagementService = {
             if (sources.length === 0) return true;
 
             let updatePromises = [];
-            let deletePromise = null;
+            let needsCatalogDelete = false;
 
             if (table === "db_PLAYERS") {
                 updatePromises = [
@@ -76,7 +108,7 @@ export const DBManagementService = {
                     supabase.from('egy_NT_PKS').update({ "EGYPT GK": targetName }).in('EGYPT GK', sources),
                     supabase.from('egy_NT_PKS').update({ "OPPONENT GK": targetName }).in('OPPONENT GK', sources)
                 ];
-                deletePromise = supabase.from('db_PLAYERS').delete().in('PLAYER_NAME', sources);
+                needsCatalogDelete = true;
             }
             else if (table === "db_MANAGERS") {
                 updatePromises = [
@@ -90,7 +122,7 @@ export const DBManagementService = {
                     supabase.from('egy_NT_MATCHDETAILS').update({ "EGYPT MANAGER": targetName }).in('EGYPT MANAGER', sources),
                     supabase.from('egy_NT_MATCHDETAILS').update({ "OPPONENT MANAGER": targetName }).in('OPPONENT MANAGER', sources)
                 ];
-                deletePromise = supabase.from('db_MANAGERS').delete().in('MANAGER_NAME', sources);
+                needsCatalogDelete = true;
             }
             else if (table === "db_STADIUMS") {
                 updatePromises = [
@@ -103,7 +135,7 @@ export const DBManagementService = {
                     // Egypt Club Match Details
                     supabase.from('egy_CLUB_MATCHDETAILS').update({ "PLACE": targetName }).in('PLACE', sources)
                 ];
-                deletePromise = supabase.from('db_STADIUMS').delete().in('STADIUM_NAME', sources);
+                needsCatalogDelete = true;
             }
             else if (table === "db_REFEREES") {
                 updatePromises = [
@@ -115,7 +147,7 @@ export const DBManagementService = {
                     // Egypt NT Match Details
                     supabase.from('egy_NT_MATCHDETAILS').update({ "REFREE": targetName }).in('REFREE', sources)
                 ];
-                deletePromise = supabase.from('db_REFEREES').delete().in('REFEREE_NAME', sources);
+                needsCatalogDelete = true;
             }
             else if (table === "db_TEAMS") {
                 updatePromises = [
@@ -146,7 +178,7 @@ export const DBManagementService = {
                     supabase.from('egy_NT_PLAYERDETAILS').update({ "TEAM": targetName }).in('TEAM', sources),
                     supabase.from('egy_NT_SQUAD').update({ "CLUB": targetName }).in('CLUB', sources)
                 ];
-                deletePromise = supabase.from('db_TEAMS').delete().in('TEAM_NAME', sources);
+                needsCatalogDelete = true;
             }
             else if (table === "db_COUNTRIES") {
                 updatePromises = [
@@ -171,9 +203,9 @@ export const DBManagementService = {
             await mergeBilingualCatalogNames(table, targetName, sources);
 
             // 3. Once all updates are successful, run the delete query to clear old catalog records
-            if (deletePromise) {
-                const deleteResult = await deletePromise;
-                if (deleteResult && deleteResult.error) {
+            if (needsCatalogDelete) {
+                const deleteResult = await deleteMergedCatalogRows(table, sources);
+                if (deleteResult?.error) {
                     console.error("Merge partial fail (Delete):", deleteResult.error.message);
                     throw new Error("Updates succeeded but failed to delete source records: " + deleteResult.error.message);
                 }

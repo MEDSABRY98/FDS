@@ -358,7 +358,6 @@ export default function DBManagement() {
                         onClose={() => setShowMergeTool(false)}
                         onMergeComplete={fetchTableData}
                         addNotification={addNotification}
-                        getName={getName}
                     />
                 )}
 

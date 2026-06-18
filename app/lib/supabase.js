@@ -17,7 +17,6 @@ import {
 import {
     getActiveTableSortRules,
     parseTableSortSetting,
-    serializeTableSortSetting,
     sortRowsByTableSortRules,
     parseColumnOrderFromSetting,
     serializeTableSettings,
@@ -1235,13 +1234,13 @@ export async function FetchAllTableSortSettings() {
     }
 }
 
-export async function SaveTableSettings(tableName, { columnOrder = [], sortRules = [] } = {}) {
+export async function SaveTableSettings(tableName, { columnOrder = [], sortRules = [], dataSortPreset = null } = {}) {
     const normalizedTableName = String(tableName || "").trim();
     if (!normalizedTableName) {
         throw new Error("TABLE_NAME is required.");
     }
 
-    const payload = serializeTableSettings({ columnOrder, sortRules });
+    const payload = serializeTableSettings({ columnOrder, sortRules, dataSortPreset });
 
     const { data: existing, error: fetchError } = await rawSupabase
         .from(SETTINGS_TABLE)

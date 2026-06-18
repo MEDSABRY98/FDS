@@ -1,14 +1,14 @@
 import React, { useState, useMemo } from 'react';
 import { Search, Plus, X, AlertTriangle, GitMerge } from 'lucide-react';
 import { DBManagementService } from "../db_management_service";
+import { getCatalogRowSearchNames } from "../../lib/catalogBilingual";
 
 export default function MergeToolModal({
     selectedTable,
     tableData,
     onClose,
     onMergeComplete,
-    addNotification,
-    getName
+    addNotification
 }) {
     const [searchQuery, setSearchQuery] = useState("");
     const [selectedNames, setSelectedNames] = useState([]);
@@ -31,9 +31,12 @@ export default function MergeToolModal({
     // Map tableData to distinct sorted names
     const allPossibleNames = useMemo(() => {
         if (!tableData) return [];
-        const names = tableData.map(row => getName(row)).filter(Boolean);
-        return [...new Set(names)].sort((a, b) => a.localeCompare(b, 'ar'));
-    }, [tableData, getName]);
+        const names = new Set();
+        tableData.forEach((row) => {
+            getCatalogRowSearchNames(row, selectedTable).forEach((name) => names.add(name));
+        });
+        return [...names].sort((a, b) => a.localeCompare(b, undefined, { sensitivity: "base" }));
+    }, [tableData, selectedTable]);
 
     // Filter names based on search query
     const searchResults = useMemo(() => {
