@@ -15,6 +15,7 @@
 }
 .luxury-squad-table {
     width: 100%;
+    table-layout: fixed;
     border-collapse: collapse;
     text-align: center;
     font-size: 14px;
@@ -38,6 +39,13 @@
 .luxury-squad-table tr:hover td {
     background: #fafafa;
 }
+.luxury-squad-table .nodata-table-row td {
+    padding: 0;
+    border-bottom: none;
+}
+.luxury-squad-table .nodata-table-row:hover td {
+    background: transparent;
+}
 .row-num {
     font-family: 'Space Mono', monospace;
     color: #888;
@@ -47,6 +55,9 @@
     font-weight: 800;
     color: #000;
     font-size: 15px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
 }
 .callups-count {
     font-family: 'Space Mono', monospace;
@@ -182,6 +193,7 @@
 }
 .modal-data-table {
     width: 100%;
+    table-layout: fixed;
     border-collapse: collapse;
     text-align: center;
 }
@@ -203,6 +215,9 @@
     font-weight: 700;
     color: #000;
     font-size: 14px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
 }
 .item-count {
     text-align: center;

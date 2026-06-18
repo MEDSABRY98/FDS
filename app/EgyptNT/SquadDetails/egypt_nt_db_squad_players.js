@@ -89,65 +89,78 @@ export default function EgyptNTSquadPlayers({ squadData }) {
                 />
             </div>
 
-            {filteredPlayers.length === 0 ? (
-                <NoData_db message="No players found matching your query." />
-            ) : (
-                <>
-                    <div className="squad-table-container">
-                        <table className="luxury-squad-table">
-                            <thead>
-                                <tr>
-                                    <th>#</th>
-                                    <th>PLAYER NAME</th>
-                                    <th>CALL-UPS COUNT</th>
-                                    <th style={{ textAlign: "center" }}>CLUBS DETAILS</th>
-                                    <th style={{ textAlign: "center" }}>CHAMPIONS DETAILS</th>
-                                    <th style={{ textAlign: "center" }}>SEASONS DETAILS</th>
+            <div className="squad-table-container">
+                <table className="luxury-squad-table">
+                    <colgroup>
+                        <col style={{ width: "5%" }} />
+                        <col style={{ width: "32%" }} />
+                        <col style={{ width: "15%" }} />
+                        <col style={{ width: "16%" }} />
+                        <col style={{ width: "16%" }} />
+                        <col style={{ width: "16%" }} />
+                    </colgroup>
+                    <thead>
+                        <tr>
+                            <th>#</th>
+                            <th>PLAYER NAME</th>
+                            <th>CALL-UPS COUNT</th>
+                            <th style={{ textAlign: "center" }}>CLUBS DETAILS</th>
+                            <th style={{ textAlign: "center" }}>CHAMPIONS DETAILS</th>
+                            <th style={{ textAlign: "center" }}>SEASONS DETAILS</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {paginatedPlayers.length === 0 ? (
+                            <NoData_db
+                                isTable
+                                colSpan={6}
+                                message="No players found matching your query."
+                                height="200px"
+                            />
+                        ) : (
+                            paginatedPlayers.map((player, idx) => (
+                                <tr key={player.name}>
+                                    <td className="row-num">{(currentPage - 1) * pageSize + idx + 1}</td>
+                                    <td className="player-name-cell">{player.name}</td>
+                                    <td className="callups-count">{player.callups} Times</td>
+                                    <td style={{ textAlign: "center" }}>
+                                        <button
+                                            className="action-btn club-btn"
+                                            onClick={() => setClubModalPlayer(player)}
+                                            title="View Clubs"
+                                            style={{ fontSize: "18px", padding: "6px 12px" }}
+                                        >
+                                            🏢
+                                        </button>
+                                    </td>
+                                    <td style={{ textAlign: "center" }}>
+                                        <button
+                                            className="action-btn champ-btn"
+                                            onClick={() => setChampModalPlayer(player)}
+                                            title="View Tournaments"
+                                            style={{ fontSize: "18px", padding: "6px 12px" }}
+                                        >
+                                            🏆
+                                        </button>
+                                    </td>
+                                    <td style={{ textAlign: "center" }}>
+                                        <button
+                                            className="action-btn seasons-btn"
+                                            onClick={() => setSeasonsModalPlayer(player)}
+                                            title="View Seasons"
+                                            style={{ fontSize: "18px", padding: "6px 12px" }}
+                                        >
+                                            🗓️
+                                        </button>
+                                    </td>
                                 </tr>
-                            </thead>
-                            <tbody>
-                                {paginatedPlayers.map((player, idx) => (
-                                    <tr key={player.name}>
-                                        <td className="row-num">{(currentPage - 1) * pageSize + idx + 1}</td>
-                                        <td className="player-name-cell">{player.name}</td>
-                                        <td className="callups-count">{player.callups} Times</td>
-                                        <td style={{ textAlign: "center" }}>
-                                            <button 
-                                                className="action-btn club-btn"
-                                                onClick={() => setClubModalPlayer(player)}
-                                                title="View Clubs"
-                                                style={{ fontSize: '18px', padding: '6px 12px' }}
-                                            >
-                                                🏢
-                                            </button>
-                                        </td>
-                                        <td style={{ textAlign: "center" }}>
-                                            <button 
-                                                className="action-btn champ-btn"
-                                                onClick={() => setChampModalPlayer(player)}
-                                                title="View Tournaments"
-                                                style={{ fontSize: '18px', padding: '6px 12px' }}
-                                            >
-                                                🏆
-                                            </button>
-                                        </td>
-                                        <td style={{ textAlign: "center" }}>
-                                            <button 
-                                                className="action-btn seasons-btn"
-                                                onClick={() => setSeasonsModalPlayer(player)}
-                                                title="View Seasons"
-                                                style={{ fontSize: '18px', padding: '6px 12px' }}
-                                            >
-                                                🗓️
-                                            </button>
-                                        </td>
-                                    </tr>
-                                ))}
-                            </tbody>
-                        </table>
-                    </div>
+                            ))
+                        )}
+                    </tbody>
+                </table>
+            </div>
 
-                    {totalPages > 1 && (
+            {totalPages > 1 && filteredPlayers.length > 0 && (
                         <div className="squad-pagination">
                             <button 
                                 className="pag-btn"
@@ -167,8 +180,6 @@ export default function EgyptNTSquadPlayers({ squadData }) {
                                 →
                             </button>
                         </div>
-                    )}
-                </>
             )}
 
             {/* Club Pop-up Modal */}

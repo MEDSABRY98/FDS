@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import "../../lib/Filters_db.css";
 import "./alahly_pks_player_details.css";
 import AlAhlyPKsPlayerDetailsDashboard from "./alahly_pks_player_details_dashboard";
 import AlAhlyPKsPlayerDetailsMatches from "./alahly_pks_player_details_matches";
@@ -80,7 +81,7 @@ export default function AlAhlyPKsPlayerDetails({ playerName, pksData, playerStat
 
             {/* Filter Modal */}
             {showFilterModal && (
-                <div className="filter-modal-backdrop" onClick={() => setShowFilterModal(false)}>
+                <div className="filter-popup-overlay" onClick={() => setShowFilterModal(false)}>
                     <div className="filter-modal" onClick={e => e.stopPropagation()}>
                         <div className="filter-modal-header">
                             <h3>FILTER BY TEAM</h3>

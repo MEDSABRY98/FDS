@@ -3,11 +3,11 @@
 import { useState, useMemo, useEffect, useRef } from "react";
 import { X } from "lucide-react";
 import { UseColumnOrder, SortColumnNames } from "../../lib/Settings_db";
-import "./alahly_finals_filters.css";
+import { NormalizeFilterDropdownOptions } from "../../lib/Filters_db";
+import "../../lib/Filters_db.css";
 
 const TABLE_NAME = "alahly_MATCHDETAILS";
 
-// Custom Searchable Dropdown Component
 function SearchableDropdown({ label, options, value, onChange }) {
     const [isOpen, setIsOpen] = useState(false);
     const [openUp, setOpenUp] = useState(false);
@@ -28,51 +28,55 @@ function SearchableDropdown({ label, options, value, onChange }) {
         if (!isOpen) {
             if (dropdownRef.current) {
                 const rect = dropdownRef.current.getBoundingClientRect();
-                const windowHeight = window.innerHeight;
-                const spaceBelow = windowHeight - rect.bottom;
+                const spaceBelow = window.innerHeight - rect.bottom;
                 setOpenUp(spaceBelow < 350);
             }
         }
         setIsOpen(!isOpen);
     };
 
+    const normalizedOptions = useMemo(
+        () => NormalizeFilterDropdownOptions(options),
+        [options]
+    );
+
     const filteredOptions = useMemo(() => {
-        if (!searchTerm) return options;
-        return options.filter(opt => 
+        if (!searchTerm) return normalizedOptions;
+        return normalizedOptions.filter(opt =>
             String(opt).toLowerCase().includes(searchTerm.toLowerCase())
         );
-    }, [options, searchTerm]);
+    }, [normalizedOptions, searchTerm]);
 
     return (
-        <div className="finals-dropdown-container" ref={dropdownRef}>
-            <label className="finals-dropdown-label">{label.replace(/_/g, ' ')}</label>
-            <div 
-                className={`finals-dropdown-trigger ${isOpen ? 'active' : ''}`} 
+        <div className="custom-dropdown-container" ref={dropdownRef}>
+            <label className="dropdown-label">{label.replace(/_/g, " ")}</label>
+            <div
+                className={`dropdown-trigger ${isOpen ? "active" : ""}`}
                 onClick={handleToggle}
             >
-                <span className="finals-current-value">{value || "All"}</span>
-                <span className="finals-arrow">▼</span>
+                <span className="current-value">{value || "All"}</span>
+                <span className="arrow">▼</span>
             </div>
 
             {isOpen && (
-                <div className={`finals-dropdown-menu ${openUp ? 'open-up' : ''}`}>
-                    <input 
-                        type="text" 
-                        className="finals-dropdown-search"
-                        placeholder="Search..." 
+                <div className={`dropdown-menu ${openUp ? "open-up" : ""}`}>
+                    <input
+                        type="text"
+                        className="dropdown-search"
+                        placeholder="Search..."
                         value={searchTerm}
                         onChange={(e) => setSearchTerm(e.target.value)}
                         autoFocus
                         onClick={(e) => e.stopPropagation()}
                     />
-                    <div className="finals-options-list">
+                    <div className="options-list">
                         {filteredOptions.length === 0 ? (
-                            <div className="finals-no-results">No results</div>
+                            <div className="no-results">No results</div>
                         ) : (
-                            filteredOptions.map(opt => (
-                                <div 
-                                    key={opt} 
-                                    className={`finals-option-item ${value === opt ? 'selected' : ''}`}
+                            filteredOptions.map((opt, index) => (
+                                <div
+                                    key={`${opt}-${index}`}
+                                    className={`option-item ${value === opt ? "selected" : ""}`}
                                     onClick={() => {
                                         onChange(opt);
                                         setIsOpen(false);
@@ -100,16 +104,16 @@ export default function AlAhlyFinalsFilter({ data, onFilter, isOpen, onClose }) 
         if (!d) return "";
         const s = String(d).trim();
         if (/^\d{4}-\d{2}-\d{2}/.test(s)) return s.substring(0, 10);
-        if (s.includes('/')) {
-            const parts = s.split('/');
+        if (s.includes("/")) {
+            const parts = s.split("/");
             if (parts.length === 3) {
                 const [day, month, year] = parts;
-                return `${year}-${month.padStart(2, '0')}-${day.padStart(2, '0')}`;
+                return `${year}-${month.padStart(2, "0")}-${day.padStart(2, "0")}`;
             }
         }
         try {
             const dt = new Date(d);
-            if (!isNaN(dt.getTime())) return dt.toISOString().split('T')[0];
+            if (!isNaN(dt.getTime())) return dt.toISOString().split("T")[0];
         } catch (e) {}
         return s;
     };
@@ -127,7 +131,7 @@ export default function AlAhlyFinalsFilter({ data, onFilter, isOpen, onClose }) 
         const options = {};
         columns.forEach(col => {
             const values = [...new Set(data.map(item => String(item[col] || "")))].filter(Boolean).sort();
-            options[col] = ["All", ...values];
+            options[col] = NormalizeFilterDropdownOptions(values);
         });
         return options;
     }, [data, columns]);
@@ -145,7 +149,6 @@ export default function AlAhlyFinalsFilter({ data, onFilter, isOpen, onClose }) 
     const handleApply = () => {
         let filtered = [...data];
 
-        // Apply Date Range Filter
         if (startDate || endDate) {
             filtered = filtered.filter(item => {
                 const itemDate = standardizeDate(item.DATE);
@@ -156,7 +159,6 @@ export default function AlAhlyFinalsFilter({ data, onFilter, isOpen, onClose }) 
             });
         }
 
-        // Apply Column Filters
         Object.keys(activeFilters).forEach(col => {
             filtered = filtered.filter(item => String(item[col] || "") === activeFilters[col]);
         });
@@ -175,45 +177,47 @@ export default function AlAhlyFinalsFilter({ data, onFilter, isOpen, onClose }) 
     if (!isOpen) return null;
 
     return (
-        <div className="finals-filter-overlay" onClick={onClose}>
-            <div className="finals-filter-container" onClick={e => e.stopPropagation()}>
-                <div className="finals-filter-header">
-                    <div className="finals-header-title">
+        <div className="filter-popup-overlay" onClick={onClose}>
+            <div className="filter-popup-container" onClick={e => e.stopPropagation()}>
+                <div className="filter-popup-header">
+                    <div className="filter-popup-title">
                         DATABASE <span className="gold-text">FILTERS</span>
                     </div>
-                    <button className="finals-close-btn" onClick={onClose}><X size={24} /></button>
+                    <button className="filter-popup-close-btn" onClick={onClose} type="button">
+                        <X size={24} />
+                    </button>
                 </div>
 
-                <div className="finals-filter-scrollable-body">
-                    <div className="finals-filter-grid">
+                <div className="filter-popup-scroll-body">
+                    <div className="filter-popup-grid">
                         {columns.length === 0 ? (
-                            <div className="no-data">NO DATA AVAILABLE TO FILTER</div>
+                            <div className="filter-popup-no-data">NO DATA AVAILABLE TO FILTER</div>
                         ) : (
                             columns.flatMap(col => {
-                                if (col.toUpperCase() === 'DATE') {
+                                if (col.toUpperCase() === "DATE") {
                                     return [
-                                        <div key="date_from" className="finals-dropdown-container">
-                                            <label className="finals-dropdown-label">DATE FROM</label>
-                                            <input 
-                                                type="date" 
-                                                value={startDate} 
-                                                onChange={(e) => setStartDate(e.target.value)} 
-                                                className="finals-individual-date-input"
+                                        <div key="date_from" className="filter-popup-date-field">
+                                            <label className="dropdown-label">DATE FROM</label>
+                                            <input
+                                                type="date"
+                                                value={startDate}
+                                                onChange={(e) => setStartDate(e.target.value)}
+                                                className="filter-popup-date-input"
                                             />
                                         </div>,
-                                        <div key="date_to" className="finals-dropdown-container">
-                                            <label className="finals-dropdown-label">DATE TO</label>
-                                            <input 
-                                                type="date" 
-                                                value={endDate} 
-                                                onChange={(e) => setEndDate(e.target.value)} 
-                                                className="finals-individual-date-input"
+                                        <div key="date_to" className="filter-popup-date-field">
+                                            <label className="dropdown-label">DATE TO</label>
+                                            <input
+                                                type="date"
+                                                value={endDate}
+                                                onChange={(e) => setEndDate(e.target.value)}
+                                                className="filter-popup-date-input"
                                             />
                                         </div>
                                     ];
                                 }
                                 return (
-                                    <SearchableDropdown 
+                                    <SearchableDropdown
                                         key={col}
                                         label={col}
                                         options={filterOptions[col] || ["All"]}
@@ -226,9 +230,13 @@ export default function AlAhlyFinalsFilter({ data, onFilter, isOpen, onClose }) 
                     </div>
                 </div>
 
-                <div className="finals-filter-footer">
-                    <button className="finals-reset-btn" onClick={handleReset}>RESET ALL</button>
-                    <button className="finals-apply-btn" onClick={handleApply}>APPLY FILTERS</button>
+                <div className="filter-popup-footer">
+                    <button className="filter-popup-reset-btn" onClick={handleReset} type="button">
+                        RESET ALL
+                    </button>
+                    <button className="filter-popup-apply-btn" onClick={handleApply} type="button">
+                        APPLY FILTERS
+                    </button>
                 </div>
             </div>
         </div>

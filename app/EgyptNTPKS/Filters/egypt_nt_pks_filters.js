@@ -3,7 +3,8 @@
 import { useState, useMemo, useEffect, useRef } from "react";
 import { X } from "lucide-react";
 import { UseColumnOrder, SortColumnNames } from "../../lib/Settings_db";
-import "./egypt_nt_pks_filters.css";
+import { NormalizeFilterDropdownOptions } from "../../lib/Filters_db";
+import "../../lib/Filters_db.css";
 
 const TABLE_NAME = "egy_NT_PKS";
 
@@ -36,12 +37,17 @@ function SearchableDropdown({ label, options, value, onChange }) {
         setIsOpen(!isOpen);
     };
 
+    const normalizedOptions = useMemo(
+        () => NormalizeFilterDropdownOptions(options),
+        [options]
+    );
+
     const filteredOptions = useMemo(() => {
-        if (!searchTerm) return options;
-        return options.filter(opt =>
+        if (!searchTerm) return normalizedOptions;
+        return normalizedOptions.filter(opt =>
             String(opt).toLowerCase().includes(searchTerm.toLowerCase())
         );
-    }, [options, searchTerm]);
+    }, [normalizedOptions, searchTerm]);
 
     return (
         <div className="custom-dropdown-container" ref={dropdownRef}>
@@ -69,9 +75,9 @@ function SearchableDropdown({ label, options, value, onChange }) {
                         {filteredOptions.length === 0 ? (
                             <div className="no-results">No results</div>
                         ) : (
-                            filteredOptions.map(opt => (
+                            filteredOptions.map((opt, index) => (
                                 <div
-                                    key={opt}
+                                    key={`${opt}-${index}`}
                                     className={`option-item ${value === opt ? 'selected' : ''}`}
                                     onClick={() => {
                                         onChange(opt);
@@ -110,7 +116,7 @@ export default function EgyptNTPKSFilters({ data, onFilter, isOpen, onClose }) {
         const options = {};
         columns.forEach(col => {
             const values = [...new Set(data.map(item => String(item[col] || "")))].filter(Boolean).sort();
-            options[col] = ["All", ...values];
+            options[col] = NormalizeFilterDropdownOptions(values);
         });
         return options;
     }, [data, columns]);
@@ -142,19 +148,21 @@ export default function EgyptNTPKSFilters({ data, onFilter, isOpen, onClose }) {
     if (!isOpen) return null;
 
     return (
-        <div className="pks-filter-overlay" onClick={onClose}>
-            <div className="pks-filter-container" onClick={e => e.stopPropagation()}>
-                <div className="filter-header">
-                    <div className="header-title">
+        <div className="filter-popup-overlay" onClick={onClose}>
+            <div className="filter-popup-container" onClick={e => e.stopPropagation()}>
+                <div className="filter-popup-header">
+                    <div className="filter-popup-title">
                         DATABASE <span className="gold-text">FILTERS</span>
                     </div>
-                    <button className="close-btn" onClick={onClose}><X size={24} /></button>
+                    <button className="filter-popup-close-btn" onClick={onClose} type="button">
+                        <X size={24} />
+                    </button>
                 </div>
 
-                <div className="filter-scrollable-body">
-                    <div className="filter-grid">
+                <div className="filter-popup-scroll-body">
+                    <div className="filter-popup-grid">
                         {columns.length === 0 ? (
-                            <div className="no-data">NO DATA AVAILABLE TO FILTER</div>
+                            <div className="filter-popup-no-data">NO DATA AVAILABLE TO FILTER</div>
                         ) : (
                             columns.map(col => (
                                 <SearchableDropdown
@@ -169,9 +177,13 @@ export default function EgyptNTPKSFilters({ data, onFilter, isOpen, onClose }) {
                     </div>
                 </div>
 
-                <div className="filter-footer">
-                    <button className="reset-btn" onClick={handleReset}>RESET ALL FILTERS</button>
-                    <button className="apply-btn" onClick={handleApply}>APPLY FILTERS & CLOSE</button>
+                <div className="filter-popup-footer">
+                    <button className="filter-popup-reset-btn" onClick={handleReset} type="button">
+                        RESET ALL FILTERS
+                    </button>
+                    <button className="filter-popup-apply-btn" onClick={handleApply} type="button">
+                        APPLY FILTERS & CLOSE
+                    </button>
                 </div>
             </div>
         </div>

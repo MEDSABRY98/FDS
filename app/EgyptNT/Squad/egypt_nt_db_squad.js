@@ -3,9 +3,10 @@
 import { useState, useEffect, useMemo } from "react";
 import { EgyptNTService } from "../Service/egypt_nt_db_service";
 import { EgyptNTExcelExport } from "../ExportExcel/egypt_nt_export_excel";
-import EgyptNTSquadPlayers from "../SquadPlayers/egypt_nt_db_squad_players";
-import EgyptNTSquadClubs from "../SquadClubs/egypt_nt_db_squad_clubs";
+import EgyptNTSquadPlayers from "../SquadDetails/egypt_nt_db_squad_players";
+import EgyptNTSquadClubs from "../SquadDetails/egypt_nt_db_squad_clubs";
 import { Filter, X } from "lucide-react";
+import "../../lib/Filters_db.css";
 import "./egypt_nt_db_squad.css";
 
 export default function EgyptNTSquad({ squadData }) {
@@ -218,7 +219,7 @@ export default function EgyptNTSquad({ squadData }) {
 
             {/* Filter Modal */}
             {isFilterOpen && (
-                <div className="filter-modal-overlay" onClick={() => setIsFilterOpen(false)}>
+                <div className="filter-popup-overlay" onClick={() => setIsFilterOpen(false)}>
                     <div className="filter-modal-card" onClick={e => e.stopPropagation()}>
                         <div className="modal-header">
                             <h3>⚡ FILTER EGYPT NT SQUAD</h3>

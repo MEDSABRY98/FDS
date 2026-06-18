@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, useCallback } from "react";
 import { GripVertical, Save, RotateCcw, Languages, Columns3, ArrowDownUp, ChevronLeft, ChevronRight } from "lucide-react";
 import DropDownList_db from "./DropDownList_db";
 import Loading_db from "./Loading_db";
@@ -301,6 +301,9 @@ function mergeColumnOrderWithSchema(savedOrder = [], schemaColumns = []) {
 export function parseColumnOrderFromSetting(raw, schemaColumns = []) {
     const payload = parseJsonSettingsPayload(raw);
     if (Array.isArray(payload?.columnOrder) && payload.columnOrder.length > 0) {
+        if (!schemaColumns?.length) {
+            return payload.columnOrder.map((column) => String(column).toUpperCase());
+        }
         return mergeColumnOrderWithSchema(payload.columnOrder, schemaColumns);
     }
     return null;
@@ -466,13 +469,27 @@ export function SortFilterFields(Fields, ColumnOrder) {
 export function UseColumnOrder(TableName) {
     const [ColumnOrder, SetColumnOrder] = useState(null);
 
-    useEffect(() => {
-        let Cancelled = false;
-        FetchColumnOrder(TableName).then((Order) => {
-            if (!Cancelled) SetColumnOrder(Order);
+    const loadOrder = useCallback(() => {
+        if (!TableName) return;
+        FetchColumnOrder(TableName).then((order) => {
+            SetColumnOrder(order);
         });
-        return () => { Cancelled = true; };
     }, [TableName]);
+
+    useEffect(() => {
+        loadOrder();
+    }, [loadOrder]);
+
+    useEffect(() => {
+        const onSettingsSaved = (event) => {
+            const savedTable = event.detail?.tableName;
+            if (!savedTable || savedTable === TableName) {
+                loadOrder();
+            }
+        };
+        window.addEventListener("fdbase-table-settings-saved", onSettingsSaved);
+        return () => window.removeEventListener("fdbase-table-settings-saved", onSettingsSaved);
+    }, [TableName, loadOrder]);
 
     return ColumnOrder;
 }

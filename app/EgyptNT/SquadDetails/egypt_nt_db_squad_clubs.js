@@ -75,34 +75,45 @@ export default function EgyptNTSquadClubs({ squadData }) {
                 />
             </div>
 
-            {filteredClubs.length === 0 ? (
-                <NoData_db message="No clubs found matching your query." />
-            ) : (
-                <>
-                    <div className="squad-table-container">
-                        <table className="luxury-squad-table">
-                            <thead>
-                                <tr>
-                                    <th>#</th>
-                                    <th>CLUB NAME</th>
-                                    <th style={{ textAlign: "center" }}>NUMBER OF PLAYERS</th>
-                                    <th style={{ textAlign: "center" }}>NUMBER OF TOURNAMENTS</th>
+            <div className="squad-table-container">
+                <table className="luxury-squad-table">
+                    <colgroup>
+                        <col style={{ width: "5%" }} />
+                        <col style={{ width: "45%" }} />
+                        <col style={{ width: "25%" }} />
+                        <col style={{ width: "25%" }} />
+                    </colgroup>
+                    <thead>
+                        <tr>
+                            <th>#</th>
+                            <th>CLUB NAME</th>
+                            <th style={{ textAlign: "center" }}>NUMBER OF PLAYERS</th>
+                            <th style={{ textAlign: "center" }}>NUMBER OF TOURNAMENTS</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {paginatedClubs.length === 0 ? (
+                            <NoData_db
+                                isTable
+                                colSpan={4}
+                                message="No clubs found matching your query."
+                                height="200px"
+                            />
+                        ) : (
+                            paginatedClubs.map((club, idx) => (
+                                <tr key={club.name}>
+                                    <td className="row-num">{(currentPage - 1) * pageSize + idx + 1}</td>
+                                    <td className="club-name-cell">{club.name}</td>
+                                    <td className="count-cell highlight-blue">{club.playerCount} Players</td>
+                                    <td className="count-cell highlight-gold">{club.championCount} Tournaments</td>
                                 </tr>
-                            </thead>
-                            <tbody>
-                                {paginatedClubs.map((club, idx) => (
-                                    <tr key={club.name}>
-                                        <td className="row-num">{(currentPage - 1) * pageSize + idx + 1}</td>
-                                        <td className="club-name-cell">{club.name}</td>
-                                        <td className="count-cell highlight-blue">{club.playerCount} Players</td>
-                                        <td className="count-cell highlight-gold">{club.championCount} Tournaments</td>
-                                    </tr>
-                                ))}
-                            </tbody>
-                        </table>
-                    </div>
+                            ))
+                        )}
+                    </tbody>
+                </table>
+            </div>
 
-                    {totalPages > 1 && (
+            {totalPages > 1 && filteredClubs.length > 0 && (
                         <div className="squad-pagination">
                             <button 
                                 className="pag-btn"
@@ -122,8 +133,6 @@ export default function EgyptNTSquadClubs({ squadData }) {
                                 →
                             </button>
                         </div>
-                    )}
-                </>
             )}
 
         </div>
