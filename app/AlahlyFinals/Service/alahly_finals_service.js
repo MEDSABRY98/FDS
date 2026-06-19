@@ -1,10 +1,10 @@
-import { supabase } from "../../lib/supabase";
+﻿import { supabase } from "../../Database";
 
 const MATCH_TABLE = "alahly_MATCHDETAILS";
 const LINEUP_TABLE = "alahly_LINEUPDETAILS";
 const PLAYER_TABLE = "alahly_PLAYERDETAILS";
 
-const FINALS_ROUND_OR = "ROUND.ilike.%نهائي%,ROUND.ilike.%final%";
+const FINALS_ROUND_OR = "ROUND.ilike.%Ù†Ù‡Ø§Ø¦ÙŠ%,ROUND.ilike.%final%";
 const MATCH_ID_CHUNK = 100;
 
 async function fetchPaginated(buildQuery) {
@@ -121,7 +121,7 @@ export const AlAhlyFinalsService = {
         try {
             const payload = {
                 ...record,
-                ROUND: record.ROUND || "النهائي",
+                ROUND: record.ROUND || "Ø§Ù„Ù†Ù‡Ø§Ø¦ÙŠ",
             };
             const { data, error } = await supabase
                 .from(MATCH_TABLE)

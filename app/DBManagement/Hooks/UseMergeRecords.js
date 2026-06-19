@@ -1,6 +1,6 @@
-import { useState } from 'react';
+﻿import { useState } from 'react';
 import { DBManagementService } from "../db_management_service";
-import { collectCatalogMergeNames, getCatalogRowMergeName } from "../../lib/catalogBilingual";
+import { collectCatalogMergeNames, getCatalogRowMergeName } from "../../Database/CatalogBilingual_db";
 
 export function useMergeRecords(selectedTable, fetchTableData, addNotification) {
     const [selectedRows, setSelectedRows] = useState([]);

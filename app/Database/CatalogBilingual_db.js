@@ -116,6 +116,28 @@ export function pickBilingualDisplayName(names, lang = "auto") {
     return ar || en;
 }
 
+const NAME_SORT_OPTIONS = { sensitivity: "base", numeric: true };
+
+export function compareCatalogRowNamesArThenEn(rowA, rowB, arCol, enCol) {
+    const arCompare = String(rowA?.[arCol] || "").localeCompare(
+        String(rowB?.[arCol] || ""),
+        "ar",
+        NAME_SORT_OPTIONS
+    );
+    if (arCompare !== 0) return arCompare;
+
+    return String(rowA?.[enCol] || "").localeCompare(
+        String(rowB?.[enCol] || ""),
+        "en",
+        NAME_SORT_OPTIONS
+    );
+}
+
+export function sortCatalogRowsArThenEn(rows = [], arCol, enCol) {
+    if (!Array.isArray(rows) || rows.length === 0 || !arCol) return rows;
+    return [...rows].sort((a, b) => compareCatalogRowNamesArThenEn(a, b, arCol, enCol));
+}
+
 export function sortCatalogNames(values = [], lang = "auto") {
     if (lang === "en") {
         return [...values].filter(Boolean).sort((a, b) => a.localeCompare(b, "en"));

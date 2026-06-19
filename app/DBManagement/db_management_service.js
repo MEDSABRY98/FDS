@@ -1,5 +1,5 @@
-import { supabase } from "../lib/supabase";
-import { getScriptType } from "../lib/catalogBilingual";
+﻿import { supabase } from "../Database";
+import { getScriptType } from "../Database/CatalogBilingual_db";
 
 const MERGE_BILINGUAL_CONFIG = {
     db_PLAYERS: { idCol: "PLAYER_ID", nameCol: "PLAYER_NAME", nameColEn: "PLAYER_NAME_EN" },
@@ -180,8 +180,6 @@ export const DBManagementService = {
                     supabase.from('alahly_LINEUPDETAILS').update({ "TEAM": targetName }).in('TEAM', sources),
                     supabase.from('alahly_MATCHDETAILS').update({ "AHLY TEAM": targetName }).in('AHLY TEAM', sources),
                     supabase.from('alahly_MATCHDETAILS').update({ "OPPONENT TEAM": targetName }).in('OPPONENT TEAM', sources),
-                    supabase.from('alahly_PKS').update({ "AHLY TEAM": targetName }).in('AHLY TEAM', sources),
-                    supabase.from('alahly_PKS').update({ "OPPONENT TEAM": targetName }).in('OPPONENT TEAM', sources),
                     supabase.from('alahly_PLAYERDETAILS').update({ "TEAM": targetName }).in('TEAM', sources),
 
                     // Egypt Club

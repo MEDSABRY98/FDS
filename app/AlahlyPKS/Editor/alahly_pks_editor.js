@@ -1,8 +1,8 @@
-"use client";
+﻿"use client";
 
 import React, { useState, useEffect, useMemo, useCallback, useRef } from "react";
 import { AlAhlyService } from "../../Alahly/Service/alahly_db_service";
-import { fetchCatalogDisplayNames, AutocompleteInput } from "../../lib/supabase";
+import { fetchCatalogDisplayNames, AutocompleteInput } from "../../Database";
 import SearchBar_db from "../../lib/SearchBar_db";
 import DropDownList_db from "../../lib/DropDownList_db";
 import { useNotification } from "../../lib/Notification_db";
@@ -36,17 +36,17 @@ function toDropdownOptions(values = []) {
         .map((value) => ({ value, label: value }));
 }
 
-function toDateInputValue(value) {
-    const raw = String(value || "").trim();
-    if (!raw) return "";
-    if (/^\d{4}-\d{2}-\d{2}$/.test(raw)) return raw;
-    const parsed = new Date(raw);
-    if (Number.isNaN(parsed.getTime())) return "";
-    return parsed.toISOString().slice(0, 10);
-}
-
 function getKickRowKey(row) {
     return row.ORIGINAL_ROW_ID || row._localId;
+}
+
+function formatMatchPickerLabel(match) {
+    if (!match) return "";
+    const date = String(match.DATE || "").slice(0, 10);
+    const opponent = match["OPPONENT TEAM"] || "";
+    const champion = match.CHAMPION || "";
+    const pen = match.PEN || "";
+    return [match.MATCH_ID, date, opponent, champion, pen].filter(Boolean).join(" · ");
 }
 
 function loadShootoutFromKicks(kicks, setCommonData, setKickRows, setFoundKicks, setEditingKick) {
@@ -54,16 +54,9 @@ function loadShootoutFromKicks(kicks, setCommonData, setKickRows, setFoundKicks,
     setFoundKicks(kicks);
     setCommonData({
         PKS_ID: first.PKS_ID,
-        MATCH_ID: first.MATCH_ID,
-        DATE: toDateInputValue(first.DATE),
+        MATCH_ID: first.MATCH_ID || "",
         "PKS SYSTEM": first["PKS SYSTEM"],
-        "CHAMPION SYSTEM": first["CHAMPION SYSTEM"],
-        CHAMPION: first.CHAMPION,
-        SEASON: first.SEASON,
-        ROUND: first.ROUND,
         "WHO START?": first["WHO START?"],
-        "OPPONENT TEAM": first["OPPONENT TEAM"],
-        "AHLY TEAM": first["AHLY TEAM"],
         "MATCH RESULT": first["MATCH RESULT"],
         "PKS W-L": first["PKS W-L"],
         "G-OPPONENT": first["G-OPPONENT"],
@@ -82,6 +75,34 @@ function loadShootoutFromKicks(kicks, setCommonData, setKickRows, setFoundKicks,
         _localId: undefined,
     })));
     setEditingKick(true);
+}
+
+function MatchSummary({ match }) {
+    if (!match) {
+        return (
+            <div className="pks-match-summary pks-match-summary--empty">
+                Select a MATCH ID to load match details from the main database.
+            </div>
+        );
+    }
+
+    const season = match["SEASON - NAME"] || match["SEASON - NUMBER"] || "—";
+
+    return (
+        <div className="pks-match-summary">
+            <div className="pks-match-summary-title">MATCH DETAILS (from main database)</div>
+            <div className="pks-match-summary-grid">
+                <span><strong>Date:</strong> {String(match.DATE || "").slice(0, 10) || "—"}</span>
+                <span><strong>Champion:</strong> {match.CHAMPION || "—"}</span>
+                <span><strong>Season:</strong> {season}</span>
+                <span><strong>Round:</strong> {match.ROUND || "—"}</span>
+                <span><strong>Ahly Team:</strong> {match["AHLY TEAM"] || "—"}</span>
+                <span><strong>Opponent:</strong> {match["OPPONENT TEAM"] || "—"}</span>
+                <span><strong>Champion System:</strong> {match["CHAMPION SYSTEM"] || "—"}</span>
+                <span><strong>PEN:</strong> {match.PEN || "—"}</span>
+            </div>
+        </div>
+    );
 }
 
 const KickRow = React.memo(function KickRow({
@@ -181,7 +202,7 @@ const KickRow = React.memo(function KickRow({
     );
 });
 
-export default function AlAhlyPKsEditor({ pksData, pksSuggestions = {}, onDataSaved }) {
+export default function AlAhlyPKsEditor({ pksData, pksSuggestions = {}, penaltyMatches = [], onDataSaved }) {
     const { addNotification } = useNotification();
     const [mode, setMode] = useState("SEARCH");
     const [searchId, setSearchId] = useState("");
@@ -189,6 +210,23 @@ export default function AlAhlyPKsEditor({ pksData, pksSuggestions = {}, onDataSa
     const [editingKick, setEditingKick] = useState(null);
     const [isSearching, setIsSearching] = useState(false);
     const [isSaving, setIsSaving] = useState(false);
+
+    const matchById = useMemo(() => {
+        const map = new Map();
+        (penaltyMatches || []).forEach((m) => {
+            const id = String(m.MATCH_ID || "").trim();
+            if (id) map.set(id, m);
+        });
+        return map;
+    }, [penaltyMatches]);
+
+    const matchPickerOptions = useMemo(
+        () => (penaltyMatches || []).map((m) => ({
+            value: m.MATCH_ID,
+            label: formatMatchPickerLabel(m),
+        })),
+        [penaltyMatches]
+    );
 
     const getNextPksId = useCallback(() => {
         if (!pksData || pksData.length === 0) return "PKS-0100";
@@ -203,15 +241,8 @@ export default function AlAhlyPKsEditor({ pksData, pksSuggestions = {}, onDataSa
     const initialCommonData = useMemo(() => ({
         PKS_ID: getNextPksId(),
         MATCH_ID: "",
-        DATE: "",
         "PKS SYSTEM": "",
-        "CHAMPION SYSTEM": "",
-        CHAMPION: "",
-        SEASON: "",
-        ROUND: "",
         "WHO START?": "",
-        "OPPONENT TEAM": "",
-        "AHLY TEAM": "الأهلي - مصر",
         "MATCH RESULT": "",
         "PKS W-L": "",
         "G-OPPONENT": 0,
@@ -220,19 +251,23 @@ export default function AlAhlyPKsEditor({ pksData, pksSuggestions = {}, onDataSa
 
     const [commonData, setCommonData] = useState({});
     const [kickRows, setKickRows] = useState(() => [createKickRow()]);
+    const [resolvedMatch, setResolvedMatch] = useState(null);
     const scrollToNewKickRef = useRef(false);
-    const [catalogNames, setCatalogNames] = useState({ players: [], teams: [] });
+    const [catalogNames, setCatalogNames] = useState({ players: [] });
+
+    const selectedMatch = useMemo(() => {
+        const id = String(commonData.MATCH_ID || "").trim();
+        if (!id) return resolvedMatch;
+        return matchById.get(id) || resolvedMatch;
+    }, [commonData.MATCH_ID, matchById, resolvedMatch]);
 
     useEffect(() => {
         let active = true;
 
         async function loadCatalogNames() {
             try {
-                const [players, teams] = await Promise.all([
-                    fetchCatalogDisplayNames("db_PLAYERS"),
-                    fetchCatalogDisplayNames("db_TEAMS"),
-                ]);
-                if (active) setCatalogNames({ players, teams });
+                const players = await fetchCatalogDisplayNames("db_PLAYERS");
+                if (active) setCatalogNames({ players });
             } catch (err) {
                 console.error("Failed to load PKS catalog names:", err);
             }
@@ -250,8 +285,32 @@ export default function AlAhlyPKsEditor({ pksData, pksSuggestions = {}, onDataSa
         if (mode === "CREATE") {
             setCommonData(initialCommonData);
             setKickRows([createKickRow()]);
+            setResolvedMatch(null);
         }
     }, [mode, initialCommonData]);
+
+    useEffect(() => {
+        const matchId = String(commonData.MATCH_ID || "").trim();
+        if (!matchId) {
+            setResolvedMatch(null);
+            return;
+        }
+        if (matchById.has(matchId)) {
+            setResolvedMatch(matchById.get(matchId));
+            return;
+        }
+
+        let active = true;
+        AlAhlyService.getMatchByMatchId(matchId)
+            .then((match) => {
+                if (active) setResolvedMatch(match);
+            })
+            .catch(() => {
+                if (active) setResolvedMatch(null);
+            });
+
+        return () => { active = false; };
+    }, [commonData.MATCH_ID, matchById]);
 
     useEffect(() => {
         if (!scrollToNewKickRef.current) return;
@@ -264,19 +323,15 @@ export default function AlAhlyPKsEditor({ pksData, pksSuggestions = {}, onDataSa
 
     const dropdownOptions = useMemo(() => ({
         pksSystem: toDropdownOptions(pksSuggestions.pksSystem),
-        champSystem: toDropdownOptions(pksSuggestions.champSystem),
-        champion: toDropdownOptions(pksSuggestions.champion),
-        season: toDropdownOptions(pksSuggestions.season),
-        round: toDropdownOptions(pksSuggestions.round),
         whoStart: toDropdownOptions(pksSuggestions.whoStart),
         ahlyStatus: toDropdownOptions(pksSuggestions.ahlyStatus),
         oppStatus: toDropdownOptions(pksSuggestions.oppStatus),
         pksWL: toDropdownOptions(pksSuggestions.pksWL),
         howMiss: toDropdownOptions(pksSuggestions.howMiss),
-    }), [pksSuggestions]);
+        matchId: matchPickerOptions,
+    }), [pksSuggestions, matchPickerOptions]);
 
     const playerOptions = catalogNames.players;
-    const teamOptions = catalogNames.teams;
 
     const handleSearch = async () => {
         if (!searchId.trim() || isSearching) return;
@@ -295,7 +350,8 @@ export default function AlAhlyPKsEditor({ pksData, pksSuggestions = {}, onDataSa
                 setEditingKick(null);
                 addNotification("No shootout found with this ID.", "error");
             } else {
-                loadShootoutFromKicks(kicks, setCommonData, setKickRows, setFoundKicks, setEditingKick);
+                const enriched = await AlAhlyService.enrichPksWithMatchDetails(kicks);
+                loadShootoutFromKicks(enriched, setCommonData, setKickRows, setFoundKicks, setEditingKick);
             }
         } catch (err) {
             addNotification(err?.message || "Error searching for shootout.", "error");
@@ -328,6 +384,12 @@ export default function AlAhlyPKsEditor({ pksData, pksSuggestions = {}, onDataSa
     const handleSaveShootout = async (e) => {
         e.preventDefault();
         if (isSaving) return;
+
+        if (!String(commonData.MATCH_ID || "").trim()) {
+            addNotification("MATCH ID is required. Link this shootout to a main match.", "error");
+            return;
+        }
+
         setIsSaving(true);
         try {
             await AlAhlyService.savePKSShootout({
@@ -350,8 +412,9 @@ export default function AlAhlyPKsEditor({ pksData, pksSuggestions = {}, onDataSa
             addNotification(`Shootout ${savedPksId} saved successfully.`, "success");
 
             if (freshKicks.length > 0) {
+                const enriched = await AlAhlyService.enrichPksWithMatchDetails(freshKicks);
                 loadShootoutFromKicks(
-                    freshKicks,
+                    enriched,
                     setCommonData,
                     setKickRows,
                     setFoundKicks,
@@ -381,45 +444,27 @@ export default function AlAhlyPKsEditor({ pksData, pksSuggestions = {}, onDataSa
                         <label>PKS ID</label>
                         <input type="text" value={commonData.PKS_ID || ""} onChange={(e) => setCommonField("PKS_ID", e.target.value)} />
                     </div>
-                    <div className="form-group">
-                        <label>MATCH ID</label>
-                        <input type="text" value={commonData.MATCH_ID || ""} onChange={(e) => setCommonField("MATCH_ID", e.target.value)} />
+                    <div className="form-group form-group--wide">
+                        <label>MATCH ID *</label>
+                        <DropDownList_db
+                            allowCustom
+                            options={dropdownOptions.matchId}
+                            value={commonData.MATCH_ID || ""}
+                            onChange={(v) => setCommonField("MATCH_ID", v)}
+                            placeholder="Select penalty match..."
+                            searchable
+                        />
                     </div>
-                    <div className="form-group">
-                        <label>DATE</label>
-                        <input type="date" value={commonData.DATE || ""} onChange={(e) => setCommonField("DATE", e.target.value)} />
+                    <div className="form-group form-group--full">
+                        <MatchSummary match={selectedMatch} />
                     </div>
                     <div className="form-group">
                         <label>PKS SYSTEM</label>
                         <DropDownList_db allowCustom options={dropdownOptions.pksSystem} value={commonData["PKS SYSTEM"] || ""} onChange={(v) => setCommonField("PKS SYSTEM", v)} placeholder="Select PKS System" searchable />
                     </div>
                     <div className="form-group">
-                        <label>CHAMPION SYSTEM</label>
-                        <DropDownList_db allowCustom options={dropdownOptions.champSystem} value={commonData["CHAMPION SYSTEM"] || ""} onChange={(v) => setCommonField("CHAMPION SYSTEM", v)} placeholder="Select Champion System" searchable />
-                    </div>
-                    <div className="form-group">
-                        <label>CHAMPION</label>
-                        <DropDownList_db allowCustom options={dropdownOptions.champion} value={commonData.CHAMPION || ""} onChange={(v) => setCommonField("CHAMPION", v)} placeholder="Select Champion" searchable />
-                    </div>
-                    <div className="form-group">
-                        <label>SEASON</label>
-                        <DropDownList_db allowCustom options={dropdownOptions.season} value={commonData.SEASON || ""} onChange={(v) => setCommonField("SEASON", v)} placeholder="Select Season" searchable />
-                    </div>
-                    <div className="form-group">
-                        <label>ROUND</label>
-                        <DropDownList_db allowCustom options={dropdownOptions.round} value={commonData.ROUND || ""} onChange={(v) => setCommonField("ROUND", v)} placeholder="Select Round" searchable />
-                    </div>
-                    <div className="form-group">
                         <label>WHO START?</label>
                         <DropDownList_db allowCustom options={dropdownOptions.whoStart} value={commonData["WHO START?"] || ""} onChange={(v) => setCommonField("WHO START?", v)} placeholder="Who starts?" />
-                    </div>
-                    <div className="form-group">
-                        <label>AHLY TEAM</label>
-                        <AutocompleteInput options={teamOptions} value={commonData["AHLY TEAM"] || ""} onChange={(v) => setCommonField("AHLY TEAM", v)} placeholder="Select Ahly Team" accentColor="#c9a84c" />
-                    </div>
-                    <div className="form-group">
-                        <label>OPPONENT TEAM</label>
-                        <AutocompleteInput options={teamOptions} value={commonData["OPPONENT TEAM"] || ""} onChange={(v) => setCommonField("OPPONENT TEAM", v)} placeholder="Select Opponent Team" accentColor="#c9a84c" />
                     </div>
                     <div className="form-group">
                         <label>MATCH RESULT</label>

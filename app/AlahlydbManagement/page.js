@@ -1,7 +1,7 @@
-"use client";
+﻿"use client";
 
 import { useState, useEffect } from "react";
-import { supabase } from "../lib/supabase";
+import { supabase } from "../Database";
 import * as XLSX from "xlsx";
 import Login_db from "../lib/Login_db";
 import Loading_db from "../lib/Loading_db";

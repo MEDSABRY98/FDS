@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { useState, useEffect, useMemo } from "react";
 import {
@@ -18,7 +18,7 @@ import {
 import Link from "next/link";
 
 import { EgyptClubService } from "./Service/egy_c_service";
-import { supabase } from "../lib/supabase";
+import { supabase } from "../Database";
 import EgyptClubDashboard from "./Dashboard/egy_c_dashboard";
 import EgyptClubMatches from "./Matches/egy_c_matches";
 import EgyptClubClubs from "./EgyptClubs/egy_c_egypt_clubs";

@@ -1,12 +1,12 @@
-import { useState } from 'react';
-import { supabase, getChangedFormFields } from "../../lib/supabase";
+﻿import { useState } from 'react';
+import { supabase, getChangedFormFields } from "../../Database";
 
 export function useEditRecord(selectedTable, columns, fetchTableData, addNotification) {
     const [editingRow, setEditingRow] = useState(null);
     const [editForm, setEditForm] = useState({});
     const [saving, setSaving] = useState(false);
 
-    // ── Add Record ───────────────────────────────────────────────────────────
+    // â”€â”€ Add Record â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
     const [isAdding, setIsAdding] = useState(false);
     const [addForm, setAddForm] = useState({});
 
@@ -37,7 +37,7 @@ export function useEditRecord(selectedTable, columns, fetchTableData, addNotific
         }
     };
 
-    // ── Edit Record ──────────────────────────────────────────────────────────
+    // â”€â”€ Edit Record â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
     const handleEditClick = (row) => {
         setEditingRow(row);
         setEditForm({ ...row });
@@ -86,7 +86,7 @@ export function useEditRecord(selectedTable, columns, fetchTableData, addNotific
         }
     };
 
-    // ── Delete Record ────────────────────────────────────────────────────────
+    // â”€â”€ Delete Record â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
     const handleDelete = async (row) => {
         if (!window.confirm("Are you sure you want to delete this record?")) return;
         try {

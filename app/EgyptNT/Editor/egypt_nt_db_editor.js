@@ -1,14 +1,14 @@
-"use client";
+﻿"use client";
 
 import { useState, useCallback, useEffect } from "react";
 import "./egypt_nt_db_editor.css";
-import { supabase, getChangedFormFields, resolveCatalogFieldsInForm, AutocompleteInput, isEditorWrapColumn, getEditorColumnMinWidth, ShrinkToFitInput, fetchCatalogDisplayNames } from "../../lib/supabase";
+import { supabase, getChangedFormFields, resolveCatalogFieldsInForm, AutocompleteInput, isEditorWrapColumn, getEditorColumnMinWidth, ShrinkToFitInput, fetchCatalogDisplayNames } from "../../Database";
 import Login_db from "../../lib/Login_db";
 import NoData_db from "../../lib/NoData_db";
 import SearchBar_db from "../../lib/SearchBar_db";
 import { useNotification } from "../../lib/Notification_db";
 
-// ── Helper ──────────────────────────────────────────────────────────────────
+// â”€â”€ Helper â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 const EMPTY_MATCH = {
     "MATCH_ID": "", "AGE": "", "CHAMPION_SYSTEM": "", "SYSTEM_KIND": "", "DATE": "", "CHAMPION": "", "SEASON": "",
     "EGYPT MANAGER": "", "OPPONENT MANAGER": "", "REFREE": "", "ROUND": "", "PLACE": "",
@@ -83,9 +83,9 @@ const buildLineupTeamResolver = (matchInfo = {}) => {
 
     const egyptIdentifiers = new Set([
         "egypt",
-        "مصر",
-        "منتخب مصر",
-        "المنتخب المصري",
+        "Ù…ØµØ±",
+        "Ù…Ù†ØªØ®Ø¨ Ù…ØµØ±",
+        "Ø§Ù„Ù…Ù†ØªØ®Ø¨ Ø§Ù„Ù…ØµØ±ÙŠ",
         normalizeTeamName(egyptTeamName),
     ].filter(Boolean));
 
@@ -172,7 +172,7 @@ const mergeSavedEditorRow = (existingRow, savedRow) => {
     return merged;
 };
 
-// ── Editable Table ───────────────────────────────────────────────────────────
+// â”€â”€ Editable Table â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 function EditableTable({ title, color, rows, setRows, columns, matchId, emptyRow, tableName, onSave, onDelete, isSaving, autoFields = {}, columnOptions = {}, onAddRow }) {
     const [addingRow, setAddingRow] = useState(false);
 
@@ -299,13 +299,13 @@ function EditableTable({ title, color, rows, setRows, columns, matchId, emptyRow
                                             <button onClick={() => onSave(row, ri, tableName, setRows)} disabled={isSaving}
                                                 className="row-action-btn"
                                                 style={{ background: '#22c55e', color: '#fff' }}>
-                                                {isSaving ? '...' : '💾'}
+                                                {isSaving ? '...' : 'ðŸ’¾'}
                                             </button>
                                         )}
                                         <button onClick={() => onDelete(row, ri, tableName, setRows)}
                                             className="row-action-btn"
                                             style={{ background: '#fee2e2', color: '#ef4444', padding: '5px 10px' }}>
-                                            ✕
+                                            âœ•
                                         </button>
                                     </div>
                                 </td>
@@ -319,7 +319,7 @@ function EditableTable({ title, color, rows, setRows, columns, matchId, emptyRow
     );
 }
 
-// ── Main Editor ──────────────────────────────────────────────────────────────
+// â”€â”€ Main Editor â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 export default function EgyptNTEditor() {
     const [searchId, setSearchId] = useState('');
     const [matchData, setMatchData] = useState(null);       // MATCHDETAILS record
@@ -466,7 +466,7 @@ export default function EgyptNTEditor() {
             let matchMin = parseInt(matchMinuteRef) || 90;
             let total = "";
 
-            if (row.STATU === 'اساسي') {
+            if (row.STATU === 'Ø§Ø³Ø§Ø³ÙŠ') {
                 const playerName = String(row["PLAYER NAME"] || "").trim();
                 const subOutRow = playerName ? next.find(r => String(r["PLAYER NAME OUT"] || "").trim() === playerName) : null;
 
@@ -476,7 +476,7 @@ export default function EgyptNTEditor() {
                 } else {
                     total = matchMin;
                 }
-            } else if (row.STATU === 'احتياطي') {
+            } else if (row.STATU === 'Ø§Ø­ØªÙŠØ§Ø·ÙŠ') {
                 if (!isNaN(outMin) && outMin > 0) {
                     total = Math.max(0, matchMin - outMin);
                 }
@@ -503,7 +503,7 @@ export default function EgyptNTEditor() {
                 ...EMPTY_LINEUP,
                 "MATCH MINUTE": "90",
                 "TEAM": getDefaultEgyptTeamLabel(newMatchData),
-                "STATU": i < 11 ? "اساسي" : "احتياطي",
+                "STATU": i < 11 ? "Ø§Ø³Ø§Ø³ÙŠ" : "Ø§Ø­ØªÙŠØ§Ø·ÙŠ",
                 "TOTAL MINUTE": i < 11 ? "90" : "",
                 MATCH_ID: newMatchData.MATCH_ID || '',
                 _isNew: true,
@@ -513,7 +513,7 @@ export default function EgyptNTEditor() {
                 ...EMPTY_LINEUP,
                 "MATCH MINUTE": "90",
                 "TEAM": newMatchData["OPPONENT TEAM"] || "OPPONENT",
-                "STATU": i < 11 ? "اساسي" : "احتياطي",
+                "STATU": i < 11 ? "Ø§Ø³Ø§Ø³ÙŠ" : "Ø§Ø­ØªÙŠØ§Ø·ÙŠ",
                 "TOTAL MINUTE": i < 11 ? "90" : "",
                 MATCH_ID: newMatchData.MATCH_ID || '',
                 _isNew: true,
@@ -608,7 +608,7 @@ export default function EgyptNTEditor() {
         setter(sortRowsByEventId([...currentRows, row]));
     }, []);
 
-    // ── Search ──────────────────────────────────────────────────────────────
+    // â”€â”€ Search â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
     const handleSearch = async () => {
         const id = searchId.trim();
         if (!id) return;
@@ -628,7 +628,7 @@ export default function EgyptNTEditor() {
                     ...EMPTY_LINEUP,
                     "MATCH MINUTE": "90",
                     "TEAM": getDefaultEgyptTeamLabel(md),
-                    "STATU": i < 11 ? "اساسي" : "احتياطي",
+                    "STATU": i < 11 ? "Ø§Ø³Ø§Ø³ÙŠ" : "Ø§Ø­ØªÙŠØ§Ø·ÙŠ",
                     "TOTAL MINUTE": i < 11 ? "90" : "",
                     MATCH_ID: id,
                     _isNew: true,
@@ -638,7 +638,7 @@ export default function EgyptNTEditor() {
                     ...EMPTY_LINEUP,
                     "MATCH MINUTE": "90",
                     "TEAM": md?.["OPPONENT TEAM"] || "OPPONENT",
-                    "STATU": i < 11 ? "اساسي" : "احتياطي",
+                    "STATU": i < 11 ? "Ø§Ø³Ø§Ø³ÙŠ" : "Ø§Ø­ØªÙŠØ§Ø·ÙŠ",
                     "TOTAL MINUTE": i < 11 ? "90" : "",
                     MATCH_ID: id,
                     _isNew: true,
@@ -659,7 +659,7 @@ export default function EgyptNTEditor() {
         setLoading(false);
     };
 
-    // ── Save a single row ────────────────────────────────────────────────────
+    // â”€â”€ Save a single row â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
     const handleSaveRow = useCallback(async (row, ri, tableName, setterFn) => {
         if (isSaving) return;
         setIsSaving(true);
@@ -714,7 +714,7 @@ export default function EgyptNTEditor() {
             const savedRow = result.data?.[0];
             if (!savedRow) throw new Error("No data returned from DB after save success.");
 
-            addToast(treatAsInsert ? 'Row inserted ✓' : 'Row updated ✓');
+            addToast(treatAsInsert ? 'Row inserted âœ“' : 'Row updated âœ“');
 
             setterFn?.(prev => {
                 const updated = prev.map((r, i) => {
@@ -731,7 +731,7 @@ export default function EgyptNTEditor() {
         }
     }, [matchData, playerRows, resolveNextPlayerEventId, isSaving, addNotification]);
 
-    // ── Delete a row ─────────────────────────────────────────────────────────
+    // â”€â”€ Delete a row â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
     const handleDeleteRow = useCallback(async (row, ri, tableName, setterFn) => {
         if (!confirm('Delete this row?')) return;
         if (!row._isNew) {
@@ -744,14 +744,14 @@ export default function EgyptNTEditor() {
                     if (delErr) throw delErr;
                 }
                 setterFn?.(prev => prev.filter((_, i) => i !== ri));
-                addToast('Row deleted ✓', 'warn');
+                addToast('Row deleted âœ“', 'warn');
             } catch (e) { addToast('Delete failed: ' + e.message, 'error'); }
         } else {
             setterFn?.(prev => prev.filter((_, i) => i !== ri));
         }
     }, [matchData]);
 
-    // ── Save Match Details (Global Save) ────────────────────────────────────
+    // â”€â”€ Save Match Details (Global Save) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
     const handleSaveMatch = async () => {
         if (isSaving) return;
         setIsSaving(true);
@@ -914,7 +914,7 @@ export default function EgyptNTEditor() {
                 saveLinkedTable('egy_NT_HOWPENMISSED', penRows, setPenRows),
             ]);
 
-            addToast('Match and all pending records saved ✓');
+            addToast('Match and all pending records saved âœ“');
         } catch (e) {
             addNotification(`Global Save Failed:\n${e.message}`, "error");
             addToast('Save Failed: ' + e.message, 'error');
@@ -923,7 +923,7 @@ export default function EgyptNTEditor() {
         }
     };
 
-    // ── Create New Match ─────────────────────────────────────────────────────
+    // â”€â”€ Create New Match â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
     const handleCreateMatch = async () => {
         if (!newMatchData.MATCH_ID) { addToast('MATCH_ID is required', 'error'); return; }
         setIsSaving(true);
@@ -964,7 +964,7 @@ export default function EgyptNTEditor() {
                 saveStagedTable('egy_NT_HOWPENMISSED', newPenRows),
             ]);
 
-            addToast('Match + all linked data created ✓');
+            addToast('Match + all linked data created âœ“');
             setSearchId(mid);
             setNewEgyLineupRows([]); setNewOppLineupRows([]); setNewPlayerRows([]); setNewGkRows([]); setNewPenRows([]);
             setMode('search');
@@ -989,7 +989,7 @@ export default function EgyptNTEditor() {
     return (
         <Login_db title="EDITOR ACCESS" subtitle="AUTHORIZATION REQUIRED">
             <div className="editor-container">
-                {/* ── Header ── */}
+                {/* â”€â”€ Header â”€â”€ */}
                 <div style={{ display: 'flex', justifyContent: 'center', marginTop: 30, marginBottom: 30 }}>
                     <div style={{ display: 'flex', width: 400, background: '#f8f8f8', borderRadius: 12, padding: 4 }}>
                         <button
@@ -1013,20 +1013,20 @@ export default function EgyptNTEditor() {
                     </div>
                 </div>
 
-                {/* ── Mode: Search = portal ── */}
+                {/* â”€â”€ Mode: Search = portal â”€â”€ */}
                 {(mode === 'search') && (
                     <div className="portal-container">
-                        <div className="portal-icon">🔎</div>
+                        <div className="portal-icon">ðŸ”Ž</div>
                         <div className="portal-title">ENTER MATCH ID</div>
                         <div className="portal-subtitle">Type the Match ID to load all linked records for editing</div>
                         <div style={{ display: 'flex', gap: 12, justifyContent: 'center', width: '100%', maxWidth: 520 }}>
                             <SearchBar_db value={searchId} onChange={setSearchId} onKeyDown={e => e.key === 'Enter' && handleSearch()} placeholder="Match ID..." style={{ flex: 1 }} />
-                            <button onClick={handleSearch} disabled={loading} className="load-btn">{loading ? 'Loading...' : 'LOAD →'}</button>
+                            <button onClick={handleSearch} disabled={loading} className="load-btn">{loading ? 'Loading...' : 'LOAD â†’'}</button>
                         </div>
                     </div>
                 )}
 
-                {/* ── Mode: New Match ── */}
+                {/* â”€â”€ Mode: New Match â”€â”€ */}
                 {mode === 'new' && (
                     <>
                         <div className="editor-card">
@@ -1071,7 +1071,7 @@ export default function EgyptNTEditor() {
                                 ))}
                             </div>
                             <div style={{ display: 'flex', justifyContent: 'center' }}>
-                                <button onClick={handleCreateMatch} disabled={isSaving} className="create-match-btn">{isSaving ? 'Creating...' : '✓ CREATE MATCH'}</button>
+                                <button onClick={handleCreateMatch} disabled={isSaving} className="create-match-btn">{isSaving ? 'Creating...' : 'âœ“ CREATE MATCH'}</button>
                             </div>
                         </div>
 
@@ -1100,7 +1100,7 @@ export default function EgyptNTEditor() {
                                     columnOptions={{
                                         "PLAYER NAME": allPlayersList,
                                         "TEAM": [newEgyTeamLabel],
-                                        "PLAYER NAME OUT": newEgyLineupRows.filter(r => String(r.STATU || '').trim() === 'اساسي' && String(r["PLAYER NAME"] || '').trim()).map(r => r["PLAYER NAME"]).sort((a, b) => a.localeCompare(b, 'ar'))
+                                        "PLAYER NAME OUT": newEgyLineupRows.filter(r => String(r.STATU || '').trim() === 'Ø§Ø³Ø§Ø³ÙŠ' && String(r["PLAYER NAME"] || '').trim()).map(r => r["PLAYER NAME"]).sort((a, b) => a.localeCompare(b, 'ar'))
                                     }}
                                 />
                             )}
@@ -1114,7 +1114,7 @@ export default function EgyptNTEditor() {
                                     columnOptions={{
                                         "PLAYER NAME": allPlayersList,
                                         "TEAM": [newMatchData["OPPONENT TEAM"]].filter(Boolean),
-                                        "PLAYER NAME OUT": newOppLineupRows.filter(r => String(r.STATU || '').trim() === 'اساسي' && String(r["PLAYER NAME"] || '').trim()).map(r => r["PLAYER NAME"]).sort((a, b) => a.localeCompare(b, 'ar'))
+                                        "PLAYER NAME OUT": newOppLineupRows.filter(r => String(r.STATU || '').trim() === 'Ø§Ø³Ø§Ø³ÙŠ' && String(r["PLAYER NAME"] || '').trim()).map(r => r["PLAYER NAME"]).sort((a, b) => a.localeCompare(b, 'ar'))
                                     }}
                                 />
                             )}
@@ -1144,7 +1144,7 @@ export default function EgyptNTEditor() {
                                     columnOptions={{
                                         "PLAYER NAME": allPlayersList,
                                         "TEAM": [newEgyTeamLabel, newMatchData["OPPONENT TEAM"]].filter(Boolean),
-                                        "STATU": ["اساسي", "احتياطي"]
+                                        "STATU": ["Ø§Ø³Ø§Ø³ÙŠ", "Ø§Ø­ØªÙŠØ§Ø·ÙŠ"]
                                     }}
                                 />
                             )}
@@ -1165,7 +1165,7 @@ export default function EgyptNTEditor() {
                     </>
                 )}
 
-                {/* ── Mode: Edit ── */}
+                {/* â”€â”€ Mode: Edit â”€â”€ */}
                 {mode === 'edit' && matchData && (
                     <>
                         <div className="editor-card">
@@ -1178,8 +1178,8 @@ export default function EgyptNTEditor() {
                                     </div>
                                 </div>
                                 <div style={{ display: 'flex', gap: 10 }}>
-                                    <button onClick={() => { setMode('search'); setMatchData(null); }} title="Back to search" className="action-btn-circle">←</button>
-                                    <button onClick={handleSaveMatch} disabled={isSaving} title="Save match" className="save-match-btn">{isSaving ? '⏳' : '💾'}</button>
+                                    <button onClick={() => { setMode('search'); setMatchData(null); }} title="Back to search" className="action-btn-circle">â†</button>
+                                    <button onClick={handleSaveMatch} disabled={isSaving} title="Save match" className="save-match-btn">{isSaving ? 'â³' : 'ðŸ’¾'}</button>
                                 </div>
                             </div>
                             <div className="grid-fields">
@@ -1225,7 +1225,7 @@ export default function EgyptNTEditor() {
                                     columnOptions={{
                                         "PLAYER NAME": allPlayersList,
                                         "TEAM": [editEgyTeamLabel],
-                                        "PLAYER NAME OUT": egyLineupRows.filter(r => String(r.STATU || '').trim() === 'اساسي' && String(r["PLAYER NAME"] || '').trim()).map(r => r["PLAYER NAME"]).sort((a, b) => a.localeCompare(b, 'ar'))
+                                        "PLAYER NAME OUT": egyLineupRows.filter(r => String(r.STATU || '').trim() === 'Ø§Ø³Ø§Ø³ÙŠ' && String(r["PLAYER NAME"] || '').trim()).map(r => r["PLAYER NAME"]).sort((a, b) => a.localeCompare(b, 'ar'))
                                     }}
                                 />
                             )}
@@ -1239,7 +1239,7 @@ export default function EgyptNTEditor() {
                                     columnOptions={{
                                         "PLAYER NAME": allPlayersList,
                                         "TEAM": [matchData["OPPONENT TEAM"]].filter(Boolean),
-                                        "PLAYER NAME OUT": oppLineupRows.filter(r => String(r.STATU || '').trim() === 'اساسي' && String(r["PLAYER NAME"] || '').trim()).map(r => r["PLAYER NAME"]).sort((a, b) => a.localeCompare(b, 'ar'))
+                                        "PLAYER NAME OUT": oppLineupRows.filter(r => String(r.STATU || '').trim() === 'Ø§Ø³Ø§Ø³ÙŠ' && String(r["PLAYER NAME"] || '').trim()).map(r => r["PLAYER NAME"]).sort((a, b) => a.localeCompare(b, 'ar'))
                                     }}
                                 />
                             )}
@@ -1269,7 +1269,7 @@ export default function EgyptNTEditor() {
                                     columnOptions={{
                                         "PLAYER NAME": allPlayersList,
                                         "TEAM": [editEgyTeamLabel, matchData["OPPONENT TEAM"]].filter(Boolean),
-                                        "STATU": ["اساسي", "احتياطي"]
+                                        "STATU": ["Ø§Ø³Ø§Ø³ÙŠ", "Ø§Ø­ØªÙŠØ§Ø·ÙŠ"]
                                     }}
                                 />
                             )}

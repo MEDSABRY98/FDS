@@ -1,4 +1,4 @@
-import { supabase } from "../../lib/supabase";
+﻿import { supabase } from "../../Database";
 
 function normalizePksLinkText(value) {
     return String(value ?? "").trim().toLowerCase().replace(/\s+/g, " ");
@@ -14,18 +14,87 @@ function normalizePenScoreFromPksRow(row = {}) {
 function normalizePenScoreFromMatchPen(penValue) {
     const raw = String(penValue ?? "").trim();
     if (!raw) return "";
-    const match = raw.match(/(\d+)\s*[-:–]\s*(\d+)/);
+    const match = raw.match(/(\d+)\s*[-:â€“]\s*(\d+)/);
     if (!match) return "";
     return `${parseInt(match[1], 10)}-${parseInt(match[2], 10)}`;
+}
+
+const PKS_SHOOTOUT_FIELDS = [
+    "PKS_ID",
+    "MATCH_ID",
+    "PKS SYSTEM",
+    "WHO START?",
+    "MATCH RESULT",
+    "PKS W-L",
+    "G-AHLY",
+    "G-OPPONENT",
+];
+
+const MATCH_DETAILS_SELECT_FOR_PKS =
+    'MATCH_ID, DATE, "CHAMPION SYSTEM", CHAMPION, "SEASON - NAME", "SEASON - NUMBER", ROUND, "AHLY TEAM", "OPPONENT TEAM", "AHLY MANAGER", "OPPONENT MANAGER", PEN';
+
+function pickPksShootoutFields(data = {}) {
+    const picked = {};
+    PKS_SHOOTOUT_FIELDS.forEach((key) => {
+        if (data[key] !== undefined) picked[key] = data[key];
+    });
+    return picked;
+}
+
+function mapMatchDetailsToPksFields(match) {
+    if (!match) return {};
+    const seasonName = String(match["SEASON - NAME"] || "").trim();
+    const seasonNumber = String(match["SEASON - NUMBER"] || "").trim();
+    return {
+        DATE: match.DATE || "",
+        "CHAMPION SYSTEM": match["CHAMPION SYSTEM"] || "",
+        CHAMPION: match.CHAMPION || "",
+        SEASON: seasonName || seasonNumber || "",
+        "SEASON - NAME": seasonName,
+        ROUND: match.ROUND || "",
+        "AHLY TEAM": match["AHLY TEAM"] || "",
+        "OPPONENT TEAM": match["OPPONENT TEAM"] || "",
+        "AHLY MANAGER": match["AHLY MANAGER"] || "---",
+        "OPPONENT MANAGER": match["OPPONENT MANAGER"] || "---",
+    };
 }
 
 function getPksShootoutGroupKey(pk = {}) {
     const pksId = String(pk.PKS_ID || "").trim();
     if (pksId) return pksId;
+    return `orphan:${String(pk.ROW_ID || "").trim()}`;
+}
 
-    const opponent = normalizePksLinkText(pk["OPPONENT TEAM"]);
-    const pen = normalizePenScoreFromPksRow(pk);
-    return `orphan:${opponent}|${pen}`;
+export function auditPksMatchLinks(pks = []) {
+    const groups = new Map();
+
+    pks.forEach((row) => {
+        const pksId = String(row.PKS_ID || "").trim();
+        if (!pksId) return;
+        if (!groups.has(pksId)) groups.set(pksId, []);
+        groups.get(pksId).push(row);
+    });
+
+    const unlinkedPksIds = [];
+    let linked = 0;
+
+    groups.forEach((rows, pksId) => {
+        const matchIds = [
+            ...new Set(rows.map((r) => String(r.MATCH_ID || "").trim()).filter(Boolean)),
+        ];
+        if (matchIds.length === 1) {
+            linked += 1;
+        } else {
+            unlinkedPksIds.push(pksId);
+        }
+    });
+
+    return {
+        totalShootouts: groups.size,
+        linked,
+        unlinked: unlinkedPksIds.length,
+        unlinkedPksIds: unlinkedPksIds.sort(),
+    };
 }
 
 function buildPksMatchLookup(matches = []) {
@@ -433,14 +502,13 @@ export const AlAhlyService = {
     },
 
     /**
-     * Fill missing MATCH_ID / DATE on alahly_PKS rows by linking to alahly_MATCHDETAILS
+     * Fill missing MATCH_ID on alahly_PKS rows by linking to alahly_MATCHDETAILS
      * via OPPONENT TEAM + penalty score (G-AHLY/G-OPPONENT vs PEN).
+     * Uses legacy PKS columns when present; safe to remove after all rows are linked.
      */
     async enrichPksFromMatchDetails(pks, options = { persist: true }) {
         const rows = pks || [];
-        const needsLink = rows.some(
-            (row) => !String(row.MATCH_ID || "").trim() || !String(row.DATE || "").trim()
-        );
+        const needsLink = rows.some((row) => !String(row.MATCH_ID || "").trim());
 
         if (!needsLink) return rows;
 
@@ -467,28 +535,18 @@ export const AlAhlyService = {
             if (!match) return pk;
 
             const missingMatchId = !String(pk.MATCH_ID || "").trim();
-            const missingDate = !String(pk.DATE || "").trim();
-            if (!missingMatchId && !missingDate) return pk;
+            if (!missingMatchId) return pk;
 
             const patched = { ...pk };
-            if (missingMatchId && match.MATCH_ID) {
+            if (match.MATCH_ID) {
                 patched.MATCH_ID = match.MATCH_ID;
             }
-            if (missingDate && match.DATE) {
-                patched.DATE = match.DATE;
-            }
 
-            if (options.persist && pk.ROW_ID) {
-                const updatePayload = {};
-                if (missingMatchId && match.MATCH_ID) {
-                    updatePayload.MATCH_ID = match.MATCH_ID;
-                }
-                if (missingDate && match.DATE) {
-                    updatePayload.DATE = match.DATE;
-                }
-                if (Object.keys(updatePayload).length > 0) {
-                    updates.push({ rowId: pk.ROW_ID, updatePayload });
-                }
+            if (options.persist && pk.ROW_ID && match.MATCH_ID) {
+                updates.push({
+                    rowId: pk.ROW_ID,
+                    updatePayload: { MATCH_ID: match.MATCH_ID },
+                });
             }
 
             return patched;
@@ -506,14 +564,16 @@ export const AlAhlyService = {
     },
 
     /**
-     * Enrich PKS kick rows with manager names from MATCHDETAILS (targeted fetch).
+     * Enrich PKS rows with match metadata from alahly_MATCHDETAILS via MATCH_ID.
+     * Fields are virtual (in-memory only) — not persisted to alahly_PKS.
      */
-    async enrichPksWithManagers(pks) {
-        const matchIds = [...new Set(
-            (pks || []).map(pk => String(pk.MATCH_ID || "").trim()).filter(Boolean)
-        )];
+    async enrichPksWithMatchDetails(pks) {
+        const rows = pks || [];
+        const matchIds = [
+            ...new Set(rows.map((pk) => String(pk.MATCH_ID || "").trim()).filter(Boolean)),
+        ];
 
-        if (!matchIds.length) return pks || [];
+        if (!matchIds.length) return rows;
 
         const matchMap = new Map();
         const chunkSize = 100;
@@ -521,9 +581,9 @@ export const AlAhlyService = {
         for (let i = 0; i < matchIds.length; i += chunkSize) {
             const chunk = matchIds.slice(i, i + chunkSize);
             const { data, error } = await supabase
-                .from('alahly_MATCHDETAILS')
-                .select('MATCH_ID, "AHLY MANAGER", "OPPONENT MANAGER"')
-                .in('MATCH_ID', chunk);
+                .from("alahly_MATCHDETAILS")
+                .select(MATCH_DETAILS_SELECT_FOR_PKS)
+                .in("MATCH_ID", chunk);
 
             if (error) throw error;
 
@@ -533,16 +593,69 @@ export const AlAhlyService = {
             });
         }
 
-        return (pks || []).map((pk) => {
+        return rows.map((pk) => {
             const pkMatchId = String(pk.MATCH_ID || "").trim().toUpperCase();
             const matchInfo = matchMap.get(pkMatchId);
+            const fromMatch = mapMatchDetailsToPksFields(matchInfo);
 
             return {
                 ...pk,
-                "AHLY MANAGER": matchInfo?.["AHLY MANAGER"] || pk["AHLY MANAGER"] || "---",
-                "OPPONENT MANAGER": matchInfo?.["OPPONENT MANAGER"] || pk["OPPONENT MANAGER"] || "---",
+                ...fromMatch,
+                "AHLY MANAGER": fromMatch["AHLY MANAGER"] || pk["AHLY MANAGER"] || "---",
+                "OPPONENT MANAGER": fromMatch["OPPONENT MANAGER"] || pk["OPPONENT MANAGER"] || "---",
             };
         });
+    },
+
+    /** @deprecated Use enrichPksWithMatchDetails */
+    async enrichPksWithManagers(pks) {
+        return this.enrichPksWithMatchDetails(pks);
+    },
+
+    /**
+     * Penalty matches for PKS editor MATCH_ID picker.
+     */
+    async getPenaltyMatchesForPicker() {
+        let allData = [];
+        let from = 0;
+        const step = 1000;
+        let finished = false;
+
+        while (!finished) {
+            const { data, error } = await supabase
+                .from("alahly_MATCHDETAILS")
+                .select(MATCH_DETAILS_SELECT_FOR_PKS)
+                .not("PEN", "is", null)
+                .neq("PEN", "")
+                .order("DATE", { ascending: false })
+                .range(from, from + step - 1);
+
+            if (error) throw error;
+
+            if (data && data.length > 0) {
+                allData = [...allData, ...data];
+                from += step;
+                if (data.length < step) finished = true;
+            } else {
+                finished = true;
+            }
+        }
+
+        return allData.filter((match) => normalizePenScoreFromMatchPen(match.PEN));
+    },
+
+    async getMatchByMatchId(matchId) {
+        const id = String(matchId || "").trim();
+        if (!id) return null;
+
+        const { data, error } = await supabase
+            .from("alahly_MATCHDETAILS")
+            .select(MATCH_DETAILS_SELECT_FOR_PKS)
+            .eq("MATCH_ID", id)
+            .maybeSingle();
+
+        if (error) throw error;
+        return data;
     },
 
     /**
@@ -575,9 +688,11 @@ export const AlAhlyService = {
         const insertRecords = [];
         let nextNewIdIndex = 0;
 
+        const shootoutData = pickPksShootoutFields(commonData);
+
         for (const row of kickRows) {
             const { ORIGINAL_ROW_ID, _localId, ...kickFields } = row;
-            const payload = { ...commonData, ...kickFields };
+            const payload = { ...shootoutData, ...kickFields };
 
             if (ORIGINAL_ROW_ID) {
                 updatePromises.push(this.updatePKSRecord(ORIGINAL_ROW_ID, payload));
@@ -783,7 +898,7 @@ export const AlAhlyService = {
             const isAhlyTeam = (t) => {
                 if (!t) return false;
                 const s = String(t).trim();
-                return s === "الأهلي" || s === "ال الأهلي" || s === "Al Ahly" || s === "Al-Ahly" || s === "الأهلى";
+                return s === "Ø§Ù„Ø£Ù‡Ù„ÙŠ" || s === "Ø§Ù„ Ø§Ù„Ø£Ù‡Ù„ÙŠ" || s === "Al Ahly" || s === "Al-Ahly" || s === "Ø§Ù„Ø£Ù‡Ù„Ù‰";
             };
 
             let winImpact = 0;
@@ -810,7 +925,7 @@ export const AlAhlyService = {
                 // Goals for THE SAME SIDE as the player in this match
                 const sideGoals = matchEvents.filter(e =>
                     isAhlyTeam(e.TEAM) === isAhlySideInThisMatch &&
-                    (["GOAL", "هدف"].includes(String(e.TYPE || "").toUpperCase()) || String(e.TYPE_SUB || "").toUpperCase() === "PENGOAL")
+                    (["GOAL", "Ù‡Ø¯Ù"].includes(String(e.TYPE || "").toUpperCase()) || String(e.TYPE_SUB || "").toUpperCase() === "PENGOAL")
                 ).sort((a, b) => (parseInt(a.MINUTE) || 0) - (parseInt(b.MINUTE) || 0) || parseInt(a.EVENT_ID || 0) - parseInt(b.EVENT_ID || 0));
 
                 if (sideGoals.length === 0) return;
@@ -854,7 +969,7 @@ export const AlAhlyService = {
             const isAhlyTeam = (t) => {
                 if (!t) return false;
                 const s = String(t).trim();
-                return s === "الأهلي" || s === "ال الأهلي" || s === "Al Ahly" || s === "Al-Ahly" || s === "الأهلى";
+                return s === "Ø§Ù„Ø£Ù‡Ù„ÙŠ" || s === "Ø§Ù„ Ø§Ù„Ø£Ù‡Ù„ÙŠ" || s === "Al Ahly" || s === "Al-Ahly" || s === "Ø§Ù„Ø£Ù‡Ù„Ù‰";
             };
 
             let winImpact = 0;
@@ -881,7 +996,7 @@ export const AlAhlyService = {
                     if (playerSideG - opponentSideG === 1) {
                         const sideGoals = matchEvents.filter(e =>
                             isAhlyTeam(e.TEAM) === isAhlySideInThisMatch &&
-                            (["GOAL", "هدف"].includes(String(e.TYPE || "").toUpperCase()) || String(e.TYPE_SUB || "").toUpperCase() === "PENGOAL")
+                            (["GOAL", "Ù‡Ø¯Ù"].includes(String(e.TYPE || "").toUpperCase()) || String(e.TYPE_SUB || "").toUpperCase() === "PENGOAL")
                         ).sort((a, b) => (parseInt(a.MINUTE) || 0) - (parseInt(b.MINUTE) || 0) || parseInt(a.EVENT_ID || 0) - parseInt(b.EVENT_ID || 0));
 
                         if (sideGoals.length === 0) return;
@@ -889,7 +1004,7 @@ export const AlAhlyService = {
                         const gId = String(lg.EVENT_ID);
 
                         const assistRow = matchEvents.find(e =>
-                            ["ASSIST", "اسيست", "صنع"].includes(String(e.TYPE || "").toUpperCase()) &&
+                            ["ASSIST", "Ø§Ø³ÙŠØ³Øª", "ØµÙ†Ø¹"].includes(String(e.TYPE || "").toUpperCase()) &&
                             (String(e.PARENT_EVENT_ID) === gId || (parseInt(e.MINUTE) === parseInt(lg.MINUTE) && parseInt(e.MINUTE) > 0)) &&
                             String(e["PLAYER NAME"] || "").trim() === searchName &&
                             String(e["PLAYER NAME"] || "").trim() !== String(lg["PLAYER NAME"] || "").trim()
@@ -903,7 +1018,7 @@ export const AlAhlyService = {
                 } else if (isDraw && playerSideG > 0) {
                     const sideGoals = matchEvents.filter(e =>
                         isAhlySideInThisMatch === isAhlyTeam(e.TEAM) &&
-                        (["GOAL", "هدف"].includes(String(e.TYPE || "").toUpperCase()) || String(e.TYPE_SUB || "").toUpperCase() === "PENGOAL")
+                        (["GOAL", "Ù‡Ø¯Ù"].includes(String(e.TYPE || "").toUpperCase()) || String(e.TYPE_SUB || "").toUpperCase() === "PENGOAL")
                     ).sort((a, b) => (parseInt(a.MINUTE) || 0) - (parseInt(b.MINUTE) || 0) || parseInt(a.EVENT_ID || 0) - parseInt(b.EVENT_ID || 0));
 
                     if (sideGoals.length === 0) return;
@@ -911,7 +1026,7 @@ export const AlAhlyService = {
                     const gId = String(lg.EVENT_ID);
 
                     const assistRow = matchEvents.find(e =>
-                        ["ASSIST", "اسيست", "صنع"].includes(String(e.TYPE || "").toUpperCase()) &&
+                        ["ASSIST", "Ø§Ø³ÙŠØ³Øª", "ØµÙ†Ø¹"].includes(String(e.TYPE || "").toUpperCase()) &&
                         (String(e.PARENT_EVENT_ID) === gId || (parseInt(e.MINUTE) === parseInt(lg.MINUTE) && parseInt(e.MINUTE) > 0)) &&
                         String(e["PLAYER NAME"] || "").trim() === searchName &&
                         String(e["PLAYER NAME"] || "").trim() !== String(lg["PLAYER NAME"] || "").trim()

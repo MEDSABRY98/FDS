@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { useState, useEffect, useMemo, useRef } from "react";
 import { 
@@ -21,7 +21,7 @@ import {
 import Link from "next/link";
 
 import { EgyptNTService } from "./Service/egypt_nt_db_service";
-import { supabase } from "../lib/supabase";
+import { supabase } from "../Database";
 import EgyptNTDashboard from "./Dashboard/egypt_nt_db_dashboard";
 import EgyptNTMatches from "./Matches/egypt_nt_db_matches";
 import EgyptNTSeasons from "./Seasons/egypt_nt_db_seasons";

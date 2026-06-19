@@ -1,7 +1,7 @@
-import React, { useState, useMemo } from 'react';
+﻿import React, { useState, useMemo } from 'react';
 import { Search, Plus, X, AlertTriangle, GitMerge } from 'lucide-react';
 import { DBManagementService } from "../db_management_service";
-import { getCatalogRowSearchNames } from "../../lib/catalogBilingual";
+import { getCatalogRowSearchNames } from "../../Database/CatalogBilingual_db";
 
 export default function MergeToolModal({
     selectedTable,
@@ -229,7 +229,7 @@ export default function MergeToolModal({
                     ) : (
                         /* Confirmation view */
                         <div className="merge-warning-box" style={{ padding: '20px 30px', background: '#fff1f0', borderRadius: '12px', border: '2px dashed #cf1322', textAlign: 'center' }}>
-                            <div style={{ fontSize: '32px', marginBottom: '15px' }}>⚠️</div>
+                            <div style={{ fontSize: '32px', marginBottom: '15px' }}>âš ï¸</div>
                             <h4 style={{ color: '#cf1322', margin: '0 0 10px 0', fontSize: '18px', fontWeight: '900' }}>PERMANENT CASCADE DATA CHANGE</h4>
                             <p style={{ fontSize: '14px', lineHeight: '1.6', color: '#444' }}>
                                 Are you absolutely sure about this merge? <br />

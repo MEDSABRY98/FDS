@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { useState, useEffect } from "react";
 import * as XLSX from "xlsx";
@@ -21,7 +21,7 @@ import MergeToolModal from "./Modals/MergeToolModal";
 import DeleteConfirmModal from "./Modals/DeleteConfirmModal";
 import DuplicatesPanel from "./Components/DuplicatesPanel";
 import Settings_db from "../lib/Settings_db";
-import { SETTINGS_TAB_ID } from "../lib/supabase";
+import { SETTINGS_TAB_ID } from "../Database";
 import { useDuplicateSuggestions } from "./Hooks/UseDuplicateSuggestions";
 
 import { Plus, GitMerge, X } from "lucide-react";
@@ -288,7 +288,7 @@ export default function DBManagement() {
                                             <span className="duplicates-summary">
                                                 {computing
                                                     ? 'SCANNING FOR DUPLICATES...'
-                                                    : `${duplicatePairs.length} SUGGESTED PAIRS${totalSuggestions > duplicatePairs.length ? ` · ${hiddenCount} HIDDEN` : ''}`}
+                                                    : `${duplicatePairs.length} SUGGESTED PAIRS${totalSuggestions > duplicatePairs.length ? ` Â· ${hiddenCount} HIDDEN` : ''}`}
                                             </span>
                                             <button
                                                 type="button"

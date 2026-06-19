@@ -32,6 +32,7 @@ export default function AlAhlyPKsDatabase() {
     const [activeTab, setActiveTab] = useState("alahly_pks_dashboard");
     const [pksData, setPksData] = useState([]);
     const [filteredData, setFilteredData] = useState([]);
+    const [penaltyMatches, setPenaltyMatches] = useState([]);
     const [loading, setLoading] = useState(true);
     const [selectedPksId, setSelectedPksId] = useState(null);
     const [isFilterOpen, setIsFilterOpen] = useState(false);
@@ -50,6 +51,9 @@ export default function AlAhlyPKsDatabase() {
 
     useEffect(() => {
         fetchPKData();
+        AlAhlyService.getPenaltyMatchesForPicker()
+            .then(setPenaltyMatches)
+            .catch((err) => console.error("Failed to load penalty matches:", err));
     }, []);
 
     useEffect(() => {
@@ -68,7 +72,7 @@ export default function AlAhlyPKsDatabase() {
 
         const pks = await AlAhlyService.getAllPKs();
         const linkedPks = await AlAhlyService.enrichPksFromMatchDetails(pks);
-        const enrichedData = await AlAhlyService.enrichPksWithManagers(linkedPks);
+        const enrichedData = await AlAhlyService.enrichPksWithMatchDetails(linkedPks);
 
         setPksData(enrichedData);
         setFilteredData(enrichedData);
@@ -78,29 +82,37 @@ export default function AlAhlyPKsDatabase() {
     const handleEditorDataSaved = useCallback(async () => {
         const pks = await AlAhlyService.getAllPKs();
         const linkedPks = await AlAhlyService.enrichPksFromMatchDetails(pks);
-        const enrichedData = await AlAhlyService.enrichPksWithManagers(linkedPks);
+        const enrichedData = await AlAhlyService.enrichPksWithMatchDetails(linkedPks);
         setPksData(enrichedData);
         setFilteredData(enrichedData);
     }, []);
 
     const pksSuggestions = useMemo(() => {
-        const getUnique = (key) => [...new Set((pksData || []).map((item) => item[key]).filter(Boolean))].sort();
+        const getUniqueFromPks = (key) => [...new Set((pksData || []).map((item) => item[key]).filter(Boolean))].sort();
+        const getUniqueFromMatches = (key) => [...new Set((penaltyMatches || []).map((item) => item[key]).filter(Boolean))].sort();
+        const seasons = [...new Set(
+            (penaltyMatches || []).flatMap((m) => [
+                m["SEASON - NAME"],
+                m["SEASON - NUMBER"],
+            ].filter(Boolean))
+        )].sort();
+
         return {
-            pksSystem: getUnique("PKS SYSTEM"),
-            champSystem: getUnique("CHAMPION SYSTEM"),
-            champion: getUnique("CHAMPION"),
-            season: getUnique("SEASON"),
-            round: getUnique("ROUND"),
-            whoStart: getUnique("WHO START?"),
-            oppStatus: getUnique("OPPONENT STATUS"),
-            ahlyStatus: getUnique("AHLY STATUS"),
-            pksWL: getUnique("PKS W-L"),
+            pksSystem: getUniqueFromPks("PKS SYSTEM"),
+            champSystem: getUniqueFromMatches("CHAMPION SYSTEM"),
+            champion: getUniqueFromMatches("CHAMPION"),
+            season: seasons,
+            round: getUniqueFromMatches("ROUND"),
+            whoStart: getUniqueFromPks("WHO START?"),
+            oppStatus: getUniqueFromPks("OPPONENT STATUS"),
+            ahlyStatus: getUniqueFromPks("AHLY STATUS"),
+            pksWL: getUniqueFromPks("PKS W-L"),
             howMiss: [...new Set([
                 ...(pksData || []).map((item) => item["HOWMISS AHLY"]),
                 ...(pksData || []).map((item) => item["HOWMISS OPPONENT"]),
             ].filter(Boolean))].sort(),
         };
-    }, [pksData]);
+    }, [pksData, penaltyMatches]);
 
     const renderAppContent = () => {
         switch (activeTab) {
@@ -139,6 +151,7 @@ export default function AlAhlyPKsDatabase() {
                         <AlAhlyPKsEditor
                             pksData={pksData}
                             pksSuggestions={pksSuggestions}
+                            penaltyMatches={penaltyMatches}
                             onDataSaved={handleEditorDataSaved}
                         />
                     </Login_db>

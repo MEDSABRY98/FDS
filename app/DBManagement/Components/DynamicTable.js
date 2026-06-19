@@ -1,7 +1,7 @@
-import React from 'react';
+﻿import React from 'react';
 import { Edit3, Trash2 } from 'lucide-react';
 import NoData_db from '../../lib/NoData_db';
-import { formatCatalogColumnLabel } from '../../lib/supabase';
+import { formatCatalogColumnLabel } from "../../Database";
 
 const NAME_EN_COLUMNS = new Set([
     'PLAYER_NAME_EN',

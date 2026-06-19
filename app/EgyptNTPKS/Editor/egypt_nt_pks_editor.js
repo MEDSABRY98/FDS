@@ -1,8 +1,8 @@
-"use client";
+﻿"use client";
 
 import React, { useState, useEffect, useMemo, useCallback, useRef } from "react";
 import { EgyptNTPKSService } from "../Service/egypt_nt_pks_service";
-import { fetchCatalogDisplayNames, AutocompleteInput } from "../../lib/supabase";
+import { fetchCatalogDisplayNames, AutocompleteInput } from "../../Database";
 import SearchBar_db from "../../lib/SearchBar_db";
 import DropDownList_db from "../../lib/DropDownList_db";
 import { useNotification } from "../../lib/Notification_db";
@@ -199,7 +199,7 @@ export default function EgyptNTPKSEditor({ pksData, pksSuggestions = {}, onDataS
 
     const defaultEgyptTeam = useMemo(() => {
         const fromData = (pksData || []).find((item) => item["Egypt TEAM"])?.["Egypt TEAM"];
-        return fromData || "مصر";
+        return fromData || "Ù…ØµØ±";
     }, [pksData]);
 
     const initialCommonData = useMemo(() => ({
@@ -533,7 +533,7 @@ export default function EgyptNTPKSEditor({ pksData, pksSuggestions = {}, onDataS
                 <div className="search-section">
                     {!editingKick && (
                         <div className="portal-container">
-                            <div className="portal-icon">🔎</div>
+                            <div className="portal-icon">ðŸ”Ž</div>
                             <div className="portal-title">ENTER MATCH ID</div>
                             <div className="portal-subtitle">
                                 Type MATCH ID or PK-N (display ID) to load all linked records for editing
@@ -552,7 +552,7 @@ export default function EgyptNTPKSEditor({ pksData, pksSuggestions = {}, onDataS
                                             <span className="btn-spinner btn-spinner--light" />
                                             Loading...
                                         </span>
-                                    ) : "LOAD →"}
+                                    ) : "LOAD â†’"}
                                 </button>
                             </div>
                         </div>

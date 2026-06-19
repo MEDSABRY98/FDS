@@ -1,13 +1,13 @@
-"use client";
+﻿"use client";
 
 import { useMemo, useState, useEffect, useCallback } from "react";
 import "./egypt_nt_db_match_details.css";
 import NoData_db from "../../lib/NoData_db";
-import { reorderMatchEvents, AutocompleteInput } from "../../lib/supabase";
+import { reorderMatchEvents, AutocompleteInput } from "../../Database";
 
 const parseTimelineMinute = (value) => {
     const raw = String(value ?? "").trim();
-    if (!raw || raw === "?" || raw === "؟" || raw === "-") return null;
+    if (!raw || raw === "?" || raw === "ØŸ" || raw === "-") return null;
     const num = parseInt(raw.replace(/[^0-9]/g, ""), 10);
     return Number.isFinite(num) ? num : null;
 };
@@ -76,15 +76,15 @@ export default function EgyptNTMatchDetails({
     const matchInfo = useMemo(() => (matches || []).find(m => String(m.MATCH_ID) === String(matchId)), [matchId, matches]);
 
     const { egyptTeamName, opponentTeamName, isEgyptSide } = useMemo(() => {
-        const egyptTeamName = String(matchInfo?.["Egypt TEAM"] || matchInfo?.["EGYPT TEAM"] || "منتخب مصر").trim();
+        const egyptTeamName = String(matchInfo?.["Egypt TEAM"] || matchInfo?.["EGYPT TEAM"] || "Ù…Ù†ØªØ®Ø¨ Ù…ØµØ±").trim();
         const opponentTeamName = String(matchInfo?.["OPPONENT TEAM"] || "").trim();
         const norm = (value) => String(value || "").trim().toLowerCase();
 
         const egyptIdentifiers = new Set([
             "egypt",
-            "مصر",
-            "منتخب مصر",
-            "المنتخب المصري",
+            "Ù…ØµØ±",
+            "Ù…Ù†ØªØ®Ø¨ Ù…ØµØ±",
+            "Ø§Ù„Ù…Ù†ØªØ®Ø¨ Ø§Ù„Ù…ØµØ±ÙŠ",
             norm(egyptTeamName)
         ].filter(Boolean));
 
@@ -131,12 +131,12 @@ export default function EgyptNTMatchDetails({
 
         return {
             egypt: {
-                starters: egyptLineup.filter(p => p.STATU === 'اساسي'),
-                subs: egyptLineup.filter(p => p.STATU !== 'اساسي')
+                starters: egyptLineup.filter(p => p.STATU === 'Ø§Ø³Ø§Ø³ÙŠ'),
+                subs: egyptLineup.filter(p => p.STATU !== 'Ø§Ø³Ø§Ø³ÙŠ')
             },
             opp: {
-                starters: oppLineup.filter(p => p.STATU === 'اساسي'),
-                subs: oppLineup.filter(p => p.STATU !== 'اساسي')
+                starters: oppLineup.filter(p => p.STATU === 'Ø§Ø³Ø§Ø³ÙŠ'),
+                subs: oppLineup.filter(p => p.STATU !== 'Ø§Ø³Ø§Ø³ÙŠ')
             }
         };
     }, [matchId, lineupDetails, isEgyptSide]);
@@ -269,8 +269,8 @@ export default function EgyptNTMatchDetails({
     const gks = useMemo(() => {
         const matchGks = (gkDetails || []).filter(g => String(g.MATCH_ID) === String(matchId));
         const sortGks = (list) => [...list].sort((a, b) => {
-            const aStarter = String(a.STATU || "").trim() === "اساسي" ? 0 : 1;
-            const bStarter = String(b.STATU || "").trim() === "اساسي" ? 0 : 1;
+            const aStarter = String(a.STATU || "").trim() === "Ø§Ø³Ø§Ø³ÙŠ" ? 0 : 1;
+            const bStarter = String(b.STATU || "").trim() === "Ø§Ø³Ø§Ø³ÙŠ" ? 0 : 1;
             return aStarter - bStarter;
         });
 
@@ -292,18 +292,18 @@ export default function EgyptNTMatchDetails({
 
     const getEventIcon = (type) => {
         const t = String(type || "").trim().toLowerCase();
-        if (t.includes('اسيست') || t.includes('assist') || t.includes('صنع') || t.includes('penassist') || t.includes('penmake')) return '🅰️';
-        if (t.includes('هدف') || t.includes('goal')) return '⚽';
+        if (t.includes('Ø§Ø³ÙŠØ³Øª') || t.includes('assist') || t.includes('ØµÙ†Ø¹') || t.includes('penassist') || t.includes('penmake')) return 'ðŸ…°ï¸';
+        if (t.includes('Ù‡Ø¯Ù') || t.includes('goal')) return 'âš½';
 
         switch (t) {
-            case 'انذار':
-            case 'yellow': return '🟨';
-            case 'طرد':
-            case 'red': return '🟥';
-            case 'تغيير':
-            case 'sub': return '🔄';
-            case 'pen miss': return '❌';
-            default: return '⚽';
+            case 'Ø§Ù†Ø°Ø§Ø±':
+            case 'yellow': return 'ðŸŸ¨';
+            case 'Ø·Ø±Ø¯':
+            case 'red': return 'ðŸŸ¥';
+            case 'ØªØºÙŠÙŠØ±':
+            case 'sub': return 'ðŸ”„';
+            case 'pen miss': return 'âŒ';
+            default: return 'âš½';
         }
     };
 
@@ -313,7 +313,7 @@ export default function EgyptNTMatchDetails({
 
         if (type === "PENASSISTGOAL") return { kind: "assist", label: "Penalty Assist" };
         if (type === "PENMAKEGOAL") return { kind: "assist", label: "Penalty Won" };
-        if (type === "ASSIST" || type === "اسيست" || type === "صنع" || type.includes("ASSIST")) {
+        if (type === "ASSIST" || type === "Ø§Ø³ÙŠØ³Øª" || type === "ØµÙ†Ø¹" || type.includes("ASSIST")) {
             return { kind: "assist", label: "Assist" };
         }
 
@@ -321,14 +321,14 @@ export default function EgyptNTMatchDetails({
             return { kind: "miss", label: "Penalty Missed" };
         }
 
-        if (type === "GOAL" || type === "هدف" || sub === "PENGOAL" || sub === "هدف جزاء") {
-            const isPen = sub === "PENGOAL" || sub === "هدف جزاء";
+        if (type === "GOAL" || type === "Ù‡Ø¯Ù" || sub === "PENGOAL" || sub === "Ù‡Ø¯Ù Ø¬Ø²Ø§Ø¡") {
+            const isPen = sub === "PENGOAL" || sub === "Ù‡Ø¯Ù Ø¬Ø²Ø§Ø¡";
             return { kind: "goal", label: isPen ? "Penalty Goal" : "Goal" };
         }
 
-        if (type === "انذار" || type === "YELLOW") return { kind: "card", label: "Yellow Card" };
-        if (type === "طرد" || type === "RED") return { kind: "card", label: "Red Card" };
-        if (type === "تغيير" || type === "SUB") return { kind: "sub", label: "Substitution" };
+        if (type === "Ø§Ù†Ø°Ø§Ø±" || type === "YELLOW") return { kind: "card", label: "Yellow Card" };
+        if (type === "Ø·Ø±Ø¯" || type === "RED") return { kind: "card", label: "Red Card" };
+        if (type === "ØªØºÙŠÙŠØ±" || type === "SUB") return { kind: "sub", label: "Substitution" };
 
         return {
             kind: "other",
@@ -342,7 +342,7 @@ export default function EgyptNTMatchDetails({
             {/* Premium Header/Navigation */}
             <div className="match-nav">
                 <button className="btn-back" onClick={onBack}>
-                    <span className="icon">←</span>
+                    <span className="icon">â†</span>
                     <span className="text">All Matches</span>
                 </button>
                 <div className="match-id-badge">{matchId}</div>
@@ -354,7 +354,7 @@ export default function EgyptNTMatchDetails({
                 <div className="scoreboard-content">
                     <div className="team-display egypt">
                         <div className="team-logo-container">
-                            <div className="logo-placeholder egypt-logo">🇪🇬</div>
+                            <div className="logo-placeholder egypt-logo">ðŸ‡ªðŸ‡¬</div>
                         </div>
                         <div className="team-meta">
                             <h1 className="team-name">{egyptTeamName}</h1>
@@ -378,7 +378,7 @@ export default function EgyptNTMatchDetails({
                             <span className="manager-tag">COACH: {matchInfo["OPPONENT MANAGER"]}</span>
                         </div>
                         <div className="team-logo-container">
-                            <div className="logo-placeholder opp-logo">🛡️</div>
+                            <div className="logo-placeholder opp-logo">ðŸ›¡ï¸</div>
                         </div>
                     </div>
                 </div>
@@ -445,7 +445,7 @@ export default function EgyptNTMatchDetails({
 
                 {activeTab === 'lineup' && (
                     <>
-                        {/* ── Main Players Grid ── */}
+                        {/* â”€â”€ Main Players Grid â”€â”€ */}
                         <div className="lineup-view grid-layout">
                             {/* Egypt Column */}
                             <div className="team-column egypt-theme">
@@ -469,7 +469,7 @@ export default function EgyptNTMatchDetails({
                                                 <div key={i} className="player-card">
                                                     <span className="player-num">{i + 1}</span>
                                                     <span className="player-name">
-                                                        {p["PLAYER NAME"]} {wasSubbed && <span className="out-arrow-indicator">▼</span>}
+                                                        {p["PLAYER NAME"]} {wasSubbed && <span className="out-arrow-indicator">â–¼</span>}
                                                         {p.CLUB && <span style={{ fontSize: '11px', color: '#999', marginLeft: '6px' }}>({p.CLUB})</span>}
                                                     </span>
                                                     <div className="player-badges">
@@ -498,15 +498,15 @@ export default function EgyptNTMatchDetails({
                                                             </span>
                                                             {subInfo && (
                                                                 <div className="sub-details-row">
-                                                                    <span className="sub-in-label">🔄 {subInfo.minute}'</span>
+                                                                    <span className="sub-in-label">ðŸ”„ {subInfo.minute}'</span>
                                                                     {subInfo.playerOut && (
-                                                                        <span className="sub-out-label">↙ {subInfo.playerOut}</span>
+                                                                        <span className="sub-out-label">â†™ {subInfo.playerOut}</span>
                                                                     )}
                                                                 </div>
                                                             )}
                                                         </div>
                                                         <div className="player-badges">
-                                                            {events.egypt.filter(e => e["PLAYER NAME"] === p["PLAYER NAME"] && String(e.TYPE).trim() !== 'تغيير').map((e, idx) => (
+                                                            {events.egypt.filter(e => e["PLAYER NAME"] === p["PLAYER NAME"] && String(e.TYPE).trim() !== 'ØªØºÙŠÙŠØ±').map((e, idx) => (
                                                                 <span key={idx} title={e.TYPE} className="event-mini-icon">
                                                                     {getEventIcon(e.TYPE)}
                                                                 </span>
@@ -548,7 +548,7 @@ export default function EgyptNTMatchDetails({
                                                         ))}
                                                     </div>
                                                     <span className="player-name tr">
-                                                        {wasSubbed && <span className="out-arrow-indicator">▼</span>} {p["PLAYER NAME"]}
+                                                        {wasSubbed && <span className="out-arrow-indicator">â–¼</span>} {p["PLAYER NAME"]}
                                                         {p.CLUB && <span style={{ fontSize: '11px', color: '#999', marginRight: '6px' }}>({p.CLUB})</span>}
                                                     </span>
                                                     <span className="player-num">{i + 1}</span>
@@ -571,15 +571,15 @@ export default function EgyptNTMatchDetails({
                                                             </span>
                                                             {subInfo && (
                                                                 <div className="sub-details-row rev">
-                                                                    <span className="sub-in-label">🔄 {subInfo.minute}'</span>
+                                                                    <span className="sub-in-label">ðŸ”„ {subInfo.minute}'</span>
                                                                     {subInfo.playerOut && (
-                                                                        <span className="sub-out-label">↙ {subInfo.playerOut}</span>
+                                                                        <span className="sub-out-label">â†™ {subInfo.playerOut}</span>
                                                                     )}
                                                                 </div>
                                                             )}
                                                         </div>
                                                         <div className="player-badges">
-                                                            {events.opp.filter(e => e["PLAYER NAME"] === p["PLAYER NAME"] && String(e.TYPE).trim() !== 'تغيير').map((e, idx) => (
+                                                            {events.opp.filter(e => e["PLAYER NAME"] === p["PLAYER NAME"] && String(e.TYPE).trim() !== 'ØªØºÙŠÙŠØ±').map((e, idx) => (
                                                                 <span key={idx} title={e.TYPE} className="event-mini-icon">
                                                                     {getEventIcon(e.TYPE)}
                                                                 </span>
@@ -594,14 +594,14 @@ export default function EgyptNTMatchDetails({
                             </div>
                         </div>
 
-                        {/* ── Goalkeeper Row ── */}
+                        {/* â”€â”€ Goalkeeper Row â”€â”€ */}
                         <div className="gk-sync-row grid-layout">
                             <div className="team-column egypt-theme">
                                 <div className="gk-section">
                                     <h3 className="list-title">GOALKEEPER</h3>
                                     {gks.egypt.length === 0 ? (
                                         <div className="gk-card highlighting placeholder-card op-mask">
-                                            <span className="gk-icon">🧤</span>
+                                            <span className="gk-icon">ðŸ§¤</span>
                                             <div className="gk-info">
                                                 <span className="gk-name">Main Keeper</span>
                                                 <span className="gk-stat">N/A</span>
@@ -610,7 +610,7 @@ export default function EgyptNTMatchDetails({
                                     ) : (
                                         gks.egypt.map((g, i) => (
                                             <div key={i} className="gk-card highlighting">
-                                                <span className="gk-icon">🧤</span>
+                                                <span className="gk-icon">ðŸ§¤</span>
                                                 <div className="gk-info">
                                                     <span className="gk-name">
                                                         {g["PLAYER NAME"]}
@@ -632,7 +632,7 @@ export default function EgyptNTMatchDetails({
                                                 <span className="gk-name">Main Keeper</span>
                                                 <span className="gk-stat">N/A</span>
                                             </div>
-                                            <span className="gk-icon">🧤</span>
+                                            <span className="gk-icon">ðŸ§¤</span>
                                         </div>
                                     ) : (
                                         gks.opp.map((g, i) => (
@@ -644,7 +644,7 @@ export default function EgyptNTMatchDetails({
                                                     </span>
                                                     <span className="gk-stat">{g["GOALS CONCEDED"]} GA</span>
                                                 </div>
-                                                <span className="gk-icon">🧤</span>
+                                                <span className="gk-icon">ðŸ§¤</span>
                                             </div>
                                         ))
                                     )}
@@ -714,7 +714,7 @@ export default function EgyptNTMatchDetails({
                                                                     value={event.MINUTE ?? ""}
                                                                     onChange={(e) => updateEventMinute(index, e.target.value)}
                                                                     disabled={savingOrder}
-                                                                    placeholder="—"
+                                                                    placeholder="â€”"
                                                                     aria-label={`Minute for event ${index + 1}`}
                                                                 />
                                                                 <span className="event-reorder-minute-suffix">'</span>
@@ -735,7 +735,7 @@ export default function EgyptNTMatchDetails({
                                                     </div>
                                                     <div className="event-reorder-main">
                                                         <div className="event-reorder-player-row">
-                                                            <span className="event-reorder-player">{event["PLAYER NAME"] || "—"}</span>
+                                                            <span className="event-reorder-player">{event["PLAYER NAME"] || "â€”"}</span>
                                                             {event.CLUB && (
                                                                 <>
                                                                     <span className="event-reorder-dot" aria-hidden="true" />
@@ -761,7 +761,7 @@ export default function EgyptNTMatchDetails({
                                                             disabled={index === 0 || savingOrder}
                                                             title="Move up"
                                                         >
-                                                            ↑
+                                                            â†‘
                                                         </button>
                                                         <button
                                                             type="button"
@@ -770,7 +770,7 @@ export default function EgyptNTMatchDetails({
                                                             disabled={index === reorderRows.length - 1 || savingOrder}
                                                             title="Move down"
                                                         >
-                                                            ↓
+                                                            â†“
                                                         </button>
                                                     </div>
                                                 </div>
@@ -894,7 +894,7 @@ export default function EgyptNTMatchDetails({
                                                                     <span className="sub-min-val">{s.minute}'</span>
                                                                 </div>
                                                                 <div className="sub-player-out-info">
-                                                                    <span className="red-diag-arrow">↙</span>
+                                                                    <span className="red-diag-arrow">â†™</span>
                                                                     <span className="out-name-text">{s["PLAYER NAME OUT"] || s["NAME OUT"] || "???"}</span>
                                                                 </div>
                                                             </div>

@@ -1,6 +1,17 @@
 import React, { useState, useEffect } from 'react';
 import { Calendar, Layers, Clock, TrendingUp } from 'lucide-react';
-import { supabase } from '../../lib/supabase';
+import { supabase } from "../../Database";
+import NoData_db from '../../lib/NoData_db';
+
+function isEntityStatsEmpty(stats) {
+    if (!stats) return true;
+
+    const total = Number(stats.total_occurrences || 0);
+    const hasTables = Array.isArray(stats.tables) && stats.tables.length > 0;
+    const hasTimeline = Boolean(stats.first_appearance || stats.last_appearance);
+
+    return total === 0 && !hasTables && !hasTimeline;
+}
 
 export default function EntityStatsModal({
     isOpen,
@@ -26,7 +37,10 @@ export default function EntityStatsModal({
                 });
 
                 if (error) throw error;
-                if (data?.error) throw new Error(data.error);
+                if (data?.error) {
+                    setStats(null);
+                    return;
+                }
                 setStats(data);
             } catch (err) {
                 const message = err?.message || err?.details || err?.hint || "Unknown error";
@@ -52,6 +66,8 @@ export default function EntityStatsModal({
     };
 
     const displayName = stats?.entity_name || entityLabel || entityId;
+    const hasTimeline = Boolean(stats?.first_appearance || stats?.last_appearance);
+    const hasTableAppearances = Array.isArray(stats?.tables) && stats.tables.length > 0;
 
     return (
         <div className="edit-modal-wrap" onClick={onClose} style={{ background: 'rgba(0, 0, 0, 0.4)', backdropFilter: 'none' }}>
@@ -73,6 +89,11 @@ export default function EntityStatsModal({
                         <div style={{ padding: '20px', textAlign: 'center', color: '#cf1322', background: '#fff1f0', borderRadius: '8px', border: '1px solid #ffa39e' }}>
                             <p style={{ margin: 0, fontWeight: '700' }}>Failed to retrieve data: {error}</p>
                         </div>
+                    ) : isEntityStatsEmpty(stats) ? (
+                        <NoData_db
+                            message="No database activity found for this entity."
+                            height="220px"
+                        />
                     ) : stats ? (
                         <div className="stats-modal-content">
                             {/* Highlights Row */}
@@ -98,13 +119,12 @@ export default function EntityStatsModal({
                                 </div>
                             </div>
 
-                            {/* Timeline / Active Period */}
-                            <div style={{ background: '#fbfbfb', border: '1px solid #eee', borderRadius: '12px', padding: '20px', marginBottom: '25px' }}>
-                                <h4 style={{ margin: '0 0 15px 0', fontSize: '11px', fontWeight: '800', letterSpacing: '1px', color: '#444', textTransform: 'uppercase', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                                    <Calendar size={16} style={{ color: '#c9a84c' }} />
-                                    Historical Timeframe / Active Period
-                                </h4>
-                                {stats.first_appearance ? (
+                            {hasTimeline && (
+                                <div style={{ background: '#fbfbfb', border: '1px solid #eee', borderRadius: '12px', padding: '20px', marginBottom: '25px' }}>
+                                    <h4 style={{ margin: '0 0 15px 0', fontSize: '11px', fontWeight: '800', letterSpacing: '1px', color: '#444', textTransform: 'uppercase', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                        <Calendar size={16} style={{ color: '#c9a84c' }} />
+                                        Historical Timeframe / Active Period
+                                    </h4>
                                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', position: 'relative', padding: '10px 0' }}>
                                         <div style={{ flex: 1 }}>
                                             <div style={{ fontSize: '10px', color: '#888', fontWeight: '700', textTransform: 'uppercase' }}>First Appearance</div>
@@ -119,20 +139,15 @@ export default function EntityStatsModal({
                                             <div style={{ fontSize: '15px', fontWeight: '900', color: '#000', marginTop: '4px' }}>{stats.last_appearance}</div>
                                         </div>
                                     </div>
-                                ) : (
-                                    <p style={{ margin: 0, fontSize: '13px', color: '#888', fontStyle: 'italic' }}>
-                                        No match date data available for this entity.
-                                    </p>
-                                )}
-                            </div>
+                                </div>
+                            )}
 
-                            {/* Table Mention List */}
-                            <div>
-                                <h4 style={{ margin: '0 0 15px 0', fontSize: '11px', fontWeight: '800', letterSpacing: '1px', color: '#444', textTransform: 'uppercase', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                                    <Layers size={16} style={{ color: '#c9a84c' }} />
-                                    Database Table Appearances
-                                </h4>
-                                {stats.tables && stats.tables.length > 0 ? (
+                            {hasTableAppearances && (
+                                <div>
+                                    <h4 style={{ margin: '0 0 15px 0', fontSize: '11px', fontWeight: '800', letterSpacing: '1px', color: '#444', textTransform: 'uppercase', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                        <Layers size={16} style={{ color: '#c9a84c' }} />
+                                        Database Table Appearances
+                                    </h4>
                                     <div style={{ overflow: 'hidden', border: '1px solid #eee', borderRadius: '8px' }}>
                                         <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '13px' }}>
                                             <thead>
@@ -159,14 +174,15 @@ export default function EntityStatsModal({
                                             </tbody>
                                         </table>
                                     </div>
-                                ) : (
-                                    <p style={{ margin: 0, fontSize: '13px', color: '#888', fontStyle: 'italic' }}>
-                                        Not mentioned in any transaction tables.
-                                    </p>
-                                )}
-                            </div>
+                                </div>
+                            )}
                         </div>
-                    ) : null}
+                    ) : (
+                        <NoData_db
+                            message="No database activity found for this entity."
+                            height="220px"
+                        />
+                    )}
                 </div>
 
                 <div className="modal-actions">

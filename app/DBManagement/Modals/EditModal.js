@@ -1,5 +1,5 @@
-import React from 'react';
-import { formatCatalogColumnLabel } from '../../lib/supabase';
+﻿import React from 'react';
+import { formatCatalogColumnLabel } from "../../Database";
 
 const NAME_EN_COLUMNS = new Set([
     'PLAYER_NAME_EN',

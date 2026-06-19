@@ -1,4 +1,4 @@
-import { supabase } from "../../lib/supabase";
+﻿import { supabase } from "../../Database";
 
 /**
  * Service to handle Egypt National Team PKS (Penalty Shootouts) Database operations.

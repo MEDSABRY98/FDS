@@ -1,8 +1,8 @@
-"use client";
+﻿"use client";
 
 import { useState, useEffect } from "react";
 import { createPortal } from "react-dom";
-import { supabase, fetchCatalogDisplayNames } from "../../lib/supabase";
+import { supabase, fetchCatalogDisplayNames } from "../../Database";
 import { useNotification } from "../../lib/Notification_db";
 import { Save, Plus, Trash2 } from "lucide-react";
 import "./egypt_nt_db_squad_editor.css";

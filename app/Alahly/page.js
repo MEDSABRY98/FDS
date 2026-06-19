@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { useState, useEffect, useMemo, useRef } from "react";
 import {
@@ -21,7 +21,7 @@ import {
 import Link from "next/link";
 
 import { AlAhlyService } from "./Service/alahly_db_service";
-import { supabase } from "../lib/supabase";
+import { supabase } from "../Database";
 import AlAhlyDashboard from "./Dashboard/alahly_db_dashboard";
 import AlAhlyMatches from "./Matches/alahly_db_matches";
 import AlAhlySeasons from "./SeasonsName/alahly_db_seasons_name";

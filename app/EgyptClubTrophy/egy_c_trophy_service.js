@@ -1,4 +1,4 @@
-import { supabase } from "../lib/supabase";
+﻿import { supabase } from "../Database";
 
 /**
  * Service to handle all Egypt Clubs Trophies database operations.

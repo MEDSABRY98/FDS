@@ -1,5 +1,5 @@
-import { useState } from "react";
-import { supabase, getChangedFormFields } from "../../lib/supabase";
+﻿import { useState } from "react";
+import { supabase, getChangedFormFields } from "../../Database";
 
 export function useEditRecord(selectedTable, columns, fetchTableData, addNotification) {
     const [editingRow, setEditingRow] = useState(null);

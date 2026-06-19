@@ -1,6 +1,6 @@
-import { useState, useCallback } from "react";
-import { supabase, sortManagementTableData } from "../../lib/supabase";
-import { FetchTableSortSetting } from "../../lib/supabase";
+﻿import { useState, useCallback } from "react";
+import { supabase, sortManagementTableData } from "../../Database";
+import { FetchTableSortSetting } from "../../Database";
 import { resolveTableColumnOrder } from "../../lib/Settings_db";
 
 export function useTableData(selectedTable, addNotification) {
