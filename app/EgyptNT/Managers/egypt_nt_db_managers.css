@@ -108,3 +108,16 @@
     line-height: 1.35;
     vertical-align: middle;
 }
+
+.mgr-details-tabs {
+    display: flex !important;
+    flex-wrap: nowrap;
+    gap: 12px;
+    width: 100%;
+    grid-template-columns: none !important;
+}
+
+.mgr-details-tabs .player-tab-item {
+    flex: 1 1 0;
+    min-width: 0;
+}

@@ -4,6 +4,36 @@ import { useMemo, useState, useEffect } from "react";
 import NoData_db from "../../lib/NoData_db";
 import { EgyptNTService } from "../Service/egypt_nt_db_service";
 import { EgyptNTExcelExport } from "../ExportExcel/egypt_nt_export_excel";
+import "../../Alahly/PlayerDetails/alahly_db_player_details.css";
+import "../Referees/egypt_nt_db_referees.css";
+
+function parseSeasonParts(season) {
+    const raw = String(season || "").trim();
+    if (!raw) return { text: "", number: 0, raw };
+
+    const numberMatch = raw.match(/\d+/);
+    const number = numberMatch ? parseInt(numberMatch[0], 10) : 0;
+    const text = raw
+        .replace(/\d+/g, " ")
+        .replace(/[/\-–—|]+/g, " ")
+        .replace(/\s+/g, " ")
+        .trim()
+        .toLowerCase();
+
+    return { text, number, raw };
+}
+
+function compareSeasonLabels(a, b) {
+    const partA = parseSeasonParts(a);
+    const partB = parseSeasonParts(b);
+
+    const textCmp = partA.text.localeCompare(partB.text, undefined, { sensitivity: "base" });
+    if (textCmp !== 0) return textCmp;
+
+    if (partB.number !== partA.number) return partB.number - partA.number;
+
+    return partB.raw.localeCompare(partA.raw, undefined, { numeric: true });
+}
 
 function Referee_Overview_Module({ stats }) {
     return (
@@ -55,14 +85,13 @@ function Referee_Overview_Module({ stats }) {
 function Referee_Matches_Module({ stats }) {
     return (
         <div style={{ overflowX: 'auto' }} className="fade-in">
-            <table className="player-match-table">
+            <table className="player-match-table ref-matches-table">
                 <thead>
                     <tr>
                         <th>#</th>
                         <th>MATCH ID</th>
                         <th>DATE</th>
-                        <th>CHAMPIONSHIP</th>
-                        <th>SEASON</th>
+                        <th className="ref-season-col">SEASON</th>
                         <th>OPPONENT TEAM</th>
                         <th>RESULT</th>
                         <th>GF</th>
@@ -77,8 +106,7 @@ function Referee_Matches_Module({ stats }) {
                             <td>{idx + 1}</td>
                             <td>{m.idx}</td>
                             <td>{m.date}</td>
-                            <td style={{ color: 'var(--gold)' }}>{m.champion}</td>
-                            <td>{m.season}</td>
+                            <td className="ref-season-col">{m.season}</td>
                             <td style={{ fontWeight: '800' }}>{m.opponent}</td>
                             <td>
                                 <span className={`m-role-pill ${m.wdl === 'W' ? 'role-starter' : m.wdl === 'L' ? 'role-sub' : ''}`} style={{ fontSize: '11px', fontWeight: '800' }}>
@@ -135,20 +163,9 @@ function Referee_Championships_Module({ stats }) {
     );
 }
 
-function Referee_Seasons_Module({ stats, isNumberMode }) {
-    const dataObj = isNumberMode ? stats.statsBySY : stats.statsByChampSeason;
-    const list = [];
-    if (isNumberMode) {
-        Object.keys(dataObj).forEach(sy => list.push({ key: sy, ...dataObj[sy] }));
-        list.sort((a, b) => b.key.localeCompare(a.key));
-    } else {
-        Object.keys(dataObj).forEach(comp => {
-            Object.keys(dataObj[comp]).forEach(season => {
-                list.push({ key: `${comp} - ${season}`, ...dataObj[comp][season] });
-            });
-        });
-        list.sort((a, b) => b.matches - a.matches);
-    }
+function Referee_Seasons_Module({ stats }) {
+    const list = Object.keys(stats.seasonalStats).map(season => ({ key: season, ...stats.seasonalStats[season] }));
+    list.sort((a, b) => compareSeasonLabels(a.key, b.key));
     return (
         <table className="player-match-table fade-in">
             <thead>
@@ -235,7 +252,7 @@ export default function EgyptNTRefereeDetails({ refereeName, masterMatches, play
             gs: 0, ga: 0, csFor: 0, csAgainst: 0,
             penFor: 0, penAgainst: 0,
             matchHistory: [], seasonalStats: {}, compStats: {},
-            statsByChampSeason: {}, statsBySY: {}, statsByOpponent: {}
+            statsByOpponent: {}
         };
 
         if (!refereeName || !masterMatches) return { stats: summary };
@@ -254,8 +271,7 @@ export default function EgyptNTRefereeDetails({ refereeName, masterMatches, play
             const ga = parseInt(m["GA"]) || 0;
             const wdl = String(m["W-D-L"] || "").toUpperCase();
             const champion = String(m.CHAMPION || "Unknown").trim();
-            const season = String(m["SEASON - NAME"] || "Unknown").trim();
-            const sy = String(m["SEASON - NUMBER"] || "Unknown").trim();
+            const season = String(m.SEASON || "Unknown").trim();
             const opp = String(m["OPPONENT TEAM"] || "—").trim();
             const matchId = String(m.MATCH_ID);
 
@@ -290,42 +306,36 @@ export default function EgyptNTRefereeDetails({ refereeName, masterMatches, play
             summary.matchHistory.push({
                 idx: m.MATCH_ID,
                 date: m.DATE,
-                champion,
                 season,
-                sy,
                 opponent: opp,
                 gf, ga, wdl: result,
                 penFor: penForEgypt,
                 penAgainst: penAgainstEgypt
             });
 
-            [sy, champion, opp].forEach((key, i) => {
-                const target = [summary.seasonalStats, summary.compStats, summary.statsByOpponent][i];
-                if (!target[key]) target[key] = { matches: 0, wins: 0, draws: 0, losses: 0, gs: 0, ga: 0, csFor: 0, csAgainst: 0, penFor: 0, penAgainst: 0 };
-                const s = target[key];
-                s.matches += 1; s.gs += gf; s.ga += ga;
-                if (result === 'W') s.wins += 1; else if (result === 'L') s.losses += 1; else s.draws += 1;
-                if (ga === 0) s.csFor += 1;
-                if (gf === 0) s.csAgainst += 1;
-                s.penFor += penForEgypt; s.penAgainst += penAgainstEgypt;
-            });
+            if (!summary.compStats[champion]) summary.compStats[champion] = { matches: 0, wins: 0, draws: 0, losses: 0, gs: 0, ga: 0, csFor: 0, csAgainst: 0, penFor: 0, penAgainst: 0 };
+            const comp = summary.compStats[champion];
+            comp.matches += 1; comp.gs += gf; comp.ga += ga;
+            if (result === 'W') comp.wins += 1; else if (result === 'L') comp.losses += 1; else comp.draws += 1;
+            if (ga === 0) comp.csFor += 1;
+            if (gf === 0) comp.csAgainst += 1;
+            comp.penFor += penForEgypt; comp.penAgainst += penAgainstEgypt;
 
-            if (!summary.statsByChampSeason[champion]) summary.statsByChampSeason[champion] = {};
-            if (!summary.statsByChampSeason[champion][season]) summary.statsByChampSeason[champion][season] = { matches: 0, wins: 0, draws: 0, losses: 0, gs: 0, ga: 0, csFor: 0, csAgainst: 0, penFor: 0, penAgainst: 0 };
-            const cs = summary.statsByChampSeason[champion][season];
-            cs.matches += 1; cs.gs += gf; cs.ga += ga;
-            if (result === 'W') cs.wins += 1; else if (result === 'L') cs.losses += 1; else cs.draws += 1;
-            if (ga === 0) cs.csFor += 1;
-            if (gf === 0) cs.csAgainst += 1;
-            cs.penFor += penForEgypt; cs.penAgainst += penAgainstEgypt;
-
-            if (!summary.statsBySY[sy]) summary.statsBySY[sy] = { matches: 0, wins: 0, draws: 0, losses: 0, gs: 0, ga: 0, csFor: 0, csAgainst: 0, penFor: 0, penAgainst: 0 };
-            const ss = summary.statsBySY[sy];
+            if (!summary.seasonalStats[season]) summary.seasonalStats[season] = { matches: 0, wins: 0, draws: 0, losses: 0, gs: 0, ga: 0, csFor: 0, csAgainst: 0, penFor: 0, penAgainst: 0 };
+            const ss = summary.seasonalStats[season];
             ss.matches += 1; ss.gs += gf; ss.ga += ga;
             if (result === 'W') ss.wins += 1; else if (result === 'L') ss.losses += 1; else ss.draws += 1;
             if (ga === 0) ss.csFor += 1;
             if (gf === 0) ss.csAgainst += 1;
             ss.penFor += penForEgypt; ss.penAgainst += penAgainstEgypt;
+
+            if (!summary.statsByOpponent[opp]) summary.statsByOpponent[opp] = { matches: 0, wins: 0, draws: 0, losses: 0, gs: 0, ga: 0, csFor: 0, csAgainst: 0, penFor: 0, penAgainst: 0 };
+            const oppStats = summary.statsByOpponent[opp];
+            oppStats.matches += 1; oppStats.gs += gf; oppStats.ga += ga;
+            if (result === 'W') oppStats.wins += 1; else if (result === 'L') oppStats.losses += 1; else oppStats.draws += 1;
+            if (ga === 0) oppStats.csFor += 1;
+            if (gf === 0) oppStats.csAgainst += 1;
+            oppStats.penFor += penForEgypt; oppStats.penAgainst += penAgainstEgypt;
         });
 
         summary.matchHistory.sort((a, b) => {
@@ -352,7 +362,7 @@ export default function EgyptNTRefereeDetails({ refereeName, masterMatches, play
                 break;
             case 'matches':
                 exportData = stats.matchHistory.map((m, i) => ({
-                    "#": i + 1, "DATE": m.date, "CHAMPION": m.champion, "SEASON": m.season, "SY": m.sy, "OPPONENT": m.opponent, "WDL": m.wdl, "GF": m.gf, "GA": m.ga, "PEN-F": m.penFor, "PEN-A": m.penAgainst
+                    "#": i + 1, "DATE": m.date, "SEASON": m.season, "OPPONENT": m.opponent, "WDL": m.wdl, "GF": m.gf, "GA": m.ga, "PEN-F": m.penFor, "PEN-A": m.penAgainst
                 }));
                 break;
             case 'championships':
@@ -361,19 +371,10 @@ export default function EgyptNTRefereeDetails({ refereeName, masterMatches, play
                     return { "#": i + 1, "CHAMPION": c, "MP": s.matches, "W": s.wins, "D": s.draws, "L": s.losses, "GF": s.gs, "GA": s.ga, "CS-F": s.csFor, "PEN-F": s.penFor };
                 });
                 break;
-            case 'season_name':
-                exportData = [];
-                Object.keys(stats.statsByChampSeason).forEach(comp => {
-                    Object.keys(stats.statsByChampSeason[comp]).forEach(season => {
-                        const s = stats.statsByChampSeason[comp][season];
-                        exportData.push({ "CHAMPION": comp, "SEASON": season, "MP": s.matches, "W": s.wins, "D": s.draws, "L": s.losses, "GF": s.gs, "GA": s.ga });
-                    });
-                });
-                break;
-            case 'season_number':
-                exportData = Object.keys(stats.statsBySY).sort((a, b) => b.localeCompare(a)).map((sy, i) => {
-                    const s = stats.statsBySY[sy];
-                    return { "#": i + 1, "SY": sy, "MP": s.matches, "W": s.wins, "D": s.draws, "L": s.losses, "GF": s.gs, "GA": s.ga };
+            case 'seasons':
+                exportData = Object.keys(stats.seasonalStats).sort(compareSeasonLabels).map((season, i) => {
+                    const s = stats.seasonalStats[season];
+                    return { "#": i + 1, "SEASON": season, "MP": s.matches, "W": s.wins, "D": s.draws, "L": s.losses, "GF": s.gs, "GA": s.ga, "CS-F": s.csFor, "PEN-F": s.penFor, "PEN-A": s.penAgainst };
                 });
                 break;
             case 'vs_teams':
@@ -403,13 +404,12 @@ export default function EgyptNTRefereeDetails({ refereeName, masterMatches, play
                 </div>
             </div>
 
-            <div className="player-details-tabs" style={{ flexWrap: 'wrap', gap: '5px' }}>
+            <div className="player-details-tabs ref-details-tabs">
                 {[
                     { id: 'overview', label: 'Overview' },
                     { id: 'matches', label: 'Matches' },
                     { id: 'championships', label: 'Championships' },
-                    { id: 'season_name', label: 'Season Name' },
-                    { id: 'season_number', label: 'Season Number' },
+                    { id: 'seasons', label: 'Seasons' },
                     { id: 'vs_teams', label: 'Vs Teams' }
                 ].map(t => (
                     <div key={t.id} className={`player-tab-item ${activeTab === t.id ? 'active' : ''}`} onClick={() => setActiveTab(t.id)}>
@@ -422,8 +422,7 @@ export default function EgyptNTRefereeDetails({ refereeName, masterMatches, play
                 {activeTab === 'overview' && <Referee_Overview_Module stats={stats} />}
                 {activeTab === 'matches' && <Referee_Matches_Module stats={stats} />}
                 {activeTab === 'championships' && <Referee_Championships_Module stats={stats} />}
-                {activeTab === 'season_name' && <Referee_Seasons_Module stats={stats} isNumberMode={false} />}
-                {activeTab === 'season_number' && <Referee_Seasons_Module stats={stats} isNumberMode={true} />}
+                {activeTab === 'seasons' && <Referee_Seasons_Module stats={stats} />}
                 {activeTab === 'vs_teams' && <Referee_VsTeams_Module stats={stats} />}
             </div>
         </div>

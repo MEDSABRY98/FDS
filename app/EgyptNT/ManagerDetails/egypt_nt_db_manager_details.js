@@ -4,6 +4,8 @@ import { useMemo, useState, useEffect } from "react";
 import NoData_db from "../../lib/NoData_db";
 import { EgyptNTService } from "../Service/egypt_nt_db_service";
 import { EgyptNTExcelExport } from "../ExportExcel/egypt_nt_export_excel";
+import "../../Alahly/PlayerDetails/alahly_db_player_details.css";
+import "../Managers/egypt_nt_db_managers.css";
 
 function Manager_Overview_Module({ stats }) {
     return (
@@ -507,7 +509,7 @@ export default function EgyptNTManagerDetails({ managerName, managerStatus, mast
                 </div>
             </div>
 
-            <div className="player-details-tabs" style={{ flexWrap: 'wrap', gap: '5px' }}>
+            <div className="player-details-tabs mgr-details-tabs">
                 {[
                     { id: 'overview', label: 'Overview' },
                     { id: 'matches', label: 'Matches' },
