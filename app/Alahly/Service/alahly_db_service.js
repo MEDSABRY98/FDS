@@ -1,5 +1,82 @@
 import { supabase } from "../../lib/supabase";
 
+function normalizePksLinkText(value) {
+    return String(value ?? "").trim().toLowerCase().replace(/\s+/g, " ");
+}
+
+function normalizePenScoreFromPksRow(row = {}) {
+    const ahly = parseInt(row["G-AHLY"], 10);
+    const opp = parseInt(row["G-OPPONENT"], 10);
+    if (!Number.isFinite(ahly) || !Number.isFinite(opp)) return "";
+    return `${ahly}-${opp}`;
+}
+
+function normalizePenScoreFromMatchPen(penValue) {
+    const raw = String(penValue ?? "").trim();
+    if (!raw) return "";
+    const match = raw.match(/(\d+)\s*[-:–]\s*(\d+)/);
+    if (!match) return "";
+    return `${parseInt(match[1], 10)}-${parseInt(match[2], 10)}`;
+}
+
+function getPksShootoutGroupKey(pk = {}) {
+    const pksId = String(pk.PKS_ID || "").trim();
+    if (pksId) return pksId;
+
+    const opponent = normalizePksLinkText(pk["OPPONENT TEAM"]);
+    const pen = normalizePenScoreFromPksRow(pk);
+    return `orphan:${opponent}|${pen}`;
+}
+
+function buildPksMatchLookup(matches = []) {
+    const lookup = new Map();
+
+    matches.forEach((match) => {
+        const pen = normalizePenScoreFromMatchPen(match.PEN);
+        const opponent = normalizePksLinkText(match["OPPONENT TEAM"]);
+        if (!pen || !opponent) return;
+
+        const key = `${opponent}|${pen}`;
+        if (!lookup.has(key)) lookup.set(key, []);
+        lookup.get(key).push(match);
+    });
+
+    return lookup;
+}
+
+function resolveMatchForPksShootout(shootoutRows = [], lookup = new Map()) {
+    const first = shootoutRows[0];
+    if (!first) return null;
+
+    const opponent = normalizePksLinkText(first["OPPONENT TEAM"]);
+    const pen = normalizePenScoreFromPksRow(first);
+    if (!opponent || !pen) return null;
+
+    const candidates = lookup.get(`${opponent}|${pen}`) || [];
+    if (candidates.length === 0) return null;
+    if (candidates.length === 1) return candidates[0];
+
+    const champion = normalizePksLinkText(first.CHAMPION);
+    const season = normalizePksLinkText(first.SEASON);
+
+    let filtered = candidates;
+    if (champion) {
+        filtered = filtered.filter(
+            (match) => normalizePksLinkText(match.CHAMPION) === champion
+        );
+    }
+
+    if (season && filtered.length > 1) {
+        filtered = filtered.filter((match) => {
+            const seasonName = normalizePksLinkText(match["SEASON - NAME"] || match.SEASON || "");
+            const seasonNumber = String(match["SEASON - NUMBER"] || "").trim().toLowerCase();
+            return seasonName === season || seasonNumber === season;
+        });
+    }
+
+    return filtered.length === 1 ? filtered[0] : null;
+}
+
 /**
  * Service to handle all Al Ahly Database operations.
  */
@@ -321,6 +398,111 @@ export const AlAhlyService = {
         return Array.from({ length: total }, (_, index) =>
             `R-${String(maxNum + 1 + index).padStart(4, "0")}`
         );
+    },
+
+    /**
+     * Fetch main matches that have a penalty-shootout score (PEN column).
+     */
+    async _fetchPenaltyMatchesForPksLinking() {
+        let allData = [];
+        let from = 0;
+        const step = 1000;
+        let finished = false;
+
+        while (!finished) {
+            const { data, error } = await supabase
+                .from('alahly_MATCHDETAILS')
+                .select('MATCH_ID, DATE, "OPPONENT TEAM", PEN, CHAMPION, "SEASON - NAME", "SEASON - NUMBER"')
+                .not('PEN', 'is', null)
+                .neq('PEN', '')
+                .order('DATE', { ascending: false })
+                .range(from, from + step - 1);
+
+            if (error) throw error;
+
+            if (data && data.length > 0) {
+                allData = [...allData, ...data];
+                from += step;
+                if (data.length < step) finished = true;
+            } else {
+                finished = true;
+            }
+        }
+
+        return allData.filter((match) => normalizePenScoreFromMatchPen(match.PEN));
+    },
+
+    /**
+     * Fill missing MATCH_ID / DATE on alahly_PKS rows by linking to alahly_MATCHDETAILS
+     * via OPPONENT TEAM + penalty score (G-AHLY/G-OPPONENT vs PEN).
+     */
+    async enrichPksFromMatchDetails(pks, options = { persist: true }) {
+        const rows = pks || [];
+        const needsLink = rows.some(
+            (row) => !String(row.MATCH_ID || "").trim() || !String(row.DATE || "").trim()
+        );
+
+        if (!needsLink) return rows;
+
+        const matches = await this._fetchPenaltyMatchesForPksLinking();
+        const lookup = buildPksMatchLookup(matches);
+
+        const groups = new Map();
+        rows.forEach((pk) => {
+            const groupKey = getPksShootoutGroupKey(pk);
+            if (!groups.has(groupKey)) groups.set(groupKey, []);
+            groups.get(groupKey).push(pk);
+        });
+
+        const resolvedByGroup = new Map();
+        groups.forEach((groupRows, groupKey) => {
+            resolvedByGroup.set(groupKey, resolveMatchForPksShootout(groupRows, lookup));
+        });
+
+        const updates = [];
+
+        const enriched = rows.map((pk) => {
+            const groupKey = getPksShootoutGroupKey(pk);
+            const match = resolvedByGroup.get(groupKey);
+            if (!match) return pk;
+
+            const missingMatchId = !String(pk.MATCH_ID || "").trim();
+            const missingDate = !String(pk.DATE || "").trim();
+            if (!missingMatchId && !missingDate) return pk;
+
+            const patched = { ...pk };
+            if (missingMatchId && match.MATCH_ID) {
+                patched.MATCH_ID = match.MATCH_ID;
+            }
+            if (missingDate && match.DATE) {
+                patched.DATE = match.DATE;
+            }
+
+            if (options.persist && pk.ROW_ID) {
+                const updatePayload = {};
+                if (missingMatchId && match.MATCH_ID) {
+                    updatePayload.MATCH_ID = match.MATCH_ID;
+                }
+                if (missingDate && match.DATE) {
+                    updatePayload.DATE = match.DATE;
+                }
+                if (Object.keys(updatePayload).length > 0) {
+                    updates.push({ rowId: pk.ROW_ID, updatePayload });
+                }
+            }
+
+            return patched;
+        });
+
+        if (options.persist && updates.length > 0) {
+            await Promise.all(
+                updates.map(({ rowId, updatePayload }) =>
+                    this.updatePKSRecord(rowId, updatePayload)
+                )
+            );
+        }
+
+        return enriched;
     },
 
     /**

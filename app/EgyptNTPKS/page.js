@@ -1,11 +1,12 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useMemo, useCallback } from "react";
 import { 
     Download, 
     SlidersHorizontal, 
     LayoutDashboard, 
     Trophy, 
+    FileText,
     Users, 
     Shield, 
     User, 
@@ -21,6 +22,8 @@ import EgyptNTPKSFilters from "./Filters/egypt_nt_pks_filters";
 import EgyptNTPKSH2H from "./HeadToHead/egypt_nt_pks_h2h";
 import EgyptNTPKSManagers from "./Managers/egypt_nt_pks_managers";
 import EgyptNTPKSDashboard from "./Dashboard/egypt_nt_pks_dashboard";
+import EgyptNTPKSEditor from "./Editor/egypt_nt_pks_editor";
+import Login_db from "../lib/Login_db";
 import Loading_db from "../lib/Loading_db";
 import SideBar_db from "../lib/SideBar_db";
 
@@ -37,6 +40,7 @@ export default function EgyptNTPKSDatabase() {
     const tabs = [
         { id: 'egy_pks_dashboard', label: 'Dashboard', icon: LayoutDashboard },
         { id: 'egy_pks_matches', label: 'Matches', icon: Trophy },
+        { id: 'egy_pks_editor', label: 'Editor', icon: FileText },
         { id: 'egy_pks_champions', label: 'Champions', icon: Trophy },
         { id: 'egy_pks_players', label: 'Players', icon: Users },
         { id: 'egy_pks_gks', label: 'Gks', icon: Shield },
@@ -58,13 +62,39 @@ export default function EgyptNTPKSDatabase() {
         }
     }, [selectedPksId]);
 
-    async function fetchPKData() {
-        setLoading(true);
-        const data = await EgyptNTPKSService.getAllPKs();
-        setPksData(data);
-        setFilteredData(data);
-        setLoading(false);
+    async function fetchPKData(options = {}) {
+        const { silent = false } = options;
+        if (!silent) setLoading(true);
+
+        const pks = await EgyptNTPKSService.getAllPKs();
+        const enrichedData = await EgyptNTPKSService.enrichPksWithManagers(pks);
+
+        setPksData(enrichedData);
+        setFilteredData(enrichedData);
+        if (!silent) setLoading(false);
     }
+
+    const handleEditorDataSaved = useCallback(async () => {
+        const pks = await EgyptNTPKSService.getAllPKs();
+        const enrichedData = await EgyptNTPKSService.enrichPksWithManagers(pks);
+        setPksData(enrichedData);
+        setFilteredData(enrichedData);
+    }, []);
+
+    const pksSuggestions = useMemo(() => {
+        const getUnique = (key) => [...new Set((pksData || []).map((item) => item[key]).filter(Boolean))].sort();
+        return {
+            pksSystem: getUnique("PKS System"),
+            champSystem: getUnique("CHAMPION System"),
+            egyptStatus: getUnique("Egypt STATUS"),
+            oppStatus: getUnique("OPPONENT STATUS"),
+            pksWL: getUnique("PKS W-L"),
+            howMiss: [...new Set([
+                ...(pksData || []).map((item) => item["EGYPT HOW MISS"]),
+                ...(pksData || []).map((item) => item["OPPONENT HOW MISS"]),
+            ].filter(Boolean))].sort(),
+        };
+    }, [pksData]);
 
     const renderAppContent = () => {
         switch (activeTab) {
@@ -96,6 +126,16 @@ export default function EgyptNTPKSDatabase() {
                             />
                         )}
                     </>
+                );
+            case "egy_pks_editor":
+                return (
+                    <Login_db title="EDITOR ACCESS" subtitle="AUTHORIZATION REQUIRED">
+                        <EgyptNTPKSEditor
+                            pksData={pksData}
+                            pksSuggestions={pksSuggestions}
+                            onDataSaved={handleEditorDataSaved}
+                        />
+                    </Login_db>
                 );
             case "egy_pks_champions":
                 return <EgyptNTPKSChampions pksData={filteredData} />;
@@ -157,7 +197,7 @@ export default function EgyptNTPKSDatabase() {
                 }
             ]}
         >
-            <main className="egy-pks-content-viewport" style={{ padding: '0', maxWidth: (activeTab === 'egy_pks_h2h' || activeTab === 'egy_pks_champions' || activeTab === 'egy_pks_managers') ? '100%' : '1380px', margin: '0 auto', width: '100%' }}>
+            <main className="egy-pks-content-viewport" style={{ padding: '0', maxWidth: (activeTab === 'egy_pks_h2h' || activeTab === 'egy_pks_champions' || activeTab === 'egy_pks_managers' || activeTab === 'egy_pks_editor') ? '100%' : '1380px', margin: '0 auto', width: '100%' }}>
                 {loading ? (
                     <Loading_db title="EGYPT NT" subtitle="PKs DATABASE" message="SYNCING DATA" inline={true} />
                 ) : (
