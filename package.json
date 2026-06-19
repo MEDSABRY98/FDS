@@ -7,7 +7,9 @@
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
-    "db:drop-pks-columns": "node scripts/apply-pks-column-drops.mjs"
+    "db:drop-pks-columns": "node scripts/apply-pks-column-drops.mjs",
+    "db:int-club-table": "node scripts/apply-int-club-matchdetails.mjs",
+    "db:int-club-rls": "node scripts/apply-int-club-rls.mjs"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.100.0",

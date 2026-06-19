@@ -1,0 +1,251 @@
+.intl-club-details {
+    max-width: 1400px;
+    margin: 0 auto;
+    padding-bottom: 40px;
+}
+
+.intl-club-details-back {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    margin-bottom: 20px;
+}
+
+.intl-club-details-back-btn {
+    background: #0d0d0d;
+    color: var(--gold, #c9a84c);
+    border: 1px solid var(--gold, #c9a84c);
+    border-radius: 8px;
+    width: 40px;
+    height: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.intl-club-details-back-btn:hover {
+    background: var(--gold, #c9a84c);
+    color: #000;
+}
+
+.intl-club-details-title {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 36px;
+    letter-spacing: 1px;
+    margin: 0;
+    line-height: 1.1;
+}
+
+.intl-club-details-title .gold {
+    color: var(--gold, #c9a84c);
+}
+
+.intl-club-details-summary {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+    margin-bottom: 24px;
+}
+
+.intl-club-details-stat {
+    background: #fff;
+    border: 1px solid #eee;
+    border-radius: 10px;
+    padding: 10px 16px;
+    font-family: 'Space Mono', monospace;
+    font-size: 12px;
+    font-weight: 700;
+}
+
+.intl-club-details-stat span {
+    color: var(--gold, #c9a84c);
+    margin-right: 6px;
+}
+
+.intl-club-details-tabs {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 20px;
+    border-bottom: 1px solid #eee;
+    flex-wrap: wrap;
+    justify-content: center;
+}
+
+.intl-club-details-tab {
+    flex: 1 1 160px;
+    max-width: 200px;
+    background: transparent;
+    border: none;
+    border-bottom: 3px solid transparent;
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 18px;
+    letter-spacing: 1px;
+    padding: 12px 16px;
+    cursor: pointer;
+    color: #888;
+    transition: all 0.2s;
+}
+
+.intl-club-details-tab.active {
+    color: #000;
+    border-bottom-color: var(--gold, #c9a84c);
+}
+
+.intl-club-details-tab:hover:not(.active) {
+    color: #000;
+}
+
+.intl-club-details-panel {
+    background: #fff;
+    border: 1px solid #eee;
+    border-radius: 14px;
+    overflow: hidden;
+}
+
+.intl-club-details-search {
+    margin: 0 auto 16px;
+    max-width: 420px;
+    width: 100%;
+}
+
+.intl-club-details-search .search-bar-db {
+    width: 100%;
+}
+
+.intl-club-details-search .search-bar-db input {
+    height: 46px;
+    font-size: 14px;
+}
+
+.intl-club-details-table-wrap {
+    overflow-x: auto;
+}
+
+.intl-club-details-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 13px;
+}
+
+.intl-club-details-table th {
+    background: #0a0a0a;
+    color: #fff;
+    padding: 12px 14px;
+    text-align: center;
+    font-family: 'Space Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 0.8px;
+}
+
+.intl-club-details-table td {
+    padding: 12px 14px;
+    border-bottom: 1px solid #f0f0f0;
+    text-align: center;
+    vertical-align: middle;
+}
+
+.intl-club-details-table tr:hover td {
+    background: #fafafa;
+}
+
+.intl-club-details-table .opponent {
+    font-weight: 700;
+    text-align: center;
+}
+
+.intl-club-details-table .score {
+    font-weight: 700;
+    font-family: 'Space Mono', monospace;
+    white-space: nowrap;
+}
+
+.intl-club-details-table .result-w { color: #00c853; font-weight: 700; }
+.intl-club-details-table .result-l { color: #ff4d4d; font-weight: 700; }
+.intl-club-details-table .result-d { color: var(--gold, #c9a84c); font-weight: 700; }
+
+.intl-club-details-table .win-rate {
+    color: var(--gold, #c9a84c);
+    font-weight: 700;
+}
+
+.intl-club-details-table .totals-row td {
+    background: #f9f9f9;
+    font-weight: 700;
+    border-top: 2px solid #ddd;
+}
+
+.intl-club-details-table--opponents {
+    font-size: 16px;
+}
+
+.intl-club-details-table--opponents th {
+    font-size: 12px;
+    padding: 14px 16px;
+}
+
+.intl-club-details-table--opponents td {
+    padding: 14px 16px;
+    font-family: 'Space Mono', monospace;
+    font-size: 16px;
+}
+
+.intl-club-details-table--opponents .opponent {
+    font-family: 'DM Sans', sans-serif;
+    font-size: 17px;
+}
+
+.intl-club-details-table--opponents .win-rate {
+    font-size: 16px;
+}
+
+.intl-club-details-table--opponents .totals-row .opponent {
+    font-size: 16px;
+}
+
+.intl-club-details-pagination {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 16px;
+    padding: 16px;
+}
+
+.intl-club-details-pagination button {
+    border: 1px solid rgba(201, 168, 76, 0.3);
+    background: rgba(201, 168, 76, 0.08);
+    color: var(--gold, #c9a84c);
+    border-radius: 8px;
+    padding: 8px 16px;
+    font-family: 'Space Mono', monospace;
+    font-size: 11px;
+    font-weight: 700;
+    cursor: pointer;
+}
+
+.intl-club-details-pagination button:disabled {
+    opacity: 0.35;
+    cursor: not-allowed;
+}
+
+.intl-club-details-pagination span {
+    font-family: 'Space Mono', monospace;
+    font-size: 12px;
+    font-weight: 700;
+    color: var(--gold, #c9a84c);
+}
+
+@media (max-width: 700px) {
+    .intl-club-details-tabs {
+        flex-direction: column;
+    }
+
+    .intl-club-details-tab {
+        max-width: none;
+    }
+
+    .intl-club-details-search {
+        max-width: none;
+    }
+}

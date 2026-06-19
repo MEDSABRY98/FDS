@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { Database, Shield, Target, Trophy, Swords, Flag } from "lucide-react";
+import { Database, Shield, Target, Trophy, Swords, Flag, Globe } from "lucide-react";
 import "./home_db_selection.css";
 
 export default function HomeDbSelection() {
@@ -31,6 +31,10 @@ export default function HomeDbSelection() {
             { href: "/EgyptClubdbManagement", label: "EGYPT CLUB DB MANAGEMENT", icon: Database },
             { href: "/EgyptClub", label: "EGYPT CLUBS", icon: Trophy },
             { href: "/EgyptClubTrophy", label: "EGYPT CLUBS TROPHIES", icon: Trophy }
+        ],
+        international_clubs: [
+            { href: "/InternationalClubdbManagement", label: "INTL CLUB DB MANAGEMENT", icon: Database },
+            { href: "/InternationalClub", label: "INTERNATIONAL CLUBS", icon: Globe }
         ]
     };
 
@@ -72,6 +76,12 @@ export default function HomeDbSelection() {
                     onClick={() => setActiveTab('egypt_clubs')}
                 >
                     EGYPT CLUBS
+                </button>
+                <button
+                    className={`home-tab-btn ${activeTab === 'international_clubs' ? 'active' : ''}`}
+                    onClick={() => setActiveTab('international_clubs')}
+                >
+                    INTL CLUBS
                 </button>
             </div>
 

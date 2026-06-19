@@ -1,0 +1,55 @@
+.intl-competitions {
+    max-width: 1400px;
+    margin: 0 auto;
+}
+
+.intl-competitions-header {
+    margin-bottom: 20px;
+}
+
+.intl-competitions-header h1 {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 36px;
+    letter-spacing: 2px;
+    margin: 0;
+}
+
+.intl-competitions-table-wrap {
+    overflow-x: auto;
+    background: #fff;
+    border: 1px solid #eee;
+    border-radius: 14px;
+}
+
+.intl-competitions-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 13px;
+}
+
+.intl-competitions-table th {
+    background: #0a0a0a;
+    color: #fff;
+    padding: 12px 14px;
+    text-align: center;
+    font-family: 'Space Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 0.8px;
+}
+
+.intl-competitions-table td {
+    padding: 12px 14px;
+    border-bottom: 1px solid #f0f0f0;
+    text-align: center;
+    vertical-align: middle;
+}
+
+.intl-competitions-table tr:hover td {
+    background: #fafafa;
+}
+
+.intl-competitions-table .count {
+    font-family: 'Space Mono', monospace;
+    font-weight: 700;
+    color: var(--gold, #c9a84c);
+}

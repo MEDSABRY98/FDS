@@ -1,0 +1,19 @@
+.intl-clubs { max-width: 1400px; margin: 0 auto; }
+.intl-clubs-header {
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+    gap: 16px;
+    flex-wrap: wrap;
+    margin-bottom: 20px;
+}
+.intl-clubs h1 { font-family: 'Bebas Neue', sans-serif; font-size: 36px; letter-spacing: 2px; margin: 0; }
+.intl-club-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 16px; }
+.intl-club-card {
+    text-align: left; background: #fff; border: 1px solid #eee; border-radius: 12px;
+    padding: 16px; cursor: pointer; display: flex; flex-direction: column; gap: 8px;
+}
+.intl-club-card:hover { border-color: var(--gold, #c9a84c); }
+.intl-club-card span { font-size: 12px; color: #666; }
+.intl-back-btn { border: none; background: none; cursor: pointer; color: var(--gold, #c9a84c); font-weight: 700; margin-bottom: 12px; }
+.intl-club-stats { display: flex; gap: 16px; flex-wrap: wrap; margin: 12px 0 20px; font-family: 'Space Mono', monospace; font-size: 12px; }

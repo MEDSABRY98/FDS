@@ -152,11 +152,12 @@ export function UseColumnOrder(TableName) {
 }
 
 async function fetchAllManagementTables() {
-    const [alahlyRes, dbManagementRes, egyptclubRes, egyptntRes] = await Promise.all([
+    const [alahlyRes, dbManagementRes, egyptclubRes, egyptntRes, intlclubRes] = await Promise.all([
         supabase.rpc("get_alahly_tables"),
         supabase.rpc("get_dbmanagement_tables"),
         supabase.rpc("get_egyptclub_tables"),
         supabase.rpc("get_egyptnt_tables"),
+        supabase.rpc("get_intclub_tables"),
     ]);
 
     let all = [];
@@ -189,6 +190,12 @@ async function fetchAllManagementTables() {
             label: `EGYPT NT: ${t.table_name.replace("egy_NT_", "").replace(/_/g, " ").toUpperCase()}`,
         }))];
     }
+    if (intlclubRes.data) {
+        all = [...all, ...intlclubRes.data.map((t) => ({
+            name: t.table_name,
+            label: `INT CLUB: ${t.table_name.replace("int_club_", "").replace(/_/g, " ").toUpperCase()}`,
+        }))];
+    }
 
     return all.sort((a, b) => a.label.localeCompare(b.label));
 }
@@ -211,6 +218,7 @@ function formatTableLabel(tableName) {
         .replace("db_", "")
         .replace("egy_CLUB_", "")
         .replace("egy_NT_", "")
+        .replace("int_club_", "")
         .replace(/_/g, " ")
         .toUpperCase();
 }
