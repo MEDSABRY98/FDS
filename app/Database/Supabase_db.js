@@ -71,7 +71,6 @@ const teamColumnsMap = {
     'egy_NT_HOWPENMISSED': ['TEAM'],
     'egy_NT_LINEUPDETAILS': ['TEAM'],
     'egy_NT_MATCHDETAILS': ['Egypt TEAM', 'OPPONENT TEAM'],
-    'egy_NT_PKS': ['Egypt TEAM', 'OPPONENT TEAM'],
     'egy_NT_PLAYERDETAILS': ['TEAM'],
     'egy_NT_SQUAD': ['CLUB']
 };
@@ -81,41 +80,41 @@ const CATALOG_CONFIG = {
         idCol: "PLAYER_ID",
         nameCols: ["PLAYER_NAME", "PLAYER_NAME_EN"],
         idPrefix: "P-",
-        labelAr: "Ø§Ù„Ù„Ø§Ø¹Ø¨"
+        labelAr: "اللاعب"
     },
     db_MANAGERS: {
         idCol: "MANAGER_ID",
         nameCols: ["MANAGER_NAME", "MANAGER_NAME_EN"],
         idPrefix: "M-",
-        labelAr: "Ø§Ù„Ù…Ø¯Ø±Ø¨"
+        labelAr: "المدرب"
     },
     db_REFEREES: {
         idCol: "REFEREE_ID",
         nameCols: ["REFEREE_NAME", "REFEREE_NAME_EN"],
         idPrefix: "REF-",
-        labelAr: "Ø§Ù„Ø­ÙƒÙ…"
+        labelAr: "الحكم"
     },
     db_TEAMS: {
         idCol: "TEAM_ID",
         nameCols: ["TEAM_NAME", "TEAM_NAME_EN"],
         idPrefix: "T-",
-        labelAr: "Ø§Ù„ÙØ±ÙŠÙ‚"
+        labelAr: "الفريق"
     },
     db_STADIUMS: {
         idCol: "STADIUM_ID",
         nameCols: ["STADIUM_NAME", "STADIUM_NAME_EN"],
         idPrefix: "S-",
-        labelAr: "Ø§Ù„Ø§Ø³ØªØ§Ø¯"
+        labelAr: "الاستاد"
     },
     db_COUNTRIES: {
         idCol: "COUNTRY_ID",
         nameCols: ["COUNTRY_NAME", "COUNTRY_NAME_EN"],
         idPrefix: "C-",
-        labelAr: "Ø§Ù„Ø¯ÙˆÙ„Ø©"
+        labelAr: "الدولة"
     }
 };
 
-const CATALOG_SKIP_VALUES = new Set(["-", "unknown", "?", "ØŸ", "n/a", "na", "none", ""]);
+const CATALOG_SKIP_VALUES = new Set(["-", "unknown", "?", "؟", "n/a", "na", "none", ""]);
 
 function isSkippableCatalogValue(val) {
     if (val === null || val === undefined) return true;
@@ -158,7 +157,7 @@ function isLikelyCatalogName(val, idPrefix) {
 
 function buildCatalogError(catalog, value) {
     const label = CATALOG_CONFIG[catalog]?.labelAr || catalog;
-    return `"${value}" ØºÙŠØ± Ù…ÙˆØ¬ÙˆØ¯ ÙÙŠ ${label}. Ø£Ø¶ÙÙ‡ Ø£ÙˆÙ„Ø§Ù‹ Ù…Ù† Global DB Management.`;
+    return `"${value}" غير موجود في ${label}. أضفه أولاً من Global DB Management.`;
 }
 
 function normalizeCatalogName(val) {

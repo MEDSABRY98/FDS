@@ -32,6 +32,7 @@ export default function EgyptNTPKSDatabase() {
     const [activeTab, setActiveTab] = useState("egy_pks_dashboard");
     const [pksData, setPksData] = useState([]);
     const [filteredData, setFilteredData] = useState([]);
+    const [penaltyMatches, setPenaltyMatches] = useState([]);
     const [loading, setLoading] = useState(true);
     const [selectedPksId, setSelectedPksId] = useState(null);
     const [isFilterOpen, setIsFilterOpen] = useState(false);
@@ -50,6 +51,9 @@ export default function EgyptNTPKSDatabase() {
 
     useEffect(() => {
         fetchPKData();
+        EgyptNTPKSService.getPenaltyMatchesForPicker()
+            .then(setPenaltyMatches)
+            .catch((err) => console.error("Failed to load penalty matches:", err));
     }, []);
 
     useEffect(() => {
@@ -67,7 +71,7 @@ export default function EgyptNTPKSDatabase() {
         if (!silent) setLoading(true);
 
         const pks = await EgyptNTPKSService.getAllPKs();
-        const enrichedData = await EgyptNTPKSService.enrichPksWithManagers(pks);
+        const enrichedData = await EgyptNTPKSService.enrichPksWithMatchDetails(pks);
 
         setPksData(enrichedData);
         setFilteredData(enrichedData);
@@ -76,25 +80,26 @@ export default function EgyptNTPKSDatabase() {
 
     const handleEditorDataSaved = useCallback(async () => {
         const pks = await EgyptNTPKSService.getAllPKs();
-        const enrichedData = await EgyptNTPKSService.enrichPksWithManagers(pks);
+        const enrichedData = await EgyptNTPKSService.enrichPksWithMatchDetails(pks);
         setPksData(enrichedData);
         setFilteredData(enrichedData);
     }, []);
 
     const pksSuggestions = useMemo(() => {
-        const getUnique = (key) => [...new Set((pksData || []).map((item) => item[key]).filter(Boolean))].sort();
+        const getUniqueFromPks = (key) => [...new Set((pksData || []).map((item) => item[key]).filter(Boolean))].sort();
+        const getUniqueFromMatches = (key) => [...new Set((penaltyMatches || []).map((item) => item[key]).filter(Boolean))].sort();
         return {
-            pksSystem: getUnique("PKS System"),
-            champSystem: getUnique("CHAMPION System"),
-            egyptStatus: getUnique("Egypt STATUS"),
-            oppStatus: getUnique("OPPONENT STATUS"),
-            pksWL: getUnique("PKS W-L"),
+            pksSystem: getUniqueFromPks("PKS System"),
+            champSystem: getUniqueFromMatches("CHAMPION_SYSTEM"),
+            egyptStatus: getUniqueFromPks("Egypt STATUS"),
+            oppStatus: getUniqueFromPks("OPPONENT STATUS"),
+            pksWL: getUniqueFromPks("PKS W-L"),
             howMiss: [...new Set([
                 ...(pksData || []).map((item) => item["EGYPT HOW MISS"]),
                 ...(pksData || []).map((item) => item["OPPONENT HOW MISS"]),
             ].filter(Boolean))].sort(),
         };
-    }, [pksData]);
+    }, [pksData, penaltyMatches]);
 
     const renderAppContent = () => {
         switch (activeTab) {
@@ -133,6 +138,7 @@ export default function EgyptNTPKSDatabase() {
                         <EgyptNTPKSEditor
                             pksData={pksData}
                             pksSuggestions={pksSuggestions}
+                            penaltyMatches={penaltyMatches}
                             onDataSaved={handleEditorDataSaved}
                         />
                     </Login_db>

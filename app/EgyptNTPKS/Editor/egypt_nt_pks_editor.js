@@ -42,6 +42,15 @@ function getKickRowKey(row) {
     return row.ORIGINAL_ROW_ID || row._localId;
 }
 
+function formatMatchPickerLabel(match) {
+    if (!match) return "";
+    const date = String(match.DATE || "").slice(0, 10);
+    const opponent = match["OPPONENT TEAM"] || "";
+    const champion = match.CHAMPION || "";
+    const pen = match.PEN || "";
+    return [match.MATCH_ID, date, opponent, champion, pen].filter(Boolean).join(" · ");
+}
+
 function resolveMatchIdFromSearch(searchTerm, pksData = []) {
     const trimmed = String(searchTerm || "").trim();
     if (!trimmed) return "";
@@ -66,11 +75,8 @@ function loadShootoutFromKicks(kicks, setCommonData, setKickRows, setFoundKicks,
     const first = kicks[0];
     setFoundKicks(kicks);
     setCommonData({
-        MATCH_ID: first.MATCH_ID,
+        MATCH_ID: first.MATCH_ID || "",
         "PKS System": first["PKS System"],
-        "CHAMPION System": first["CHAMPION System"],
-        "Egypt TEAM": first["Egypt TEAM"],
-        "OPPONENT TEAM": first["OPPONENT TEAM"],
         "PKS W-L": first["PKS W-L"],
         "G-EGYPT": first["G-EGYPT"],
         "G-OPPONENT": first["G-OPPONENT"],
@@ -89,6 +95,32 @@ function loadShootoutFromKicks(kicks, setCommonData, setKickRows, setFoundKicks,
         _localId: undefined,
     })));
     setEditingKick(true);
+}
+
+function MatchSummary({ match }) {
+    if (!match) {
+        return (
+            <div className="pks-match-summary pks-match-summary--empty">
+                Select a MATCH ID to load match details from the main database.
+            </div>
+        );
+    }
+
+    return (
+        <div className="pks-match-summary">
+            <div className="pks-match-summary-title">MATCH DETAILS (from main database)</div>
+            <div className="pks-match-summary-grid">
+                <span><strong>Date:</strong> {String(match.DATE || "").slice(0, 10) || "—"}</span>
+                <span><strong>Champion:</strong> {match.CHAMPION || "—"}</span>
+                <span><strong>Season:</strong> {match.SEASON || "—"}</span>
+                <span><strong>Round:</strong> {match.ROUND || "—"}</span>
+                <span><strong>Egypt Team:</strong> {match["Egypt TEAM"] || "—"}</span>
+                <span><strong>Opponent:</strong> {match["OPPONENT TEAM"] || "—"}</span>
+                <span><strong>Champion System:</strong> {match.CHAMPION_SYSTEM || "—"}</span>
+                <span><strong>PEN:</strong> {match.PEN || "—"}</span>
+            </div>
+        </div>
+    );
 }
 
 const KickRow = React.memo(function KickRow({
@@ -188,7 +220,7 @@ const KickRow = React.memo(function KickRow({
     );
 });
 
-export default function EgyptNTPKSEditor({ pksData, pksSuggestions = {}, onDataSaved }) {
+export default function EgyptNTPKSEditor({ pksData, pksSuggestions = {}, penaltyMatches = [], onDataSaved }) {
     const { addNotification } = useNotification();
     const [mode, setMode] = useState("SEARCH");
     const [searchId, setSearchId] = useState("");
@@ -197,37 +229,50 @@ export default function EgyptNTPKSEditor({ pksData, pksSuggestions = {}, onDataS
     const [isSearching, setIsSearching] = useState(false);
     const [isSaving, setIsSaving] = useState(false);
 
-    const defaultEgyptTeam = useMemo(() => {
-        const fromData = (pksData || []).find((item) => item["Egypt TEAM"])?.["Egypt TEAM"];
-        return fromData || "Ù…ØµØ±";
-    }, [pksData]);
+    const matchById = useMemo(() => {
+        const map = new Map();
+        (penaltyMatches || []).forEach((m) => {
+            const id = String(m.MATCH_ID || "").trim();
+            if (id) map.set(id, m);
+        });
+        return map;
+    }, [penaltyMatches]);
+
+    const matchPickerOptions = useMemo(
+        () => (penaltyMatches || []).map((m) => ({
+            value: m.MATCH_ID,
+            label: formatMatchPickerLabel(m),
+        })),
+        [penaltyMatches]
+    );
 
     const initialCommonData = useMemo(() => ({
         MATCH_ID: "",
         "PKS System": "",
-        "CHAMPION System": "",
-        "Egypt TEAM": defaultEgyptTeam,
-        "OPPONENT TEAM": "",
         "PKS W-L": "",
         "G-OPPONENT": 0,
         "G-EGYPT": 0,
-    }), [defaultEgyptTeam]);
+    }), []);
 
     const [commonData, setCommonData] = useState({});
     const [kickRows, setKickRows] = useState(() => [createKickRow()]);
+    const [resolvedMatch, setResolvedMatch] = useState(null);
     const scrollToNewKickRef = useRef(false);
-    const [catalogNames, setCatalogNames] = useState({ players: [], teams: [] });
+    const [catalogNames, setCatalogNames] = useState({ players: [] });
+
+    const selectedMatch = useMemo(() => {
+        const id = String(commonData.MATCH_ID || "").trim();
+        if (!id) return resolvedMatch;
+        return matchById.get(id) || resolvedMatch;
+    }, [commonData.MATCH_ID, matchById, resolvedMatch]);
 
     useEffect(() => {
         let active = true;
 
         async function loadCatalogNames() {
             try {
-                const [players, teams] = await Promise.all([
-                    fetchCatalogDisplayNames("db_PLAYERS"),
-                    fetchCatalogDisplayNames("db_TEAMS"),
-                ]);
-                if (active) setCatalogNames({ players, teams });
+                const players = await fetchCatalogDisplayNames("db_PLAYERS");
+                if (active) setCatalogNames({ players });
             } catch (err) {
                 console.error("Failed to load PKS catalog names:", err);
             }
@@ -245,8 +290,32 @@ export default function EgyptNTPKSEditor({ pksData, pksSuggestions = {}, onDataS
         if (mode === "CREATE") {
             setCommonData(initialCommonData);
             setKickRows([createKickRow()]);
+            setResolvedMatch(null);
         }
     }, [mode, initialCommonData]);
+
+    useEffect(() => {
+        const matchId = String(commonData.MATCH_ID || "").trim();
+        if (!matchId) {
+            setResolvedMatch(null);
+            return;
+        }
+        if (matchById.has(matchId)) {
+            setResolvedMatch(matchById.get(matchId));
+            return;
+        }
+
+        let active = true;
+        EgyptNTPKSService.getMatchByMatchId(matchId)
+            .then((match) => {
+                if (active) setResolvedMatch(match);
+            })
+            .catch(() => {
+                if (active) setResolvedMatch(null);
+            });
+
+        return () => { active = false; };
+    }, [commonData.MATCH_ID, matchById]);
 
     useEffect(() => {
         if (!scrollToNewKickRef.current) return;
@@ -259,15 +328,14 @@ export default function EgyptNTPKSEditor({ pksData, pksSuggestions = {}, onDataS
 
     const dropdownOptions = useMemo(() => ({
         pksSystem: toDropdownOptions(pksSuggestions.pksSystem),
-        champSystem: toDropdownOptions(pksSuggestions.champSystem),
         egyptStatus: toDropdownOptions(pksSuggestions.egyptStatus),
         oppStatus: toDropdownOptions(pksSuggestions.oppStatus),
         pksWL: toDropdownOptions(pksSuggestions.pksWL),
         howMiss: toDropdownOptions(pksSuggestions.howMiss),
-    }), [pksSuggestions]);
+        matchId: matchPickerOptions,
+    }), [pksSuggestions, matchPickerOptions]);
 
     const playerOptions = catalogNames.players;
-    const teamOptions = catalogNames.teams;
 
     const handleSearch = async () => {
         if (!searchId.trim() || isSearching) return;
@@ -288,13 +356,8 @@ export default function EgyptNTPKSEditor({ pksData, pksSuggestions = {}, onDataS
                 setEditingKick(null);
                 addNotification("No shootout found with this ID.", "error");
             } else {
-                const displayMatch = (pksData || []).find(
-                    (k) => String(k.MATCH_ID || k.PKS_ID || "").toUpperCase() === matchId.toUpperCase()
-                );
-                const kicksWithDisplay = displayMatch?.DISPLAY_ID
-                    ? kicks.map((k) => ({ ...k, DISPLAY_ID: displayMatch.DISPLAY_ID }))
-                    : kicks;
-                loadShootoutFromKicks(kicksWithDisplay, setCommonData, setKickRows, setFoundKicks, setEditingKick);
+                const enriched = await EgyptNTPKSService.enrichPksWithMatchDetails(kicks);
+                loadShootoutFromKicks(enriched, setCommonData, setKickRows, setFoundKicks, setEditingKick);
             }
         } catch (err) {
             addNotification(err?.message || "Error searching for shootout.", "error");
@@ -329,7 +392,7 @@ export default function EgyptNTPKSEditor({ pksData, pksSuggestions = {}, onDataS
         if (isSaving) return;
 
         if (!String(commonData.MATCH_ID || "").trim()) {
-            addNotification("MATCH ID is required.", "error");
+            addNotification("MATCH ID is required. Link this shootout to a main match.", "error");
             return;
         }
 
@@ -355,8 +418,9 @@ export default function EgyptNTPKSEditor({ pksData, pksSuggestions = {}, onDataS
             addNotification(`Shootout ${savedMatchId} saved successfully.`, "success");
 
             if (freshKicks.length > 0) {
+                const enriched = await EgyptNTPKSService.enrichPksWithMatchDetails(freshKicks);
                 loadShootoutFromKicks(
-                    freshKicks,
+                    enriched,
                     setCommonData,
                     setKickRows,
                     setFoundKicks,
@@ -386,13 +450,19 @@ export default function EgyptNTPKSEditor({ pksData, pksSuggestions = {}, onDataS
                     <h3>GENERAL MATCH DETAILS</h3>
                 </div>
                 <div className="form-grid">
-                    <div className="form-group">
-                        <label>MATCH ID</label>
-                        <input
-                            type="text"
+                    <div className="form-group form-group--full">
+                        <label>MATCH ID *</label>
+                        <DropDownList_db
+                            allowCustom
+                            options={dropdownOptions.matchId}
                             value={commonData.MATCH_ID || ""}
-                            onChange={(e) => setCommonField("MATCH_ID", e.target.value)}
+                            onChange={(v) => setCommonField("MATCH_ID", v)}
+                            placeholder="Select penalty match..."
+                            searchable
                         />
+                    </div>
+                    <div className="form-group form-group--full">
+                        <MatchSummary match={selectedMatch} />
                     </div>
                     <div className="form-group">
                         <label>PKS SYSTEM</label>
@@ -403,37 +473,6 @@ export default function EgyptNTPKSEditor({ pksData, pksSuggestions = {}, onDataS
                             onChange={(v) => setCommonField("PKS System", v)}
                             placeholder="Select PKS System"
                             searchable
-                        />
-                    </div>
-                    <div className="form-group">
-                        <label>CHAMPION SYSTEM</label>
-                        <DropDownList_db
-                            allowCustom
-                            options={dropdownOptions.champSystem}
-                            value={commonData["CHAMPION System"] || ""}
-                            onChange={(v) => setCommonField("CHAMPION System", v)}
-                            placeholder="Select Champion System"
-                            searchable
-                        />
-                    </div>
-                    <div className="form-group">
-                        <label>EGYPT TEAM</label>
-                        <AutocompleteInput
-                            options={teamOptions}
-                            value={commonData["Egypt TEAM"] || ""}
-                            onChange={(v) => setCommonField("Egypt TEAM", v)}
-                            placeholder="Select Egypt Team"
-                            accentColor={ACCENT}
-                        />
-                    </div>
-                    <div className="form-group">
-                        <label>OPPONENT TEAM</label>
-                        <AutocompleteInput
-                            options={teamOptions}
-                            value={commonData["OPPONENT TEAM"] || ""}
-                            onChange={(v) => setCommonField("OPPONENT TEAM", v)}
-                            placeholder="Select Opponent Team"
-                            accentColor={ACCENT}
                         />
                     </div>
                     <div className="form-group">
@@ -533,7 +572,7 @@ export default function EgyptNTPKSEditor({ pksData, pksSuggestions = {}, onDataS
                 <div className="search-section">
                     {!editingKick && (
                         <div className="portal-container">
-                            <div className="portal-icon">ðŸ”Ž</div>
+                            <div className="portal-icon">🔎</div>
                             <div className="portal-title">ENTER MATCH ID</div>
                             <div className="portal-subtitle">
                                 Type MATCH ID or PK-N (display ID) to load all linked records for editing
@@ -552,7 +591,7 @@ export default function EgyptNTPKSEditor({ pksData, pksSuggestions = {}, onDataS
                                             <span className="btn-spinner btn-spinner--light" />
                                             Loading...
                                         </span>
-                                    ) : "LOAD â†’"}
+                                    ) : "LOAD →"}
                                 </button>
                             </div>
                         </div>

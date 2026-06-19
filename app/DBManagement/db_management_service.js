@@ -192,8 +192,6 @@ export const DBManagementService = {
                     supabase.from('egy_NT_LINEUPDETAILS').update({ "TEAM": targetName }).in('TEAM', sources),
                     supabase.from('egy_NT_MATCHDETAILS').update({ "Egypt TEAM": targetName }).in('Egypt TEAM', sources),
                     supabase.from('egy_NT_MATCHDETAILS').update({ "OPPONENT TEAM": targetName }).in('OPPONENT TEAM', sources),
-                    supabase.from('egy_NT_PKS').update({ "Egypt TEAM": targetName }).in('Egypt TEAM', sources),
-                    supabase.from('egy_NT_PKS').update({ "OPPONENT TEAM": targetName }).in('OPPONENT TEAM', sources),
                     supabase.from('egy_NT_PLAYERDETAILS').update({ "TEAM": targetName }).in('TEAM', sources),
                     supabase.from('egy_NT_SQUAD').update({ "CLUB": targetName }).in('CLUB', sources)
                 ];

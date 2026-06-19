@@ -19,7 +19,7 @@ const EMPTY_PLAYER = { "MATCH_ID": "", "EVENT_ID": "", "PARENT_EVENT_ID": "", "P
 const EMPTY_GK = { "MATCH_ID": "", "EVENT_ID": "", "TEAM": "", "PLAYER NAME": "", "STATU": "", "OUT MINUTE": "", "GOALS CONCEDED": "" };
 const EMPTY_PEN = { "MATCH_ID": "", "PARENT_EVENT_ID": "", "HOW MISSED?": "", "TEAM": "", "MINUTE": "" };
 
-const isFinalRound = (round) => String(round || "").trim() === "Ø§Ù„Ù†Ù‡Ø§Ø¦ÙŠ";
+const isFinalRound = (round) => String(round || "").trim() === "النهائي";
 
 
 // â”€â”€ Editable Table â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
@@ -139,13 +139,13 @@ function EditableTable({ title, color, rows, setRows, columns, matchId, emptyRow
                                             <button onClick={() => onSave(row, ri, tableName)} disabled={isSaving}
                                                 className="row-action-btn"
                                                 style={{ background: '#22c55e', color: '#fff' }}>
-                                                {isSaving ? '...' : 'ðŸ’¾'}
+                                                {isSaving ? '...' : '💾'}
                                             </button>
                                         )}
                                         <button onClick={() => onDelete(row, ri, tableName, setRows)}
                                             className="row-action-btn"
                                             style={{ background: '#fee2e2', color: '#ef4444', padding: '5px 10px' }}>
-                                            âœ•
+                                            ✕
                                         </button>
                                     </div>
                                 </td>
@@ -395,7 +395,7 @@ export default function AlAhlyEditor() {
             let matchMin = parseInt(matchMinuteRef) || 90;
             let total = "";
 
-            if (row.STATU === 'Ø§Ø³Ø§Ø³ÙŠ') {
+            if (row.STATU === 'اساسي') {
                 const playerName = String(row["PLAYER NAME"] || "").trim();
                 const subOutRow = playerName ? next.find(r => String(r["PLAYER NAME OUT"] || "").trim() === playerName) : null;
 
@@ -405,7 +405,7 @@ export default function AlAhlyEditor() {
                 } else {
                     total = matchMin;
                 }
-            } else if (row.STATU === 'Ø§Ø­ØªÙŠØ§Ø·ÙŠ') {
+            } else if (row.STATU === 'احتياطي') {
                 if (!isNaN(outMin) && outMin > 0) {
                     total = Math.max(0, matchMin - outMin);
                 }
@@ -429,8 +429,8 @@ export default function AlAhlyEditor() {
             const initialLineup = Array.from({ length: 16 }, (_, i) => ({
                 ...EMPTY_LINEUP,
                 "MATCH MINUTE": "90",
-                "TEAM": "Ø§Ù„Ø£Ù‡Ù„ÙŠ",
-                "STATU": i < 11 ? "Ø§Ø³Ø§Ø³ÙŠ" : "Ø§Ø­ØªÙŠØ§Ø·ÙŠ",
+                "TEAM": "الأهلي",
+                "STATU": i < 11 ? "اساسي" : "احتياطي",
                 "TOTAL MINUTE": i < 11 ? "90" : "",
                 MATCH_ID: newMatchData.MATCH_ID || '',
                 _isNew: true,
@@ -469,8 +469,8 @@ export default function AlAhlyEditor() {
                 const initialLineup = Array.from({ length: 16 }, (_, i) => ({
                     ...EMPTY_LINEUP,
                     "MATCH MINUTE": "90",
-                    "TEAM": "Ø§Ù„Ø£Ù‡Ù„ÙŠ",
-                    "STATU": i < 11 ? "Ø§Ø³Ø§Ø³ÙŠ" : "Ø§Ø­ØªÙŠØ§Ø·ÙŠ",
+                    "TEAM": "الأهلي",
+                    "STATU": i < 11 ? "اساسي" : "احتياطي",
                     "TOTAL MINUTE": i < 11 ? "90" : "",
                     MATCH_ID: id,
                     _isNew: true,
@@ -526,7 +526,7 @@ export default function AlAhlyEditor() {
             const savedRow = result.data?.[0];
             if (!savedRow) throw new Error("No data returned from DB after save success.");
 
-            addToast(row._isNew ? 'Row inserted âœ“' : 'Row updated âœ“');
+            addToast(row._isNew ? 'Row inserted ✓' : 'Row updated ✓');
 
             const setterMap = {
                 'alahly_LINEUPDETAILS': setLineupRows,
@@ -576,7 +576,7 @@ export default function AlAhlyEditor() {
                     const { error: insErr } = await supabase.from(tableName).insert(remaining);
                     if (insErr) throw insErr;
                 }
-                addToast('Row deleted âœ“', 'warn');
+                addToast('Row deleted ✓', 'warn');
             } catch (e) { addToast('Delete failed: ' + e.message, 'error'); }
         } else {
             const setterMap = {
@@ -662,7 +662,7 @@ export default function AlAhlyEditor() {
                 saveLinkedTable('alahly_HOWPENMISSED', penRows, setPenRows),
             ]);
 
-            addToast('Match and all pending records saved âœ“');
+            addToast('Match and all pending records saved ✓');
         } catch (e) {
             console.error("Global Save Error:", e);
             addNotification(`Global Save Failed:\n${e.message}`, "error");
@@ -715,7 +715,7 @@ export default function AlAhlyEditor() {
                 saveStagedTable('alahly_HOWPENMISSED', newPenRows),
             ]);
 
-            addToast('Match + all linked data created âœ“');
+            addToast('Match + all linked data created ✓');
             setSearchId(mid);
             // Reset states
             setNewLineupRows([]); setNewPlayerRows([]); setNewGkRows([]); setNewPenRows([]);
@@ -769,7 +769,7 @@ export default function AlAhlyEditor() {
                 {/* â”€â”€ Mode: Search = portal â”€â”€ */}
                 {(mode === 'search') && (
                     <div className="portal-container">
-                        <div className="portal-icon">ðŸ”Ž</div>
+                        <div className="portal-icon">🔎</div>
                         <div className="portal-title">
                             ENTER MATCH ID
                         </div>
@@ -788,7 +788,7 @@ export default function AlAhlyEditor() {
                                 onClick={handleSearch}
                                 disabled={loading}
                                 className="load-btn">
-                                {loading ? 'Loading...' : 'LOAD â†’'}
+                                {loading ? 'Loading...' : 'LOAD →'}
                             </button>
                         </div>
                     </div>
@@ -813,7 +813,7 @@ export default function AlAhlyEditor() {
                                     onClick={handleCreateMatch}
                                     disabled={isSaving}
                                     className="create-match-btn">
-                                    {isSaving ? 'Creating...' : 'âœ“ CREATE MATCH'}
+                                    {isSaving ? 'Creating...' : '✓ CREATE MATCH'}
                                 </button>
                             </div>
                         </div>
@@ -844,7 +844,7 @@ export default function AlAhlyEditor() {
                                     columnOptions={{
                                         "PLAYER NAME": allPlayersList,
                                         "TEAM": [newMatchData["AHLY TEAM"], newMatchData["OPPONENT TEAM"]].filter(Boolean),
-                                        "PLAYER NAME OUT": newLineupRows.filter(r => String(r.STATU || '').trim() === 'Ø§Ø³Ø§Ø³ÙŠ' && String(r["PLAYER NAME"] || '').trim()).map(r => r["PLAYER NAME"]).sort((a, b) => a.localeCompare(b, 'ar'))
+                                        "PLAYER NAME OUT": newLineupRows.filter(r => String(r.STATU || '').trim() === 'اساسي' && String(r["PLAYER NAME"] || '').trim()).map(r => r["PLAYER NAME"]).sort((a, b) => a.localeCompare(b, 'ar'))
                                     }}
                                 />
                             )}
@@ -874,7 +874,7 @@ export default function AlAhlyEditor() {
                                     columnOptions={{
                                         "PLAYER NAME": allPlayersList,
                                         "TEAM": [newMatchData["AHLY TEAM"], newMatchData["OPPONENT TEAM"]].filter(Boolean),
-                                        "STATU": ["Ø§Ø³Ø§Ø³ÙŠ", "Ø§Ø­ØªÙŠØ§Ø·ÙŠ"]
+                                        "STATU": ["اساسي", "احتياطي"]
                                     }}
                                 />
                             )}
@@ -913,14 +913,14 @@ export default function AlAhlyEditor() {
                                         onClick={() => { setMode('search'); setMatchData(null); }}
                                         title="Back to search"
                                         className="action-btn-circle">
-                                        â†
+                                        ←
                                     </button>
                                     <button
                                         onClick={handleSaveMatch}
                                         disabled={isSaving}
                                         title="Save match"
                                         className="save-match-btn">
-                                        {isSaving ? 'â³' : 'ðŸ’¾'}
+                                        {isSaving ? '⏳' : '💾'}
                                     </button>
                                 </div>
                             </div>
@@ -956,7 +956,7 @@ export default function AlAhlyEditor() {
                                     columnOptions={{
                                         "PLAYER NAME": allPlayersList,
                                         "TEAM": [matchData["AHLY TEAM"], matchData["OPPONENT TEAM"]].filter(Boolean),
-                                        "PLAYER NAME OUT": lineupRows.filter(r => String(r.STATU || '').trim() === 'Ø§Ø³Ø§Ø³ÙŠ' && String(r["PLAYER NAME"] || '').trim()).map(r => r["PLAYER NAME"]).sort((a, b) => a.localeCompare(b, 'ar'))
+                                        "PLAYER NAME OUT": lineupRows.filter(r => String(r.STATU || '').trim() === 'اساسي' && String(r["PLAYER NAME"] || '').trim()).map(r => r["PLAYER NAME"]).sort((a, b) => a.localeCompare(b, 'ar'))
                                     }}
                                 />
                             )}
@@ -986,7 +986,7 @@ export default function AlAhlyEditor() {
                                     columnOptions={{
                                         "PLAYER NAME": allPlayersList,
                                         "TEAM": [matchData["AHLY TEAM"], matchData["OPPONENT TEAM"]].filter(Boolean),
-                                        "STATU": ["Ø§Ø³Ø§Ø³ÙŠ", "Ø§Ø­ØªÙŠØ§Ø·ÙŠ"]
+                                        "STATU": ["اساسي", "احتياطي"]
                                     }}
                                 />
                             )}

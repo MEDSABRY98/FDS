@@ -440,11 +440,7 @@ export default function AlAhlyPKsEditor({ pksData, pksSuggestions = {}, penaltyM
                     <h3>GENERAL MATCH DETAILS</h3>
                 </div>
                 <div className="form-grid">
-                    <div className="form-group">
-                        <label>PKS ID</label>
-                        <input type="text" value={commonData.PKS_ID || ""} onChange={(e) => setCommonField("PKS_ID", e.target.value)} />
-                    </div>
-                    <div className="form-group form-group--wide">
+                    <div className="form-group form-group--full">
                         <label>MATCH ID *</label>
                         <DropDownList_db
                             allowCustom

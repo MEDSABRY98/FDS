@@ -97,6 +97,16 @@
 
 .col-pks-id { width: 80px; flex-shrink: 0; text-align: center; }
 .col-date { width: 110px; flex-shrink: 0; text-align: center; }
+
+.unlinked-badge {
+    display: inline-block;
+    padding: 2px 8px;
+    border-radius: 6px;
+    background: #fff0f0;
+    color: #b42318;
+    font-size: 11px;
+    font-weight: 700;
+}
 .col-champion { width: 220px; flex-shrink: 0; text-align: center; }
 .col-season { width: 120px; flex-shrink: 0; text-align: center; }
 .col-round { width: 110px; flex-shrink: 0; text-align: center; }

@@ -344,8 +344,10 @@ export default function EgyptNTPKSMatches({ pksData, onSelectMatch }) {
                                     >
                                         <span className="pks-id-txt">{pk.DISPLAY_ID}</span>
                                     </div>
-                                    <div className="col-date">{formatDate(pk.DATE)}</div>
-                                    <div className="col-champion">{pk.CHAMPION || "---"}</div>
+                                    <div className="col-date">
+                                        {pk.MATCH_ID ? formatDate(pk.DATE) : <span className="unlinked-badge">غير مربوط</span>}
+                                    </div>
+                                    <div className="col-champion">{pk.MATCH_ID ? (pk.CHAMPION || "---") : "---"}</div>
                                     <div className="col-season">
                                         <span className="season-txt">🏆 {pk.SEASON || "---"}</span>
                                     </div>

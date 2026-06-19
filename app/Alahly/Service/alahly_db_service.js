@@ -14,7 +14,7 @@ function normalizePenScoreFromPksRow(row = {}) {
 function normalizePenScoreFromMatchPen(penValue) {
     const raw = String(penValue ?? "").trim();
     if (!raw) return "";
-    const match = raw.match(/(\d+)\s*[-:â€“]\s*(\d+)/);
+    const match = raw.match(/(\d+)\s*[-:–]\s*(\d+)/);
     if (!match) return "";
     return `${parseInt(match[1], 10)}-${parseInt(match[2], 10)}`;
 }
@@ -898,7 +898,7 @@ export const AlAhlyService = {
             const isAhlyTeam = (t) => {
                 if (!t) return false;
                 const s = String(t).trim();
-                return s === "Ø§Ù„Ø£Ù‡Ù„ÙŠ" || s === "Ø§Ù„ Ø§Ù„Ø£Ù‡Ù„ÙŠ" || s === "Al Ahly" || s === "Al-Ahly" || s === "Ø§Ù„Ø£Ù‡Ù„Ù‰";
+                return s === "الأهلي" || s === "ال الأهلي" || s === "Al Ahly" || s === "Al-Ahly" || s === "الأهلي";
             };
 
             let winImpact = 0;
@@ -925,7 +925,7 @@ export const AlAhlyService = {
                 // Goals for THE SAME SIDE as the player in this match
                 const sideGoals = matchEvents.filter(e =>
                     isAhlyTeam(e.TEAM) === isAhlySideInThisMatch &&
-                    (["GOAL", "Ù‡Ø¯Ù"].includes(String(e.TYPE || "").toUpperCase()) || String(e.TYPE_SUB || "").toUpperCase() === "PENGOAL")
+                    (["GOAL", "هدف"].includes(String(e.TYPE || "").toUpperCase()) || String(e.TYPE_SUB || "").toUpperCase() === "PENGOAL")
                 ).sort((a, b) => (parseInt(a.MINUTE) || 0) - (parseInt(b.MINUTE) || 0) || parseInt(a.EVENT_ID || 0) - parseInt(b.EVENT_ID || 0));
 
                 if (sideGoals.length === 0) return;
@@ -969,7 +969,7 @@ export const AlAhlyService = {
             const isAhlyTeam = (t) => {
                 if (!t) return false;
                 const s = String(t).trim();
-                return s === "Ø§Ù„Ø£Ù‡Ù„ÙŠ" || s === "Ø§Ù„ Ø§Ù„Ø£Ù‡Ù„ÙŠ" || s === "Al Ahly" || s === "Al-Ahly" || s === "Ø§Ù„Ø£Ù‡Ù„Ù‰";
+                return s === "الأهلي" || s === "ال الأهلي" || s === "Al Ahly" || s === "Al-Ahly" || s === "الأهلي";
             };
 
             let winImpact = 0;
@@ -996,7 +996,7 @@ export const AlAhlyService = {
                     if (playerSideG - opponentSideG === 1) {
                         const sideGoals = matchEvents.filter(e =>
                             isAhlyTeam(e.TEAM) === isAhlySideInThisMatch &&
-                            (["GOAL", "Ù‡Ø¯Ù"].includes(String(e.TYPE || "").toUpperCase()) || String(e.TYPE_SUB || "").toUpperCase() === "PENGOAL")
+                            (["GOAL", "هدف"].includes(String(e.TYPE || "").toUpperCase()) || String(e.TYPE_SUB || "").toUpperCase() === "PENGOAL")
                         ).sort((a, b) => (parseInt(a.MINUTE) || 0) - (parseInt(b.MINUTE) || 0) || parseInt(a.EVENT_ID || 0) - parseInt(b.EVENT_ID || 0));
 
                         if (sideGoals.length === 0) return;
@@ -1004,7 +1004,7 @@ export const AlAhlyService = {
                         const gId = String(lg.EVENT_ID);
 
                         const assistRow = matchEvents.find(e =>
-                            ["ASSIST", "Ø§Ø³ÙŠØ³Øª", "ØµÙ†Ø¹"].includes(String(e.TYPE || "").toUpperCase()) &&
+                            ["ASSIST", "اسيست", "صنع"].includes(String(e.TYPE || "").toUpperCase()) &&
                             (String(e.PARENT_EVENT_ID) === gId || (parseInt(e.MINUTE) === parseInt(lg.MINUTE) && parseInt(e.MINUTE) > 0)) &&
                             String(e["PLAYER NAME"] || "").trim() === searchName &&
                             String(e["PLAYER NAME"] || "").trim() !== String(lg["PLAYER NAME"] || "").trim()
@@ -1018,7 +1018,7 @@ export const AlAhlyService = {
                 } else if (isDraw && playerSideG > 0) {
                     const sideGoals = matchEvents.filter(e =>
                         isAhlySideInThisMatch === isAhlyTeam(e.TEAM) &&
-                        (["GOAL", "Ù‡Ø¯Ù"].includes(String(e.TYPE || "").toUpperCase()) || String(e.TYPE_SUB || "").toUpperCase() === "PENGOAL")
+                        (["GOAL", "هدف"].includes(String(e.TYPE || "").toUpperCase()) || String(e.TYPE_SUB || "").toUpperCase() === "PENGOAL")
                     ).sort((a, b) => (parseInt(a.MINUTE) || 0) - (parseInt(b.MINUTE) || 0) || parseInt(a.EVENT_ID || 0) - parseInt(b.EVENT_ID || 0));
 
                     if (sideGoals.length === 0) return;
@@ -1026,7 +1026,7 @@ export const AlAhlyService = {
                     const gId = String(lg.EVENT_ID);
 
                     const assistRow = matchEvents.find(e =>
-                        ["ASSIST", "Ø§Ø³ÙŠØ³Øª", "ØµÙ†Ø¹"].includes(String(e.TYPE || "").toUpperCase()) &&
+                        ["ASSIST", "اسيست", "صنع"].includes(String(e.TYPE || "").toUpperCase()) &&
                         (String(e.PARENT_EVENT_ID) === gId || (parseInt(e.MINUTE) === parseInt(lg.MINUTE) && parseInt(e.MINUTE) > 0)) &&
                         String(e["PLAYER NAME"] || "").trim() === searchName &&
                         String(e["PLAYER NAME"] || "").trim() !== String(lg["PLAYER NAME"] || "").trim()
