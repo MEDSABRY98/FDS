@@ -200,16 +200,6 @@
     flex-shrink: 0;
 }
 
-.match-note {
-    font-size: 11px;
-    color: #888;
-    font-style: italic;
-    max-width: 100px;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-}
-
 .match-venue-badge {
     width: 28px;
     height: 28px;

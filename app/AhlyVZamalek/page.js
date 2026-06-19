@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import {
     Download,
     SlidersHorizontal,
@@ -38,6 +38,7 @@ export default function AhlyVZamalekDatabase() {
     const [selectedManagerName, setSelectedManagerName] = useState(null);
     const [selectedManagerStatus, setSelectedManagerStatus] = useState("alahly");
     const [isFilterOpen, setIsFilterOpen] = useState(false);
+    const matchesListScrollY = useRef(0);
 
     const tabs = [
         { id: 'avz_dashboard', label: 'Dashboard', icon: LayoutDashboard },
@@ -53,7 +54,13 @@ export default function AhlyVZamalekDatabase() {
 
     useEffect(() => {
         window.scrollTo(0, 0);
-    }, [selectedMatchId, selectedPlayerName, selectedManagerName, activeTab]);
+    }, [activeTab]);
+
+    useEffect(() => {
+        if (selectedMatchId || selectedPlayerName || selectedManagerName) {
+            window.scrollTo(0, 0);
+        }
+    }, [selectedMatchId, selectedPlayerName, selectedManagerName]);
 
     async function fetchAvZData() {
         setLoading(true);
@@ -76,18 +83,6 @@ export default function AhlyVZamalekDatabase() {
     }
 
     const renderAppContent = () => {
-        if (selectedMatchId) {
-            return (
-                <AhlyVZamalekMatchDetails
-                    matchId={selectedMatchId}
-                    matches={matchesData}
-                    playerDetails={playersData}
-                    lineupDetails={lineupsData}
-                    onBack={() => setSelectedMatchId(null)}
-                />
-            );
-        }
-
         if (selectedPlayerName) {
             return (
                 <AhlyVZamalekPlayerDetails
@@ -117,7 +112,35 @@ export default function AhlyVZamalekDatabase() {
             case "avz_dashboard":
                 return <AhlyVZamalekDashboard derbyData={filteredData} />;
             case "avz_matches":
-                return <AhlyVZamalekMatches derbyData={filteredData} onSelectMatch={(id) => setSelectedMatchId(id)} />;
+                return (
+                    <>
+                        <div hidden={!!selectedMatchId}>
+                            <AhlyVZamalekMatches
+                                derbyData={filteredData}
+                                onSelectMatch={(id) => {
+                                    matchesListScrollY.current = window.scrollY;
+                                    setSelectedMatchId(id);
+                                }}
+                            />
+                        </div>
+                        {selectedMatchId && (
+                            <AhlyVZamalekMatchDetails
+                                matchId={selectedMatchId}
+                                matches={matchesData}
+                                playerDetails={playersData}
+                                lineupDetails={lineupsData}
+                                onBack={() => {
+                                    setSelectedMatchId(null);
+                                    requestAnimationFrame(() => {
+                                        requestAnimationFrame(() => {
+                                            window.scrollTo({ top: matchesListScrollY.current, left: 0 });
+                                        });
+                                    });
+                                }}
+                            />
+                        )}
+                    </>
+                );
             case "avz_champions":
                 return <AhlyVZamalekChampions derbyData={filteredData} />;
             case "avz_players":

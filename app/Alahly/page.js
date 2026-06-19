@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, useRef } from "react";
 import {
     Download,
     SlidersHorizontal,
@@ -54,6 +54,7 @@ export default function AlAhlyDatabase() {
     const [loading, setLoading] = useState(true);
     const [selectedMatchId, setSelectedMatchId] = useState(null);
     const [isFilterOpen, setIsFilterOpen] = useState(false);
+    const matchesListScrollY = useRef(0);
 
     // Date Range State
     const [startDate, setStartDate] = useState("");
@@ -448,19 +449,35 @@ export default function AlAhlyDatabase() {
                     <>
                         {activeTab === 'dashboard' && <AlAhlyDashboard matches={filteredMatches} season={dbFilters.season} />}
                         {activeTab === 'matches' && (
-                            !selectedMatchId ? (
-                                <AlAhlyMatches matches={filteredMatches} onMatchClick={(id) => { setSelectedMatchId(id); }} />
-                            ) : (
-                                <AlAhlyMatchDetails
-                                    matchId={selectedMatchId}
-                                    matches={matches}
-                                    playerDetails={playerDetails}
-                                    lineupDetails={lineupDetails}
-                                    gkDetails={gkDetails}
-                                    howPenMissed={howPenMissed}
-                                    onBack={() => setSelectedMatchId(null)}
-                                />
-                            )
+                            <>
+                                <div hidden={!!selectedMatchId}>
+                                    <AlAhlyMatches
+                                        matches={filteredMatches}
+                                        onMatchClick={(id) => {
+                                            matchesListScrollY.current = window.scrollY;
+                                            setSelectedMatchId(id);
+                                        }}
+                                    />
+                                </div>
+                                {selectedMatchId && (
+                                    <AlAhlyMatchDetails
+                                        matchId={selectedMatchId}
+                                        matches={matches}
+                                        playerDetails={playerDetails}
+                                        lineupDetails={lineupDetails}
+                                        gkDetails={gkDetails}
+                                        howPenMissed={howPenMissed}
+                                        onBack={() => {
+                                            setSelectedMatchId(null);
+                                            requestAnimationFrame(() => {
+                                                requestAnimationFrame(() => {
+                                                    window.scrollTo({ top: matchesListScrollY.current, left: 0 });
+                                                });
+                                            });
+                                        }}
+                                    />
+                                )}
+                            </>
                         )}
                         {activeTab === 'seasons' && <AlAhlySeasons matches={filteredMatches} />}
                         {activeTab === 'seasons_n' && <AlAhlySeasonsN matches={filteredMatches} />}

@@ -96,6 +96,8 @@ export default function AlAhlyMatchDetails({
 
     if (!matchInfo) return <div className="error-state">Match record not located.</div>;
 
+    const matchNote = matchInfo["W-L Q & F"] || matchInfo.NOTE || "";
+
     const formatDate = (dateStr) => {
         if (!dateStr) return "N/A";
         const d = new Date(dateStr);
@@ -150,6 +152,7 @@ export default function AlAhlyMatchDetails({
                             <span className="score-divider">-</span>
                             <span className="score-digit">{matchInfo.GA}</span>
                         </div>
+                        {matchNote && <div className="score-note">{matchNote}</div>}
                         {matchInfo.PEN && <div className="pen-result">{matchInfo.PEN}</div>}
 
                     </div>

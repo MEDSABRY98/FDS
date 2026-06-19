@@ -351,10 +351,6 @@ export default function EgyptClubMatches({ matches, onMatchClick }) {
                                         </div>
 
                                         <div className="match-meta-right">
-                                            <span className="match-note">
-                                                {m["W-L Q & F"] ? m["W-L Q & F"] : (m.NOTE ? m.NOTE : "")}
-                                            </span>
-                                            
                                             <div 
                                                 className="match-venue-badge"
                                                 title={m.PLACE ? `Place: ${m.PLACE}` : ""}

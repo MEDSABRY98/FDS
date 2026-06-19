@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { 
     Download, 
     SlidersHorizontal, 
@@ -32,6 +32,7 @@ export default function EgyptNTPKSDatabase() {
     const [loading, setLoading] = useState(true);
     const [selectedPksId, setSelectedPksId] = useState(null);
     const [isFilterOpen, setIsFilterOpen] = useState(false);
+    const matchesListScrollY = useRef(0);
 
     const tabs = [
         { id: 'egy_pks_dashboard', label: 'Dashboard', icon: LayoutDashboard },
@@ -49,7 +50,13 @@ export default function EgyptNTPKSDatabase() {
 
     useEffect(() => {
         window.scrollTo(0, 0);
-    }, [selectedPksId, activeTab]);
+    }, [activeTab]);
+
+    useEffect(() => {
+        if (selectedPksId) {
+            window.scrollTo(0, 0);
+        }
+    }, [selectedPksId]);
 
     async function fetchPKData() {
         setLoading(true);
@@ -60,16 +67,36 @@ export default function EgyptNTPKSDatabase() {
     }
 
     const renderAppContent = () => {
-        if (selectedPksId) {
-            const matchKicks = filteredData.filter(k => k.PKS_ID === selectedPksId);
-            return <EgyptNTPKSMatchDetails matchPks={matchKicks} onBack={() => setSelectedPksId(null)} />;
-        }
-
         switch (activeTab) {
             case "egy_pks_dashboard":
                 return <EgyptNTPKSDashboard pksData={filteredData} />;
             case "egy_pks_matches":
-                return <EgyptNTPKSMatches pksData={filteredData} onSelectMatch={(id) => setSelectedPksId(id)} />;
+                return (
+                    <>
+                        <div hidden={!!selectedPksId}>
+                            <EgyptNTPKSMatches
+                                pksData={filteredData}
+                                onSelectMatch={(id) => {
+                                    matchesListScrollY.current = window.scrollY;
+                                    setSelectedPksId(id);
+                                }}
+                            />
+                        </div>
+                        {selectedPksId && (
+                            <EgyptNTPKSMatchDetails
+                                matchPks={filteredData.filter(k => k.PKS_ID === selectedPksId)}
+                                onBack={() => {
+                                    setSelectedPksId(null);
+                                    requestAnimationFrame(() => {
+                                        requestAnimationFrame(() => {
+                                            window.scrollTo({ top: matchesListScrollY.current, left: 0 });
+                                        });
+                                    });
+                                }}
+                            />
+                        )}
+                    </>
+                );
             case "egy_pks_champions":
                 return <EgyptNTPKSChampions pksData={filteredData} />;
             case "egy_pks_players":

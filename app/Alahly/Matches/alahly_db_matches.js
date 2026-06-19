@@ -370,10 +370,6 @@ export default function AlAhlyMatches({ matches, onMatchClick }) {
                                         </div>
 
                                         <div className="match-meta-right">
-                                            <span className="match-note">
-                                                {m["W-L Q & F"] ? m["W-L Q & F"] : (m.NOTE ? m.NOTE : "")}
-                                            </span>
-                                            
                                             <div 
                                                 className="match-venue-badge"
                                                 title={m.PLACE ? `Place: ${m.PLACE}` : ""}
@@ -589,15 +585,6 @@ export default function AlAhlyMatches({ matches, onMatchClick }) {
                     justify-content: flex-end;
                     gap: 12px;
                     flex-shrink: 0;
-                }
-                .match-note {
-                    font-size: 11px;
-                    color: #888;
-                    font-style: italic;
-                    max-width: 100px;
-                    overflow: hidden;
-                    text-overflow: ellipsis;
-                    white-space: nowrap;
                 }
                 .match-venue-badge {
                     width: 28px;

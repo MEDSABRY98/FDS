@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { LayoutDashboard, Trophy, Award, Users, UserCheck, Download, Filter } from "lucide-react";
 import SideBar_db from "../lib/SideBar_db";
 import { AlAhlyFinalsService } from "./Service/alahly_finals_service";
@@ -24,6 +24,7 @@ export default function AlAhlyFinalsDatabase() {
     const [loading, setLoading] = useState(true);
     const [selectedMatchId, setSelectedMatchId] = useState(null);
     const [isFilterOpen, setIsFilterOpen] = useState(false);
+    const matchesListScrollY = useRef(0);
 
     useEffect(() => {
         fetchFinalsData();
@@ -31,7 +32,13 @@ export default function AlAhlyFinalsDatabase() {
 
     useEffect(() => {
         window.scrollTo(0, 0);
-    }, [selectedMatchId, activeTab]);
+    }, [activeTab]);
+
+    useEffect(() => {
+        if (selectedMatchId) {
+            window.scrollTo(0, 0);
+        }
+    }, [selectedMatchId]);
 
     async function fetchFinalsData() {
         setLoading(true);
@@ -54,24 +61,39 @@ export default function AlAhlyFinalsDatabase() {
     }
 
     const renderAppContent = () => {
-        // Handle Match Details drill-down if needed
-        if (selectedMatchId) {
-            return (
-                <AlAhlyFinalsMatchDetails
-                    matchId={selectedMatchId}
-                    matches={matchesData}
-                    playerDetails={playersData}
-                    lineupDetails={lineupsData}
-                    onBack={() => setSelectedMatchId(null)}
-                />
-            );
-        }
-
         switch (activeTab) {
             case "finals_dashboard":
                 return <AlAhlyFinalsDashboard finalsData={filteredData} />;
             case "finals_matches":
-                return <AlAhlyFinalsMatches finalsData={filteredData} onSelectMatch={(id) => setSelectedMatchId(id)} />;
+                return (
+                    <>
+                        <div hidden={!!selectedMatchId}>
+                            <AlAhlyFinalsMatches
+                                finalsData={filteredData}
+                                onSelectMatch={(id) => {
+                                    matchesListScrollY.current = window.scrollY;
+                                    setSelectedMatchId(id);
+                                }}
+                            />
+                        </div>
+                        {selectedMatchId && (
+                            <AlAhlyFinalsMatchDetails
+                                matchId={selectedMatchId}
+                                matches={matchesData}
+                                playerDetails={playersData}
+                                lineupDetails={lineupsData}
+                                onBack={() => {
+                                    setSelectedMatchId(null);
+                                    requestAnimationFrame(() => {
+                                        requestAnimationFrame(() => {
+                                            window.scrollTo({ top: matchesListScrollY.current, left: 0 });
+                                        });
+                                    });
+                                }}
+                            />
+                        )}
+                    </>
+                );
             case "finals_players":
                 return <AlAhlyFinalsPlayers playersData={playersData} matchesData={matchesData} lineupsData={lineupsData} />;
             case "finals_champions":

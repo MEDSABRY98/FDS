@@ -135,6 +135,17 @@
     margin-bottom: 10px;
 }
 
+.score-note {
+    font-size: 13px;
+    font-style: italic;
+    color: #888;
+    font-weight: 600;
+    max-width: 220px;
+    margin: 0 auto 8px;
+    line-height: 1.4;
+    text-align: center;
+}
+
 .score-digit {
     font-size: 80px;
     font-weight: 950;

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import {
     Download,
     SlidersHorizontal,
@@ -35,6 +35,7 @@ export default function AlAhlyPKsDatabase() {
     const [loading, setLoading] = useState(true);
     const [selectedPksId, setSelectedPksId] = useState(null);
     const [isFilterOpen, setIsFilterOpen] = useState(false);
+    const matchesListScrollY = useRef(0);
 
     const tabs = [
         { id: 'alahly_pks_dashboard', label: 'Dashboard', icon: LayoutDashboard },
@@ -53,7 +54,13 @@ export default function AlAhlyPKsDatabase() {
 
     useEffect(() => {
         window.scrollTo(0, 0);
-    }, [selectedPksId, activeTab]);
+    }, [activeTab]);
+
+    useEffect(() => {
+        if (selectedPksId) {
+            window.scrollTo(0, 0);
+        }
+    }, [selectedPksId]);
 
     async function fetchPKData(options = {}) {
         const { silent = false } = options;
@@ -93,16 +100,36 @@ export default function AlAhlyPKsDatabase() {
     }
 
     const renderAppContent = () => {
-        if (selectedPksId) {
-            const matchKicks = filteredData.filter(k => k.PKS_ID === selectedPksId);
-            return <AlAhlyPKsMatchDetails matchPks={matchKicks} onBack={() => setSelectedPksId(null)} />;
-        }
-
         switch (activeTab) {
             case "alahly_pks_dashboard":
                 return <AlAhlyPKsDashboard pksData={filteredData} />;
             case "alahly_pks_matches":
-                return <AlAhlyPKsMatches pksData={filteredData} onSelectMatch={(id) => setSelectedPksId(id)} />;
+                return (
+                    <>
+                        <div hidden={!!selectedPksId}>
+                            <AlAhlyPKsMatches
+                                pksData={filteredData}
+                                onSelectMatch={(id) => {
+                                    matchesListScrollY.current = window.scrollY;
+                                    setSelectedPksId(id);
+                                }}
+                            />
+                        </div>
+                        {selectedPksId && (
+                            <AlAhlyPKsMatchDetails
+                                matchPks={filteredData.filter(k => k.PKS_ID === selectedPksId)}
+                                onBack={() => {
+                                    setSelectedPksId(null);
+                                    requestAnimationFrame(() => {
+                                        requestAnimationFrame(() => {
+                                            window.scrollTo({ top: matchesListScrollY.current, left: 0 });
+                                        });
+                                    });
+                                }}
+                            />
+                        )}
+                    </>
+                );
             case "alahly_pks_editor":
                 return (
                     <Login_db title="EDITOR ACCESS" subtitle="AUTHORIZATION REQUIRED">

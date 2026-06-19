@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, useRef } from "react";
 import { 
     Download, 
     SlidersHorizontal, 
@@ -55,6 +55,7 @@ export default function EgyptNTDatabase() {
     const [loading, setLoading] = useState(true);
     const [selectedMatchId, setSelectedMatchId] = useState(null);
     const [isFilterOpen, setIsFilterOpen] = useState(false);
+    const matchesListScrollY = useRef(0);
 
     // Date Range State
     const [startDate, setStartDate] = useState("");
@@ -536,20 +537,36 @@ export default function EgyptNTDatabase() {
                         <>
                             {activeTab === 'dashboard' && <EgyptNTDashboard matches={filteredMatches} season={dbFilters.season} />}
                             {activeTab === 'matches' && (
-                                !selectedMatchId ? (
-                                    <EgyptNTMatches matches={filteredMatches} onMatchClick={(id) => { setSelectedMatchId(id); }} />
-                                ) : (
-                                    <EgyptNTMatchDetails
-                                        matchId={selectedMatchId}
-                                        matches={matches}
-                                        playerDetails={playerDetails}
-                                        lineupDetails={lineupDetails}
-                                        gkDetails={gkDetails}
-                                        howPenMissed={howPenMissed}
-                                        onBack={() => setSelectedMatchId(null)}
-                                        onRefresh={() => fetchMatchData(true)}
-                                    />
-                                )
+                                <>
+                                    <div hidden={!!selectedMatchId}>
+                                        <EgyptNTMatches
+                                            matches={filteredMatches}
+                                            onMatchClick={(id) => {
+                                                matchesListScrollY.current = window.scrollY;
+                                                setSelectedMatchId(id);
+                                            }}
+                                        />
+                                    </div>
+                                    {selectedMatchId && (
+                                        <EgyptNTMatchDetails
+                                            matchId={selectedMatchId}
+                                            matches={matches}
+                                            playerDetails={playerDetails}
+                                            lineupDetails={lineupDetails}
+                                            gkDetails={gkDetails}
+                                            howPenMissed={howPenMissed}
+                                            onBack={() => {
+                                                setSelectedMatchId(null);
+                                                requestAnimationFrame(() => {
+                                                    requestAnimationFrame(() => {
+                                                        window.scrollTo({ top: matchesListScrollY.current, left: 0 });
+                                                    });
+                                                });
+                                            }}
+                                            onRefresh={() => fetchMatchData(true)}
+                                        />
+                                    )}
+                                </>
                             )}
                             {activeTab === 'squad' && (
                                 <EgyptNTSquad
