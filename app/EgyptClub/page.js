@@ -13,7 +13,8 @@ import {
     GitCompare,
     Menu,
     ArrowLeft,
-    Award
+    Award,
+    Plus
 } from "lucide-react";
 import Link from "next/link";
 
@@ -26,6 +27,7 @@ import EgyptClubOpponents from "./Opponents/egy_c_opponents_club";
 import EgyptClubH2H from "./HeadToHead/egy_c_h2h";
 import EgyptClubSeasons from "./Seasons/egy_c_seasons";
 import EgyptClubYears from "./Years/egy_c_years";
+import EgyptClubAddMatches from "./AddMatches/egy_c_add_matches";
 import EgyptClubFilters from "./Filters/egy_c_filters";
 import { exportMatchesToExcel } from "./ExcelExport/egy_c_excel_export";
 import Loading_db from "../lib/Loading_db";
@@ -349,11 +351,12 @@ export default function EgyptClubDatabase() {
     const tabs = [
         { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
         { id: 'matches', label: 'Matches', icon: Trophy },
+        { id: 'add_matches', label: 'Add Matches', icon: Plus },
         { id: 'clubs', label: 'Egyptian Clubs', icon: Shield },
         { id: 'opponents', label: 'Opponents Club', icon: Users },
         { id: 'h2h', label: 'H2H Comparison', icon: GitCompare },
         { id: 'seasons', label: 'Seasons', icon: Calendar },
-        { id: 'years', label: 'Years', icon: Calendar }
+        { id: 'years', label: 'Years', icon: Calendar },
     ];
 
     return (
@@ -476,7 +479,7 @@ export default function EgyptClubDatabase() {
                 </header>
 
                 <main className="egypt-content-viewport">
-                    {loading ? (
+                    {loading && activeTab !== "add_matches" ? (
                         <Loading_db title="EGYPT CLUBS" subtitle="DATABASE" message="SYNCING DATA" inline={true} />
                     ) : (
                         <>
@@ -487,6 +490,12 @@ export default function EgyptClubDatabase() {
                             {activeTab === 'h2h' && <EgyptClubH2H matches={filteredMatches} />}
                             {activeTab === 'seasons' && <EgyptClubSeasons matches={filteredMatches} />}
                             {activeTab === 'years' && <EgyptClubYears matches={filteredMatches} />}
+                            {activeTab === 'add_matches' && (
+                                <EgyptClubAddMatches
+                                    matches={matches}
+                                    onRefresh={() => fetchMatchData(true)}
+                                />
+                            )}
                         </>
                     )}
                 </main>

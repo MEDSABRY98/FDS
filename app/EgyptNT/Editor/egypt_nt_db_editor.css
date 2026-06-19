@@ -246,20 +246,29 @@
 
 /* ── Tabs for Linked Tables ── */
 .linked-tabs-grid {
-    display: grid;
-    grid-template-columns: repeat(5, 1fr);
+    display: flex;
+    flex-wrap: nowrap;
+    align-items: stretch;
     gap: 10px;
     margin-bottom: 30px;
+    width: 100%;
 }
 
 .tab-btn {
+    flex: 1 1 0;
+    min-width: 0;
     border: none;
-    padding: 14px;
+    padding: 12px 8px;
     border-radius: 12px;
     font-weight: 800;
     cursor: pointer;
     font-family: 'Outfit', sans-serif;
-    font-size: 13px;
+    font-size: clamp(10px, 0.85vw, 13px);
+    letter-spacing: 0.3px;
+    line-height: 1.2;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
     transition: all 0.2s;
     background: #f8f8f8;
     color: #888;

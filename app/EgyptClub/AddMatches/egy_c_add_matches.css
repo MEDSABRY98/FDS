@@ -1,0 +1,247 @@
+.add-matches-wrap {
+    padding: 0 40px 40px;
+    max-width: 1400px;
+    width: 95%;
+    margin: 0 auto;
+}
+
+.add-matches-header {
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+    gap: 16px;
+    flex-wrap: wrap;
+    margin-bottom: 8px;
+}
+
+.add-matches-title {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 42px;
+    letter-spacing: 2px;
+    line-height: 1;
+    margin: 0;
+}
+
+.add-matches-title .accent {
+    color: var(--gold, #c9a84c);
+}
+
+.add-matches-actions {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+}
+
+.add-matches-btn {
+    border: none;
+    border-radius: 10px;
+    padding: 12px 20px;
+    font-weight: 800;
+    font-family: 'Outfit', sans-serif;
+    font-size: 13px;
+    letter-spacing: 0.5px;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.add-matches-btn.primary {
+    background: var(--gold, #c9a84c);
+    color: #0a0a0a;
+}
+
+.add-matches-btn.secondary {
+    background: #0a0a0a;
+    color: #fff;
+}
+
+.add-matches-btn:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
+.gold-line {
+    height: 2px;
+    background: var(--gold, #c9a84c);
+    margin: 0 0 24px;
+}
+
+.match-cards-list {
+    display: flex;
+    flex-direction: column;
+    gap: 24px;
+}
+
+.match-card {
+    background: #fff;
+    border: 1px solid #eee;
+    border-radius: 14px;
+    padding: 20px 22px 22px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.04);
+}
+
+.match-card-header {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    margin-bottom: 20px;
+    padding-bottom: 16px;
+    border-bottom: 1px solid #f0f0f0;
+    flex-wrap: wrap;
+}
+
+.match-card-index {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 22px;
+    letter-spacing: 1.5px;
+    color: #0a0a0a;
+    flex-shrink: 0;
+}
+
+.match-card-id-wrap {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.match-card-id-label {
+    font-family: 'Space Mono', monospace;
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 1px;
+    color: #888;
+}
+
+.match-id-preview {
+    font-family: 'Space Mono', monospace;
+    font-size: 11px;
+    color: #16a34a;
+    background: rgba(34, 197, 94, 0.06);
+    border: 1px solid rgba(34, 197, 94, 0.25);
+    border-radius: 10px;
+    padding: 10px 14px;
+    word-break: break-word;
+    line-height: 1.4;
+}
+
+.match-id-preview.empty {
+    color: #bbb;
+    background: #fafafa;
+    border-color: #eee;
+}
+
+.add-matches-delete-btn {
+    border: none;
+    border-radius: 10px;
+    background: #fee2e2;
+    color: #ef4444;
+    width: 40px;
+    height: 40px;
+    cursor: pointer;
+    font-weight: 800;
+    font-size: 16px;
+    flex-shrink: 0;
+    transition: background 0.2s;
+}
+
+.add-matches-delete-btn:hover {
+    background: #fecaca;
+}
+
+/* Two rows of fields per match card — 4 columns, no horizontal scroll */
+.match-fields-row {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 18px 20px;
+    margin-bottom: 18px;
+}
+
+.match-fields-row:last-child {
+    margin-bottom: 0;
+}
+
+.match-field {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    min-width: 0;
+}
+
+.match-field--wide {
+    grid-column: span 2;
+}
+
+.match-field-label {
+    font-family: 'Space Mono', monospace;
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 0.8px;
+    color: #888;
+    text-align: left;
+    line-height: 1.3;
+}
+
+.match-field-input,
+.match-field .field-input {
+    width: 100%;
+    min-width: 0;
+    box-sizing: border-box;
+    border: 1.5px solid #ebebeb;
+    border-radius: 10px;
+    padding: 10px 12px;
+    font-size: 13px;
+    font-family: 'Outfit', sans-serif;
+    height: 42px;
+    background: #fff;
+    transition: border-color 0.2s;
+}
+
+.match-field-input:focus {
+    outline: none;
+    border-color: var(--gold, #c9a84c);
+}
+
+.add-matches-errors {
+    margin-top: 24px;
+    padding: 14px 16px;
+    border-radius: 10px;
+    background: #fef2f2;
+    border: 1px solid #fecaca;
+    color: #b91c1c;
+    font-size: 13px;
+}
+
+.add-matches-errors ul {
+    margin: 8px 0 0;
+    padding-left: 18px;
+}
+
+@media (max-width: 1100px) {
+    .match-fields-row {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .match-field--wide {
+        grid-column: span 2;
+    }
+}
+
+@media (max-width: 768px) {
+    .add-matches-wrap {
+        width: 100%;
+        padding: 0 20px 40px;
+    }
+
+    .match-fields-row {
+        grid-template-columns: 1fr;
+    }
+
+    .match-field--wide {
+        grid-column: span 1;
+    }
+
+    .match-card {
+        padding: 16px;
+    }
+}

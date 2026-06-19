@@ -71,8 +71,7 @@ export default function AlAhlyPKsDatabase() {
         if (!silent) setLoading(true);
 
         const pks = await AlAhlyService.getAllPKs();
-        const linkedPks = await AlAhlyService.enrichPksFromMatchDetails(pks);
-        const enrichedData = await AlAhlyService.enrichPksWithMatchDetails(linkedPks);
+        const enrichedData = await AlAhlyService.enrichPksWithMatchDetails(pks);
 
         setPksData(enrichedData);
         setFilteredData(enrichedData);
@@ -81,8 +80,7 @@ export default function AlAhlyPKsDatabase() {
 
     const handleEditorDataSaved = useCallback(async () => {
         const pks = await AlAhlyService.getAllPKs();
-        const linkedPks = await AlAhlyService.enrichPksFromMatchDetails(pks);
-        const enrichedData = await AlAhlyService.enrichPksWithMatchDetails(linkedPks);
+        const enrichedData = await AlAhlyService.enrichPksWithMatchDetails(pks);
         setPksData(enrichedData);
         setFilteredData(enrichedData);
     }, []);

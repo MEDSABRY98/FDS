@@ -21,6 +21,60 @@ const EMPTY_PEN = { "MATCH_ID": "", "PARENT_EVENT_ID": "", "HOW MISSED?": "", "T
 
 const isFinalRound = (round) => String(round || "").trim() === "النهائي";
 
+const resolveAhlyTeam = (formData = {}) => String(formData["AHLY TEAM"] || "").trim() || "الأهلي";
+const resolveOpponentTeam = (formData = {}) => String(formData["OPPONENT TEAM"] || "").trim();
+
+function isLineupForAhly(row, ahlyTeam) {
+    const team = String(row?.TEAM || "").trim();
+    if (team === ahlyTeam) return true;
+    if (!formDataHasCustomAhlyTeam(ahlyTeam) && (team === "الأهلي" || team === "الأهلى")) return true;
+    return false;
+}
+
+function formDataHasCustomAhlyTeam(ahlyTeam) {
+    return ahlyTeam && ahlyTeam !== "الأهلي" && ahlyTeam !== "الأهلى";
+}
+
+function isLineupForOpponent(row, opponentTeam, ahlyTeam) {
+    const team = String(row?.TEAM || "").trim();
+    if (!opponentTeam || !team) return false;
+    if (team === opponentTeam) return true;
+    if (isLineupForAhly(row, ahlyTeam)) return false;
+    return false;
+}
+
+function createInitialTeamLineup(matchId, teamName, count = 16) {
+    const baseKey = Date.now();
+    return Array.from({ length: count }, (_, i) => ({
+        ...EMPTY_LINEUP,
+        "MATCH MINUTE": "90",
+        TEAM: teamName,
+        STATU: i < 11 ? "اساسي" : "احتياطي",
+        "TOTAL MINUTE": i < 11 ? "90" : "",
+        MATCH_ID: matchId || "",
+        _isNew: true,
+        _key: `lineup-${baseKey}-${teamName}-${i}`,
+    }));
+}
+
+function findRowIndexInList(list, row, fallbackIndex) {
+    if (row?._key != null) {
+        const byKey = list.findIndex((r) => r._key === row._key);
+        if (byKey >= 0) return byKey;
+    }
+    if (row?.ROW_ID) {
+        const byRowId = list.findIndex((r) => r.ROW_ID === row.ROW_ID);
+        if (byRowId >= 0) return byRowId;
+    }
+    return fallbackIndex;
+}
+
+function mergeTeamLineupUpdate(allRows, teamFilter, teamAction, applyLogic) {
+    const others = allRows.filter((r) => !teamFilter(r));
+    const teamPrev = allRows.filter(teamFilter);
+    const teamNext = typeof teamAction === "function" ? teamAction(teamPrev) : teamAction;
+    return applyLogic([...others, ...teamNext], teamNext);
+}
 
 // â”€â”€ Editable Table â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 function EditableTable({ title, color, rows, setRows, columns, matchId, emptyRow, tableName, onSave, onDelete, isSaving, autoFields = {}, columnOptions = {} }) {
@@ -172,7 +226,7 @@ export default function AlAhlyEditor() {
     const [mode, setMode] = useState('search'); // 'search' | 'edit' | 'new'
     const { addNotification } = useNotification();
     const [newMatchData, setNewMatchData] = useState({ ...EMPTY_MATCH });
-    const [activeLinkedTab, setActiveLinkedTab] = useState('lineup');
+    const [activeLinkedTab, setActiveLinkedTab] = useState('lineup-ahly');
     // new match linked rows (staged before create)
     const [newLineupRows, setNewLineupRows] = useState([]);
     const [newPlayerRows, setNewPlayerRows] = useState([]);
@@ -421,24 +475,74 @@ export default function AlAhlyEditor() {
         });
     };
 
-    const handleNewLineupRows = useCallback((action) => setNewLineupRows(p => applyLineupLogic(p, action)), []);
-    const handleEditLineupRows = useCallback((action) => setLineupRows(p => applyLineupLogic(p, action)), []);
+    const handleNewLineupRows = useCallback((action) => {
+        setNewLineupRows((prev) => mergeTeamLineupUpdate(prev, () => true, action, applyLineupLogic));
+    }, []);
+
+    const makeNewAhlyLineupSetter = useCallback((formData) => {
+        const ahlyTeam = resolveAhlyTeam(formData);
+        const filter = (r) => isLineupForAhly(r, ahlyTeam);
+        return (action) => setNewLineupRows((prev) => mergeTeamLineupUpdate(prev, filter, action, applyLineupLogic));
+    }, []);
+
+    const makeNewOpponentLineupSetter = useCallback((formData) => {
+        const ahlyTeam = resolveAhlyTeam(formData);
+        const oppTeam = resolveOpponentTeam(formData);
+        const filter = (r) => isLineupForOpponent(r, oppTeam, ahlyTeam);
+        return (action) => setNewLineupRows((prev) => mergeTeamLineupUpdate(prev, filter, action, applyLineupLogic));
+    }, []);
+
+    const makeEditAhlyLineupSetter = useCallback((formData) => {
+        const ahlyTeam = resolveAhlyTeam(formData);
+        const filter = (r) => isLineupForAhly(r, ahlyTeam);
+        return (action) => setLineupRows((prev) => mergeTeamLineupUpdate(prev, filter, action, applyLineupLogic));
+    }, []);
+
+    const makeEditOpponentLineupSetter = useCallback((formData) => {
+        const ahlyTeam = resolveAhlyTeam(formData);
+        const oppTeam = resolveOpponentTeam(formData);
+        const filter = (r) => isLineupForOpponent(r, oppTeam, ahlyTeam);
+        return (action) => setLineupRows((prev) => mergeTeamLineupUpdate(prev, filter, action, applyLineupLogic));
+    }, []);
+
+    const handleEditLineupRows = useCallback((action) => {
+        setLineupRows((prev) => mergeTeamLineupUpdate(prev, () => true, action, applyLineupLogic));
+    }, []);
 
     useEffect(() => {
         if (mode === 'new') {
-            const initialLineup = Array.from({ length: 16 }, (_, i) => ({
-                ...EMPTY_LINEUP,
-                "MATCH MINUTE": "90",
-                "TEAM": "الأهلي",
-                "STATU": i < 11 ? "اساسي" : "احتياطي",
-                "TOTAL MINUTE": i < 11 ? "90" : "",
-                MATCH_ID: newMatchData.MATCH_ID || '',
-                _isNew: true,
-                _key: Date.now() + i
-            }));
-            handleNewLineupRows(initialLineup);
+            const ahlyTeam = resolveAhlyTeam(newMatchData);
+            const oppTeam = resolveOpponentTeam(newMatchData);
+            const matchId = newMatchData.MATCH_ID || '';
+            const ahlyRows = createInitialTeamLineup(matchId, ahlyTeam);
+            const oppRows = oppTeam ? createInitialTeamLineup(matchId, oppTeam) : [];
+            handleNewLineupRows([...ahlyRows, ...oppRows]);
+            setActiveLinkedTab('lineup-ahly');
         }
     }, [mode]);
+
+    useEffect(() => {
+        if (mode !== 'new') return;
+        const oppTeam = resolveOpponentTeam(newMatchData);
+        if (!oppTeam) return;
+
+        setNewLineupRows((prev) => {
+            const ahlyTeam = resolveAhlyTeam(newMatchData);
+            const matchId = newMatchData.MATCH_ID || '';
+            const nonAhlyRows = prev.filter((r) => !isLineupForAhly(r, ahlyTeam));
+
+            if (nonAhlyRows.length === 0) {
+                return [...prev, ...createInitialTeamLineup(matchId, oppTeam)];
+            }
+
+            return prev.map((r) => {
+                if (isLineupForAhly(r, ahlyTeam)) {
+                    return { ...r, MATCH_ID: matchId || r.MATCH_ID };
+                }
+                return { ...r, TEAM: oppTeam, MATCH_ID: matchId || r.MATCH_ID };
+            });
+        });
+    }, [newMatchData['OPPONENT TEAM'], newMatchData.MATCH_ID, mode]);
 
     useEffect(() => {
         if (mode === 'new') {
@@ -466,20 +570,15 @@ export default function AlAhlyEditor() {
             if (!md) { addToast(`Match ID "${id}" not found`, 'error'); setLoading(false); return; }
             setMatchData({ ...md });
             if (!ld || ld.length === 0) {
-                const initialLineup = Array.from({ length: 16 }, (_, i) => ({
-                    ...EMPTY_LINEUP,
-                    "MATCH MINUTE": "90",
-                    "TEAM": "الأهلي",
-                    "STATU": i < 11 ? "اساسي" : "احتياطي",
-                    "TOTAL MINUTE": i < 11 ? "90" : "",
-                    MATCH_ID: id,
-                    _isNew: true,
-                    _key: Date.now() + i
-                }));
-                setLineupRows(applyLineupLogic(initialLineup, initialLineup));
+                const ahlyTeam = resolveAhlyTeam(md);
+                const oppTeam = resolveOpponentTeam(md);
+                const ahlyRows = createInitialTeamLineup(id, ahlyTeam);
+                const oppRows = oppTeam ? createInitialTeamLineup(id, oppTeam) : [];
+                setLineupRows(applyLineupLogic([...ahlyRows, ...oppRows], [...ahlyRows, ...oppRows]));
             } else {
-                setLineupRows(ld.map((r, i) => ({ ...r, _key: i })));
+                setLineupRows(ld.map((r, i) => ({ ...r, _key: r._key ?? i })));
             }
+            setActiveLinkedTab('lineup-ahly');
             setPlayerRows((pd || []).map((r, i) => ({ ...r, _key: 1000 + i })));
             setGkRows((gd || []).map((r, i) => ({ ...r, _key: 2000 + i })));
             setPenRows((pen || []).map((r, i) => ({ ...r, _key: 3000 + i })));
@@ -535,9 +634,12 @@ export default function AlAhlyEditor() {
                 'alahly_HOWPENMISSED': setPenRows,
             };
 
-            setterMap[tableName]?.(prev => prev.map((r, i) =>
-                i === ri ? { ...r, ...savedRow, _isNew: false, _isDirty: false } : r
-            ));
+            setterMap[tableName]?.(prev => {
+                const idx = findRowIndexInList(prev, row, ri);
+                return prev.map((r, i) =>
+                    i === idx ? { ...r, ...savedRow, _isNew: false, _isDirty: false } : r
+                );
+            });
 
         } catch (e) {
             console.error("Save Error:", e);
@@ -566,8 +668,9 @@ export default function AlAhlyEditor() {
                 // Get all rows except this one
                 let remaining;
                 currentSetter(prev => {
-                    remaining = prev.filter((_, i) => i !== ri).map(({ _isNew, _isDirty, _key, ...clean }) => clean);
-                    return prev.filter((_, i) => i !== ri);
+                    const idx = findRowIndexInList(prev, row, ri);
+                    remaining = prev.filter((_, i) => i !== idx).map(({ _isNew, _isDirty, _key, ...clean }) => clean);
+                    return prev.filter((_, i) => i !== idx);
                 });
                 // Delete all then re-insert
                 const { error: delErr } = await supabase.from(tableName).delete().eq('MATCH_ID', matchData.MATCH_ID);
@@ -585,7 +688,10 @@ export default function AlAhlyEditor() {
                 'alahly_GKSDETAILS': setGkRows,
                 'alahly_HOWPENMISSED': setPenRows,
             };
-            setterMap[tableName]?.(prev => prev.filter((_, i) => i !== ri));
+            setterMap[tableName]?.(prev => {
+                const idx = findRowIndexInList(prev, row, ri);
+                return prev.filter((_, i) => i !== idx);
+            });
         }
     }, [matchData]);
 
@@ -734,9 +840,93 @@ export default function AlAhlyEditor() {
 
     const matchInfoFields = Object.keys(EMPTY_MATCH);
     const lineupCols = Object.keys(EMPTY_LINEUP);
+    const lineupColsNoTeam = lineupCols.filter((col) => col !== 'TEAM' && col !== 'MATCH_ID');
     const playerCols = Object.keys(EMPTY_PLAYER);
     const gkCols = Object.keys(EMPTY_GK);
     const penCols = Object.keys(EMPTY_PEN);
+
+    const renderLinkedTabBar = (formData) => {
+        const ahlyTeam = resolveAhlyTeam(formData);
+        const oppTeam = resolveOpponentTeam(formData);
+        const tabStyle = (tabId, activeBg, activeColor = '#fff') => ({
+            background: activeLinkedTab === tabId ? activeBg : '#f8f8f8',
+            color: activeLinkedTab === tabId ? activeColor : '#888',
+        });
+
+        return (
+            <div className="linked-tabs-grid linked-tabs-grid--5">
+                <button type="button" onClick={() => setActiveLinkedTab('lineup-ahly')} className="tab-btn" style={tabStyle('lineup-ahly', '#c9a84c', '#0a0a0a')}>
+                    LINEUP — {ahlyTeam}
+                </button>
+                <button
+                    type="button"
+                    onClick={() => oppTeam && setActiveLinkedTab('lineup-opponent')}
+                    className="tab-btn"
+                    style={tabStyle('lineup-opponent', '#3b82f6')}
+                    disabled={!oppTeam}
+                    title={!oppTeam ? 'Select OPPONENT TEAM in match details first' : undefined}
+                >
+                    LINEUP — {oppTeam || 'OPPONENT'}
+                </button>
+                <button type="button" onClick={() => setActiveLinkedTab('events')} className="tab-btn" style={tabStyle('events', '#8b5cf6')}>PLAYER EVENTS</button>
+                <button type="button" onClick={() => setActiveLinkedTab('gks')} className="tab-btn" style={tabStyle('gks', '#f59e0b')}>GK DETAILS</button>
+                <button type="button" onClick={() => setActiveLinkedTab('pens')} className="tab-btn" style={tabStyle('pens', '#ef4444')}>PENALTY MISSES</button>
+            </div>
+        );
+    };
+
+    const renderLineupTable = ({ formData, isNew, side }) => {
+        const ahlyTeam = resolveAhlyTeam(formData);
+        const oppTeam = resolveOpponentTeam(formData);
+        const isAhly = side === 'ahly';
+        const teamName = isAhly ? ahlyTeam : oppTeam;
+        const allRows = isNew ? newLineupRows : lineupRows;
+        const rows = isAhly
+            ? allRows.filter((r) => isLineupForAhly(r, ahlyTeam))
+            : allRows.filter((r) => isLineupForOpponent(r, oppTeam, ahlyTeam));
+        const setRows = isNew
+            ? (isAhly ? makeNewAhlyLineupSetter(formData) : makeNewOpponentLineupSetter(formData))
+            : (isAhly ? makeEditAhlyLineupSetter(formData) : makeEditOpponentLineupSetter(formData));
+        const matchId = isNew ? (formData.MATCH_ID || '---') : formData.MATCH_ID;
+        const onSave = isNew ? () => { } : handleSaveRow;
+        const onDelete = isNew
+            ? (row, ri, _, setter) => setter((prev) => prev.filter((_, i) => i !== ri))
+            : handleDeleteRow;
+
+        if (!isAhly && !oppTeam) {
+            return (
+                <NoData_db
+                    message={isNew ? 'SELECT OPPONENT TEAM IN MATCH DETAILS TO EDIT OPPONENT LINEUP' : 'SET OPPONENT TEAM IN MATCH DETAILS TO EDIT OPPONENT LINEUP'}
+                    height="240px"
+                />
+            );
+        }
+
+        return (
+            <EditableTable
+                title={`LINEUP — ${teamName}`}
+                color={isAhly ? '#c9a84c' : '#3b82f6'}
+                rows={rows}
+                setRows={setRows}
+                columns={lineupColsNoTeam}
+                matchId={matchId}
+                emptyRow={EMPTY_LINEUP}
+                tableName="alahly_LINEUPDETAILS"
+                onSave={onSave}
+                onDelete={onDelete}
+                isSaving={isNew ? false : isSaving}
+                autoFields={{ TEAM: () => teamName }}
+                columnOptions={{
+                    "PLAYER NAME": allPlayersList,
+                    "PLAYER NAME OUT": rows
+                        .filter((r) => String(r.STATU || '').trim() === 'اساسي' && String(r["PLAYER NAME"] || '').trim())
+                        .map((r) => r["PLAYER NAME"])
+                        .sort((a, b) => a.localeCompare(b, 'ar')),
+                    STATU: ["اساسي", "احتياطي"],
+                }}
+            />
+        );
+    };
 
     return (
         <Login_db title="EDITOR ACCESS" subtitle="AUTHORIZATION REQUIRED">
@@ -827,27 +1017,10 @@ export default function AlAhlyEditor() {
                                 </div>
                             </div>
 
-                            <div className="linked-tabs-grid">
-                                <button onClick={() => setActiveLinkedTab('lineup')} className="tab-btn" style={{ background: activeLinkedTab === 'lineup' ? '#3b82f6' : '#f8f8f8', color: activeLinkedTab === 'lineup' ? '#fff' : '#888' }}>LINEUP DETAILS</button>
-                                <button onClick={() => setActiveLinkedTab('events')} className="tab-btn" style={{ background: activeLinkedTab === 'events' ? '#8b5cf6' : '#f8f8f8', color: activeLinkedTab === 'events' ? '#fff' : '#888' }}>PLAYER EVENTS</button>
-                                <button onClick={() => setActiveLinkedTab('gks')} className="tab-btn" style={{ background: activeLinkedTab === 'gks' ? '#f59e0b' : '#f8f8f8', color: activeLinkedTab === 'gks' ? '#fff' : '#888' }}>GK DETAILS</button>
-                                <button onClick={() => setActiveLinkedTab('pens')} className="tab-btn" style={{ background: activeLinkedTab === 'pens' ? '#ef4444' : '#f8f8f8', color: activeLinkedTab === 'pens' ? '#fff' : '#888' }}>PENALTY MISSES</button>
-                            </div>
+                            {renderLinkedTabBar(newMatchData)}
 
-                            {activeLinkedTab === 'lineup' && (
-                                <EditableTable
-                                    title="LINEUP DETAILS" color="#3b82f6"
-                                    rows={newLineupRows} setRows={handleNewLineupRows}
-                                    columns={lineupCols} matchId={newMatchData.MATCH_ID || '---'}
-                                    emptyRow={EMPTY_LINEUP} tableName="alahly_LINEUPDETAILS"
-                                    onSave={() => { }} onDelete={(row, ri, _, setter) => setter(prev => prev.filter((_, i) => i !== ri))} isSaving={false}
-                                    columnOptions={{
-                                        "PLAYER NAME": allPlayersList,
-                                        "TEAM": [newMatchData["AHLY TEAM"], newMatchData["OPPONENT TEAM"]].filter(Boolean),
-                                        "PLAYER NAME OUT": newLineupRows.filter(r => String(r.STATU || '').trim() === 'اساسي' && String(r["PLAYER NAME"] || '').trim()).map(r => r["PLAYER NAME"]).sort((a, b) => a.localeCompare(b, 'ar'))
-                                    }}
-                                />
-                            )}
+                            {activeLinkedTab === 'lineup-ahly' && renderLineupTable({ formData: newMatchData, isNew: true, side: 'ahly' })}
+                            {activeLinkedTab === 'lineup-opponent' && renderLineupTable({ formData: newMatchData, isNew: true, side: 'opponent' })}
                             {activeLinkedTab === 'events' && (
                                 <EditableTable
                                     title="PLAYER EVENTS" color="#8b5cf6"
@@ -939,27 +1112,10 @@ export default function AlAhlyEditor() {
                                 </div>
                             </div>
 
-                            <div className="linked-tabs-grid">
-                                <button onClick={() => setActiveLinkedTab('lineup')} className="tab-btn" style={{ background: activeLinkedTab === 'lineup' ? '#3b82f6' : '#f8f8f8', color: activeLinkedTab === 'lineup' ? '#fff' : '#888' }}>LINEUP DETAILS</button>
-                                <button onClick={() => setActiveLinkedTab('events')} className="tab-btn" style={{ background: activeLinkedTab === 'events' ? '#8b5cf6' : '#f8f8f8', color: activeLinkedTab === 'events' ? '#fff' : '#888' }}>PLAYER EVENTS</button>
-                                <button onClick={() => setActiveLinkedTab('gks')} className="tab-btn" style={{ background: activeLinkedTab === 'gks' ? '#f59e0b' : '#f8f8f8', color: activeLinkedTab === 'gks' ? '#fff' : '#888' }}>GK DETAILS</button>
-                                <button onClick={() => setActiveLinkedTab('pens')} className="tab-btn" style={{ background: activeLinkedTab === 'pens' ? '#ef4444' : '#f8f8f8', color: activeLinkedTab === 'pens' ? '#fff' : '#888' }}>PENALTY MISSES</button>
-                            </div>
+                            {renderLinkedTabBar(matchData)}
 
-                            {activeLinkedTab === 'lineup' && (
-                                <EditableTable
-                                    title="LINEUP DETAILS" color="#3b82f6"
-                                    rows={lineupRows} setRows={handleEditLineupRows}
-                                    columns={lineupCols} matchId={matchData.MATCH_ID}
-                                    emptyRow={EMPTY_LINEUP} tableName="alahly_LINEUPDETAILS"
-                                    onSave={handleSaveRow} onDelete={handleDeleteRow} isSaving={isSaving}
-                                    columnOptions={{
-                                        "PLAYER NAME": allPlayersList,
-                                        "TEAM": [matchData["AHLY TEAM"], matchData["OPPONENT TEAM"]].filter(Boolean),
-                                        "PLAYER NAME OUT": lineupRows.filter(r => String(r.STATU || '').trim() === 'اساسي' && String(r["PLAYER NAME"] || '').trim()).map(r => r["PLAYER NAME"]).sort((a, b) => a.localeCompare(b, 'ar'))
-                                    }}
-                                />
-                            )}
+                            {activeLinkedTab === 'lineup-ahly' && renderLineupTable({ formData: matchData, isNew: false, side: 'ahly' })}
+                            {activeLinkedTab === 'lineup-opponent' && renderLineupTable({ formData: matchData, isNew: false, side: 'opponent' })}
                             {activeLinkedTab === 'events' && (
                                 <EditableTable
                                     title="PLAYER EVENTS" color="#8b5cf6"

@@ -24,7 +24,6 @@ const PKS_SHOOTOUT_FIELDS = [
     "MATCH_ID",
     "PKS SYSTEM",
     "WHO START?",
-    "MATCH RESULT",
     "PKS W-L",
     "G-AHLY",
     "G-OPPONENT",

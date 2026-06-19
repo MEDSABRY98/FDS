@@ -57,7 +57,6 @@ function loadShootoutFromKicks(kicks, setCommonData, setKickRows, setFoundKicks,
         MATCH_ID: first.MATCH_ID || "",
         "PKS SYSTEM": first["PKS SYSTEM"],
         "WHO START?": first["WHO START?"],
-        "MATCH RESULT": first["MATCH RESULT"],
         "PKS W-L": first["PKS W-L"],
         "G-OPPONENT": first["G-OPPONENT"],
         "G-AHLY": first["G-AHLY"],
@@ -243,7 +242,6 @@ export default function AlAhlyPKsEditor({ pksData, pksSuggestions = {}, penaltyM
         MATCH_ID: "",
         "PKS SYSTEM": "",
         "WHO START?": "",
-        "MATCH RESULT": "",
         "PKS W-L": "",
         "G-OPPONENT": 0,
         "G-AHLY": 0,
@@ -461,10 +459,6 @@ export default function AlAhlyPKsEditor({ pksData, pksSuggestions = {}, penaltyM
                     <div className="form-group">
                         <label>WHO START?</label>
                         <DropDownList_db allowCustom options={dropdownOptions.whoStart} value={commonData["WHO START?"] || ""} onChange={(v) => setCommonField("WHO START?", v)} placeholder="Who starts?" />
-                    </div>
-                    <div className="form-group">
-                        <label>MATCH RESULT</label>
-                        <input type="text" value={commonData["MATCH RESULT"] || ""} onChange={(e) => setCommonField("MATCH RESULT", e.target.value)} />
                     </div>
                     <div className="form-group">
                         <label>PKS W-L</label>

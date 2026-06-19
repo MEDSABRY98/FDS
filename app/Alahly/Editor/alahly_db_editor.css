@@ -252,6 +252,15 @@
     margin-bottom: 30px;
 }
 
+.linked-tabs-grid--5 {
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+}
+
+.tab-btn:disabled {
+    opacity: 0.45;
+    cursor: not-allowed;
+}
+
 .tab-btn {
     border: none;
     padding: 14px;
