@@ -393,6 +393,100 @@
     font-size: 14px;
 }
 
+/* Autocomplete fields in kick rows — match pks-dropdown-compact look */
+.pks-editor-container .side-box .autocomplete-wrapper {
+    position: relative;
+    width: 100%;
+}
+
+.pks-editor-container .side-box .autocomplete-wrapper input.pks-autocomplete-compact {
+    height: 42px;
+    padding: 0 40px 0 14px;
+    font-size: 13px;
+    font-family: 'DM Sans', sans-serif;
+    font-weight: 500;
+    color: #0a0a0a;
+    border: 1px solid #eee;
+    border-radius: 8px;
+    background: #fdfdfd;
+    width: 100%;
+    box-sizing: border-box;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.02);
+    transition: 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.pks-editor-container .side-box .autocomplete-wrapper input.pks-autocomplete-compact::placeholder {
+    color: #999;
+}
+
+.pks-editor-container .side-box .autocomplete-wrapper input.pks-autocomplete-compact:hover,
+.pks-editor-container .side-box .autocomplete-wrapper input.pks-autocomplete-compact:focus {
+    border-color: #c9a84c;
+    background: #fff;
+    box-shadow: 0 10px 30px rgba(201, 168, 76, 0.08);
+    outline: none;
+}
+
+.pks-editor-container .side-box .autocomplete-wrapper::after {
+    content: "⌄";
+    position: absolute;
+    right: 14px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: #c9a84c;
+    font-size: 14px;
+    font-weight: 800;
+    pointer-events: none;
+    line-height: 1;
+}
+
+/* Autocomplete in general match details (team fields) */
+.pks-editor-container .form-group .autocomplete-wrapper {
+    position: relative;
+    width: 100%;
+}
+
+.pks-editor-container .form-group .autocomplete-wrapper input {
+    height: 52px;
+    padding: 0 40px 0 20px;
+    font-size: 15px;
+    font-family: 'DM Sans', sans-serif;
+    font-weight: 500;
+    color: #0a0a0a;
+    border: 2px solid #eee;
+    border-radius: 12px;
+    background: #fdfdfd;
+    width: 100%;
+    box-sizing: border-box;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.02);
+    transition: 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.pks-editor-container .form-group .autocomplete-wrapper input::placeholder {
+    color: #999;
+}
+
+.pks-editor-container .form-group .autocomplete-wrapper input:hover,
+.pks-editor-container .form-group .autocomplete-wrapper input:focus {
+    border-color: #c9a84c;
+    background: #fff;
+    box-shadow: 0 10px 30px rgba(201, 168, 76, 0.08);
+    outline: none;
+}
+
+.pks-editor-container .form-group .autocomplete-wrapper::after {
+    content: "⌄";
+    position: absolute;
+    right: 20px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: #c9a84c;
+    font-size: 18px;
+    font-weight: 800;
+    pointer-events: none;
+    line-height: 1;
+}
+
 .pks-editor-container .dropdown-db.is-open {
     z-index: 5;
 }

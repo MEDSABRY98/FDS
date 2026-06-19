@@ -279,38 +279,147 @@ export const AlAhlyService = {
     },
 
     /**
+     * Parse numeric suffix from alahly_PKS ROW_ID (e.g. R-0042 -> 42).
+     */
+    _parsePksRowIdNum(rowId) {
+        const raw = String(rowId ?? "").trim();
+        const trailingNumber = raw.match(/(\d+)(?!.*\d)/);
+        const num = trailingNumber
+            ? parseInt(trailingNumber[1], 10)
+            : parseInt(raw, 10);
+        return Number.isFinite(num) ? num : 0;
+    },
+
+    /**
      * Allocate the next sequential ROW_ID values for alahly_PKS.
      */
     async allocatePksRowIds(count = 1) {
         const total = Math.max(1, Number(count) || 1);
         let maxNum = 0;
-        let from = 0;
 
-        while (true) {
+        const { count: rowCount, error: countError } = await supabase
+            .from('alahly_PKS')
+            .select('*', { count: 'exact', head: true });
+
+        if (countError) throw countError;
+
+        if (rowCount && rowCount > 0) {
+            const from = Math.max(0, rowCount - 1000);
             const { data, error } = await supabase
                 .from('alahly_PKS')
                 .select('ROW_ID')
+                .order('ROW_ID', { ascending: true })
                 .range(from, from + 999);
 
             if (error) throw error;
-            if (!data?.length) break;
 
-            data.forEach((row) => {
-                const raw = String(row?.ROW_ID ?? "").trim();
-                const trailingNumber = raw.match(/(\d+)(?!.*\d)/);
-                const num = trailingNumber
-                    ? parseInt(trailingNumber[1], 10)
-                    : parseInt(raw, 10);
-                if (Number.isFinite(num)) maxNum = Math.max(maxNum, num);
+            (data || []).forEach((row) => {
+                maxNum = Math.max(maxNum, this._parsePksRowIdNum(row?.ROW_ID));
             });
-
-            if (data.length < 1000) break;
-            from += 1000;
         }
 
         return Array.from({ length: total }, (_, index) =>
             `R-${String(maxNum + 1 + index).padStart(4, "0")}`
         );
+    },
+
+    /**
+     * Enrich PKS kick rows with manager names from MATCHDETAILS (targeted fetch).
+     */
+    async enrichPksWithManagers(pks) {
+        const matchIds = [...new Set(
+            (pks || []).map(pk => String(pk.MATCH_ID || "").trim()).filter(Boolean)
+        )];
+
+        if (!matchIds.length) return pks || [];
+
+        const matchMap = new Map();
+        const chunkSize = 100;
+
+        for (let i = 0; i < matchIds.length; i += chunkSize) {
+            const chunk = matchIds.slice(i, i + chunkSize);
+            const { data, error } = await supabase
+                .from('alahly_MATCHDETAILS')
+                .select('MATCH_ID, "AHLY MANAGER", "OPPONENT MANAGER"')
+                .in('MATCH_ID', chunk);
+
+            if (error) throw error;
+
+            (data || []).forEach((m) => {
+                const id = String(m.MATCH_ID || "").trim().toUpperCase();
+                if (id) matchMap.set(id, m);
+            });
+        }
+
+        return (pks || []).map((pk) => {
+            const pkMatchId = String(pk.MATCH_ID || "").trim().toUpperCase();
+            const matchInfo = matchMap.get(pkMatchId);
+
+            return {
+                ...pk,
+                "AHLY MANAGER": matchInfo?.["AHLY MANAGER"] || pk["AHLY MANAGER"] || "---",
+                "OPPONENT MANAGER": matchInfo?.["OPPONENT MANAGER"] || pk["OPPONENT MANAGER"] || "---",
+            };
+        });
+    },
+
+    /**
+     * Batch save an entire PKS shootout (deletes, updates, inserts).
+     */
+    async savePKSShootout({ commonData, kickRows, existingKicks = [] }) {
+        const keptOriginalIds = new Set(
+            kickRows.map((row) => row.ORIGINAL_ROW_ID).filter(Boolean)
+        );
+
+        const toDelete = (existingKicks || [])
+            .filter((kick) => !keptOriginalIds.has(kick.ROW_ID))
+            .map((kick) => kick.ROW_ID);
+
+        if (toDelete.length > 0) {
+            const { error } = await supabase
+                .from('alahly_PKS')
+                .delete()
+                .in('ROW_ID', toDelete);
+
+            if (error) throw error;
+        }
+
+        const newRows = kickRows.filter((row) => !row.ORIGINAL_ROW_ID);
+        const allocatedIds = newRows.length > 0
+            ? await this.allocatePksRowIds(newRows.length)
+            : [];
+
+        const updatePromises = [];
+        const insertRecords = [];
+        let nextNewIdIndex = 0;
+
+        for (const row of kickRows) {
+            const { ORIGINAL_ROW_ID, _localId, ...kickFields } = row;
+            const payload = { ...commonData, ...kickFields };
+
+            if (ORIGINAL_ROW_ID) {
+                updatePromises.push(this.updatePKSRecord(ORIGINAL_ROW_ID, payload));
+            } else {
+                insertRecords.push({
+                    ...payload,
+                    ROW_ID: allocatedIds[nextNewIdIndex++],
+                });
+            }
+        }
+
+        if (updatePromises.length > 0) {
+            await Promise.all(updatePromises);
+        }
+
+        if (insertRecords.length > 0) {
+            const { error } = await supabase
+                .from('alahly_PKS')
+                .insert(insertRecords);
+
+            if (error) throw error;
+        }
+
+        return true;
     },
 
     /**

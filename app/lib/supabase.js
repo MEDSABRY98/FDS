@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useLayoutEffect, useRef, useMemo } from "react";
+import { createPortal } from "react-dom";
 import { createClient } from '@supabase/supabase-js'
 import {
     NAME_DISPLAY_LANG_KEY,
@@ -1756,7 +1757,7 @@ export function AutocompleteInputDb({
         setOpen(false);
     };
 
-    useEffect(() => {
+    useLayoutEffect(() => {
         if (!open) return;
         const updateRect = () => {
             if (wrapperRef.current) setRect(wrapperRef.current.getBoundingClientRect());
@@ -1768,7 +1769,7 @@ export function AutocompleteInputDb({
             window.removeEventListener("scroll", updateRect, true);
             window.removeEventListener("resize", updateRect);
         };
-    }, [open]);
+    }, [open, query]);
 
     useLayoutEffect(() => {
         if (!shrinkToFit) {
@@ -1817,7 +1818,7 @@ export function AutocompleteInputDb({
                 style={fieldStyle}
                 autoComplete="off"
             />
-            {open && filtered.length > 0 && !disabled && rect && (() => {
+            {open && filtered.length > 0 && !disabled && rect && typeof document !== "undefined" && createPortal((() => {
                 const spaceBelow = typeof window !== "undefined" ? window.innerHeight - rect.bottom : 300;
                 const dropdownHeight = 280;
                 const openUpwards = spaceBelow < dropdownHeight && rect.top > spaceBelow;
@@ -1884,7 +1885,7 @@ export function AutocompleteInputDb({
                         ))}
                     </div>
                 );
-            })()}
+            })(), document.body)}
         </div>
     );
 }

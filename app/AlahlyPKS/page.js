@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useMemo, useCallback } from "react";
 import {
     Download,
     SlidersHorizontal,
@@ -65,39 +65,40 @@ export default function AlAhlyPKsDatabase() {
     async function fetchPKData(options = {}) {
         const { silent = false } = options;
         if (!silent) setLoading(true);
-        // Fetch both PKs and Matches to join manager info
-        const [pks, matches] = await Promise.all([
-            AlAhlyService.getAllPKs(),
-            AlAhlyService.getAllMatches()
-        ]);
 
-        // Create a fast lookup map for matches
-        const matchMap = new Map();
-        matches.forEach(m => {
-            const mId = String(m.MATCH_ID || m.id || "").trim().toUpperCase();
-            if (mId) matchMap.set(mId, m);
-        });
-
-        // Enrich PKs with manager data from MATCHDETAILS
-        const enrichedData = pks.map(pk => {
-            const pkMatchId = String(pk.MATCH_ID || pk.PKS_ID || "").trim().toUpperCase();
-            const matchInfo = matchMap.get(pkMatchId);
-
-            // Try different possible column names for managers
-            const ahlyMgr = matchInfo?.["AHLY MANAGER"] || matchInfo?.AHLY_MANAGER || pk["AHLY MANAGER"] || "---";
-            const oppMgr = matchInfo?.["OPPONENT MANAGER"] || matchInfo?.OPPONENT_MANAGER || pk["OPPONENT MANAGER"] || "---";
-
-            return {
-                ...pk,
-                "AHLY MANAGER": ahlyMgr,
-                "OPPONENT MANAGER": oppMgr
-            };
-        });
+        const pks = await AlAhlyService.getAllPKs();
+        const enrichedData = await AlAhlyService.enrichPksWithManagers(pks);
 
         setPksData(enrichedData);
         setFilteredData(enrichedData);
         if (!silent) setLoading(false);
     }
+
+    const handleEditorDataSaved = useCallback(async () => {
+        const pks = await AlAhlyService.getAllPKs();
+        const enrichedData = await AlAhlyService.enrichPksWithManagers(pks);
+        setPksData(enrichedData);
+        setFilteredData(enrichedData);
+    }, []);
+
+    const pksSuggestions = useMemo(() => {
+        const getUnique = (key) => [...new Set((pksData || []).map((item) => item[key]).filter(Boolean))].sort();
+        return {
+            pksSystem: getUnique("PKS SYSTEM"),
+            champSystem: getUnique("CHAMPION SYSTEM"),
+            champion: getUnique("CHAMPION"),
+            season: getUnique("SEASON"),
+            round: getUnique("ROUND"),
+            whoStart: getUnique("WHO START?"),
+            oppStatus: getUnique("OPPONENT STATUS"),
+            ahlyStatus: getUnique("AHLY STATUS"),
+            pksWL: getUnique("PKS W-L"),
+            howMiss: [...new Set([
+                ...(pksData || []).map((item) => item["HOWMISS AHLY"]),
+                ...(pksData || []).map((item) => item["HOWMISS OPPONENT"]),
+            ].filter(Boolean))].sort(),
+        };
+    }, [pksData]);
 
     const renderAppContent = () => {
         switch (activeTab) {
@@ -133,7 +134,11 @@ export default function AlAhlyPKsDatabase() {
             case "alahly_pks_editor":
                 return (
                     <Login_db title="EDITOR ACCESS" subtitle="AUTHORIZATION REQUIRED">
-                        <AlAhlyPKsEditor pksData={pksData} onDataSaved={() => fetchPKData({ silent: true })} />
+                        <AlAhlyPKsEditor
+                            pksData={pksData}
+                            pksSuggestions={pksSuggestions}
+                            onDataSaved={handleEditorDataSaved}
+                        />
                     </Login_db>
                 );
             case "alahly_pks_champions":
