@@ -2,6 +2,7 @@ import { supabase } from "../../Database";
 
 const TABLE_NAME = "int_club_MATCHDETAILS";
 const INSERT_CHUNK_SIZE = 100;
+const COMPUTED_MATCH_COLUMNS = ["W-D-L", "CLEAN SHEET", "OUTCOME"];
 
 const EDITABLE_COLUMNS = [
     "GAME",
@@ -34,29 +35,81 @@ export function buildIntlMatchId(edition, teamA, teamB) {
         .join("");
 }
 
+export function omitIntComputedFromPayload(payload) {
+    const next = { ...payload };
+    COMPUTED_MATCH_COLUMNS.forEach((col) => delete next[col]);
+    return next;
+}
+
+function stripStoredComputedFields(match) {
+    const next = { ...match };
+    COMPUTED_MATCH_COLUMNS.forEach((col) => delete next[col]);
+    return next;
+}
+
+function parseClubPenString(pen) {
+    const raw = String(pen ?? "").trim();
+    if (!raw) return null;
+    const m = raw.match(/^(\d+)\s*[-–]\s*(\d+)$/);
+    if (!m) return null;
+    const a = parseInt(m[1], 10);
+    const b = parseInt(m[2], 10);
+    if (Number.isNaN(a) || Number.isNaN(b)) return null;
+    return { a, b };
+}
+
+function computeCleanSheet(gf, ga) {
+    if (gf === 0 && ga === 0) return "BOTH";
+    if (ga === 0) return "F";
+    if (gf === 0) return "A";
+    return "-";
+}
+
+function resolveOutcomeFromScores(gf, ga, penPair) {
+    if (gf > ga) return "W";
+    if (gf < ga) return "L";
+    if (penPair) {
+        if (penPair.a > penPair.b) return "W";
+        if (penPair.b > penPair.a) return "L";
+    }
+    return gf === 0 ? "D." : "D";
+}
+
+function resolveWinnerLabel(outcome, teamA, teamB) {
+    if (outcome === "W") return teamA || "—";
+    if (outcome === "L") return teamB || "—";
+    if (outcome && String(outcome).startsWith("D")) return "Draw";
+    return null;
+}
+
 function enrichMatchComputedFields(match) {
-    const gf = match.GF !== null && match.GF !== undefined ? parseInt(match.GF, 10) : null;
-    const ga = match.GA !== null && match.GA !== undefined ? parseInt(match.GA, 10) : null;
+    const base = stripStoredComputedFields(match);
+    const gf = base.GF !== null && base.GF !== undefined ? parseInt(base.GF, 10) : null;
+    const ga = base.GA !== null && base.GA !== undefined ? parseInt(base.GA, 10) : null;
 
-    let wdl = null;
+    let outcome = null;
     let cleanSheet = null;
+    let winner = null;
 
-    if (gf !== null && ga !== null && !isNaN(gf) && !isNaN(ga)) {
-        if (gf > ga) wdl = "W";
-        else if (gf < ga) wdl = "L";
-        else wdl = gf === 0 ? "D." : "D";
-
-        if (gf === 0 && ga === 0) cleanSheet = "BOTH";
-        else if (ga === 0) cleanSheet = "F";
-        else if (gf === 0) cleanSheet = "A";
-        else cleanSheet = "-";
+    if (gf !== null && ga !== null && !Number.isNaN(gf) && !Number.isNaN(ga)) {
+        const penPair = gf === ga ? parseClubPenString(base.PEN) : null;
+        outcome = resolveOutcomeFromScores(gf, ga, penPair);
+        cleanSheet = computeCleanSheet(gf, ga);
+        winner = resolveWinnerLabel(outcome, base["TEAM A"], base["TEAM B"]);
     }
 
-    return {
-        ...match,
-        "W-D-L": wdl,
-        "CLEAN SHEET": cleanSheet,
-    };
+    return { ...base, OUTCOME: outcome, "W-D-L": winner, "CLEAN SHEET": cleanSheet };
+}
+
+/** W/L/D from a given club's perspective (Team A = W when that club is TEAM A). */
+export function getIntlClubTeamOutcome(match, clubName) {
+    const outcome = match?.OUTCOME;
+    if (!outcome || !clubName) return outcome ?? null;
+    const isTeamA = match["TEAM A"] === clubName;
+    if (isTeamA) return outcome;
+    if (outcome === "W") return "L";
+    if (outcome === "L") return "W";
+    return outcome;
 }
 
 function normalizePayloadRow(row, rowId, matchId) {
@@ -72,7 +125,7 @@ function normalizePayloadRow(row, rowId, matchId) {
             payload[col] = String(val).trim();
         }
     });
-    return payload;
+    return omitIntComputedFromPayload(payload);
 }
 
 export const IntlClubService = {

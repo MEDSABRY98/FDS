@@ -79,7 +79,7 @@ export default function IntlClubH2H({ matches }) {
 
         rows.forEach((m) => {
             const aIsFirst = m["TEAM A"] === teamA;
-            const wdl = m["W-D-L"];
+            const outcome = m.OUTCOME;
             const gf = Number(m.GF) || 0;
             const ga = Number(m.GA) || 0;
 
@@ -91,11 +91,11 @@ export default function IntlClubH2H({ matches }) {
                 aGa += gf;
             }
 
-            if (wdl && String(wdl).startsWith("D")) draws++;
-            else if (aIsFirst && wdl === "W") aWins++;
-            else if (aIsFirst && wdl === "L") bWins++;
-            else if (!aIsFirst && wdl === "L") aWins++;
-            else if (!aIsFirst && wdl === "W") bWins++;
+            if (outcome && String(outcome).startsWith("D")) draws++;
+            else if (aIsFirst && outcome === "W") aWins++;
+            else if (aIsFirst && outcome === "L") bWins++;
+            else if (!aIsFirst && outcome === "L") aWins++;
+            else if (!aIsFirst && outcome === "W") bWins++;
         });
 
         return {

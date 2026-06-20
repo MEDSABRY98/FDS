@@ -48,6 +48,8 @@ function parseCsvLine(line) {
 }
 
 import { fixRoundValue } from "./lib/fix-round-value.mjs";
+
+function buildMatchId(edition, teamA, teamB, han, rowId) {
     let base = [edition, teamA, teamB].map((v) => String(v ?? "").trim()).filter(Boolean).join("");
     if (han) base += han;
     return base || rowId;

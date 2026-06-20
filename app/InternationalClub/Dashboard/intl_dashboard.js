@@ -15,10 +15,10 @@ export default function IntlClubDashboard({ matches }) {
         let gaTotal = 0;
 
         matches.forEach((m) => {
-            const wdl = m["W-D-L"];
-            if (wdl === "W") wins++;
-            else if (wdl === "L") losses++;
-            else if (wdl && String(wdl).startsWith("D")) draws++;
+            const outcome = m.OUTCOME;
+            if (outcome === "W") wins++;
+            else if (outcome === "L") losses++;
+            else if (outcome && String(outcome).startsWith("D")) draws++;
 
             gfTotal += Number(m.GF) || 0;
             gaTotal += Number(m.GA) || 0;

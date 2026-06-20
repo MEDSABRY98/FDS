@@ -48,8 +48,42 @@
     background: #fafafa;
 }
 
-.intl-competitions-table .count {
+.intl-competitions-table td.game {
+    text-align: left;
+    font-weight: 700;
+}
+
+.intl-competitions-table .result-w {
+    color: #2e7d32;
+    font-weight: 700;
+}
+
+.intl-competitions-table .result-d {
+    color: #888;
+    font-weight: 700;
+}
+
+.intl-competitions-table .result-l {
+    color: #c62828;
+    font-weight: 700;
+}
+
+.intl-competitions-table .win-rate {
     font-family: 'Space Mono', monospace;
     font-weight: 700;
     color: var(--gold, #c9a84c);
+}
+
+.intl-competitions-table tr.totals-row td {
+    background: #0a0a0a;
+    color: #fff;
+    font-weight: 700;
+    border-top: 2px solid var(--gold, #c9a84c);
+}
+
+.intl-competitions-table tr.totals-row .result-w,
+.intl-competitions-table tr.totals-row .result-d,
+.intl-competitions-table tr.totals-row .result-l,
+.intl-competitions-table tr.totals-row .win-rate {
+    color: #fff;
 }

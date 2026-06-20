@@ -1,3 +1,5 @@
+import { getIntlClubTeamOutcome } from "../Service/intl_service";
+
 export function extractCountryFromTeamName(teamName) {
     const name = String(teamName ?? "").trim();
     if (!name) return "Unknown";
@@ -14,9 +16,9 @@ export function getClubMatches(matches, clubName) {
 
 export function getClubMatchPerspective(match, clubName) {
     const isTeamA = match["TEAM A"] === clubName;
-    const dbWdl = match["W-D-L"];
     const dbGf = Number(match.GF) || 0;
     const dbGa = Number(match.GA) || 0;
+    const outcome = getIntlClubTeamOutcome(match, clubName);
 
     if (isTeamA) {
         return {
@@ -24,21 +26,19 @@ export function getClubMatchPerspective(match, clubName) {
             opponentContinent: String(match["TEAM B CONTINENT"] ?? "").trim() || "Unknown",
             gf: dbGf,
             ga: dbGa,
-            wdl: dbWdl,
+            outcome,
+            winner: match["W-D-L"] || "—",
             han: match["H-A-N"] || "—",
         };
     }
-
-    let wdl = dbWdl;
-    if (dbWdl === "W") wdl = "L";
-    else if (dbWdl === "L") wdl = "W";
 
     return {
         opponent: match["TEAM A"] || "—",
         opponentContinent: String(match["TEAM A CONTINENT"] ?? "").trim() || "Unknown",
         gf: dbGa,
         ga: dbGf,
-        wdl,
+        outcome,
+        winner: match["W-D-L"] || "—",
         han: match["H-A-N"] || "—",
     };
 }
@@ -54,9 +54,10 @@ function accumulateGroupedRow(map, key, perspective) {
     row.played++;
     row.gf += perspective.gf;
     row.ga += perspective.ga;
-    if (perspective.wdl === "W") row.wins++;
-    else if (perspective.wdl === "L") row.losses++;
-    else if (perspective.wdl && String(perspective.wdl).startsWith("D")) row.draws++;
+    const outcome = perspective.outcome;
+    if (outcome === "W") row.wins++;
+    else if (outcome === "L") row.losses++;
+    else if (outcome && String(outcome).startsWith("D")) row.draws++;
 }
 
 function finalizeGroupedStats(map) {
@@ -90,9 +91,9 @@ export function buildClubProfile(matches, clubName) {
         stats.played++;
         stats.gf += p.gf;
         stats.ga += p.ga;
-        if (p.wdl === "W") stats.wins++;
-        else if (p.wdl === "L") stats.losses++;
-        else if (p.wdl && String(p.wdl).startsWith("D")) stats.draws++;
+        if (p.outcome === "W") stats.wins++;
+        else if (p.outcome === "L") stats.losses++;
+        else if (p.outcome && String(p.outcome).startsWith("D")) stats.draws++;
     });
 
     return {

@@ -1,6 +1,7 @@
 ﻿import { useState } from 'react';
 import { supabase, getChangedFormFields } from "../../Database";
 import { buildIntlMatchId, IntlClubService } from "../../InternationalClub/Service/intl_service";
+import { omitIntComputedFromPayload } from "../../InternationalClub/Service/intl_service";
 
 const INTL_MATCH_TABLE = "int_club_MATCHDETAILS";
 
@@ -34,7 +35,7 @@ export function useEditRecord(selectedTable, columns, fetchTableData, addNotific
                 payload.MATCH_ID = buildIntlMatchId(payload.Edition, payload["TEAM A"], payload["TEAM B"]);
             }
 
-            const { error } = await supabase.from(selectedTable).insert([payload]);
+            const { error } = await supabase.from(selectedTable).insert([omitIntComputedFromPayload(payload)]);
             if (error) throw error;
             if (fetchTableData) await fetchTableData();
             setIsAdding(false);
@@ -57,7 +58,7 @@ export function useEditRecord(selectedTable, columns, fetchTableData, addNotific
         if (!editingRow) return;
         setSaving(true);
         try {
-            const changedForm = getChangedFormFields(editingRow, editForm);
+            const changedForm = omitIntComputedFromPayload(getChangedFormFields(editingRow, editForm));
             if (Object.keys(changedForm).length === 0) {
                 if (addNotification) addNotification("No changes to save.", "info");
                 setSaving(false);

@@ -4,6 +4,10 @@ import {
     buildOpponentStats,
     getClubMatchPerspective,
 } from "../ClubDetails/intl_club_details_utils";
+import {
+    buildCompetitionStats,
+    buildCompetitionTotals,
+} from "../Competitions/intl_competitions_utils";
 
 export const EXPORT_EVENT = "intl-club-export-excel";
 
@@ -63,17 +67,17 @@ function buildAllClubStats(matches) {
             if (!stats[team]) stats[team] = { name: team, played: 0, wins: 0, draws: 0, losses: 0, gf: 0, ga: 0 };
             const s = stats[team];
             s.played++;
-            const wdl = m["W-D-L"];
+            const outcome = m.OUTCOME;
             if (isA) {
-                if (wdl === "W") s.wins++;
-                else if (wdl === "L") s.losses++;
-                else if (wdl && String(wdl).startsWith("D")) s.draws++;
+                if (outcome === "W") s.wins++;
+                else if (outcome === "L") s.losses++;
+                else if (outcome && String(outcome).startsWith("D")) s.draws++;
                 s.gf += Number(m.GF) || 0;
                 s.ga += Number(m.GA) || 0;
             } else {
-                if (wdl === "L") s.wins++;
-                else if (wdl === "W") s.losses++;
-                else if (wdl && String(wdl).startsWith("D")) s.draws++;
+                if (outcome === "L") s.wins++;
+                else if (outcome === "W") s.losses++;
+                else if (outcome && String(outcome).startsWith("D")) s.draws++;
                 s.gf += Number(m.GA) || 0;
                 s.ga += Number(m.GF) || 0;
             }
@@ -92,15 +96,33 @@ function buildAllClubStats(matches) {
 }
 
 function buildCompetitionRows(matches) {
-    const map = {};
-    (matches || []).forEach((m) => {
-        const key = `${m.GAME || "?"}|${m.KIND || "?"}|${m.Edition || "?"}`;
-        if (!map[key]) map[key] = { GAME: m.GAME, KIND: m.KIND, Edition: m.Edition, MATCHES: 0 };
-        map[key].MATCHES++;
+    const stats = buildCompetitionStats(matches);
+    const totals = buildCompetitionTotals(stats);
+    const rows = stats.map((r) => ({
+        GAME: r.game,
+        Edition: r.edition,
+        P: r.played,
+        W: r.wins,
+        D: r.draws,
+        L: r.losses,
+        GF: r.gf,
+        GA: r.ga,
+        GD: r.gd,
+        "WIN %": `${r.winRate}%`,
+    }));
+    rows.push({
+        GAME: `TOTAL (${stats.length})`,
+        Edition: "—",
+        P: totals.played,
+        W: totals.wins,
+        D: totals.draws,
+        L: totals.losses,
+        GF: totals.gf,
+        GA: totals.ga,
+        GD: totals.gd,
+        "WIN %": `${totals.winRate}%`,
     });
-    return Object.values(map).sort(
-        (a, b) => String(b.Edition).localeCompare(String(a.Edition), undefined, { numeric: true }) || b.MATCHES - a.MATCHES
-    );
+    return rows;
 }
 
 function buildContinentsList(matches) {
@@ -121,25 +143,25 @@ function buildContinentComparison(matches, continent) {
     (matches || []).forEach((m) => {
         const contA = String(m["TEAM A CONTINENT"] ?? "").trim();
         const contB = String(m["TEAM B CONTINENT"] ?? "").trim();
-        const wdl = m["W-D-L"];
+        const outcome = m.OUTCOME;
         const gf = Number(m.GF) || 0;
         const ga = Number(m.GA) || 0;
 
-        const add = (opponent, outcome, gFor, gAg) => {
+        const add = (opponent, resultCode, gFor, gAg) => {
             if (!stats[opponent]) stats[opponent] = { opponent, played: 0, wins: 0, draws: 0, losses: 0, gf: 0, ga: 0 };
             const row = stats[opponent];
             row.played++;
             row.gf += gFor;
             row.ga += gAg;
-            const o = String(outcome ?? "").toUpperCase();
+            const o = String(resultCode ?? "").toUpperCase();
             if (o === "W") row.wins++;
             else if (o === "L") row.losses++;
             else if (o.startsWith("D")) row.draws++;
         };
 
-        if (contA === continent && contB) add(contB, wdl, gf, ga);
+        if (contA === continent && contB) add(contB, outcome, gf, ga);
         else if (contB === continent && contA) {
-            const flipped = wdl === "W" ? "L" : wdl === "L" ? "W" : wdl;
+            const flipped = outcome === "W" ? "L" : outcome === "L" ? "W" : outcome;
             add(contA, flipped, ga, gf);
         }
     });
@@ -233,10 +255,10 @@ export async function exportIntlDashboardToExcel(matches, fileName = "IntlClubs_
     let gaTotal = 0;
 
     (matches || []).forEach((m) => {
-        const wdl = m["W-D-L"];
-        if (wdl === "W") wins++;
-        else if (wdl === "L") losses++;
-        else if (wdl && String(wdl).startsWith("D")) draws++;
+        const outcome = m.OUTCOME;
+        if (outcome === "W") wins++;
+        else if (outcome === "L") losses++;
+        else if (outcome && String(outcome).startsWith("D")) draws++;
         gfTotal += Number(m.GF) || 0;
         gaTotal += Number(m.GA) || 0;
     });
@@ -287,12 +309,19 @@ export async function exportIntlCompetitionsToExcel(matches, fileName = "IntlClu
         sheetName: "Competitions",
         columns: [
             { header: "GAME", key: "GAME", width: 18 },
-            { header: "KIND", key: "KIND", width: 12 },
             { header: "Edition", key: "Edition", width: 22 },
-            { header: "MATCHES", key: "MATCHES", width: 12 },
+            { header: "P", key: "P", width: 8 },
+            { header: "W", key: "W", width: 8 },
+            { header: "D", key: "D", width: 8 },
+            { header: "L", key: "L", width: 8 },
+            { header: "GF", key: "GF", width: 8 },
+            { header: "GA", key: "GA", width: 8 },
+            { header: "GD", key: "GD", width: 8 },
+            { header: "WIN %", key: "WIN %", width: 10 },
         ],
         rows,
         fileName,
+        highlightLastRow: true,
     });
 }
 
@@ -332,7 +361,7 @@ export async function exportIntlClubDetailMatchesToExcel(clubName, matches, file
             OPPONENT: p.opponent,
             SCORE: `${p.gf} - ${p.ga}${m.PEN ? ` (${m.PEN})` : ""}`,
             "H-A-N": p.han,
-            RESULT: p.wdl || "",
+            RESULT: p.winner || "",
         };
     });
 

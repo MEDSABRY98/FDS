@@ -1,0 +1,89 @@
+.int-nt-competitions {
+    max-width: 1400px;
+    margin: 0 auto;
+}
+
+.int-nt-competitions-header {
+    margin-bottom: 20px;
+}
+
+.int-nt-competitions-header h1 {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 36px;
+    letter-spacing: 2px;
+    margin: 0;
+}
+
+.int-nt-competitions-table-wrap {
+    overflow-x: auto;
+    background: #fff;
+    border: 1px solid #eee;
+    border-radius: 14px;
+}
+
+.int-nt-competitions-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 13px;
+}
+
+.int-nt-competitions-table th {
+    background: #0a0a0a;
+    color: #fff;
+    padding: 12px 14px;
+    text-align: center;
+    font-family: 'Space Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 0.8px;
+}
+
+.int-nt-competitions-table td {
+    padding: 12px 14px;
+    border-bottom: 1px solid #f0f0f0;
+    text-align: center;
+    vertical-align: middle;
+}
+
+.int-nt-competitions-table tr:hover td {
+    background: #fafafa;
+}
+
+.int-nt-competitions-table td.game {
+    text-align: left;
+    font-weight: 700;
+}
+
+.int-nt-competitions-table .result-w {
+    color: #2e7d32;
+    font-weight: 700;
+}
+
+.int-nt-competitions-table .result-d {
+    color: #888;
+    font-weight: 700;
+}
+
+.int-nt-competitions-table .result-l {
+    color: #c62828;
+    font-weight: 700;
+}
+
+.int-nt-competitions-table .win-rate {
+    font-family: 'Space Mono', monospace;
+    font-weight: 700;
+    color: var(--gold, #c9a84c);
+}
+
+.int-nt-competitions-table tr.totals-row td {
+    background: #0a0a0a;
+    color: #fff;
+    font-weight: 700;
+    border-top: 2px solid var(--gold, #c9a84c);
+}
+
+.int-nt-competitions-table tr.totals-row .result-w,
+.int-nt-competitions-table tr.totals-row .result-d,
+.int-nt-competitions-table tr.totals-row .result-l,
+.int-nt-competitions-table tr.totals-row .win-rate {
+    color: #fff;
+}

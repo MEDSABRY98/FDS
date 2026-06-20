@@ -10,7 +10,7 @@ function normalizeContinent(value) {
     return String(value ?? "").trim();
 }
 
-function accumulateSide(stats, opponent, wdl, gf, ga) {
+function accumulateSide(stats, opponent, outcome, gf, ga) {
     if (!stats[opponent]) {
         stats[opponent] = { opponent, played: 0, wins: 0, draws: 0, losses: 0, gf: 0, ga: 0 };
     }
@@ -19,10 +19,10 @@ function accumulateSide(stats, opponent, wdl, gf, ga) {
     row.gf += gf;
     row.ga += ga;
 
-    const outcome = String(wdl ?? "").toUpperCase();
-    if (outcome === "W") row.wins++;
-    else if (outcome === "L") row.losses++;
-    else if (outcome.startsWith("D")) row.draws++;
+    const code = String(outcome ?? "").toUpperCase();
+    if (code === "W") row.wins++;
+    else if (code === "L") row.losses++;
+    else if (code.startsWith("D")) row.draws++;
 }
 
 function buildContinentComparison(matches, continent) {
@@ -31,15 +31,15 @@ function buildContinentComparison(matches, continent) {
     (matches || []).forEach((m) => {
         const contA = normalizeContinent(m["TEAM A CONTINENT"]);
         const contB = normalizeContinent(m["TEAM B CONTINENT"]);
-        const wdl = m["W-D-L"];
+        const outcome = m.OUTCOME;
         const gf = Number(m.GF) || 0;
         const ga = Number(m.GA) || 0;
 
         if (contA === continent && contB) {
-            accumulateSide(stats, contB, wdl, gf, ga);
+            accumulateSide(stats, contB, outcome, gf, ga);
         } else if (contB === continent && contA) {
-            const flippedWdl = wdl === "W" ? "L" : wdl === "L" ? "W" : wdl;
-            accumulateSide(stats, contA, flippedWdl, ga, gf);
+            const flippedOutcome = outcome === "W" ? "L" : outcome === "L" ? "W" : outcome;
+            accumulateSide(stats, contA, flippedOutcome, ga, gf);
         }
     });
 

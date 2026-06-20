@@ -19,17 +19,17 @@ export default function IntlClubClubs({ matches }) {
                 if (!stats[team]) stats[team] = { name: team, played: 0, wins: 0, draws: 0, losses: 0, gf: 0, ga: 0 };
                 const s = stats[team];
                 s.played++;
-                const wdl = m["W-D-L"];
+                const outcome = m.OUTCOME;
                 if (isA) {
-                    if (wdl === "W") s.wins++;
-                    else if (wdl === "L") s.losses++;
-                    else if (wdl && String(wdl).startsWith("D")) s.draws++;
+                    if (outcome === "W") s.wins++;
+                    else if (outcome === "L") s.losses++;
+                    else if (outcome && String(outcome).startsWith("D")) s.draws++;
                     s.gf += Number(m.GF) || 0;
                     s.ga += Number(m.GA) || 0;
                 } else {
-                    if (wdl === "L") s.wins++;
-                    else if (wdl === "W") s.losses++;
-                    else if (wdl && String(wdl).startsWith("D")) s.draws++;
+                    if (outcome === "L") s.wins++;
+                    else if (outcome === "W") s.losses++;
+                    else if (outcome && String(outcome).startsWith("D")) s.draws++;
                     s.gf += Number(m.GA) || 0;
                     s.ga += Number(m.GF) || 0;
                 }

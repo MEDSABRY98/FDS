@@ -1,0 +1,80 @@
+.int-nt-continents {
+    max-width: 1400px;
+    margin: 0 auto;
+}
+
+.int-nt-continents h1 {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 36px;
+    letter-spacing: 2px;
+    margin: 0 0 20px;
+}
+
+.int-nt-continent-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+    gap: 16px;
+}
+
+.int-nt-continent-card {
+    background: #fff;
+    border: 1px solid #eee;
+    border-radius: 14px;
+    padding: 24px 20px;
+    cursor: pointer;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    text-align: center;
+    min-height: 120px;
+    transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.int-nt-continent-card:hover {
+    border-color: var(--gold, #c9a84c);
+    box-shadow: 0 8px 24px rgba(201, 168, 76, 0.12);
+}
+
+.int-nt-continent-card strong {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 28px;
+    letter-spacing: 1.5px;
+    color: #0a0a0a;
+}
+
+.int-nt-continent-card span {
+    font-family: 'Space Mono', monospace;
+    font-size: 11px;
+    color: #888;
+    letter-spacing: 0.5px;
+}
+
+.int-nt-continents-back {
+    border: none;
+    background: none;
+    cursor: pointer;
+    color: var(--gold, #c9a84c);
+    font-weight: 700;
+    margin-bottom: 12px;
+    padding: 0;
+    font-size: 14px;
+}
+
+.int-nt-continents-totals {
+    display: flex;
+    gap: 16px;
+    flex-wrap: wrap;
+    margin: 0 0 20px;
+    font-family: 'Space Mono', monospace;
+    font-size: 12px;
+    color: #444;
+}
+
+.int-nt-continents-totals span {
+    background: #fafafa;
+    border: 1px solid #eee;
+    border-radius: 8px;
+    padding: 8px 12px;
+}

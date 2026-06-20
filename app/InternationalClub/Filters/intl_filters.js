@@ -3,7 +3,7 @@
 import { useState, useMemo, useEffect, useRef } from "react";
 import { X } from "lucide-react";
 import { IntlClubService } from "../Service/intl_service";
-import { NormalizeFilterDropdownOptions } from "../../lib/Filters_db";
+import { NormalizeFilterDropdownOptions, buildCascadingFilterOptions, pruneInvalidFilterSelections } from "../../lib/Filters_db";
 import "../../lib/Filters_db.css";
 
 const FILTER_DEFS = [
@@ -125,22 +125,17 @@ function applyFilters(data, filters) {
 export default function IntlClubFilters({ data, onFilter, isOpen, onClose }) {
     const [filters, setFilters] = useState({});
 
-    const filterOptions = useMemo(() => {
-        const base = IntlClubService.getUniqueFilters(data || []);
-        const out = {};
-        FILTER_DEFS.forEach(({ optionsKey }) => {
-            const raw = (base[optionsKey] || []).filter((v) => v !== "All");
-            out[optionsKey] = NormalizeFilterDropdownOptions(raw);
-        });
-        return out;
-    }, [data]);
+    const filterOptions = useMemo(
+        () => buildCascadingFilterOptions(data, FILTER_DEFS, filters, (rows) => IntlClubService.getUniqueFilters(rows), rowMatchesFilter),
+        [data, filters]
+    );
 
     const handleFilterChange = (key, value) => {
         setFilters((prev) => {
             const next = { ...prev };
             if (value === "All") delete next[key];
             else next[key] = value;
-            return next;
+            return pruneInvalidFilterSelections(data, FILTER_DEFS, next, (rows) => IntlClubService.getUniqueFilters(rows), rowMatchesFilter, key);
         });
     };
 

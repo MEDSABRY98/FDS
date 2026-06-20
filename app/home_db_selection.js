@@ -35,6 +35,10 @@ export default function HomeDbSelection() {
         international_clubs: [
             { href: "/InternationalClubdbManagement", label: "INTL CLUB DB MANAGEMENT", icon: Database },
             { href: "/InternationalClub", label: "INTERNATIONAL CLUBS", icon: Globe }
+        ],
+        international_nt: [
+            { href: "/InternationalNTdbManagement", label: "INTL NT DB MANAGEMENT", icon: Database },
+            { href: "/InternationalNT", label: "INTERNATIONAL NT", icon: Flag }
         ]
     };
 
@@ -82,6 +86,12 @@ export default function HomeDbSelection() {
                     onClick={() => setActiveTab('international_clubs')}
                 >
                     INTL CLUBS
+                </button>
+                <button
+                    className={`home-tab-btn ${activeTab === 'international_nt' ? 'active' : ''}`}
+                    onClick={() => setActiveTab('international_nt')}
+                >
+                    INTL NT
                 </button>
             </div>
 

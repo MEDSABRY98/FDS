@@ -8,10 +8,10 @@ import "./intl_club_details.css";
 
 const PER_PAGE = 50;
 
-function resultClass(wdl) {
-    if (wdl === "W") return "result-w";
-    if (wdl === "L") return "result-l";
-    if (wdl && String(wdl).startsWith("D")) return "result-d";
+function resultClass(outcome) {
+    if (outcome === "W") return "result-w";
+    if (outcome === "L") return "result-l";
+    if (outcome && String(outcome).startsWith("D")) return "result-d";
     return "";
 }
 
@@ -45,7 +45,7 @@ export default function IntlClubDetailsMatches({ clubName, matches }) {
                 match.ROUND,
                 perspective.opponent,
                 perspective.han,
-                perspective.wdl,
+                perspective.winner,
                 `${perspective.gf}-${perspective.ga}`,
                 match.PEN,
                 match.NOTE,
@@ -98,7 +98,7 @@ export default function IntlClubDetailsMatches({ clubName, matches }) {
                                             {match.PEN ? ` (${match.PEN})` : ""}
                                         </td>
                                         <td>{perspective.han}</td>
-                                        <td className={resultClass(perspective.wdl)}>{perspective.wdl || "—"}</td>
+                                        <td className={resultClass(perspective.outcome)}>{perspective.winner || "—"}</td>
                                     </tr>
                                 ))}
                             </tbody>
