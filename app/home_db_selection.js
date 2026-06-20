@@ -39,6 +39,10 @@ export default function HomeDbSelection() {
         international_nt: [
             { href: "/InternationalNTdbManagement", label: "INTL NT DB MANAGEMENT", icon: Database },
             { href: "/InternationalNT", label: "INTERNATIONAL NT", icon: Flag }
+        ],
+        international_trophy: [
+            { href: "/InternationalTrophydbManagement", label: "INTL TROPHY DB MANAGEMENT", icon: Database },
+            { href: "/InternationalTrophy", label: "INTERNATIONAL TROPHIES", icon: Trophy }
         ]
     };
 
@@ -92,6 +96,12 @@ export default function HomeDbSelection() {
                     onClick={() => setActiveTab('international_nt')}
                 >
                     INTL NT
+                </button>
+                <button
+                    className={`home-tab-btn ${activeTab === 'international_trophy' ? 'active' : ''}`}
+                    onClick={() => setActiveTab('international_trophy')}
+                >
+                    INTL TROPHY
                 </button>
             </div>
 

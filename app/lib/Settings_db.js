@@ -152,13 +152,14 @@ export function UseColumnOrder(TableName) {
 }
 
 async function fetchAllManagementTables() {
-    const [alahlyRes, dbManagementRes, egyptclubRes, egyptntRes, intlclubRes, intlntRes] = await Promise.all([
+    const [alahlyRes, dbManagementRes, egyptclubRes, egyptntRes, intlclubRes, intlntRes, intltrophyRes] = await Promise.all([
         supabase.rpc("get_alahly_tables"),
         supabase.rpc("get_dbmanagement_tables"),
         supabase.rpc("get_egyptclub_tables"),
         supabase.rpc("get_egyptnt_tables"),
         supabase.rpc("get_intclub_tables"),
         supabase.rpc("get_intnt_tables"),
+        supabase.rpc("get_inttrophy_tables"),
     ]);
 
     let all = [];
@@ -201,6 +202,12 @@ async function fetchAllManagementTables() {
         all = [...all, ...intlntRes.data.map((t) => ({
             name: t.table_name,
             label: `INT NT: ${t.table_name.replace("int_nt_", "").replace(/_/g, " ").toUpperCase()}`,
+        }))];
+    }
+    if (intltrophyRes.data) {
+        all = [...all, ...intltrophyRes.data.map((t) => ({
+            name: t.table_name,
+            label: `INT TROPHY: ${t.table_name.replace("int_TROPHY_", "").replace("int_", "").replace(/_/g, " ").toUpperCase()}`,
         }))];
     }
 

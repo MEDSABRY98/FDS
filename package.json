@@ -12,7 +12,9 @@
     "db:int-club-rls": "node scripts/apply-int-club-rls.mjs",
     "db:int-nt-table": "node scripts/apply-int-nt-matchdetails.mjs",
     "db:drop-int-computed": "node scripts/apply-drop-int-computed-columns.mjs",
-    "db:import-int-nt-xlsx": "node scripts/import-int-nt-xlsx.mjs"
+    "db:import-int-nt-xlsx": "node scripts/import-int-nt-xlsx.mjs",
+    "db:int-trophy-table": "node scripts/apply-int-trophy-general.mjs",
+    "db:import-int-trophy-xlsx": "node scripts/import-int-trophy-xlsx.mjs"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.100.0",
