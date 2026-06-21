@@ -16,7 +16,8 @@ import {
     Menu, 
     ArrowLeft,
     Award,
-    Edit
+    Edit,
+    Building2
 } from "lucide-react";
 import Link from "next/link";
 
@@ -33,6 +34,7 @@ import EgyptNTFilters from "./Filters/egypt_nt_db_filters";
 import EgyptNTSquad from "./Squad/egypt_nt_db_squad";
 import EgyptNTSquadEditor from "./SquadEditor/egypt_nt_db_squad_editor";
 import EgyptNTEditor from "./Editor/egypt_nt_db_editor";
+import EgyptNTClubBackfill from "./ClubBackfill/egypt_nt_club_backfill";
 
 import EgyptNTMatchDetails from "./MatchDetails/egypt_nt_db_match_details";
 import EgyptNTChampions from "./Champions/egypt_nt_db_champions";
@@ -394,6 +396,7 @@ export default function EgyptNTDatabase() {
         { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
         { id: 'matches', label: 'Matches', icon: Trophy },
         { id: 'editor', label: 'Editor', icon: Edit },
+        { id: 'club_backfill', label: 'Club Backfill', icon: Building2 },
         { id: 'squad', label: 'Squad List', icon: Users },
         { id: 'add_squad', label: 'Add Squad', icon: Users },
         { id: 'champions', label: 'Champions', icon: Award },
@@ -582,6 +585,13 @@ export default function EgyptNTDatabase() {
                             {activeTab === 'referees' && <EgyptNTReferees matches={filteredMatches} playerDetails={playerDetails} howPenMissed={howPenMissed} />}
                             {activeTab === 'champions' && <EgyptNTChampions matchesData={filteredMatches} />}
                             {activeTab === 'editor' && <EgyptNTEditor />}
+                            {activeTab === 'club_backfill' && (
+                                <EgyptNTClubBackfill
+                                    matches={matches}
+                                    playerDetails={playerDetails}
+                                    onRefresh={() => fetchMatchData(true)}
+                                />
+                            )}
                         </>
                     )}
                 </main>

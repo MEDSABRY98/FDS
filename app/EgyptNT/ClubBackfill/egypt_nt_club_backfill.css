@@ -1,0 +1,382 @@
+.club-backfill-wrap {
+    width: 95%;
+    max-width: 1400px;
+    margin: 0 auto;
+    padding: 24px 0 48px;
+}
+
+.club-backfill-header {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-end;
+    justify-content: space-between;
+    gap: 16px;
+    margin-bottom: 20px;
+}
+
+.club-backfill-header .section-title {
+    font-family: "Bebas Neue", sans-serif;
+    font-size: 42px;
+    letter-spacing: 2px;
+    line-height: 1;
+    font-weight: 400;
+    color: #111;
+}
+
+.club-backfill-header .section-title .accent {
+    color: var(--gold, #c9a84c);
+}
+
+.club-backfill-stats {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+}
+
+.club-backfill-stat {
+    background: #111;
+    color: #fff;
+    padding: 8px 14px;
+    font-family: "Space Mono", monospace;
+    font-size: 11px;
+    letter-spacing: 0.5px;
+}
+
+.club-backfill-stat span {
+    color: #c9a84c;
+    font-weight: 700;
+}
+
+.club-backfill-controls {
+    --club-backfill-control-h: 44px;
+    --club-backfill-control-radius: 6px;
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 10px;
+    align-items: stretch;
+    margin-bottom: 16px;
+}
+
+.club-backfill-search {
+    width: 100%;
+    height: var(--club-backfill-control-h);
+    box-sizing: border-box;
+    border: 1px solid #ddd;
+    border-radius: var(--club-backfill-control-radius);
+    padding: 0 14px;
+    font-family: "Space Mono", monospace;
+    font-size: 12px;
+    background: #fff;
+    min-width: 0;
+}
+
+.club-backfill-search:focus {
+    outline: none;
+    border-color: var(--gold, #c9a84c);
+}
+
+.club-backfill-btn {
+    width: 100%;
+    height: var(--club-backfill-control-h);
+    box-sizing: border-box;
+    border: none;
+    border-radius: var(--club-backfill-control-radius);
+    padding: 0 12px;
+    font-family: "Space Mono", monospace;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.5px;
+    cursor: pointer;
+    transition: opacity 0.2s, border-color 0.2s;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    white-space: nowrap;
+}
+
+.club-backfill-btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.club-backfill-btn-primary {
+    background: #c8102e;
+    color: #fff;
+}
+
+.club-backfill-btn-gold {
+    background: #c9a84c;
+    color: #111;
+}
+
+.club-backfill-btn-dark {
+    background: #111;
+    color: #fff;
+}
+
+.club-backfill-btn-outline {
+    background: #fff;
+    color: #111;
+    border: 1px solid #ccc;
+}
+
+@media (max-width: 720px) {
+    .club-backfill-controls {
+        grid-template-columns: 1fr;
+    }
+}
+
+.club-backfill-table-wrap {
+    overflow-x: auto;
+    border: 1px solid #e5e5e5;
+    background: #fff;
+}
+
+.club-backfill-table {
+    width: 100%;
+    border-collapse: collapse;
+    table-layout: fixed;
+}
+
+.club-backfill-table col.col-check {
+    width: 48px;
+}
+
+.club-backfill-table col.col-date {
+    width: 110px;
+}
+
+.club-backfill-table col.col-match {
+    width: 120px;
+}
+
+.club-backfill-table col.col-player {
+    width: 220px;
+}
+
+.club-backfill-table col.col-champion {
+    width: 160px;
+}
+
+.club-backfill-table col.col-club {
+    width: 220px;
+}
+
+.club-backfill-table col.col-info {
+    width: 56px;
+}
+
+.club-backfill-table th {
+    background: #111;
+    color: #c9a84c;
+    font-family: "Space Mono", monospace;
+    font-size: 11px;
+    padding: 12px 10px;
+    text-align: center;
+    letter-spacing: 0.5px;
+    white-space: nowrap;
+}
+
+.club-backfill-table td {
+    padding: 8px 10px;
+    border-bottom: 1px solid #eee;
+    font-size: 12px;
+    text-align: center;
+    vertical-align: middle;
+    background: #fff;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.club-backfill-table td.cell-club {
+    overflow: visible;
+    white-space: normal;
+}
+
+.club-backfill-table tr:hover td {
+    background: #fafafa;
+}
+
+.club-backfill-club-input {
+    width: 100%;
+    max-width: 100%;
+    box-sizing: border-box;
+    padding: 6px 8px;
+    border: 1px solid #ddd;
+    font-size: 12px;
+    text-align: center;
+}
+
+.club-backfill-suggested {
+    font-weight: 700;
+    color: #c8102e;
+}
+
+.club-backfill-suggested.empty {
+    color: #999;
+    font-weight: 400;
+}
+
+.club-backfill-status {
+    display: inline-block;
+    padding: 3px 8px;
+    font-family: "Space Mono", monospace;
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 0.5px;
+}
+
+.club-backfill-status.ready {
+    background: rgba(34, 197, 94, 0.15);
+    color: #15803d;
+}
+
+.club-backfill-status.unresolved {
+    background: rgba(239, 68, 68, 0.12);
+    color: #b91c1c;
+}
+
+.club-backfill-info-btn {
+    border: 1px solid #ccc;
+    background: #fff;
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    color: #666;
+}
+
+.club-backfill-info-btn:hover {
+    border-color: #c9a84c;
+    color: #c8102e;
+}
+
+.club-backfill-pagination {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 24px;
+    margin-top: 24px;
+    padding: 8px 0 16px;
+}
+
+.club-backfill-page-btn {
+    width: auto;
+    min-width: 96px;
+    height: 40px;
+    box-sizing: border-box;
+    background: rgba(201, 168, 76, 0.1);
+    border: 1px solid rgba(201, 168, 76, 0.25);
+    border-radius: 6px;
+    padding: 0 20px;
+    font-family: "Space Mono", monospace;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.5px;
+    color: #c9a84c;
+    cursor: pointer;
+    transition: background 0.2s, color 0.2s, border-color 0.2s;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    white-space: nowrap;
+}
+
+.club-backfill-page-btn:hover:not(:disabled) {
+    background: #c9a84c;
+    color: #111;
+    border-color: #c9a84c;
+}
+
+.club-backfill-page-btn:disabled {
+    opacity: 0.25;
+    cursor: not-allowed;
+}
+
+.club-backfill-page-info {
+    font-family: "Space Mono", monospace;
+    font-size: 12px;
+    font-weight: 600;
+    letter-spacing: 0.5px;
+    color: #111;
+    white-space: nowrap;
+}
+
+.club-backfill-popup-overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 100001;
+    background: rgba(0, 0, 0, 0.45);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+}
+
+.club-backfill-popup {
+    background: #fff;
+    max-width: 480px;
+    width: 100%;
+    border-top: 4px solid #c9a84c;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.2);
+}
+
+.club-backfill-popup-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 16px 20px;
+    border-bottom: 1px solid #eee;
+}
+
+.club-backfill-popup-header h3 {
+    margin: 0;
+    font-family: "Bebas Neue", sans-serif;
+    font-size: 22px;
+    letter-spacing: 1px;
+}
+
+.club-backfill-popup-body {
+    padding: 20px;
+    font-family: "Space Mono", monospace;
+    font-size: 12px;
+    line-height: 1.7;
+    color: #333;
+}
+
+.club-backfill-popup-hint {
+    margin-top: 8px;
+    font-weight: 700;
+    color: #c8102e;
+}
+
+.club-backfill-use-hint-btn {
+    margin-top: 16px;
+    width: 100%;
+    height: 40px;
+    border: none;
+    border-radius: 6px;
+    background: #c9a84c;
+    color: #111;
+    font-family: "Space Mono", monospace;
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: 0.5px;
+    cursor: pointer;
+}
+
+.club-backfill-use-hint-btn:hover {
+    background: #b8963f;
+}
+
+.club-backfill-popup-close {
+    border: none;
+    background: transparent;
+    cursor: pointer;
+    color: #666;
+}

@@ -16,7 +16,7 @@ const EMPTY_MATCH = {
     "PEN": "", "OPPONENT TEAM": "", "W-L Q & F": "", "NOTE": ""
 };
 const EMPTY_LINEUP = { "MATCH_ID": "", "MATCH MINUTE": "", "TEAM": "", "PLAYER NAME": "", "STATU": "", "PLAYER NAME OUT": "", "OUT MINUTE": "", "TOTAL MINUTE": "" };
-const EMPTY_PLAYER = { "MATCH_ID": "", "EVENT_ID": "", "PARENT_EVENT_ID": "", "PLAYER NAME": "", "TEAM": "", "TYPE": "", "TYPE_SUB": "", "MINUTE": "" };
+const EMPTY_PLAYER = { "MATCH_ID": "", "EVENT_ID": "", "PARENT_EVENT_ID": "", "PLAYER NAME": "", "TEAM": "", "CLUB": "", "TYPE": "", "TYPE_SUB": "", "MINUTE": "" };
 const EMPTY_GK = { "MATCH_ID": "", "EVENT_ID": "", "TEAM": "", "PLAYER NAME": "", "STATU": "", "OUT MINUTE": "", "GOALS CONCEDED": "" };
 const EMPTY_PEN = { "MATCH_ID": "", "PARENT_EVENT_ID": "", "HOW MISSED?": "", "TEAM": "", "MINUTE": "" };
 
@@ -352,6 +352,7 @@ export default function EgyptNTEditor() {
     const [eventSubTypes, setEventSubTypes] = useState([]);
     const [howMissedOptions, setHowMissedOptions] = useState([]);
     const [catalogLists, setCatalogLists] = useState({ managers: [], stadiums: [], referees: [] });
+    const [allTeamsList, setAllTeamsList] = useState([]);
 
     const AUTOCOMPLETE_FIELDS = [
         'AGE', 'CHAMPION_SYSTEM', 'SYSTEM_KIND', 'CHAMPION', 'SEASON', 'EGYPT MANAGER', 'OPPONENT MANAGER',
@@ -363,15 +364,17 @@ export default function EgyptNTEditor() {
 
         const loadCatalogLists = async () => {
             try {
-                const [players, managers, stadiums, referees] = await Promise.all([
+                const [players, managers, stadiums, referees, teams] = await Promise.all([
                     fetchCatalogDisplayNames('db_PLAYERS'),
                     fetchCatalogDisplayNames('db_MANAGERS'),
                     fetchCatalogDisplayNames('db_STADIUMS'),
                     fetchCatalogDisplayNames('db_REFEREES'),
+                    fetchCatalogDisplayNames('db_TEAMS'),
                 ]);
 
                 if (cancelled) return;
                 setAllPlayersList(players);
+                setAllTeamsList(teams);
                 setCatalogLists({ managers, stadiums, referees });
 
                 const fetchUniqueCol = async (tableName, col) => {
@@ -1132,6 +1135,7 @@ export default function EgyptNTEditor() {
                                     columnOptions={{
                                         "PLAYER NAME": allPlayersList,
                                         "TEAM": [newEgyTeamLabel, newMatchData["OPPONENT TEAM"]].filter(Boolean),
+                                        "CLUB": allTeamsList,
                                         "TYPE": eventTypes,
                                         "TYPE_SUB": eventSubTypes
                                     }}
@@ -1259,6 +1263,7 @@ export default function EgyptNTEditor() {
                                     columnOptions={{
                                         "PLAYER NAME": allPlayersList,
                                         "TEAM": [editEgyTeamLabel, matchData["OPPONENT TEAM"]].filter(Boolean),
+                                        "CLUB": allTeamsList,
                                         "TYPE": eventTypes,
                                         "TYPE_SUB": eventSubTypes
                                     }}

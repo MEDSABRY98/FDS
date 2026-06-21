@@ -476,4 +476,35 @@ export const EgyptNTService = {
         }
     },
 
+    /**
+     * Update CLUB on friendly goal rows (batch by ROW_ID).
+     */
+    async applyClubBackfill(updates = []) {
+        const valid = (updates || []).filter(
+            (item) => String(item?.rowId || "").trim() && String(item?.club ?? "").trim()
+        );
+        if (!valid.length) return { updated: 0 };
+
+        let updated = 0;
+        const chunkSize = 50;
+
+        for (let i = 0; i < valid.length; i += chunkSize) {
+            const chunk = valid.slice(i, i + chunkSize);
+            const results = await Promise.all(
+                chunk.map(({ rowId, club }) =>
+                    supabase
+                        .from("egy_NT_PLAYERDETAILS")
+                        .update({ CLUB: String(club).trim() })
+                        .eq("ROW_ID", rowId)
+                )
+            );
+
+            const failed = results.find((r) => r.error);
+            if (failed?.error) throw failed.error;
+            updated += chunk.length;
+        }
+
+        return { updated };
+    },
+
 };
