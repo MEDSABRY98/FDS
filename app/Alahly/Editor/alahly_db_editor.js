@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import { useState, useCallback, useEffect } from "react";
 import "./alahly_db_editor.css";
@@ -134,7 +134,7 @@ function EditableTable({ title, color, rows, setRows, columns, matchId, emptyRow
                     </thead>
                     <tbody>
                         {rows.map((row, ri) => (
-                            <tr key={row._key || ri} className={row._isNew ? "table-row-new" : ""} style={{ borderBottom: '1px solid #f5f5f5', transition: 'background 0.2s' }}>
+                            <tr key={row._key ?? ri} className={row._isNew ? "table-row-new" : ""} style={{ borderBottom: '1px solid #f5f5f5', transition: 'background 0.2s' }}>
                                 {columns.map(col => {
                                     const isAuto = col in autoFields;
                                     const isFitCol = isEditorWrapColumn(col);

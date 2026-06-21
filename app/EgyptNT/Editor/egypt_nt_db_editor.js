@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import { useState, useCallback, useEffect } from "react";
 import "./egypt_nt_db_editor.css";
@@ -240,7 +240,7 @@ function EditableTable({ title, color, rows, setRows, columns, matchId, emptyRow
                     </thead>
                     <tbody>
                         {rows.map((row, ri) => (
-                            <tr key={row._key || ri} className={row._isNew ? "table-row-new" : ""} style={{ borderBottom: '1px solid #f5f5f5', transition: 'background 0.2s' }}>
+                            <tr key={row._key ?? ri} className={row._isNew ? "table-row-new" : ""} style={{ borderBottom: '1px solid #f5f5f5', transition: 'background 0.2s' }}>
                                 {columns.map(col => {
                                     const isAuto = col in autoFields;
                                     const isFitCol = isEditorWrapColumn(col);
@@ -335,6 +335,7 @@ export default function EgyptNTEditor() {
     const [isSaving, setIsSaving] = useState(false);
     const [mode, setMode] = useState('search'); // 'search' | 'edit' | 'new'
     const { addNotification } = useNotification();
+    const [confirmDelete, setConfirmDelete] = useState(null);
     const [newMatchData, setNewMatchData] = useState({ ...EMPTY_MATCH });
     const [activeLinkedTab, setActiveLinkedTab] = useState('lineup_egy');
     
@@ -735,8 +736,14 @@ export default function EgyptNTEditor() {
     }, [matchData, playerRows, resolveNextPlayerEventId, isSaving, addNotification]);
 
     // â”€â”€ Delete a row â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-    const handleDeleteRow = useCallback(async (row, ri, tableName, setterFn) => {
-        if (!confirm('Delete this row?')) return;
+    const handleDeleteRow = useCallback((row, ri, tableName, setterFn) => {
+        setConfirmDelete({ row, ri, tableName, setterFn });
+    }, []);
+
+    const executeDeleteRow = async () => {
+        if (!confirmDelete) return;
+        const { row, ri, tableName, setterFn } = confirmDelete;
+        setConfirmDelete(null);
         if (!row._isNew) {
             try {
                 if (row.ROW_ID) {
@@ -752,7 +759,7 @@ export default function EgyptNTEditor() {
         } else {
             setterFn?.(prev => prev.filter((_, i) => i !== ri));
         }
-    }, [matchData]);
+    };
 
     // â”€â”€ Save Match Details (Global Save) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
     const handleSaveMatch = async () => {
@@ -1300,6 +1307,26 @@ export default function EgyptNTEditor() {
                     </>
                 )}
             </div>
+            {/* Custom Confirm Delete Modal */}
+            {confirmDelete && (
+                <div className="confirm-modal-overlay">
+                    <div className="confirm-modal-box">
+                        <div className="confirm-modal-icon">⚠️</div>
+                        <div className="confirm-modal-title">Delete Row?</div>
+                        <div className="confirm-modal-text">
+                            Are you sure you want to delete this row? This action cannot be undone.
+                        </div>
+                        <div className="confirm-modal-actions">
+                            <button className="confirm-modal-btn confirm-modal-btn-cancel" onClick={() => setConfirmDelete(null)}>
+                                CANCEL
+                            </button>
+                            <button className="confirm-modal-btn confirm-modal-btn-delete" onClick={executeDeleteRow}>
+                                DELETE
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
         </Login_db>
     );
 }
