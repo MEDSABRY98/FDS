@@ -16,6 +16,7 @@ import PlayerGoalImpactTable from "./alahly_db_player_details_goal_impact";
 import PlayerAssistImpactTable from "./alahly_db_player_details_assist_impact";
 import PlayerPresenceTable, { computeSquadImpactStats } from "./alahly_db_player_details_squad_influence";
 import PlayerTimingTable from "./alahly_db_player_details_timing";
+import { computePlayerGoalImpact, computePlayerAssistImpact } from "./alahly_player_impact_utils";
 import { AlAhlyService } from "../Service/alahly_db_service";
 import { AlAhlyExcelExport } from "../ExportExcel/alahly_export_excel";
 
@@ -303,7 +304,7 @@ export default function PlayerDetails({ playerName, playerData, playerDetails, l
                 const sub = String(e.TYPE_SUB || "").trim();
                 const isGoal = type === "GOAL" || type === "هدف" || sub === "PENGOAL" || sub === "هدف جزاء";
                 const isAssist = type === "ASSIST" || type === "اسيست" || type === "صنع";
-                
+
                 if (isGoal) {
                     const min = String(e.MINUTE || "").trim();
                     if (min) {
@@ -528,6 +529,16 @@ export default function PlayerDetails({ playerName, playerData, playerDetails, l
 
         summary.matchHistory = rawHistory.sort((a, b) => b.dateVal - a.dateVal);
         summary.matchEventsHistory = matchEventsList.sort((a, b) => b.dateVal - a.dateVal);
+
+        summary.opponentByMatchId = Object.fromEntries(
+            Object.values(matchDataMap).map(d => [String(d.id), d.opponent])
+        );
+
+        const scopedMatchIds = new Set(playerEvents.map(e => String(e.MATCH_ID || "").trim()));
+        const scopedMatches = (masterMatches || []).filter(m => scopedMatchIds.has(String(m.MATCH_ID || "").trim()));
+        const scopedEvents = (playerDetails || []).filter(e => scopedMatchIds.has(String(e.MATCH_ID || "").trim()));
+        summary.goalImpact = computePlayerGoalImpact(scopedMatches, scopedEvents, playerName);
+        summary.assistImpact = computePlayerAssistImpact(scopedMatches, scopedEvents, playerName);
 
         // Calculate rates inside useMemo
         summary.goalFreq = summary.goals > 0 ? Math.round(summary.mins / summary.goals) : 0;
@@ -967,14 +978,14 @@ export default function PlayerDetails({ playerName, playerData, playerDetails, l
             )}
             {activeTab === 'goal_impact' && (
                 <PlayerGoalImpactTable
-                    playerName={playerName}
-                    filteredMatches={stats.matchHistory}
+                    impactData={stats.goalImpact}
+                    opponentByMatchId={stats.opponentByMatchId}
                 />
             )}
             {activeTab === 'assist_impact' && (
                 <PlayerAssistImpactTable
-                    playerName={playerName}
-                    filteredMatches={stats.matchHistory}
+                    impactData={stats.assistImpact}
+                    opponentByMatchId={stats.opponentByMatchId}
                 />
             )}
             {activeTab === 'timing' && (

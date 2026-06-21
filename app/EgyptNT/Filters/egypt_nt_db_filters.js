@@ -6,6 +6,8 @@ import "../../lib/Filters_db.css";
 
 const TABLE_NAME = "egy_NT_MATCHDETAILS";
 
+const PLAYER_CLUB_FIELD = { key: "player_club", label: "PLAYER CLUB", type: "select", optionsKey: "player_clubs" };
+
 const FILTER_FIELD_DEFS = [
     { key: "country", label: "COUNTRY", type: "select", optionsKey: "countries" },
     { key: "continent", label: "CONTINENT", type: "select", optionsKey: "continents" },
@@ -166,10 +168,10 @@ export default function EgyptNTFilters({
     startDate, setStartDate, endDate, setEndDate
 }) {
     const ColumnOrder = UseColumnOrder(TABLE_NAME);
-    const SortedFields = useMemo(
-        () => SortFilterFields(FILTER_FIELD_DEFS, ColumnOrder),
-        [ColumnOrder]
-    );
+    const SortedFields = useMemo(() => {
+        const sorted = SortFilterFields(FILTER_FIELD_DEFS, ColumnOrder);
+        return [PLAYER_CLUB_FIELD, ...sorted];
+    }, [ColumnOrder]);
 
     const renderField = (field) => {
         if (field.type === "date") {

@@ -40,7 +40,7 @@ export default function Manager_Details_Hub({ managerName, managerStatus, master
         const isAhlyTeam = (t) => {
             if (!t) return false;
             const s = String(t).trim();
-            return s === "الأهلي";
+            return s.includes("الأهلي") || s.includes("Al Ahly") || s.includes("Al-Ahly");
         };
 
         if (!managerName || !masterMatches) return { stats: summary, mgrComps: [], mgrSYs: [], mgrOpps: [] };

@@ -1,4 +1,4 @@
-export default function EgyptNTPlayersImpact({ paginatedRows, currentPage, pageSize, handleSort, renderSortIcon, setSelectedPlayer }) {
+export default function EgyptNTPlayersImpact({ paginatedRows, currentPage, pageSize, handleSort, sortConfig, setSelectedPlayer }) {
     return (
         <table className="modern-player-table fade-in" style={{ tableLayout: 'fixed' }}>
             <colgroup>
@@ -13,12 +13,17 @@ export default function EgyptNTPlayersImpact({ paginatedRows, currentPage, pageS
             <thead>
                 <tr>
                     <th>#</th>
-                    <th onClick={() => handleSort('name')} className="sortable">PLAYER NAME {renderSortIcon('name')}</th>
-                    <th onClick={() => handleSort('goalWinImpact')} className="sortable">GOAL WINNER {renderSortIcon('goalWinImpact')}</th>
-                    <th onClick={() => handleSort('goalDrawImpact')} className="sortable">GOAL DRAW {renderSortIcon('goalDrawImpact')}</th>
-                    <th onClick={() => handleSort('assistWinImpact')} className="sortable">ASSIST WINNER {renderSortIcon('assistWinImpact')}</th>
-                    <th onClick={() => handleSort('assistDrawImpact')} className="sortable">ASSIST DRAW {renderSortIcon('assistDrawImpact')}</th>
-                    <th onClick={() => handleSort('totalImpact')} className="sortable">TOTAL {renderSortIcon('totalImpact')}</th>
+                    <th onClick={() => handleSort('name')} className={`sortable ${sortConfig?.key === 'name' ? 'sort-active' : ''}`}>PLAYER NAME</th>
+                    <th onClick={() => handleSort('goalWinImpact')} className={`sortable ${sortConfig?.key === 'goalWinImpact' ? 'sort-active' : ''}`}>GOAL WINNER</th>
+                    <th onClick={() => handleSort('goalDrawImpact')} className={`sortable ${sortConfig?.key === 'goalDrawImpact' ? 'sort-active' : ''}`}>GOAL DRAW</th>
+                    <th onClick={() => handleSort('assistWinImpact')} className={`sortable ${sortConfig?.key === 'assistWinImpact' ? 'sort-active' : ''}`}>ASSIST WINNER</th>
+                    <th onClick={() => handleSort('assistDrawImpact')} className={`sortable ${sortConfig?.key === 'assistDrawImpact' ? 'sort-active' : ''}`}>ASSIST DRAW</th>
+                    <th
+                        onClick={() => handleSort('totalImpact')}
+                        className={`sortable ${sortConfig?.key === 'totalImpact' ? 'sort-active' : ''}`}
+                    >
+                        TOTAL
+                    </th>
                 </tr>
             </thead>
             <tbody>

@@ -1,0 +1,141 @@
+/* Club Stats — extends shared Squad table styles */
+
+.club-stat-cell {
+    font-family: "Space Mono", monospace;
+    font-weight: 700;
+    text-align: center;
+}
+
+.club-stat-cell.g-val {
+    color: #2ecc71;
+    font-size: 16px;
+}
+
+.club-stat-cell.a-val {
+    color: #3498db;
+    font-size: 16px;
+}
+
+.club-stat-cell.date-cell {
+    font-size: 12px;
+    color: #666;
+}
+
+.club-sortable-header {
+    cursor: pointer;
+    user-select: none;
+}
+
+.club-sortable-header:hover {
+    color: var(--gold);
+}
+
+.club-sort-icon {
+    opacity: 0.6;
+    font-size: 11px;
+}
+
+.events-cell {
+    text-align: center;
+    vertical-align: middle;
+}
+
+.event-chip {
+    display: inline-block;
+    background: #f4f4f4;
+    border: 1px solid #e5e5e5;
+    border-radius: 6px;
+    padding: 4px 8px;
+    margin: 2px;
+    font-size: 11px;
+    font-weight: 700;
+    color: #333;
+    white-space: nowrap;
+}
+
+.club-performance-toolbar {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 20px;
+    flex-wrap: wrap;
+    margin-bottom: 25px;
+}
+
+.club-performance-search {
+    min-width: 280px;
+}
+
+.club-stats-match-details-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    border: 1px solid #e5e5e5;
+    background: #fff;
+    color: #333;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.club-stats-match-details-btn:hover:not(:disabled) {
+    background: #000;
+    border-color: #000;
+    color: var(--gold);
+    transform: translateY(-1px);
+}
+
+.club-stats-match-details-btn:disabled {
+    opacity: 0.35;
+    cursor: not-allowed;
+}
+
+.club-stats-events-modal {
+    max-width: 720px;
+}
+
+.club-stats-events-meta {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 10px;
+    margin-bottom: 20px;
+}
+
+.club-stats-events-meta span {
+    background: #f4f4f4;
+    border: 1px solid #e5e5e5;
+    border-radius: 999px;
+    padding: 6px 12px;
+    font-size: 12px;
+    font-weight: 700;
+    color: #444;
+}
+
+.club-stats-event-type {
+    display: inline-block;
+    padding: 4px 10px;
+    border-radius: 999px;
+    font-size: 12px;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 0.4px;
+}
+
+.club-stats-event-type.is-goal {
+    background: rgba(46, 204, 113, 0.12);
+    color: #2ecc71;
+}
+
+.club-stats-event-type.is-assist {
+    background: rgba(52, 152, 219, 0.12);
+    color: #3498db;
+}
+
+.club-stats-total-row td {
+    background: rgba(200, 16, 46, 0.04);
+    border-top: 2px solid var(--gold);
+    font-weight: 900;
+}

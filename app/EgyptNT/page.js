@@ -35,6 +35,8 @@ import EgyptNTSquad from "./Squad/egypt_nt_db_squad";
 import EgyptNTSquadEditor from "./SquadEditor/egypt_nt_db_squad_editor";
 import EgyptNTEditor from "./Editor/egypt_nt_db_editor";
 import EgyptNTClubBackfill from "./ClubBackfill/egypt_nt_club_backfill";
+import EgyptNTClubStats from "./ClubStats/egypt_nt_db_club_stats";
+import { buildMatchContextMap, isEgyptScorerEvent } from "./ClubStats/egypt_nt_db_club_stats_utils";
 
 import EgyptNTMatchDetails from "./MatchDetails/egypt_nt_db_match_details";
 import EgyptNTChampions from "./Champions/egypt_nt_db_champions";
@@ -64,6 +66,7 @@ export default function EgyptNTDatabase() {
     const [endDate, setEndDate] = useState("");
 
     const [dbFilters, setDbFilters] = useState({
+        player_club: 'All',
         match_id: 'All',
         age: 'All',
         champion_system: 'All',
@@ -116,6 +119,21 @@ export default function EgyptNTDatabase() {
         if (!silent) setLoading(false);
     }
 
+    const matchContextMap = useMemo(() => buildMatchContextMap(matches), [matches]);
+
+    const matchHasPlayerClub = (m, clubName) => {
+        if (!clubName || clubName === 'All') return true;
+        const matchId = String(m.MATCH_ID || "");
+        const ctx = matchContextMap[matchId];
+        if (!ctx) return false;
+        return playerDetails.some(row => {
+            if (String(row.MATCH_ID || "") !== matchId) return false;
+            const club = String(row.CLUB || "").trim();
+            if (!club || club !== clubName) return false;
+            return isEgyptScorerEvent(row, ctx);
+        });
+    };
+
     const getMatchCountryName = (opponentTeam) => {
         if (!opponentTeam) return null;
         const parts = opponentTeam.split(' - ');
@@ -149,6 +167,10 @@ export default function EgyptNTDatabase() {
                 (c.COUNTRY_NAME_EN && c.COUNTRY_NAME_EN.toLowerCase() === mCountry)
             );
             return countryRow && countryRow.CONTINENT === val;
+        }
+
+        if (key === 'player_club') {
+            return matchHasPlayerClub(m, val);
         }
         
         const colMap = {
@@ -240,6 +262,21 @@ export default function EgyptNTDatabase() {
                 
             return ["All", ...new Set(continentOpts)].sort((a, b) => a.localeCompare(b, 'ar'));
         }
+
+        if (key === 'player_club') {
+            const partialMatchIds = new Set(partialMatches.map(m => String(m.MATCH_ID)));
+            const clubs = new Set();
+            playerDetails.forEach(row => {
+                const matchId = String(row.MATCH_ID || "");
+                if (!partialMatchIds.has(matchId)) return;
+                const club = String(row.CLUB || "").trim();
+                if (!club) return;
+                const ctx = matchContextMap[matchId];
+                if (!ctx || !isEgyptScorerEvent(row, ctx)) return;
+                clubs.add(club);
+            });
+            return ["All", ...[...clubs].sort((a, b) => a.localeCompare(b, 'ar'))];
+        }
         
         const vals = partialMatches.map(m => m[colName]).filter(v => v !== null && v !== undefined && v !== '');
         const uniqueVals = [...new Set(vals)].sort();
@@ -252,6 +289,7 @@ export default function EgyptNTDatabase() {
     // Dynamic Filter Options for ALL columns
     const filterOptions = useMemo(() => {
         return {
+            player_clubs: getOptionsForField('player_club', null),
             match_ids: getOptionsForField('match_id', 'MATCH_ID'),
             ages: getOptionsForField('age', 'AGE'),
             champion_systems: getOptionsForField('champion_system', 'CHAMPION_SYSTEM'),
@@ -278,7 +316,7 @@ export default function EgyptNTDatabase() {
             countries: getOptionsForField('country', null),
             continents: getOptionsForField('continent', null)
         };
-    }, [matches, dbFilters, countries, startDate, endDate]);
+    }, [matches, dbFilters, countries, startDate, endDate, playerDetails, matchContextMap]);
 
     const updateFilter = (key, value) => {
         setDbFilters(prev => ({ ...prev, [key]: value }));
@@ -288,6 +326,7 @@ export default function EgyptNTDatabase() {
         setStartDate("");
         setEndDate("");
         setDbFilters({
+            player_club: 'All',
             match_id: 'All',
             age: 'All',
             champion_system: 'All',
@@ -366,6 +405,7 @@ export default function EgyptNTDatabase() {
                 withinRange &&
                 passCountry &&
                 passContinent &&
+                matchHasPlayerClub(m, dbFilters.player_club) &&
                 check('match_id', 'MATCH_ID') &&
                 check('age', 'AGE') &&
                 check('champion_system', 'CHAMPION_SYSTEM') &&
@@ -390,7 +430,7 @@ export default function EgyptNTDatabase() {
                 check('note', 'NOTE')
             );
         });
-    }, [matches, dbFilters, startDate, endDate, countries]);
+    }, [matches, dbFilters, startDate, endDate, countries, playerDetails, matchContextMap]);
 
     const tabs = [
         { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
@@ -403,6 +443,7 @@ export default function EgyptNTDatabase() {
         { id: 'seasons', label: 'Seasons', icon: Calendar },
         { id: 'years', label: 'Years', icon: Calendar },
         { id: 'players', label: 'Players', icon: Users },
+        { id: 'club_stats', label: 'Club Stats', icon: Building2 },
         { id: 'gks', label: 'Gks', icon: Shield },
         { id: 'managers', label: 'Managers', icon: User },
         { id: 'referees', label: 'Referees', icon: Shield },
@@ -579,6 +620,12 @@ export default function EgyptNTDatabase() {
                             {activeTab === 'seasons' && <EgyptNTSeasons matches={filteredMatches} />}
                             {activeTab === 'years' && <EgyptNTYears matches={filteredMatches} />}
                             {activeTab === 'players' && <EgyptNTPlayers playerDetails={playerDetails} lineupDetails={lineupDetails} filteredMatches={filteredMatches} gkDetails={gkDetails} howPenMissed={howPenMissed} />}
+                            {activeTab === 'club_stats' && (
+                                <EgyptNTClubStats
+                                    playerDetails={playerDetails}
+                                    filteredMatches={filteredMatches}
+                                />
+                            )}
                             {activeTab === 'gks' && <EgyptNTGKs gkDetails={gkDetails} howPenMissed={howPenMissed} filteredMatches={filteredMatches} playerDetails={playerDetails} />}
                             {activeTab === 'managers' && <EgyptNTManagers matches={filteredMatches} playerDetails={playerDetails} lineupDetails={lineupDetails} />}
                             {activeTab === 'h2h' && <EgyptNTH2H matches={filteredMatches} />}

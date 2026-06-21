@@ -12,31 +12,35 @@ export default function AlAhlyPlayersImpact({ paginatedRows, currentPage, pageSi
             </colgroup>
             <thead>
                 <tr>
-                    <th rowSpan="2">#</th>
-                    <th className="name-th" rowSpan="2" onClick={() => handleSort('name')} style={{ color: sortConfig?.key === 'name' ? 'var(--gold)' : '' }}>PLAYER NAME</th>
-                    <th colSpan="2" style={{ background: '#27ae60', color: '#fff' }}>GOAL IMPACT</th>
-                    <th colSpan="2" style={{ background: '#2980b9', color: '#fff' }}>ASSIST IMPACT</th>
-                    <th rowSpan="2" style={{ background: '#000', color: 'var(--gold)' }}>TOTAL</th>
-                </tr>
-                <tr style={{ fontSize: '10px' }}>
-                    <th onClick={() => handleSort('goalWinImpact')} className="sortable" style={{ color: sortConfig?.key === 'goalWinImpact' ? 'var(--gold)' : '' }}>WIN</th>
-                    <th onClick={() => handleSort('goalDrawImpact')} className="sortable" style={{ color: sortConfig?.key === 'goalDrawImpact' ? 'var(--gold)' : '' }}>DRAW</th>
-                    <th onClick={() => handleSort('assistWinImpact')} className="sortable" style={{ color: sortConfig?.key === 'assistWinImpact' ? 'var(--gold)' : '' }}>WIN</th>
-                    <th onClick={() => handleSort('assistDrawImpact')} className="sortable" style={{ color: sortConfig?.key === 'assistDrawImpact' ? 'var(--gold)' : '' }}>DRAW</th>
+                    <th>#</th>
+                    <th onClick={() => handleSort('name')} className={`sortable ${sortConfig?.key === 'name' ? 'sort-active' : ''}`}>PLAYER NAME</th>
+                    <th onClick={() => handleSort('goalWinImpact')} className={`sortable ${sortConfig?.key === 'goalWinImpact' ? 'sort-active' : ''}`}>GOAL WINNER</th>
+                    <th onClick={() => handleSort('goalDrawImpact')} className={`sortable ${sortConfig?.key === 'goalDrawImpact' ? 'sort-active' : ''}`}>GOAL DRAW</th>
+                    <th onClick={() => handleSort('assistWinImpact')} className={`sortable ${sortConfig?.key === 'assistWinImpact' ? 'sort-active' : ''}`}>ASSIST WINNER</th>
+                    <th onClick={() => handleSort('assistDrawImpact')} className={`sortable ${sortConfig?.key === 'assistDrawImpact' ? 'sort-active' : ''}`}>ASSIST DRAW</th>
+                    <th
+                        onClick={() => handleSort('totalImpact')}
+                        className={`sortable ${sortConfig?.key === 'totalImpact' ? 'sort-active' : ''}`}
+                    >
+                        TOTAL
+                    </th>
                 </tr>
             </thead>
             <tbody>
-                {paginatedRows.map((r, i) => (
-                    <tr key={r.name}>
-                        <td><span className="rank-badge-premium">{(currentPage - 1) * pageSize + i + 1}</span></td>
-                        <td className="p-name" onClick={() => setSelectedPlayer(r.name)}>{r.name}</td>
-                        <td className="g-val">{r.goalWinImpact}</td>
-                        <td style={{ color: '#e67e22' }}>{r.goalDrawImpact}</td>
-                        <td className="a-val">{r.assistWinImpact}</td>
-                        <td style={{ color: '#e67e22' }}>{r.assistDrawImpact}</td>
-                        <td style={{ fontWeight: 800 }}>{r.goalWinImpact + r.goalDrawImpact + r.assistWinImpact + r.assistDrawImpact}</td>
-                    </tr>
-                ))}
+                {paginatedRows.map((r, i) => {
+                    const totalImpact = r.goalWinImpact + r.goalDrawImpact + r.assistWinImpact + r.assistDrawImpact;
+                    return (
+                        <tr key={r.name}>
+                            <td><span className="rank-badge-premium">{(currentPage - 1) * pageSize + i + 1}</span></td>
+                            <td className="p-name" onClick={() => setSelectedPlayer(r.name)}>{r.name}</td>
+                            <td className="g-val">{r.goalWinImpact}</td>
+                            <td style={{ color: '#f39c12' }}>{r.goalDrawImpact}</td>
+                            <td className="a-val">{r.assistWinImpact}</td>
+                            <td style={{ color: '#e67e22' }}>{r.assistDrawImpact}</td>
+                            <td><div className="ga-pill" style={{ background: '#000', color: 'var(--gold)', borderColor: 'var(--gold)' }}>{totalImpact}</div></td>
+                        </tr>
+                    );
+                })}
             </tbody>
         </table>
     );

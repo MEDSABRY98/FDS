@@ -15,6 +15,7 @@ import AlAhlyPlayersMultiples from "./alahly_db_players_multiples";
 import AlAhlyPlayersImpact from "./alahly_db_players_impact";
 import AlAhlyPlayersGoalsTiming from "./alahly_db_players_goals_timing";
 import AlAhlyPlayersAssistsTiming from "./alahly_db_players_assists_timing";
+import { computePlayerGoalImpact, computePlayerAssistImpact } from "../PlayerDetails/alahly_player_impact_utils";
 
 export default function AlAhlyPlayers({ playerDetails, lineupDetails, filteredMatches, gkDetails, howPenMissed }) {
     const [searchTerm, setSearchTerm] = useState("");
@@ -47,7 +48,7 @@ export default function AlAhlyPlayers({ playerDetails, lineupDetails, filteredMa
         const isAhlyTeam = (t) => {
             if (!t) return false;
             const s = String(t).trim();
-            return s === "الأهلي";
+            return s.includes("الأهلي") || s.includes("Al Ahly") || s.includes("Al-Ahly");
         };
 
         const initTiming = () => ({ "1-15": 0, "16-30": 0, "31-45": 0, "45+": 0, "46-60": 0, "61-75": 0, "76-90": 0, "90+": 0, "?": 0 });
@@ -164,66 +165,56 @@ export default function AlAhlyPlayers({ playerDetails, lineupDetails, filteredMa
             if (type === "PENMAKEMISSED") { rowToUpdate.makeMiss += 1; }
         });
 
-        // Impact Calculation (Shortened for brevity but fully functional)
+        // Impact Calculation (using the identical logic to Player Details)
         const matchesData = filteredMatches || [];
-        matchesData.forEach(match => {
-            const mId = String(match.MATCH_ID).trim();
-            const gf = parseInt(match.GF) || 0;
-            const ga = parseInt(match.GA) || 0;
-            const res = match["W-D-L"];
-            const matchEvents = (playerDetails || []).filter(e => String(e.MATCH_ID).trim() === mId);
-            const ahlySideGoals = matchEvents.filter(e => isAhlyTeam(e.TEAM) && (["GOAL", "هدف"].includes(String(e.TYPE || "").toUpperCase()) || String(e.TYPE_SUB || "").toUpperCase() === "PENGOAL")).sort((a, b) => (parseInt(a.MINUTE) || 0) - (parseInt(b.MINUTE) || 0));
-            const oppSideGoals = matchEvents.filter(e => !isAhlyTeam(e.TEAM) && (["GOAL", "هدف"].includes(String(e.TYPE || "").toUpperCase()) || String(e.TYPE_SUB || "").toUpperCase() === "PENGOAL")).sort((a, b) => (parseInt(a.MINUTE) || 0) - (parseInt(b.MINUTE) || 0));
-
-            const updateStats = (name, type, teamVal) => {
-                if (!stats[name]) return;
-                const isAhly = isAhlyTeam(teamVal);
-                if (teamFilter === "ahly" && !isAhly) return;
-                if (teamFilter === "opponents" && isAhly) return;
-                if (opponentFilter !== "all" && String(teamVal).trim() !== opponentFilter) return;
-                if (type === 'G_WIN') stats[name].goalWinImpact++;
-                if (type === 'G_DRAW') stats[name].goalDrawImpact++;
-                if (type === 'A_WIN') stats[name].assistWinImpact++;
-                if (type === 'A_DRAW') stats[name].assistDrawImpact++;
-            };
-
-            const findAssist = (goal) => {
-                if (!goal) return null;
-                const gId = String(goal.EVENT_ID);
-                const aRow = matchEvents.find(e => ["ASSIST", "اسيست", "صنع"].includes(String(e.TYPE || "").toUpperCase()) && (String(e.PARENT_EVENT_ID) === gId || (parseInt(e.MINUTE) === parseInt(goal.MINUTE))));
-                return aRow ? String(aRow["PLAYER NAME"]).trim() : null;
-            };
-
-            if (res === 'W' && gf - ga === 1) {
-                const lg = ahlySideGoals[ahlySideGoals.length-1];
-                if (lg) { updateStats(String(lg["PLAYER NAME"]).trim(), 'G_WIN', lg.TEAM); const ast = findAssist(lg); if (ast) updateStats(ast, 'A_WIN', lg.TEAM); }
-            } else if (res === 'D' && gf > 0) {
-                const lg = ahlySideGoals[ahlySideGoals.length-1];
-                if (lg) { updateStats(String(lg["PLAYER NAME"]).trim(), 'G_DRAW', lg.TEAM); const ast = findAssist(lg); if (ast) updateStats(ast, 'A_DRAW', lg.TEAM); }
-            }
-            if (res === 'L' && ga - gf === 1) {
-                const lg = oppSideGoals[oppSideGoals.length-1];
-                if (lg) { updateStats(String(lg["PLAYER NAME"]).trim(), 'G_WIN', lg.TEAM); const ast = findAssist(lg); if (ast) updateStats(ast, 'A_WIN', lg.TEAM); }
-            } else if (res === 'D' && ga > 0) {
-                const lg = oppSideGoals[oppSideGoals.length-1];
-                if (lg) { updateStats(String(lg["PLAYER NAME"]).trim(), 'G_DRAW', lg.TEAM); const ast = findAssist(lg); if (ast) updateStats(ast, 'A_DRAW', lg.TEAM); }
-            }
+        const scopedEvents = (playerDetails || []).filter(e => currentMatchIds.has(String(e.MATCH_ID || "").trim()));
+        const eventsByMatchMap = new Map();
+        scopedEvents.forEach(e => {
+            const mid = String(e.MATCH_ID || "").trim();
+            if (!eventsByMatchMap.has(mid)) eventsByMatchMap.set(mid, []);
+            eventsByMatchMap.get(mid).push(e);
         });
 
         const list = Object.values(stats);
-        list.forEach(player => {
-            const matchesForPlayer = (playerDetails || []).filter(p => String(p["PLAYER NAME"] || "").trim() === player.name && currentMatchIds.has(String(p.MATCH_ID || "").trim()));
-            const matchGroups = {};
-            matchesForPlayer.forEach(m => {
-                const mid = m.MATCH_ID; if (!matchGroups[mid]) matchGroups[mid] = { g: 0, a: 0 };
-                const t = String(m.TYPE || "").trim(); const ts = String(m.TYPE_SUB || "").trim();
-                if (t === "GOAL" || t === "هدف" || ts === "PENGOAL") matchGroups[mid].g++;
-                if (t === "ASSIST" || t === "اسيست") matchGroups[mid].a++;
-            });
-            Object.values(matchGroups).forEach(c => {
-                if (c.g === 2) player.braceG++; if (c.g === 3) player.hatG++; if (c.g >= 4) player.superG++;
-                if (c.a === 2) player.braceA++; if (c.a === 3) player.hatA++; if (c.a >= 4) player.superA++;
-            });
+        list.forEach(playerStat => {
+            const gImpact = computePlayerGoalImpact(matchesData, null, playerStat.name, eventsByMatchMap);
+            const aImpact = computePlayerAssistImpact(matchesData, null, playerStat.name, eventsByMatchMap);
+            playerStat.goalWinImpact = gImpact.winImpact;
+            playerStat.goalDrawImpact = gImpact.drawImpact;
+            playerStat.assistWinImpact = aImpact.winImpact;
+            playerStat.assistDrawImpact = aImpact.drawImpact;
+        });
+
+        // Compute Braces / Hatricks using Map for O(E) complexity
+        const playerMatchGoalsAssists = new Map(); // "playerName|matchId" -> { g: 0, a: 0 }
+        
+        scopedEvents.forEach(m => {
+            const name = String(m["PLAYER NAME"] || "").trim();
+            if (!name || name.toLowerCase() === "unknown") return;
+            const mid = String(m.MATCH_ID || "").trim();
+            
+            const key = `${name}|${mid}`;
+            if (!playerMatchGoalsAssists.has(key)) {
+                playerMatchGoalsAssists.set(key, { g: 0, a: 0 });
+            }
+            
+            const statsObj = playerMatchGoalsAssists.get(key);
+            const t = String(m.TYPE || "").trim(); 
+            const ts = String(m.TYPE_SUB || "").trim();
+            if (t === "GOAL" || t === "هدف" || ts === "PENGOAL") statsObj.g++;
+            if (t === "ASSIST" || t === "اسيست") statsObj.a++;
+        });
+
+        playerMatchGoalsAssists.forEach((c, key) => {
+            const name = key.split("|")[0];
+            if (stats[name]) {
+                if (c.g === 2) stats[name].braceG++; 
+                if (c.g === 3) stats[name].hatG++; 
+                if (c.g >= 4) stats[name].superG++;
+                if (c.a === 2) stats[name].braceA++; 
+                if (c.a === 3) stats[name].hatA++; 
+                if (c.a >= 4) stats[name].superA++;
+            }
         });
         return list;
     }, [playerDetails, lineupDetails, filteredMatches, teamFilter, opponentFilter]);
@@ -245,7 +236,10 @@ export default function AlAhlyPlayers({ playerDetails, lineupDetails, filteredMa
         const { key, direction } = sortConfig;
         return list.sort((a, b) => {
             let aVal, bVal;
-            if (activeSubTab === 5 || activeSubTab === 6) {
+            if (key === "totalImpact") {
+                aVal = a.goalWinImpact + a.goalDrawImpact + a.assistWinImpact + a.assistDrawImpact;
+                bVal = b.goalWinImpact + b.goalDrawImpact + b.assistWinImpact + b.assistDrawImpact;
+            } else if (activeSubTab === 5 || activeSubTab === 6) {
                 const timA = activeSubTab === 5 ? a.goalsTiming : a.assistsTiming;
                 const timB = activeSubTab === 5 ? b.goalsTiming : b.assistsTiming;
                 if (["1-15", "16-30", "31-45", "45+", "46-60", "61-75", "76-90", "90+", "?"].includes(key)) { aVal = timA[key] || 0; bVal = timB[key] || 0; }
@@ -301,7 +295,7 @@ export default function AlAhlyPlayers({ playerDetails, lineupDetails, filteredMa
                                 {["Stats", "Penalties", "Multiples", "Impact", "Goals Timing", "Assists Timing"].map((label, index) => {
                                     const num = index + 1;
                                     return (
-                                        <div key={num} className={`sub-tab-box ${activeSubTab === num ? 'active' : ''}`} onClick={() => setActiveSubTab(num)}>{label}</div>
+                                        <div key={num} className={`sub-tab-box ${activeSubTab === num ? 'active' : ''}`} onClick={() => { setActiveSubTab(num); setCurrentPage(1); if (num === 4) setSortConfig({ key: 'totalImpact', direction: 'desc' }); }}>{label}</div>
                                     );
                                 })}
                             </div>

@@ -15,6 +15,14 @@ import EgyptNTPlayersMultiples from "./egypt_nt_db_players_multiples";
 import EgyptNTPlayersImpact from "./egypt_nt_db_players_impact";
 import EgyptNTPlayersGoalsTiming from "./egypt_nt_db_players_goals_timing";
 import EgyptNTPlayersAssistsTiming from "./egypt_nt_db_players_assists_timing";
+import { computePlayerGoalImpact } from "../PlayerDetails/egypt_nt_db_player_details_goal_impact";
+import { computePlayerAssistImpact } from "../PlayerDetails/egypt_nt_db_player_details_assist_impact";
+import { 
+    isEgyptTeamSide, 
+    isCountableGoalEvent, 
+    isAssistEvent, 
+    sortEventsByMinute 
+} from "../PlayerDetails/egypt_nt_player_impact_utils";
 
 export default function EgyptNTPlayers({ playerDetails, lineupDetails, filteredMatches, gkDetails, howPenMissed }) {
     const [searchTerm, setSearchTerm] = useState("");
@@ -36,19 +44,17 @@ export default function EgyptNTPlayers({ playerDetails, lineupDetails, filteredM
         setSortConfig({ key, direction });
     };
 
-    const renderSortIcon = (key) => {
-        if (sortConfig.key !== key) return <span className="sort-icon">↕</span>;
-        return sortConfig.direction === "asc" ? <span className="sort-icon active">↑</span> : <span className="sort-icon active">↓</span>;
-    };
+    const renderSortIcon = () => null;
 
     const allStats = useMemo(() => {
         const stats = {};
         const currentMatchIds = new Set((filteredMatches || []).map(m => String(m.MATCH_ID || "").trim()));
-        
+
         const isEgyptTeam = (t) => {
-            if (!t) return false;
-            const s = String(t).trim();
-            return s === "مصر" || s === "Egypt" || s === "منتخب مصر" || s === "المنتخب المصري";
+            const s = String(t || "").trim();
+            if (!s) return true;
+            const normalized = s.toLowerCase();
+            return normalized === "مصر" || normalized === "egypt" || normalized === "منتخب مصر" || normalized === "المنتخب المصري";
         };
 
         const initTiming = () => ({ "1-15": 0, "16-30": 0, "31-45": 0, "45+": 0, "46-60": 0, "61-75": 0, "76-90": 0, "90+": 0, "?": 0 });
@@ -164,69 +170,62 @@ export default function EgyptNTPlayers({ playerDetails, lineupDetails, filteredM
             if (type === "PENMAKEMISSED") { rowToUpdate.makeMiss += 1; }
         });
 
-        // Impact Calculations
-        const matchesData = filteredMatches || [];
-        matchesData.forEach(match => {
-            const mId = String(match.MATCH_ID).trim();
-            const gf = parseInt(match.GF) || 0;
-            const ga = parseInt(match.GA) || 0;
-            const res = match["W-D-L"];
-            const matchEvents = (playerDetails || []).filter(e => String(e.MATCH_ID).trim() === mId);
-            const egyptSideGoals = matchEvents.filter(e => isEgyptTeam(e.TEAM) && (["GOAL", "هدف"].includes(String(e.TYPE || "").toUpperCase()) || String(e.TYPE_SUB || "").toUpperCase() === "PENGOAL")).sort((a, b) => (parseInt(a.MINUTE) || 0) - (parseInt(b.MINUTE) || 0));
-            const oppSideGoals = matchEvents.filter(e => !isEgyptTeam(e.TEAM) && (["GOAL", "هدف"].includes(String(e.TYPE || "").toUpperCase()) || String(e.TYPE_SUB || "").toUpperCase() === "PENGOAL")).sort((a, b) => (parseInt(a.MINUTE) || 0) - (parseInt(b.MINUTE) || 0));
+        // Impact — same logic as Player Details goal/assist impact tabs
+        const scopedMatches = filteredMatches || [];
+        const scopedEvents = (playerDetails || []).filter(e => currentMatchIds.has(String(e.MATCH_ID || "").trim()));
 
-            const updateStats = (name, type, teamVal) => {
-                if (!stats[name]) return;
-                const isEgypt = isEgyptTeam(teamVal);
-                if (teamFilter === "egypt" && !isEgypt) return;
-                if (teamFilter === "opponents" && isEgypt) return;
-                if (opponentFilter !== "all" && String(teamVal).trim() !== opponentFilter) return;
-                if (type === 'G_WIN') stats[name].goalWinImpact++;
-                if (type === 'G_DRAW') stats[name].goalDrawImpact++;
-                if (type === 'A_WIN') stats[name].assistWinImpact++;
-                if (type === 'A_DRAW') stats[name].assistDrawImpact++;
-            };
+        // Pre-compute events by match to avoid O(N^3) complexity which freezes the browser
+        const eventsByMatchMap = new Map();
+        scopedEvents.forEach(e => {
+            const mid = String(e.MATCH_ID || "").trim();
+            if (!eventsByMatchMap.has(mid)) eventsByMatchMap.set(mid, []);
+            eventsByMatchMap.get(mid).push(e);
+        });
 
-            const findAssist = (goal) => {
-                if (!goal) return null;
-                const gId = String(goal.EVENT_ID);
-                const aRow = matchEvents.find(e => ["ASSIST", "اسيست", "صنع"].includes(String(e.TYPE || "").toUpperCase()) && (String(e.PARENT_EVENT_ID) === gId || (parseInt(e.MINUTE) === parseInt(goal.MINUTE))));
-                return aRow ? String(aRow["PLAYER NAME"]).trim() : null;
-            };
-
-            if (res === 'W' && gf - ga === 1) {
-                const lg = egyptSideGoals[egyptSideGoals.length-1];
-                if (lg) { updateStats(String(lg["PLAYER NAME"]).trim(), 'G_WIN', lg.TEAM); const ast = findAssist(lg); if (ast) updateStats(ast, 'A_WIN', lg.TEAM); }
-            } else if (res === 'D' && gf > 0) {
-                const lg = egyptSideGoals[egyptSideGoals.length-1];
-                if (lg) { updateStats(String(lg["PLAYER NAME"]).trim(), 'G_DRAW', lg.TEAM); const ast = findAssist(lg); if (ast) updateStats(ast, 'A_DRAW', lg.TEAM); }
-            }
-            if (res === 'L' && ga - gf === 1) {
-                const lg = oppSideGoals[oppSideGoals.length-1];
-                if (lg) { updateStats(String(lg["PLAYER NAME"]).trim(), 'G_WIN', lg.TEAM); const ast = findAssist(lg); if (ast) updateStats(ast, 'A_WIN', lg.TEAM); }
-            } else if (res === 'D' && ga > 0) {
-                const lg = oppSideGoals[oppSideGoals.length-1];
-                if (lg) { updateStats(String(lg["PLAYER NAME"]).trim(), 'G_DRAW', lg.TEAM); const ast = findAssist(lg); if (ast) updateStats(ast, 'A_DRAW', lg.TEAM); }
-            }
+        // Compute Impact using the exact same logic as Player Details inner tabs
+        const statsArray = Object.values(stats);
+        statsArray.forEach(playerStat => {
+            const gImpact = computePlayerGoalImpact(scopedMatches, null, playerStat.name, eventsByMatchMap);
+            const aImpact = computePlayerAssistImpact(scopedMatches, null, playerStat.name, eventsByMatchMap);
+            playerStat.goalWinImpact = gImpact.winImpact;
+            playerStat.goalDrawImpact = gImpact.drawImpact;
+            playerStat.assistWinImpact = aImpact.winImpact;
+            playerStat.assistDrawImpact = aImpact.drawImpact;
         });
 
         // Compute Braces / Hatricks
-        const list = Object.values(stats);
-        list.forEach(player => {
-            const matchesForPlayer = (playerDetails || []).filter(p => String(p["PLAYER NAME"] || "").trim() === player.name && currentMatchIds.has(String(p.MATCH_ID || "").trim()));
-            const matchGroups = {};
-            matchesForPlayer.forEach(m => {
-                const mid = m.MATCH_ID; if (!matchGroups[mid]) matchGroups[mid] = { g: 0, a: 0 };
-                const t = String(m.TYPE || "").trim(); const ts = String(m.TYPE_SUB || "").trim();
-                if (t === "GOAL" || t === "هدف" || ts === "PENGOAL") matchGroups[mid].g++;
-                if (t === "ASSIST" || t === "اسيست") matchGroups[mid].a++;
-            });
-            Object.values(matchGroups).forEach(c => {
-                if (c.g === 2) player.braceG++; if (c.g === 3) player.hatG++; if (c.g >= 4) player.superG++;
-                if (c.a === 2) player.braceA++; if (c.a === 3) player.hatA++; if (c.a >= 4) player.superA++;
-            });
+        const playerMatchGoalsAssists = new Map(); // "playerName|matchId" -> { g: 0, a: 0 }
+        
+        scopedEvents.forEach(m => {
+            const name = String(m["PLAYER NAME"] || "").trim();
+            if (!name || name.toLowerCase() === "unknown") return;
+            const mid = String(m.MATCH_ID || "").trim();
+            
+            const key = `${name}|${mid}`;
+            if (!playerMatchGoalsAssists.has(key)) {
+                playerMatchGoalsAssists.set(key, { g: 0, a: 0 });
+            }
+            
+            const statsObj = playerMatchGoalsAssists.get(key);
+            const t = String(m.TYPE || "").trim(); 
+            const ts = String(m.TYPE_SUB || "").trim();
+            if (t === "GOAL" || t === "هدف" || ts === "PENGOAL") statsObj.g++;
+            if (t === "ASSIST" || t === "اسيست") statsObj.a++;
         });
 
+        playerMatchGoalsAssists.forEach((c, key) => {
+            const name = key.split("|")[0];
+            if (stats[name]) {
+                if (c.g === 2) stats[name].braceG++; 
+                if (c.g === 3) stats[name].hatG++; 
+                if (c.g >= 4) stats[name].superG++;
+                if (c.a === 2) stats[name].braceA++; 
+                if (c.a === 3) stats[name].hatA++; 
+                if (c.a >= 4) stats[name].superA++;
+            }
+        });
+        
+        const list = Object.values(stats);
         return list;
     }, [playerDetails, lineupDetails, filteredMatches, teamFilter, opponentFilter]);
 
@@ -234,9 +233,10 @@ export default function EgyptNTPlayers({ playerDetails, lineupDetails, filteredM
         const currentMatchIds = new Set((filteredMatches || []).map(m => String(m.MATCH_ID || "").trim()));
         const opps = new Set();
         const isEgyptTeam = (t) => {
-            if (!t) return false;
-            const s = String(t).trim();
-            return s === "مصر" || s === "Egypt" || s === "منتخب مصر" || s === "المنتخب المصري";
+            const s = String(t || "").trim();
+            if (!s) return true;
+            const normalized = s.toLowerCase();
+            return normalized === "مصر" || normalized === "egypt" || normalized === "منتخب مصر" || normalized === "المنتخب المصري";
         };
         (lineupDetails || []).forEach(l => {
             if (currentMatchIds.has(String(l.MATCH_ID || "").trim())) {
@@ -257,7 +257,10 @@ export default function EgyptNTPlayers({ playerDetails, lineupDetails, filteredM
         const { key, direction } = sortConfig;
         return list.sort((a, b) => {
             let aVal, bVal;
-            if (activeSubTab === 5 || activeSubTab === 6) {
+            if (key === "totalImpact") {
+                aVal = a.goalWinImpact + a.goalDrawImpact + a.assistWinImpact + a.assistDrawImpact;
+                bVal = b.goalWinImpact + b.goalDrawImpact + b.assistWinImpact + b.assistDrawImpact;
+            } else if (activeSubTab === 5 || activeSubTab === 6) {
                 const timA = activeSubTab === 5 ? a.goalsTiming : a.assistsTiming;
                 const timB = activeSubTab === 5 ? b.goalsTiming : b.assistsTiming;
                 if (["1-15", "16-30", "31-45", "45+", "46-60", "61-75", "76-90", "90+", "?"].includes(key)) { aVal = timA[key] || 0; bVal = timB[key] || 0; }
@@ -303,14 +306,14 @@ export default function EgyptNTPlayers({ playerDetails, lineupDetails, filteredM
     return (
         <div className="tab-content" id="tab-players">
             {selectedPlayer ? (
-                <EgyptNTPlayerDetails 
-                    playerName={selectedPlayer} 
-                    playerDetails={playerDetails} 
-                    lineupDetails={lineupDetails} 
-                    masterMatches={filteredMatches} 
-                    gkDetails={gkDetails} 
-                    howPenMissed={howPenMissed} 
-                    onBack={() => setSelectedPlayer(null)} 
+                <EgyptNTPlayerDetails
+                    playerName={selectedPlayer}
+                    playerDetails={playerDetails}
+                    lineupDetails={lineupDetails}
+                    masterMatches={filteredMatches}
+                    gkDetails={gkDetails}
+                    howPenMissed={howPenMissed}
+                    onBack={() => setSelectedPlayer(null)}
                 />
             ) : (
                 <div className="players-premium-wrap" style={{ maxWidth: '1400px' }}>
@@ -321,7 +324,7 @@ export default function EgyptNTPlayers({ playerDetails, lineupDetails, filteredM
                                 {["Stats", "Penalties", "Multiples", "Impact", "Goals Timing", "Assists Timing"].map((label, index) => {
                                     const num = index + 1;
                                     return (
-                                        <div key={num} className={`sub-tab-box ${activeSubTab === num ? 'active' : ''}`} onClick={() => { setActiveSubTab(num); setCurrentPage(1); }}>{label}</div>
+                                        <div key={num} className={`sub-tab-box ${activeSubTab === num ? 'active' : ''}`} onClick={() => { setActiveSubTab(num); setCurrentPage(1); if (num === 4) setSortConfig({ key: 'totalImpact', direction: 'desc' }); }}>{label}</div>
                                     );
                                 })}
                             </div>
@@ -341,7 +344,7 @@ export default function EgyptNTPlayers({ playerDetails, lineupDetails, filteredM
                                 {activeSubTab === 1 && <EgyptNTPlayersStats paginatedRows={paginatedRows} currentPage={currentPage} pageSize={pageSize} handleSort={handleSort} renderSortIcon={renderSortIcon} setSelectedPlayer={setSelectedPlayer} />}
                                 {activeSubTab === 2 && <EgyptNTPlayersPenalties paginatedRows={paginatedRows} currentPage={currentPage} pageSize={pageSize} handleSort={handleSort} renderSortIcon={renderSortIcon} setSelectedPlayer={setSelectedPlayer} />}
                                 {activeSubTab === 3 && <EgyptNTPlayersMultiples paginatedRows={paginatedRows} currentPage={currentPage} pageSize={pageSize} handleSort={handleSort} renderSortIcon={renderSortIcon} setSelectedPlayer={setSelectedPlayer} />}
-                                {activeSubTab === 4 && <EgyptNTPlayersImpact paginatedRows={paginatedRows} currentPage={currentPage} pageSize={pageSize} handleSort={handleSort} renderSortIcon={renderSortIcon} setSelectedPlayer={setSelectedPlayer} />}
+                                {activeSubTab === 4 && <EgyptNTPlayersImpact paginatedRows={paginatedRows} currentPage={currentPage} pageSize={pageSize} handleSort={handleSort} sortConfig={sortConfig} setSelectedPlayer={setSelectedPlayer} />}
                                 {activeSubTab === 5 && <EgyptNTPlayersGoalsTiming paginatedRows={paginatedRows} currentPage={currentPage} pageSize={pageSize} handleSort={handleSort} renderSortIcon={renderSortIcon} setSelectedPlayer={setSelectedPlayer} />}
                                 {activeSubTab === 6 && <EgyptNTPlayersAssistsTiming paginatedRows={paginatedRows} currentPage={currentPage} pageSize={pageSize} handleSort={handleSort} renderSortIcon={renderSortIcon} setSelectedPlayer={setSelectedPlayer} />}
                             </>
@@ -359,8 +362,7 @@ export default function EgyptNTPlayers({ playerDetails, lineupDetails, filteredM
             <style jsx>{`
                 .sortable { cursor: pointer; user-select: none; transition: background 0.2s; }
                 .sortable:hover { background: rgba(0,0,0,0.05) !important; }
-                .sort-icon { font-size: 10px; margin-left: 5px; opacity: 0.4; }
-                .sort-icon.active { opacity: 1; color: var(--gold); font-weight: bold; }
+                .sortable.sort-active { color: var(--gold); background: rgba(200, 16, 46, 0.08) !important; }
             `}</style>
         </div>
     );

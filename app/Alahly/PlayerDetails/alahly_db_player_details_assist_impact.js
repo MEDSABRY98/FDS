@@ -1,41 +1,22 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import NoData_db from "../../lib/NoData_db";
-import { AlAhlyService } from "../Service/alahly_db_service";
 
-export default function PlayerAssistImpactTable({ playerName, filteredMatches = [] }) {
-    const [loading, setLoading] = useState(true);
-    const [originalData, setOriginalData] = useState({ winImpact: 0, drawImpact: 0, impactMatches: [] });
-    const [activeFilter, setActiveFilter] = useState('ALL'); // 'ALL' | 'WIN' | 'DRAW'
+export default function PlayerAssistImpactTable({ impactData = {}, opponentByMatchId = {} }) {
+    const [activeFilter, setActiveFilter] = useState('ALL');
 
-    useEffect(() => {
-        async function fetchImpact() {
-            setLoading(true);
-            const data = await AlAhlyService.getPlayerAssistImpact(playerName);
-            setOriginalData(data);
-            setLoading(false);
-        }
-        if (playerName) fetchImpact();
-    }, [playerName]);
+    const impactMatches = impactData.impactMatches || [];
 
-    // Apply Advanced Filters (from parent)
-    const filteredIds = new Set(filteredMatches.map(m => String(m.id).trim()));
-    const finalMatches = originalData.impactMatches.filter(item => {
-        const mId = String(item.match.MATCH_ID).trim();
-        return filteredIds.has(mId);
-    });
+    const winCount = impactMatches.filter(m => m.type.includes('WINNER')).length;
+    const drawCount = impactMatches.filter(m => m.type.includes('DRAW')).length;
+    const totalImpact = winCount + drawCount;
 
-    const winCount = finalMatches.filter(m => m.type.includes('WINNER')).length;
-    const drawCount = finalMatches.filter(m => m.type.includes('DRAW')).length;
-
-    const displayMatches = finalMatches.filter(item => {
+    const displayMatches = impactMatches.filter(item => {
         if (activeFilter === 'WIN') return item.type.includes('WINNER');
         if (activeFilter === 'DRAW') return item.type.includes('DRAW');
         return true;
     }).sort((a, b) => new Date(b.match.DATE.split('/').reverse().join('-')) - new Date(a.match.DATE.split('/').reverse().join('-')));
 
-    const totalImpact = winCount + drawCount;
 
-    if (loading) return <div style={{ padding: '80px', textAlign: 'center', color: 'var(--player-gold)', fontFamily: 'Space Mono', letterSpacing: '2px' }}>ANALYZING ASSIST IMPACT...</div>;
 
     return (
         <div className="impact-section fade-in">
@@ -71,7 +52,7 @@ export default function PlayerAssistImpactTable({ playerName, filteredMatches = 
             </div>
 
             <div className="history-header" style={{ marginBottom: '20px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <div className="history-title">DECISIVE ASSIST HISTORY <span style={{ color: '#aaa', fontSize: '12px', letterSpacing: '1px' }}>({finalMatches.length} RECORDS)</span></div>
+                <div className="history-title">DECISIVE ASSIST HISTORY <span style={{ color: '#aaa', fontSize: '12px', letterSpacing: '1px' }}>({impactMatches.length} RECORDS)</span></div>
                 <div className="filter-pills" style={{ display: 'flex', gap: '10px' }}>
                     {['ALL', 'WIN', 'DRAW'].map(f => (
                         <button
@@ -90,19 +71,19 @@ export default function PlayerAssistImpactTable({ playerName, filteredMatches = 
                     <NoData_db message="NO RECORDED ASSIST IMPACTS FOR THIS PLAYER" />
                 ) : (
                     <table className="player-match-table impact-table">
-                    <thead>
-                        <tr>
-                            <th>DATE</th>
-                            <th>SEASON NAME</th>
-                            <th>OPPONENT</th>
-                            <th>SCORE</th>
-                            <th>ASSIST MIN</th>
-                            <th>IMPACT TYPE</th>
-                            <th>RESULT</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {displayMatches.map((item, idx) => (
+                        <thead>
+                            <tr>
+                                <th>DATE</th>
+                                <th>SEASON NAME</th>
+                                <th>OPPONENT</th>
+                                <th>SCORE</th>
+                                <th>ASSIST MIN</th>
+                                <th>IMPACT TYPE</th>
+                                <th>RESULT</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {displayMatches.map((item, idx) => (
                                 <tr key={idx}>
                                     <td style={{ fontSize: '14px', opacity: 0.8 }}>{item.match.DATE}</td>
                                     <td style={{ fontSize: '14px', opacity: 0.8 }}>{item.match["SEASON - NAME"]}</td>
@@ -119,8 +100,8 @@ export default function PlayerAssistImpactTable({ playerName, filteredMatches = 
                                     </td>
                                 </tr>
                             ))}
-                    </tbody>
-                </table>
+                        </tbody>
+                    </table>
                 )}
             </div>
 

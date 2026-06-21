@@ -28,7 +28,7 @@ export default function AhlyVZamalekManagerDetails({ managerName, managerStatus,
         const isAhlyTeam = (t) => {
             if (!t) return false;
             const s = String(t).trim();
-            return s === "الأهلي" || s.toLowerCase() === "ahly" || s.toLowerCase() === "al ahly";
+            return s.includes("الأهلي") || s.includes("Al Ahly") || s.includes("Al-Ahly");
         };
 
         if (!managerName || !masterMatches) return { stats: summary };
