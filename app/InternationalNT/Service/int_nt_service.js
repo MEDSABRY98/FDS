@@ -349,7 +349,20 @@ export const IntNtService = {
             rounds: getUnique("ROUND"),
             teams: getUniqueFromCols(["TEAMA", "TEAMB"], true),
             continents: getUniqueFromCols(["TEAMA CONTINENT", "TEAMB CONTINENT"]),
-            wdl: getUnique("W-D-L"),
+            wdl: (() => {
+                const outcomes = new Set(matches.map(m => {
+                    const out = String(m.OUTCOME || "");
+                    if (out === "W") return "W";
+                    if (out === "L") return "L";
+                    if (out.startsWith("D")) return "D";
+                    return null;
+                }).filter(Boolean));
+                const opts = [];
+                if (outcomes.has("W")) opts.push("W");
+                if (outcomes.has("D")) opts.push("D");
+                if (outcomes.has("L")) opts.push("L");
+                return ["All", ...opts];
+            })(),
             clean_sheets: getUnique("CLEAN SHEET"),
         };
     },

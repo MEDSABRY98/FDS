@@ -97,6 +97,12 @@ function rowMatchesFilter(row, def, val) {
     if (def.type === "continent") {
         return String(row["TEAMA CONTINENT"] ?? "") === selected || String(row["TEAMB CONTINENT"] ?? "") === selected;
     }
+    if (def.key === "wdl") {
+        const outcome = String(row.OUTCOME ?? "");
+        if (selected === "W") return outcome === "W";
+        if (selected === "L") return outcome === "L";
+        if (selected === "D") return outcome.startsWith("D");
+    }
     return String(row[def.col] ?? "") === selected;
 }
 
