@@ -5,118 +5,143 @@ import Link from "next/link";
 import { Database, Shield, Target, Trophy, Swords, Flag, Globe } from "lucide-react";
 import "./home_db_selection.css";
 
-export default function HomeDbSelection() {
-    const [activeTab, setActiveTab] = useState("db_management");
-
-    // Tab content data
-    const tabContents = {
-        db_management: [
-            { href: "/DBManagement", label: "GLOBAL DB MANAGEMENT", icon: Database }
+const MODULES = [
+    {
+        id: "db_management",
+        label: "DB MANAGEMENT",
+        tag: "GLOBAL",
+        links: [
+            { href: "/DBManagement", label: "GLOBAL DB MANAGEMENT", icon: Database },
         ],
-        alahly: [
+    },
+    {
+        id: "alahly",
+        label: "AL AHLY",
+        tag: "CLUB",
+        links: [
             { href: "/AlahlydbManagement", label: "AL AHLY DB MANAGEMENT", icon: Database },
             { href: "/Alahly", label: "AL AHLY SC", icon: Shield },
             { href: "/AlahlyPKS", label: "AL AHLY PKs", icon: Target },
             { href: "/AlahlyFinals", label: "AL AHLY FINALS", icon: Trophy },
         ],
-        derby: [
-            { href: "/AhlyVZamalek", label: "CAIRO DERBY", icon: Swords }
+    },
+    {
+        id: "derby",
+        label: "DERBY",
+        tag: "SPECIAL",
+        links: [
+            { href: "/AhlyVZamalek", label: "CAIRO DERBY", icon: Swords },
         ],
-        egypt_nt: [
+    },
+    {
+        id: "egypt_nt",
+        label: "EGYPT NT",
+        tag: "NATIONAL",
+        links: [
             { href: "/EgyptNTdbManagement", label: "EGYPT NT DB MANAGEMENT", icon: Database },
             { href: "/EgyptNT", label: "EGYPT NT", icon: Flag },
-            { href: "/EgyptNTPKS", label: "EGYPT NT PKs", icon: Target }
+            { href: "/EgyptNTPKS", label: "EGYPT NT PKs", icon: Target },
         ],
-        egypt_clubs: [
+    },
+    {
+        id: "egypt_clubs",
+        label: "EGYPT CLUBS",
+        tag: "DOMESTIC",
+        links: [
             { href: "/EgyptClubdbManagement", label: "EGYPT CLUB DB MANAGEMENT", icon: Database },
             { href: "/EgyptClub", label: "EGYPT CLUBS", icon: Trophy },
-            { href: "/EgyptClubTrophy", label: "EGYPT CLUBS TROPHIES", icon: Trophy }
+            { href: "/EgyptClubTrophy", label: "EGYPT CLUBS TROPHIES", icon: Trophy },
         ],
-        international_clubs: [
+    },
+    {
+        id: "international_clubs",
+        label: "INTL CLUBS",
+        tag: "WORLD",
+        links: [
             { href: "/InternationalClubdbManagement", label: "INTL CLUB DB MANAGEMENT", icon: Database },
-            { href: "/InternationalClub", label: "INTERNATIONAL CLUBS", icon: Globe }
+            { href: "/InternationalClub", label: "INTERNATIONAL CLUBS", icon: Globe },
         ],
-        international_nt: [
+    },
+    {
+        id: "international_nt",
+        label: "INTL NT",
+        tag: "WORLD",
+        links: [
             { href: "/InternationalNTdbManagement", label: "INTL NT DB MANAGEMENT", icon: Database },
-            { href: "/InternationalNT", label: "INTERNATIONAL NT", icon: Flag }
+            { href: "/InternationalNT", label: "INTERNATIONAL NT", icon: Flag },
         ],
-        international_trophy: [
+    },
+    {
+        id: "international_trophy",
+        label: "INTL TROPHY",
+        tag: "WORLD",
+        links: [
             { href: "/InternationalTrophydbManagement", label: "INTL TROPHY DB MANAGEMENT", icon: Database },
-            { href: "/InternationalTrophy", label: "INTERNATIONAL TROPHIES", icon: Trophy }
-        ]
-    };
+            { href: "/InternationalTrophy", label: "INTERNATIONAL TROPHIES", icon: Trophy },
+        ],
+    },
+];
+
+export default function HomeDbSelection() {
+    const [activeModuleId, setActiveModuleId] = useState(MODULES[0].id);
+    const activeModule = MODULES.find((m) => m.id === activeModuleId) || MODULES[0];
 
     return (
         <div id="home-screen">
-            <div className="home-topbar"></div>
-            <div className="home-bg-grid"></div>
+            <div className="home-topbar" />
+            <div className="home-bg-grid" />
 
-            <div className="home-sys-name">FOOTBALL <span>DATABASE</span></div>
-            <div className="home-sys-sub">SELECT A SECTION TO CONTINUE</div>
+            <header className="home-header">
+                <div className="home-sys-name">FOOTBALL <span>DATABASE</span></div>
+                <div className="home-sys-sub">SELECT A MODULE TO CONTINUE</div>
+            </header>
 
-            <div className="home-tabs-container">
-                <button
-                    className={`home-tab-btn ${activeTab === 'db_management' ? 'active' : ''}`}
-                    onClick={() => setActiveTab('db_management')}
-                >
-                    DB MANAGEMENT
-                </button>
-                <button
-                    className={`home-tab-btn ${activeTab === 'alahly' ? 'active' : ''}`}
-                    onClick={() => setActiveTab('alahly')}
-                >
-                    AL AHLY
-                </button>
-                <button
-                    className={`home-tab-btn ${activeTab === 'derby' ? 'active' : ''}`}
-                    onClick={() => setActiveTab('derby')}
-                >
-                    DERBY
-                </button>
-                <button
-                    className={`home-tab-btn ${activeTab === 'egypt_nt' ? 'active' : ''}`}
-                    onClick={() => setActiveTab('egypt_nt')}
-                >
-                    EGYPT NT
-                </button>
-                <button
-                    className={`home-tab-btn ${activeTab === 'egypt_clubs' ? 'active' : ''}`}
-                    onClick={() => setActiveTab('egypt_clubs')}
-                >
-                    EGYPT CLUBS
-                </button>
-                <button
-                    className={`home-tab-btn ${activeTab === 'international_clubs' ? 'active' : ''}`}
-                    onClick={() => setActiveTab('international_clubs')}
-                >
-                    INTL CLUBS
-                </button>
-                <button
-                    className={`home-tab-btn ${activeTab === 'international_nt' ? 'active' : ''}`}
-                    onClick={() => setActiveTab('international_nt')}
-                >
-                    INTL NT
-                </button>
-                <button
-                    className={`home-tab-btn ${activeTab === 'international_trophy' ? 'active' : ''}`}
-                    onClick={() => setActiveTab('international_trophy')}
-                >
-                    INTL TROPHY
-                </button>
-            </div>
+            <div className="home-layout">
+                <aside className="home-sidebar" aria-label="Modules">
+                    <div className="home-sidebar-label">MODULES</div>
+                    <nav className="home-module-nav">
+                        {MODULES.map((mod, index) => {
+                            const isActive = mod.id === activeModuleId;
+                            const isLast = index === MODULES.length - 1;
+                            return (
+                                <button
+                                    key={mod.id}
+                                    type="button"
+                                    className={`home-module-item ${isActive ? "active" : ""}`}
+                                    onClick={() => setActiveModuleId(mod.id)}
+                                >
+                                    <span className="home-module-track">
+                                        <span className="home-module-dot" />
+                                        {!isLast && <span className="home-module-line" />}
+                                    </span>
+                                    <span className="home-module-text">
+                                        <span className="home-module-tag">{mod.tag}</span>
+                                        <span className="home-module-name">{mod.label}</span>
+                                    </span>
+                                </button>
+                            );
+                        })}
+                    </nav>
+                </aside>
 
-            <div className="section-cards">
-                {tabContents[activeTab].map((item, idx) => {
-                    const Icon = item.icon;
-                    return (
-                        <Link key={idx} href={item.href} className="section-card">
-                            <div className="card-icon-wrap" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--gold, #c9a84c)' }}>
-                                <Icon size={36} strokeWidth={1.5} />
-                            </div>
-                            <div className="card-name">{item.label}</div>
-                        </Link>
-                    );
-                })}
+                <main className="home-content">
+                    <header className="home-content-head">
+                        <span className="home-content-tag">{activeModule.tag}</span>
+                        <h2 className="home-content-title">{activeModule.label}</h2>
+                    </header>
+
+                    <nav className="home-section-tabs" aria-label={`${activeModule.label} sections`}>
+                        {activeModule.links.map((item) => {
+                            const Icon = item.icon;
+                            return (
+                                <Link key={item.href} href={item.href} className="home-section-tab">
+                                    <Icon size={18} strokeWidth={1.5} />
+                                    <span>{item.label}</span>
+                                </Link>
+                            );
+                        })}
+                    </nav>
+                </main>
             </div>
         </div>
     );

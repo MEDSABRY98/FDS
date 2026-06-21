@@ -301,7 +301,6 @@ export const EgyptNTService = {
             rounds: getUnique('ROUND'),
             places: getUnique('PLACE'),
             han: getUnique('H-A-N'),
-            stadiums: getUnique('STAD'),
             egy_teams: getUnique('Egypt TEAM'),
             gf: getUnique('GF'),
             ga: getUnique('GA'),

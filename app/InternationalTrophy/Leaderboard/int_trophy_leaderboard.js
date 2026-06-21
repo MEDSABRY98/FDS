@@ -3,7 +3,8 @@
 import { useMemo, useState } from "react";
 import NoData_db from "../../lib/NoData_db";
 import SearchBar_db from "../../lib/SearchBar_db";
-import { IntTrophyService, sortTrophiesBySeason } from "../Service/int_trophy_service";
+import { IntTrophyService } from "../Service/int_trophy_service";
+import IntTrophyTeamDetails from "../TeamDetails/int_trophy_team_details";
 import "./int_trophy_leaderboard.css";
 
 const PER_PAGE = 50;
@@ -30,45 +31,16 @@ export default function IntTrophyLeaderboard({ trophies }) {
     const totalPages = Math.max(1, Math.ceil(filtered.length / PER_PAGE));
     const paginated = filtered.slice((page - 1) * PER_PAGE, page * PER_PAGE);
 
-    const detailTrophies = useMemo(() => {
-        if (!selectedChampion) return [];
-        const row = leaderboard.find((l) => l.champion === selectedChampion);
-        return sortTrophiesBySeason(row?.trophies || []);
-    }, [selectedChampion, leaderboard]);
-
     if (!trophies?.length) return <NoData_db message="NO TROPHY RECORDS FOUND" />;
 
     if (selectedChampion) {
         return (
-            <div className="int-trophy-lb">
-                <button type="button" className="int-trophy-back" onClick={() => setSelectedChampion(null)}>← Back</button>
-                <h1>{selectedChampion} <span className="gold">TROPHIES</span></h1>
-                <div className="gold-line" />
-                <div className="int-trophy-table-wrap">
-                    <table className="int-trophy-table">
-                        <thead>
-                            <tr>
-                                <th>TYPE</th><th>SEASON</th><th>GAME</th><th>COMPETITION</th>
-                                <th>CHAMPION</th><th>RUNNER-UP</th><th>RESULT</th><th>PLACE</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {detailTrophies.map((t) => (
-                                <tr key={t.ROW_ID}>
-                                    <td>{t.TYPE || "—"}</td>
-                                    <td>{t.SEASON || "—"}</td>
-                                    <td>{t.GAME || "—"}</td>
-                                    <td>{t.COMPETITION || "—"}</td>
-                                    <td><strong>{t.CHAMPION || "—"}</strong></td>
-                                    <td>{t["RUNNER-UP"] || "—"}</td>
-                                    <td>{t.RESULT || "—"}</td>
-                                    <td>{t.PLACE || "—"}</td>
-                                </tr>
-                            ))}
-                        </tbody>
-                    </table>
-                </div>
-            </div>
+            <IntTrophyTeamDetails
+                championName={selectedChampion}
+                trophies={trophies}
+                typeFilter={typeFilter}
+                onBack={() => setSelectedChampion(null)}
+            />
         );
     }
 

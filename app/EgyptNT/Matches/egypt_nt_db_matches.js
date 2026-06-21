@@ -17,7 +17,6 @@ function SearchScopeSelect({ value, onChange }) {
         { value: "egypt_manager", label: "Egypt Manager" },
         { value: "season", label: "Season" },
         { value: "match_id", label: "Match ID" },
-        { value: "stad", label: "Stadium" },
         { value: "referee", label: "Referee" },
         { value: "place", label: "Place" }
     ];
@@ -178,7 +177,6 @@ export default function EgyptNTMatches({ matches, onMatchClick }) {
                     String(m["EGYPT MANAGER"] || "").toLowerCase().includes(lowSearch) ||
                     String(m["SEASON"] || "").toLowerCase().includes(lowSearch) ||
                     String(m.MATCH_ID || "").toLowerCase().includes(lowSearch) ||
-                    String(m.STAD || "").toLowerCase().includes(lowSearch) ||
                     String(m.REFREE || "").toLowerCase().includes(lowSearch) ||
                     String(m.PLACE || "").toLowerCase().includes(lowSearch)
                 );
@@ -190,7 +188,6 @@ export default function EgyptNTMatches({ matches, onMatchClick }) {
                 egypt_manager: "EGYPT MANAGER",
                 season: "SEASON",
                 match_id: "MATCH_ID",
-                stad: "STAD",
                 referee: "REFREE",
                 place: "PLACE"
             };
@@ -236,7 +233,6 @@ export default function EgyptNTMatches({ matches, onMatchClick }) {
             "CHAMPION": m.CHAMPION,
             "SEASON": m["SEASON"],
             "VENUE": m["H-A-N"],
-            "STADIUM": m.STAD,
             "PLACE": m.PLACE,
             "REFEREE": m.REFREE,
             "EGYPT MANAGER": m["EGYPT MANAGER"],

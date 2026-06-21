@@ -296,14 +296,27 @@ export const IntTrophyService = {
             return ["All", ...uniqueValues];
         };
 
+        const getUniqueFromCols = (cols, localeSort = false) => {
+            const set = new Set();
+            (trophies || []).forEach((t) => {
+                cols.forEach((col) => {
+                    const v = t[col];
+                    if (v !== null && v !== undefined && v !== "") set.add(String(v));
+                });
+            });
+            const uniqueValues = [...set].sort((a, b) =>
+                localeSort ? a.localeCompare(b, "ar") : a.localeCompare(b, undefined, { numeric: true })
+            );
+            return ["All", ...uniqueValues];
+        };
+
         return {
             types: getUnique("TYPE"),
             areas: getUnique("AREA"),
             games: getUnique("GAME"),
             competitions: getUnique("COMPETITION"),
             seasons: getUnique("SEASON", true),
-            champions: getUnique("CHAMPION"),
-            runners_up: getUnique("RUNNER-UP"),
+            teams: getUniqueFromCols(["CHAMPION", "RUNNER-UP"], true),
             places: getUnique("PLACE"),
             w_managers: getUnique("W-MANAGER"),
             l_managers: getUnique("L-MANAGER"),

@@ -74,7 +74,6 @@ export default function EgyptNTDatabase() {
         referee: 'All',
         round: 'All',
         han: 'All',
-        stad: 'All',
         place: 'All',
         egypt_team: 'All',
         gf: 'All',
@@ -162,7 +161,6 @@ export default function EgyptNTDatabase() {
             referee: 'REFREE',
             round: 'ROUND',
             han: 'H-A-N',
-            stad: 'STAD',
             place: 'PLACE',
             egypt_team: 'Egypt TEAM',
             gf: 'GF',
@@ -265,7 +263,6 @@ export default function EgyptNTDatabase() {
             rounds: getOptionsForField('round', 'ROUND'),
             places: getOptionsForField('place', 'PLACE'),
             han: getOptionsForField('han', 'H-A-N'),
-            stadiums: getOptionsForField('stad', 'STAD'),
             egy_teams: getOptionsForField('egypt_team', 'Egypt TEAM'),
             gf: getOptionsForField('gf', 'GF'),
             ga: getOptionsForField('ga', 'GA'),
@@ -301,7 +298,6 @@ export default function EgyptNTDatabase() {
             referee: 'All',
             round: 'All',
             han: 'All',
-            stad: 'All',
             place: 'All',
             egypt_team: 'All',
             gf: 'All',
@@ -379,7 +375,6 @@ export default function EgyptNTDatabase() {
                 check('referee', 'REFREE') &&
                 check('round', 'ROUND') &&
                 check('han', 'H-A-N') &&
-                check('stad', 'STAD') &&
                 check('place', 'PLACE') &&
                 check('egypt_team', 'Egypt TEAM') &&
                 check('gf', 'GF') &&

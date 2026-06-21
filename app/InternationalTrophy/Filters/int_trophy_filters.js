@@ -12,8 +12,7 @@ const FILTER_DEFS = [
     { key: "game", label: "GAME", col: "GAME", optionsKey: "games" },
     { key: "competition", label: "COMPETITION", col: "COMPETITION", optionsKey: "competitions" },
     { key: "season", label: "SEASON", col: "SEASON", optionsKey: "seasons" },
-    { key: "champion", label: "CHAMPION", col: "CHAMPION", optionsKey: "champions" },
-    { key: "runner_up", label: "RUNNER-UP", col: "RUNNER-UP", optionsKey: "runners_up" },
+    { key: "team", label: "TEAM", optionsKey: "teams", type: "team" },
     { key: "place", label: "PLACE", col: "PLACE", optionsKey: "places" },
     { key: "w_manager", label: "W-MANAGER", col: "W-MANAGER", optionsKey: "w_managers" },
     { key: "l_manager", label: "L-MANAGER", col: "L-MANAGER", optionsKey: "l_managers" },
@@ -67,7 +66,11 @@ function SearchableDropdown({ label, options, value, onChange }) {
 
 function rowMatchesFilter(row, def, val) {
     if (!val || val === "All") return true;
-    return String(row[def.col] ?? "") === String(val);
+    const selected = String(val);
+    if (def.type === "team") {
+        return String(row.CHAMPION ?? "") === selected || String(row["RUNNER-UP"] ?? "") === selected;
+    }
+    return String(row[def.col] ?? "") === selected;
 }
 
 function applyFilters(data, filters) {

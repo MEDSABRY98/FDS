@@ -400,18 +400,9 @@ export default function EgyptNTMatchDetails({
                     </div>
                     <div className="info-divider"></div>
                     <div className="info-item">
-                        <span className="label">STADIUM</span>
-                        <span className="value">{matchInfo.STAD}</span>
+                        <span className="label">PLACE</span>
+                        <span className="value">{matchInfo.PLACE}</span>
                     </div>
-                    {matchInfo.PLACE && (
-                        <>
-                            <div className="info-divider"></div>
-                            <div className="info-item">
-                                <span className="label">PLACE</span>
-                                <span className="value">{matchInfo.PLACE}</span>
-                            </div>
-                        </>
-                    )}
                     <div className="info-divider"></div>
                     <div className="info-item">
                         <span className="label">REFEREE</span>

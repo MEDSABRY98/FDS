@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Trophy, List, Download, Plus, Filter } from "lucide-react";
+import { Trophy, List, Download, Plus, Filter, LayoutGrid } from "lucide-react";
 import SideBar_db from "../lib/SideBar_db";
 import Loading_db from "../lib/Loading_db";
 import { useNotification } from "../lib/Notification_db";
@@ -9,6 +9,7 @@ import { IntTrophyService } from "./Service/int_trophy_service";
 import IntTrophyLeaderboard from "./Leaderboard/int_trophy_leaderboard";
 import IntTrophyRecords from "./Records/int_trophy_records";
 import IntTrophyAddTrophies from "./AddTrophies/int_trophy_add_trophies";
+import IntTrophyAggregateTables from "./Aggregates/int_trophy_aggregate_tables";
 import IntTrophyFilters from "./Filters/int_trophy_filters";
 import { exportIntTrophyByTab } from "./ExcelExport/int_trophy_excel_export";
 import "./Leaderboard/int_trophy_leaderboard.css";
@@ -20,6 +21,12 @@ export default function InternationalTrophyPage() {
     const [filteredTrophies, setFilteredTrophies] = useState([]);
     const [loading, setLoading] = useState(true);
     const [isFilterOpen, setIsFilterOpen] = useState(false);
+    const [aggregateExportFilters, setAggregateExportFilters] = useState({
+        typeFilter: "All",
+        outcomeFilter: "all",
+        viewMode: "by_game",
+        selectedGame: "",
+    });
 
     useEffect(() => { fetchData(); }, []);
 
@@ -38,6 +45,7 @@ export default function InternationalTrophyPage() {
 
     const tabs = [
         { id: "leaderboard", label: "Trophy Count", icon: Trophy },
+        { id: "aggregates", label: "Aggregate Tables", icon: LayoutGrid },
         { id: "records", label: "All Records", icon: List },
         { id: "add_trophies", label: "Add Trophies", icon: Plus },
     ];
@@ -47,7 +55,7 @@ export default function InternationalTrophyPage() {
             addNotification("Nothing to export on this tab.", "warn");
             return;
         }
-        const ok = exportIntTrophyByTab(activeTab, filteredTrophies);
+        const ok = exportIntTrophyByTab(activeTab, filteredTrophies, aggregateExportFilters);
         if (ok) addNotification("Excel exported.", "success");
         else addNotification("No data to export.", "warn");
     };
@@ -58,6 +66,13 @@ export default function InternationalTrophyPage() {
                 return <IntTrophyLeaderboard trophies={filteredTrophies} />;
             case "records":
                 return <IntTrophyRecords trophies={filteredTrophies} />;
+            case "aggregates":
+                return (
+                    <IntTrophyAggregateTables
+                        trophies={filteredTrophies}
+                        onFiltersChange={setAggregateExportFilters}
+                    />
+                );
             case "add_trophies":
                 return <IntTrophyAddTrophies trophies={trophies} onRefresh={() => fetchData(true)} />;
             default:

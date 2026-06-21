@@ -1,0 +1,207 @@
+.int-trophy-team-details {
+    padding: 0 8px 40px;
+}
+
+.int-trophy-team-details-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    margin-bottom: 20px;
+    flex-wrap: wrap;
+}
+
+.int-trophy-team-details-back {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    flex: 1 1 auto;
+    min-width: 0;
+}
+
+.int-trophy-team-details-back-btn {
+    background: #0d0d0d;
+    color: var(--gold, #c9a84c);
+    border: 1px solid var(--gold, #c9a84c);
+    border-radius: 8px;
+    width: 40px;
+    height: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    flex-shrink: 0;
+}
+
+.int-trophy-team-details-back-btn:hover {
+    background: var(--gold, #c9a84c);
+    color: #000;
+}
+
+.int-trophy-team-details-title {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: clamp(28px, 4vw, 42px);
+    letter-spacing: 1px;
+    margin: 0;
+    line-height: 1.1;
+}
+
+.int-trophy-team-details-title .gold {
+    color: var(--gold, #c9a84c);
+}
+
+.int-trophy-team-details-title-wrap {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 14px;
+    min-width: 0;
+}
+
+.int-trophy-team-details-outcome-toggle {
+    display: flex;
+    gap: 6px;
+    flex-shrink: 0;
+}
+
+.int-trophy-team-details-outcome-toggle button {
+    border: 1px solid #ddd;
+    background: #fff;
+    padding: 6px 12px;
+    border-radius: 8px;
+    font-family: 'Space Mono', monospace;
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 0.3px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.int-trophy-team-details-outcome-toggle button.active {
+    background: var(--gold, #c9a84c);
+    border-color: var(--gold, #c9a84c);
+    color: #0a0a0a;
+}
+
+.int-trophy-team-details-outcome-toggle button:hover:not(.active) {
+    border-color: var(--gold, #c9a84c);
+    color: var(--gold, #c9a84c);
+}
+
+.int-trophy-team-details-summary {
+    display: flex;
+    flex-wrap: nowrap;
+    gap: 12px;
+    flex-shrink: 0;
+}
+
+.int-trophy-team-details-stat {
+    background: #fff;
+    border: 1px solid #eee;
+    border-radius: 10px;
+    padding: 10px 16px;
+    font-family: 'Space Mono', monospace;
+    font-size: 12px;
+    font-weight: 700;
+}
+
+.int-trophy-team-details-stat span {
+    color: var(--gold, #c9a84c);
+    margin-right: 6px;
+}
+
+.int-trophy-team-details-tabs {
+    display: flex;
+    width: 100%;
+    gap: 0;
+    margin-bottom: 20px;
+    border-bottom: 1px solid #eee;
+    flex-wrap: nowrap;
+    justify-content: stretch;
+}
+
+.int-trophy-team-details-tab {
+    flex: 1 1 0;
+    min-width: 0;
+    background: transparent;
+    border: none;
+    border-bottom: 3px solid transparent;
+    padding: 12px 8px;
+    font-family: 'Space Mono', monospace;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.5px;
+    color: rgba(0, 0, 0, 0.45);
+    cursor: pointer;
+    transition: all 0.2s ease;
+    margin-bottom: -1px;
+    text-align: center;
+    white-space: nowrap;
+}
+
+.int-trophy-team-details-tab:hover {
+    color: #000;
+}
+
+.int-trophy-team-details-tab.active {
+    color: #000;
+    border-bottom-color: var(--gold, #c9a84c);
+}
+
+.int-trophy-team-breakdown-table .result-w {
+    color: #16a34a;
+    font-weight: 700;
+}
+
+.int-trophy-team-breakdown-table .result-l {
+    color: #dc2626;
+    font-weight: 700;
+}
+
+.int-trophy-team-totals-row td {
+    background: #0a0a0a;
+    color: #fff;
+    font-weight: 700;
+}
+
+.int-trophy-team-totals-row .result-w {
+    color: #86efac;
+}
+
+.int-trophy-team-totals-row .result-l {
+    color: #fca5a5;
+}
+
+@media (max-width: 768px) {
+    .int-trophy-team-details-header {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+
+    .int-trophy-team-details-title-wrap {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 10px;
+    }
+
+    .int-trophy-team-details-outcome-toggle {
+        width: 100%;
+        display: flex;
+    }
+
+    .int-trophy-team-details-outcome-toggle button {
+        flex: 1 1 0;
+    }
+
+    .int-trophy-team-details-summary {
+        width: 100%;
+        flex-wrap: wrap;
+    }
+
+    .int-trophy-team-details-tab {
+        font-size: 9px;
+        letter-spacing: 0.2px;
+        padding: 10px 4px;
+    }
+}
