@@ -791,3 +791,54 @@
     align-items: center;
     gap: 4px;
 }
+
+/* Special penalty timeline card styling */
+.special-pen-card {
+    background: linear-gradient(135deg, #fffcf4 0%, #fff8e7 100%) !important;
+    border: 1px dashed #d4af37 !important;
+    box-shadow: 0 8px 24px rgba(212, 175, 55, 0.15) !important;
+}
+
+.left .special-pen-card {
+    border-left: 5px solid #d4af37 !important;
+}
+
+.right .special-pen-card {
+    border-right: 5px solid #d4af37 !important;
+}
+
+.pen-type-badge {
+    display: inline-block;
+    padding: 3px 10px;
+    border-radius: 20px;
+    font-size: 11px;
+    font-weight: 900;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-top: 6px;
+    width: fit-content;
+}
+
+.pen-type-badge.pen-assist-goal {
+    background-color: rgba(46, 204, 113, 0.15);
+    color: #27ae60;
+    border: 1px solid rgba(46, 204, 113, 0.3);
+}
+
+.pen-type-badge.pen-assist-missed {
+    background-color: rgba(243, 156, 18, 0.15);
+    color: #d35400;
+    border: 1px solid rgba(243, 156, 18, 0.3);
+}
+
+.pen-type-badge.pen-make-goal {
+    background-color: rgba(52, 152, 219, 0.15);
+    color: #2980b9;
+    border: 1px solid rgba(52, 152, 219, 0.3);
+}
+
+.pen-type-badge.pen-make-missed {
+    background-color: rgba(231, 76, 60, 0.15);
+    color: #c0392b;
+    border: 1px solid rgba(231, 76, 60, 0.3);
+}

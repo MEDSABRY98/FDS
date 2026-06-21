@@ -105,11 +105,17 @@ export default function AlAhlyMatchDetails({
     };
 
     const getEventIcon = (type) => {
-        const t = String(type || "").trim().toLowerCase();
-        if (t.includes('هدف') || t.includes('goal')) return '⚽';
-        if (t.includes('اسيست') || t.includes('assist') || t.includes('صنع')) return 'A';
+        const t = String(type || "").trim().toUpperCase();
+        if (t === "PENASSISTGOAL") return "⭐";
+        if (t === "PENASSISTMISSED") return "⚠️";
+        if (t === "PENMAKEGOAL") return "🎯";
+        if (t === "PENMAKEMISSED") return "❌";
 
-        switch (t) {
+        const tLower = t.toLowerCase();
+        if (tLower.includes('هدف') || tLower.includes('goal')) return '⚽';
+        if (tLower.includes('اسيست') || tLower.includes('assist') || tLower.includes('صنع')) return 'A';
+
+        switch (tLower) {
             case 'انذار':
             case 'yellow': return '🟨';
             case 'طرد':
@@ -421,15 +427,26 @@ export default function AlAhlyMatchDetails({
                                 <div className="timeline-track">
                                     {events.chronological.map((e, i) => {
                                         const isAhly = checkIfAhly(e.TEAM);
+                                        const typeUpper = String(e.TYPE || "").trim().toUpperCase();
+                                        const isSpecialPen = ['PENASSISTGOAL', 'PENASSISTMISSED', 'PENMAKEGOAL', 'PENMAKEMISSED'].includes(typeUpper);
                                         return (
                                             <div key={i} className={`timeline-entry ${isAhly ? 'left' : 'right'}`}>
-                                                <div className="entry-content">
+                                                <div className={`entry-content ${isSpecialPen ? 'special-pen-card' : ''}`}>
                                                     <div className="entry-time">{e.MINUTE}'</div>
                                                     <div className="entry-details">
-                                                        <span className="entry-icon">{getEventIcon(e.TYPE)}</span>
+                                                        {!isSpecialPen && <span className="entry-icon">{getEventIcon(e.TYPE)}</span>}
                                                         <div className="entry-text">
                                                             <span className="entry-player">{e["PLAYER NAME"]}</span>
-                                                            {!e["HOW MISSED?"] ? (
+                                                            {isSpecialPen ? (
+                                                                <span className={`pen-type-badge ${
+                                                                    typeUpper === 'PENASSISTGOAL' ? 'pen-assist-goal' :
+                                                                    typeUpper === 'PENASSISTMISSED' ? 'pen-assist-missed' :
+                                                                    typeUpper === 'PENMAKEGOAL' ? 'pen-make-goal' :
+                                                                    'pen-make-missed'
+                                                                }`}>
+                                                                    {typeUpper}
+                                                                </span>
+                                                            ) : !e["HOW MISSED?"] ? (
                                                                 <span className="entry-type">
                                                                     {e.TYPE}
                                                                     {e.TYPE_SUB && <span style={{ color: '#ff5252', fontStyle: 'normal' }}> / {e.TYPE_SUB}</span>}

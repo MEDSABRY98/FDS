@@ -1,6 +1,6 @@
 import { supabase } from "../../Database";
 
-const TABLE_NAME = "int_TROPHY_GENERAL";
+const TABLE_NAME = "int_TROPHY";
 const INSERT_CHUNK_SIZE = 100;
 
 const EDITABLE_COLUMNS = [

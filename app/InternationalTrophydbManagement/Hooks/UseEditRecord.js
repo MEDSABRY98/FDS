@@ -2,7 +2,7 @@ import { useState } from "react";
 import { supabase, getChangedFormFields } from "../../Database";
 import { IntTrophyService } from "../../InternationalTrophy/Service/int_trophy_service";
 
-const TROPHY_TABLE = "int_TROPHY_GENERAL";
+const TROPHY_TABLE = "int_TROPHY";
 
 export function useEditRecord(selectedTable, columns, fetchTableData, addNotification) {
     const [editingRow, setEditingRow] = useState(null);

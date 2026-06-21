@@ -54,21 +54,21 @@ const MODULES = [
         ],
     },
     {
-        id: "international_clubs",
-        label: "INTL CLUBS",
-        tag: "WORLD",
-        links: [
-            { href: "/InternationalClubdbManagement", label: "INTL CLUB DB MANAGEMENT", icon: Database },
-            { href: "/InternationalClub", label: "INTERNATIONAL CLUBS", icon: Globe },
-        ],
-    },
-    {
         id: "international_nt",
         label: "INTL NT",
         tag: "WORLD",
         links: [
             { href: "/InternationalNTdbManagement", label: "INTL NT DB MANAGEMENT", icon: Database },
             { href: "/InternationalNT", label: "INTERNATIONAL NT", icon: Flag },
+        ],
+    },
+    {
+        id: "international_clubs",
+        label: "INTL CLUBS",
+        tag: "WORLD",
+        links: [
+            { href: "/InternationalClubdbManagement", label: "INTL CLUB DB MANAGEMENT", icon: Database },
+            { href: "/InternationalClub", label: "INTERNATIONAL CLUBS", icon: Globe },
         ],
     },
     {
