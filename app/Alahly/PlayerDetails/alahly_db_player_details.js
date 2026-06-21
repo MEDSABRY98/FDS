@@ -73,8 +73,8 @@ export default function PlayerDetails({ playerName, playerData, playerDetails, l
         const isAhly = (t) => {
             if (!t) return false;
             const s = String(t).trim();
-            // User confirmed: Exact name in database is only 'الأهلي'
-            return s === "الأهلي";
+            // Match any variant: 'الأهلي', 'الأهلي - مصر', 'Al Ahly', 'Al-Ahly'
+            return s.includes("الأهلي") || s.includes("Al Ahly") || s.includes("Al-Ahly");
         };
 
         // Collect all unique teams the player represented from both appearances and events

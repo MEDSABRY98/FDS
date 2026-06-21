@@ -8,18 +8,18 @@ export default function PlayerVsTeamsTable({ stats }) {
     const oppStore = stats.statsByOpponent || {};
     const oppNames = Object.keys(oppStore)
         .filter(name => name.toLowerCase().includes(search.toLowerCase()))
-        .sort((a, b) => (oppStore[b].apps - oppStore[a].apps) || a.localeCompare(b));
+        .sort((a, b) => ((oppStore[b].apps || 0) - (oppStore[a].apps || 0)) || a.localeCompare(b));
 
     // Calculate Totals for the dynamic (filtered) list
     const totals = oppNames.reduce((acc, name) => {
         const s = oppStore[name];
-        acc.apps += s.apps;
-        acc.ga += (s.goals + s.assists);
-        acc.goals += s.goals;
-        acc.assists += s.assists;
-        acc.penG += s.penGoals;
+        acc.apps += s.apps || 0;
+        acc.ga += ((s.goals || 0) + (s.assists || 0));
+        acc.goals += s.goals || 0;
+        acc.assists += s.assists || 0;
+        acc.penG += s.penGoals || 0;
         acc.penS += s.penSaved || 0;
-        acc.penM += s.penMissed;
+        acc.penM += s.penMissed || 0;
         return acc;
     }, { apps: 0, ga: 0, goals: 0, assists: 0, penG: 0, penS: 0, penM: 0 });
 
@@ -61,12 +61,12 @@ export default function PlayerVsTeamsTable({ stats }) {
                                     <tr key={name}>
                                         <td style={{ fontWeight: '800', color: 'var(--player-dark)' }}>{name}</td>
                                         <td style={{ fontFamily: 'Space Mono', fontWeight: '700' }}>{s.apps || "-"}</td>
-                                        <td style={{ color: 'var(--player-gold)', fontWeight: '900', fontSize: '20px' }}>{(s.goals + s.assists) || "-"}</td>
+                                        <td style={{ color: 'var(--player-gold)', fontWeight: '900', fontSize: '20px' }}>{((s.goals || 0) + (s.assists || 0)) || "-"}</td>
                                         <td style={{ color: '#27ae60' }}>{s.goals || "-"}</td>
                                         <td style={{ color: '#2980b9' }}>{s.assists || "-"}</td>
                                         <td>{s.penGoals || "-"}</td>
                                         <td style={{ color: (s.penSaved || 0) > 0 ? '#e67e22' : 'inherit' }}>{s.penSaved || "-"}</td>
-                                        <td style={{ color: s.penMissed > 0 ? '#e74c3c' : 'inherit' }}>{s.penMissed || "-"}</td>
+                                        <td style={{ color: (s.penMissed || 0) > 0 ? '#e74c3c' : 'inherit' }}>{s.penMissed || "-"}</td>
                                     </tr>
                                 );
                             })}

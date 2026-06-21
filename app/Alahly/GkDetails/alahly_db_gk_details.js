@@ -35,8 +35,10 @@ export default function GK_Details_Hub({ gkName, gkDetails, howPenMissed, master
         if (!gkName || !gkDetails) return { stats: summary, gkTeams: [], gkSYs: [], gkComps: [], gkOpps: [] };
 
         const isAhly = (t) => {
+            if (!t) return false;
             const s = String(t).trim();
-            return s === "الأهلي" || s === "الأهلى";
+            // Match any variant: 'الأهلي', 'الأهلي - مصر', 'Al Ahly', 'Al-Ahly'
+            return s.includes("الأهلي") || s.includes("الأهلى") || s.includes("Al Ahly") || s.includes("Al-Ahly");
         };
 
         const teamSet = new Set();
