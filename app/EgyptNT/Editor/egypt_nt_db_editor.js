@@ -991,9 +991,9 @@ export default function EgyptNTEditor() {
     const matchInfoFields = Object.keys(EMPTY_MATCH).filter(field => field !== 'MOTM');
     const lineupCols = Object.keys(EMPTY_LINEUP);
     const lineupColsNoTeam = lineupCols.filter((col) => col !== 'TEAM' && col !== 'MATCH_ID');
-    const playerCols = Object.keys(EMPTY_PLAYER);
-    const gkCols = Object.keys(EMPTY_GK);
-    const penCols = Object.keys(EMPTY_PEN);
+    const playerCols = Object.keys(EMPTY_PLAYER).filter(col => col !== 'MATCH_ID');
+    const gkCols = Object.keys(EMPTY_GK).filter(col => col !== 'MATCH_ID');
+    const penCols = Object.keys(EMPTY_PEN).filter(col => col !== 'MATCH_ID');
     const newEgyTeamLabel = getDefaultEgyptTeamLabel(newMatchData);
     const editEgyTeamLabel = getDefaultEgyptTeamLabel(matchData || {});
 

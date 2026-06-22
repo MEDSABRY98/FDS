@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import { useState, useEffect, useLayoutEffect, useRef, useMemo } from "react";
 import { createPortal } from "react-dom";
@@ -233,9 +233,6 @@ export function AutocompleteInputDb({
                         animation: openUpwards ? "slideUp 0.2s cubic-bezier(0.16, 1, 0.3, 1)" : "slideIn 0.2s cubic-bezier(0.16, 1, 0.3, 1)",
                         transformOrigin: openUpwards ? "bottom center" : "top center",
                     }}>
-                        <div style={{ fontSize: 10, color: "#aaa", padding: "0 8px 8px", letterSpacing: 1, fontFamily: "'Space Mono', monospace" }}>
-                            SELECT {placeholder ? placeholder.toUpperCase() : "OPTION"}
-                        </div>
                         {filtered.map((opt, i) => (
                             <div
                                 key={i}
