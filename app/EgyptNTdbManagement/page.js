@@ -22,6 +22,7 @@ import { Pagination } from "./Components/Pagination";
 
 // Import Modals
 import { EditRecordModal } from "./Modals/EditRecordModal";
+import { ReplaceRecordModal } from "./Modals/ReplaceRecordModal";
 
 export default function EgyptDatabaseManagement() {
     const { addNotification } = useNotification();
@@ -55,7 +56,10 @@ export default function EgyptDatabaseManagement() {
         saving,
         handleEditClick,
         handleSaveEdit,
-        handleDelete
+        handleDelete,
+        isReplacing,
+        setIsReplacing,
+        handleExecuteReplace
     } = useEditRecord(selectedTable, columns, fetchTableData, addNotification);
 
     const handleDownloadExcel = () => {
@@ -146,6 +150,7 @@ export default function EgyptDatabaseManagement() {
                                     setSearchTerm={setSearchTerm} 
                                     recordCount={filteredData ? filteredData.length : 0} 
                                     loading={loading}
+                                    onReplace={() => setIsReplacing(true)}
                                 />
 
                                 <DynamicTable 
@@ -172,6 +177,15 @@ export default function EgyptDatabaseManagement() {
                             saving={saving}
                             setEditingRow={setEditingRow}
                             handleSaveEdit={handleSaveEdit}
+                        />
+                    )}
+                    {isReplacing && (
+                        <ReplaceRecordModal
+                            selectedTable={selectedTable}
+                            columns={columns}
+                            saving={saving}
+                            setIsReplacing={setIsReplacing}
+                            handleExecuteReplace={handleExecuteReplace}
                         />
                     )}
                 </div>

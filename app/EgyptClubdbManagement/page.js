@@ -23,6 +23,7 @@ import { Pagination } from "./Components/Pagination";
 // Import Modals
 import { EditRecordModal } from "./Modals/EditRecordModal";
 import { AddRecordModal } from "./Modals/AddRecordModal";
+import { ReplaceRecordModal } from "./Modals/ReplaceRecordModal";
 
 export default function EgyptClubDatabaseManagement() {
     const { addNotification } = useNotification();
@@ -50,7 +51,8 @@ export default function EgyptClubDatabaseManagement() {
         editingRow, setEditingRow, editForm, setEditForm, saving,
         isAdding, setIsAdding, addForm, setAddForm,
         handleOpenAdd, handleSaveAdd,
-        handleEditClick, handleSaveEdit, handleDelete
+        handleEditClick, handleSaveEdit, handleDelete,
+        isReplacing, setIsReplacing, handleExecuteReplace
     } = useEditRecord(selectedTable, columns, fetchTableData, addNotification);
 
     const handleDownloadExcel = () => {
@@ -143,6 +145,7 @@ export default function EgyptClubDatabaseManagement() {
                                     loading={loading}
                                     selectedTable={selectedTable}
                                     onAdd={handleOpenAdd}
+                                    onReplace={() => setIsReplacing(true)}
                                     currentPage={currentPage}
                                     totalPages={totalPages}
                                 />
@@ -183,6 +186,15 @@ export default function EgyptClubDatabaseManagement() {
                             saving={saving}
                             setIsAdding={setIsAdding}
                             handleSaveAdd={handleSaveAdd}
+                        />
+                    )}
+                    {isReplacing && (
+                        <ReplaceRecordModal
+                            selectedTable={selectedTable}
+                            columns={columns}
+                            saving={saving}
+                            setIsReplacing={setIsReplacing}
+                            handleExecuteReplace={handleExecuteReplace}
                         />
                     )}
                 </div>

@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import { useState, useEffect } from "react";
 import * as XLSX from "xlsx";
@@ -24,7 +24,8 @@ import Settings_db from "../lib/Settings_db";
 import { SETTINGS_TAB_ID } from "../Database";
 import { useDuplicateSuggestions } from "./Hooks/UseDuplicateSuggestions";
 
-import { Plus, GitMerge, X } from "lucide-react";
+import { Plus, GitMerge, X, Replace } from "lucide-react";
+import ReplaceRecordModal from "./Modals/ReplaceRecordModal";
 
 export default function DBManagement() {
     const { addNotification } = useNotification();
@@ -61,7 +62,10 @@ export default function DBManagement() {
         handleDelete,
         deletingRow,
         setDeletingRow,
-        handleConfirmDelete
+        handleConfirmDelete,
+        isReplacing,
+        setIsReplacing,
+        handleExecuteReplace
     } = useEditRecord(selectedTable, columns, fetchTableData, addNotification);
 
     // Merge record hooks
@@ -198,65 +202,153 @@ export default function DBManagement() {
                                             <div className="record-count" style={{ display: 'flex', alignItems: 'center', gap: '15px', justifyContent: 'center', flexWrap: 'wrap' }}>
                                                 <span>{filteredData.length} RECORDS FOUND (PAGE {currentPage} OF {totalPages || 1})</span>
 
+                                                {selectedTable && selectedTable !== SETTINGS_TAB_ID && (
+                                                    <button
+                                                        onClick={() => setIsReplacing(true)}
+                                                        title="REPLACE TEXT"
+                                                        style={{
+                                                            background: 'transparent',
+                                                            border: '2px solid #c9a84c',
+                                                            color: '#c9a84c',
+                                                            width: '36px',
+                                                            height: '36px',
+                                                            borderRadius: '10px',
+                                                            cursor: 'pointer',
+                                                            display: 'flex',
+                                                            alignItems: 'center',
+                                                            justifyContent: 'center',
+                                                            boxShadow: '0 4px 10px rgba(201,168,76,0.05)',
+                                                            transition: 'all 0.2s'
+                                                        }}
+                                                        onMouseEnter={(e) => {
+                                                            e.currentTarget.style.background = 'rgba(201,168,76,0.1)';
+                                                            e.currentTarget.style.transform = 'scale(1.05)';
+                                                        }}
+                                                        onMouseLeave={(e) => {
+                                                            e.currentTarget.style.background = 'transparent';
+                                                            e.currentTarget.style.transform = 'scale(1)';
+                                                        }}
+                                                    >
+                                                        <Replace size={16} />
+                                                    </button>
+                                                )}
+
                                                 <button
                                                     onClick={handleAddClick}
+                                                    title="ADD RECORD"
                                                     style={{
                                                         background: '#c9a84c',
                                                         color: '#000',
-                                                        padding: '8px 16px',
-                                                        borderRadius: '8px',
+                                                        width: '36px',
+                                                        height: '36px',
+                                                        borderRadius: '10px',
                                                         border: 'none',
-                                                        fontWeight: '800',
                                                         cursor: 'pointer',
-                                                        fontSize: '11px',
                                                         display: 'flex',
                                                         alignItems: 'center',
-                                                        gap: '6px',
-                                                        boxShadow: '0 4px 10px rgba(201,168,76,0.2)'
+                                                        justifyContent: 'center',
+                                                        boxShadow: '0 4px 10px rgba(201,168,76,0.2)',
+                                                        transition: 'all 0.2s'
+                                                    }}
+                                                    onMouseEnter={(e) => {
+                                                        e.currentTarget.style.background = '#b8943e';
+                                                        e.currentTarget.style.transform = 'scale(1.05)';
+                                                    }}
+                                                    onMouseLeave={(e) => {
+                                                        e.currentTarget.style.background = '#c9a84c';
+                                                        e.currentTarget.style.transform = 'scale(1)';
                                                     }}
                                                 >
-                                                    <Plus size={14} />
-                                                    ADD RECORD
+                                                    <Plus size={16} />
                                                 </button>
 
                                                 <button
                                                     onClick={() => setShowMergeTool(true)}
+                                                    title="MERGE PLAYER RECORDS"
                                                     style={{
                                                         background: '#cf1322',
                                                         color: '#fff',
-                                                        padding: '8px 16px',
-                                                        borderRadius: '8px',
+                                                        width: '36px',
+                                                        height: '36px',
+                                                        borderRadius: '10px',
                                                         border: 'none',
-                                                        fontWeight: '800',
                                                         cursor: 'pointer',
-                                                        fontSize: '11px',
                                                         display: 'flex',
                                                         alignItems: 'center',
-                                                        gap: '6px',
-                                                        boxShadow: '0 4px 10px rgba(207,19,34,0.2)'
+                                                        justifyContent: 'center',
+                                                        boxShadow: '0 4px 10px rgba(207,19,34,0.2)',
+                                                        transition: 'all 0.2s'
+                                                    }}
+                                                    onMouseEnter={(e) => {
+                                                        e.currentTarget.style.background = '#a6101b';
+                                                        e.currentTarget.style.transform = 'scale(1.05)';
+                                                    }}
+                                                    onMouseLeave={(e) => {
+                                                        e.currentTarget.style.background = '#cf1322';
+                                                        e.currentTarget.style.transform = 'scale(1)';
                                                     }}
                                                 >
-                                                    <GitMerge size={14} />
-                                                    MERGE RECORDS
+                                                    <GitMerge size={16} />
                                                 </button>
 
                                                 {selectedRows.length > 1 && (
                                                     <button
                                                         onClick={handleMergeTrigger}
                                                         disabled={isMerging}
+                                                        title={isMerging ? "MERGING RECORDS..." : `MERGE ${selectedRows.length} SELECTED RECORDS`}
                                                         style={{
                                                             background: '#cf1322',
                                                             color: '#fff',
-                                                            padding: '8px 16px',
-                                                            borderRadius: '8px',
+                                                            width: '36px',
+                                                            height: '36px',
+                                                            borderRadius: '10px',
                                                             border: 'none',
-                                                            fontWeight: '800',
                                                             cursor: 'pointer',
-                                                            fontSize: '11px',
-                                                            boxShadow: '0 4px 10px rgba(207,19,34,0.2)'
+                                                            display: 'flex',
+                                                            alignItems: 'center',
+                                                            justifyContent: 'center',
+                                                            boxShadow: '0 4px 10px rgba(207,19,34,0.2)',
+                                                            position: 'relative',
+                                                            opacity: isMerging ? 0.7 : 1,
+                                                            transition: 'all 0.2s'
+                                                        }}
+                                                        onMouseEnter={(e) => {
+                                                            if (!isMerging) {
+                                                                e.currentTarget.style.background = '#a6101b';
+                                                                e.currentTarget.style.transform = 'scale(1.05)';
+                                                            }
+                                                        }}
+                                                        onMouseLeave={(e) => {
+                                                            if (!isMerging) {
+                                                                e.currentTarget.style.background = '#cf1322';
+                                                                e.currentTarget.style.transform = 'scale(1)';
+                                                            }
                                                         }}
                                                     >
-                                                        {isMerging ? "MERGING..." : `MERGE ${selectedRows.length} RECORDS`}
+                                                        <div style={{ position: 'relative', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                                                            <GitMerge size={16} />
+                                                            <span
+                                                                style={{
+                                                                    position: 'absolute',
+                                                                    top: '-10px',
+                                                                    right: '-10px',
+                                                                    background: '#fff',
+                                                                    color: '#cf1322',
+                                                                    borderRadius: '50%',
+                                                                    width: '15px',
+                                                                    height: '15px',
+                                                                    fontSize: '9px',
+                                                                    fontWeight: '800',
+                                                                    display: 'flex',
+                                                                    alignItems: 'center',
+                                                                    justifyContent: 'center',
+                                                                    boxShadow: '0 2px 5px rgba(0,0,0,0.15)',
+                                                                    fontFamily: 'Space Mono, monospace'
+                                                                }}
+                                                            >
+                                                                {selectedRows.length}
+                                                            </span>
+                                                        </div>
                                                     </button>
                                                 )}
                                             </div>
@@ -368,6 +460,15 @@ export default function DBManagement() {
                         onConfirm={handleConfirmDelete}
                         deleting={deleting}
                         getName={getName}
+                    />
+                )}
+                {isReplacing && (
+                    <ReplaceRecordModal
+                        selectedTable={selectedTable}
+                        columns={columns}
+                        saving={saving}
+                        setIsReplacing={setIsReplacing}
+                        handleExecuteReplace={handleExecuteReplace}
                     />
                 )}
                 {/* Floating Merge Widget */}

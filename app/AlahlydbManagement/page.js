@@ -1,6 +1,7 @@
-﻿"use client";
+"use client";
 
 import { useState, useEffect } from "react";
+import { Download, Menu, Replace } from "lucide-react";
 import { supabase } from "../Database";
 import * as XLSX from "xlsx";
 import Login_db from "../lib/Login_db";
@@ -14,6 +15,7 @@ import DatabaseSidebar from "./Components/DatabaseSidebar";
 import DynamicTable from "./Components/DynamicTable";
 import Pagination from "./Components/Pagination";
 import EditModal from "./Modals/EditModal";
+import ReplaceRecordModal from "./Modals/ReplaceRecordModal";
 
 export default function DatabaseManagement() {
     const { addNotification } = useNotification();
@@ -63,7 +65,8 @@ export default function DatabaseManagement() {
         editingRow, setEditingRow, 
         editForm, setEditForm, 
         saving, loading: editLoading, 
-        handleEditClick, handleSaveEdit, handleDelete 
+        handleEditClick, handleSaveEdit, handleDelete,
+        isReplacing, setIsReplacing, handleExecuteReplace
     } = useEditRecord(selectedTable, columns, fetchTableData, addNotification);
 
     // Effect triggers
@@ -152,7 +155,39 @@ export default function DatabaseManagement() {
                                         onChange={(e) => setSearchTerm(e.target.value)}
                                     />
                                 </div>
-                                <div className="record-count">{filteredData.length} RECORDS FOUND (PAGE {currentPage} OF {totalPages})</div>
+                                <div className="record-count" style={{ display: 'flex', alignItems: 'center', gap: '15px' }}>
+                                    {selectedTable && (
+                                        <button
+                                            onClick={() => setIsReplacing(true)}
+                                            title="REPLACE TEXT"
+                                            style={{
+                                                background: 'transparent',
+                                                border: '2px solid #c9a84c',
+                                                color: '#c9a84c',
+                                                width: '36px',
+                                                height: '36px',
+                                                borderRadius: '10px',
+                                                cursor: 'pointer',
+                                                display: 'flex',
+                                                alignItems: 'center',
+                                                justifyContent: 'center',
+                                                boxShadow: '0 4px 10px rgba(201,168,76,0.05)',
+                                                transition: 'all 0.2s'
+                                            }}
+                                            onMouseEnter={(e) => {
+                                                e.currentTarget.style.background = 'rgba(201,168,76,0.1)';
+                                                e.currentTarget.style.transform = 'scale(1.05)';
+                                            }}
+                                            onMouseLeave={(e) => {
+                                                e.currentTarget.style.background = 'transparent';
+                                                e.currentTarget.style.transform = 'scale(1)';
+                                            }}
+                                        >
+                                            <Replace size={16} />
+                                        </button>
+                                    )}
+                                    <span>{filteredData.length} RECORDS FOUND (PAGE {currentPage} OF {totalPages || 1})</span>
+                                </div>
                             </div>
 
                             <DynamicTable 
@@ -184,6 +219,15 @@ export default function DatabaseManagement() {
                     saving={saving}
                     handleSaveEdit={handleSaveEdit}
                 />
+                {isReplacing && (
+                    <ReplaceRecordModal
+                        selectedTable={selectedTable}
+                        columns={columns}
+                        saving={saving}
+                        setIsReplacing={setIsReplacing}
+                        handleExecuteReplace={handleExecuteReplace}
+                    />
+                )}
                 </div>
             </DatabaseSidebar>
         </Login_db>

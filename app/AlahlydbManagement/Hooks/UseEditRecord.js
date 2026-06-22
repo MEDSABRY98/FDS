@@ -1,4 +1,4 @@
-﻿import { useState } from "react";
+import { useState } from "react";
 import { supabase, getChangedFormFields } from "../../Database";
 
 export function useEditRecord(selectedTable, columns, fetchTableData, addNotification) {
@@ -101,6 +101,35 @@ export function useEditRecord(selectedTable, columns, fetchTableData, addNotific
         }
     };
 
+    // ── Replace Record ────────────────────────────────────────────────────────
+    const [isReplacing, setIsReplacing] = useState(false);
+
+    const handleExecuteReplace = async (column, oldValue, newValue) => {
+        if (!column || !oldValue) {
+            if (addNotification) addNotification("Please specify both a column and the old value.", "warn");
+            return;
+        }
+        setSaving(true);
+        try {
+            const { error, count } = await supabase
+                .from(selectedTable)
+                .update({ [column]: newValue === "" ? null : newValue })
+                .eq(column, oldValue);
+
+            if (error) throw error;
+            if (fetchTableData) await fetchTableData();
+            setIsReplacing(false);
+            if (addNotification) {
+                addNotification(`Successfully replaced "${oldValue}" with "${newValue}" in ${count ?? 'matching'} rows.`, "success");
+            }
+        } catch (error) {
+            console.error("Replacement error:", error);
+            if (addNotification) addNotification("Replacement FAILED: " + error.message, "error");
+        } finally {
+            setSaving(false);
+        }
+    };
+
     return {
         editingRow, setEditingRow,
         editForm, setEditForm,
@@ -108,6 +137,9 @@ export function useEditRecord(selectedTable, columns, fetchTableData, addNotific
         loading,
         handleEditClick,
         handleSaveEdit,
-        handleDelete
+        handleDelete,
+        isReplacing,
+        setIsReplacing,
+        handleExecuteReplace
     };
 }
