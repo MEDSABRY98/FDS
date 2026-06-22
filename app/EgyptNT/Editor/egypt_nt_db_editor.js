@@ -13,7 +13,7 @@ const EMPTY_MATCH = {
     "MATCH_ID": "", "AGE": "", "CHAMPION_SYSTEM": "", "SYSTEM_KIND": "", "DATE": "", "CHAMPION": "", "SEASON": "",
     "EGYPT MANAGER": "", "OPPONENT MANAGER": "", "REFREE": "", "ROUND": "", "PLACE": "",
     "H-A-N": "", "Egypt TEAM": "", "GF": "", "GA": "", "ET": "",
-    "PEN": "", "OPPONENT TEAM": "", "W-L Q & F": "", "NOTE": ""
+    "PEN": "", "OPPONENT TEAM": "", "NOTE": ""
 };
 const EMPTY_LINEUP = { "MATCH_ID": "", "MATCH MINUTE": "", "TEAM": "", "PLAYER NAME": "", "STATU": "", "PLAYER NAME OUT": "", "OUT MINUTE": "", "TOTAL MINUTE": "" };
 const EMPTY_PLAYER = { "MATCH_ID": "", "EVENT_ID": "", "PARENT_EVENT_ID": "", "PLAYER NAME": "", "TEAM": "", "CLUB": "", "TYPE": "", "TYPE_SUB": "", "MINUTE": "" };
@@ -357,7 +357,7 @@ export default function EgyptNTEditor() {
 
     const AUTOCOMPLETE_FIELDS = [
         'AGE', 'CHAMPION_SYSTEM', 'SYSTEM_KIND', 'CHAMPION', 'SEASON', 'EGYPT MANAGER', 'OPPONENT MANAGER',
-        'REFREE', 'ROUND', 'PLACE', 'H-A-N', 'Egypt TEAM', 'ET', 'PEN', 'OPPONENT TEAM', 'W-L Q & F', 'NOTE'
+        'REFREE', 'ROUND', 'PLACE', 'H-A-N', 'Egypt TEAM', 'ET', 'PEN', 'OPPONENT TEAM', 'NOTE'
     ];
 
     useEffect(() => {

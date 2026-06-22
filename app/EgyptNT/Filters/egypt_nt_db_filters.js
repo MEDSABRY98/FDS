@@ -32,7 +32,6 @@ const FILTER_FIELD_DEFS = [
     { key: "opponent_team", label: "OPPONENT TEAM", type: "select", optionsKey: "opponent_teams", dbColumn: "OPPONENT TEAM" },
     { key: "wdl", label: "W-D-L", type: "select", optionsKey: "wdl", dbColumn: "W-D-L" },
     { key: "clean_sheet", label: "CLEAN SHEET", type: "select", optionsKey: "clean_sheets", dbColumn: "CLEAN SHEET" },
-    { key: "wl_q_f", label: "W-L Q & F", type: "select", optionsKey: "wl_q_fs", dbColumn: "W-L Q & F" },
     { key: "champion_system", label: "CHAMPION SYSTEM", type: "select", optionsKey: "champion_systems", dbColumn: "CHAMPION_SYSTEM" },
     { key: "system_kind", label: "SYSTEM KIND", type: "select", optionsKey: "system_kinds", dbColumn: "SYSTEM_KIND" },
     { key: "note", label: "NOTE", type: "select", optionsKey: "notes", dbColumn: "NOTE" },

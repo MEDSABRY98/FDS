@@ -60,7 +60,7 @@ export function DynamicTable({
                                 </div>
                             </td>
                             {columns.map(col => (
-                                <td key={col} style={col === 'W-D-L' || col === 'W-L Q & F' ? { minWidth: '120px', fontWeight: 'bold' } : {}}>
+                                <td key={col} style={col === 'W-D-L' ? { minWidth: '120px', fontWeight: 'bold' } : {}}>
                                     {String(row[col])}
                                 </td>
                             ))}

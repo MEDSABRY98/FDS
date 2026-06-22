@@ -282,7 +282,7 @@ export default function EgyptNTMatchDetails({
 
     if (!matchInfo) return <div className="error-state">Match record not located.</div>;
 
-    const matchNote = matchInfo["W-L Q & F"] || matchInfo.NOTE || "";
+    const matchNote = matchInfo.NOTE || "";
 
     const formatDate = (dateStr) => {
         if (!dateStr) return "N/A";

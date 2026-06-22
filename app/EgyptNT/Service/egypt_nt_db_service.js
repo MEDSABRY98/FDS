@@ -311,7 +311,6 @@ export const EgyptNTService = {
             opponent_teams: getUnique('OPPONENT TEAM'),
             wdl: getUnique('W-D-L'),
             clean_sheets: getUnique('CLEAN SHEET'),
-            wl_q_fs: getUnique('W-L Q & F'),
             notes: getUnique('NOTE')
         };
     },

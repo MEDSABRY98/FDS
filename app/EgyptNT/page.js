@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import { useState, useEffect, useMemo, useRef } from "react";
 import { 
@@ -88,7 +88,6 @@ export default function EgyptNTDatabase() {
         opponent_team: 'All',
         wdl: 'All',
         clean_sheet: 'All',
-        wl_q_f: 'All',
         note: 'All',
         country: 'All',
         continent: 'All'
@@ -194,7 +193,6 @@ export default function EgyptNTDatabase() {
             opponent_team: 'OPPONENT TEAM',
             wdl: 'W-D-L',
             clean_sheet: 'CLEAN SHEET',
-            wl_q_f: 'W-L Q & F',
             note: 'NOTE'
         };
         
@@ -311,7 +309,6 @@ export default function EgyptNTDatabase() {
             opponent_teams: getOptionsForField('opponent_team', 'OPPONENT TEAM'),
             wdl: getOptionsForField('wdl', 'W-D-L'),
             clean_sheets: getOptionsForField('clean_sheet', 'CLEAN SHEET'),
-            wl_q_fs: getOptionsForField('wl_q_f', 'W-L Q & F'),
             notes: getOptionsForField('note', 'NOTE'),
             countries: getOptionsForField('country', null),
             continents: getOptionsForField('continent', null)
@@ -348,7 +345,6 @@ export default function EgyptNTDatabase() {
             opponent_team: 'All',
             wdl: 'All',
             clean_sheet: 'All',
-            wl_q_f: 'All',
             note: 'All',
             country: 'All',
             continent: 'All'
@@ -426,7 +422,6 @@ export default function EgyptNTDatabase() {
                 check('opponent_team', 'OPPONENT TEAM') &&
                 check('wdl', 'W-D-L') &&
                 check('clean_sheet', 'CLEAN SHEET') &&
-                check('wl_q_f', 'W-L Q & F') &&
                 check('note', 'NOTE')
             );
         });
