@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { Database, Shield, Target, Trophy, Swords, Flag, Globe } from "lucide-react";
+import { Database, Shield, Target, Trophy, Swords, Flag, Globe, Sparkles } from "lucide-react";
 import "./home_db_selection.css";
 
 const MODULES = [
@@ -14,6 +14,15 @@ const MODULES = [
             { href: "/DBManagement", label: "GLOBAL DB MANAGEMENT", icon: Database },
         ],
     },
+    {
+        id: "ai_assistant",
+        label: "AI ASSISTANT",
+        tag: "INTELLIGENCE",
+        links: [
+            { href: "/AIAssistant", label: "FOOTBALL AI ASSISTANT", icon: Sparkles },
+        ],
+    },
+
     {
         id: "alahly",
         label: "AL AHLY",
