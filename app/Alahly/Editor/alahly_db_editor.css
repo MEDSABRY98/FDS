@@ -256,6 +256,10 @@
     grid-template-columns: repeat(5, minmax(0, 1fr));
 }
 
+.linked-tabs-grid--6 {
+    grid-template-columns: repeat(6, minmax(0, 1fr));
+}
+
 .tab-btn:disabled {
     opacity: 0.45;
     cursor: not-allowed;

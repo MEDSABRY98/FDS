@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import { createClient } from '@supabase/supabase-js'
 import {
@@ -51,10 +51,12 @@ let cachesPromise = null;
 const playerColumnsMap = {
     'alahly_GKSDETAILS': ['PLAYER NAME'],
     'alahly_LINEUPDETAILS': ['PLAYER NAME', 'PLAYER NAME OUT'],
+    'alahly_MATCHDETAILS': ['MOTM'],
     'alahly_PKS': ['AHLY GK', 'AHLY PLAYER', 'OPPONENT GK', 'OPPONENT PLAYER'],
     'alahly_PLAYERDETAILS': ['PLAYER NAME'],
     'egy_NT_GKSDETAILS': ['PLAYER NAME'],
     'egy_NT_LINEUPDETAILS': ['PLAYER NAME', 'PLAYER NAME OUT'],
+    'egy_NT_MATCHDETAILS': ['MOTM'],
     'egy_NT_PKS': ['EGYPT GK', 'Egypt PLAYER', 'OPPONENT GK', 'OPPONENT PLAYER'],
     'egy_NT_PLAYERDETAILS': ['PLAYER NAME'],
     'egy_NT_SQUAD': ['PLAYERNAME']

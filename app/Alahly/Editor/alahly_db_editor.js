@@ -12,7 +12,7 @@ const EMPTY_MATCH = {
     "MATCH_ID": "", "CHAMPION SYSTEM": "", "DATE": "", "CHAMPION": "", "SEASON - NAME": "",
     "SEASON - NUMBER": "", "AHLY MANAGER": "", "OPPONENT MANAGER": "", "REFREE": "", "ROUND": "",
     "H-A-N": "", "STAD": "", "AHLY TEAM": "", "GF": "", "GA": "", "ET": "",
-    "PEN": "", "OPPONENT TEAM": "", "NOTE": ""
+    "PEN": "", "OPPONENT TEAM": "", "NOTE": "", "MOTM": ""
 };
 const EMPTY_LINEUP = { "MATCH_ID": "", "MATCH MINUTE": "", "TEAM": "", "PLAYER NAME": "", "STATU": "", "PLAYER NAME OUT": "", "OUT MINUTE": "", "TOTAL MINUTE": "" };
 const EMPTY_PLAYER = { "MATCH_ID": "", "EVENT_ID": "", "PARENT_EVENT_ID": "", "PLAYER NAME": "", "TEAM": "", "TYPE": "", "TYPE_SUB": "", "MINUTE": "" };
@@ -422,7 +422,7 @@ export default function AlAhlyEditor() {
     );
 
     const renderMatchFieldsGrid = (formData, setFormData, { matchIdAuto = false } = {}) =>
-        Object.keys(EMPTY_MATCH).flatMap(field => {
+        Object.keys(EMPTY_MATCH).filter(field => field !== 'MOTM').flatMap(field => {
             const showFinal = isFinalRound(formData.ROUND);
             if (field === 'MATCH_ID') {
                 return [
@@ -854,7 +854,7 @@ export default function AlAhlyEditor() {
         });
 
         return (
-            <div className="linked-tabs-grid linked-tabs-grid--5">
+            <div className="linked-tabs-grid linked-tabs-grid--6">
                 <button type="button" onClick={() => setActiveLinkedTab('lineup-ahly')} className="tab-btn" style={tabStyle('lineup-ahly', '#c9a84c', '#0a0a0a')}>
                     LINEUP — {ahlyTeam}
                 </button>
@@ -869,6 +869,7 @@ export default function AlAhlyEditor() {
                     LINEUP — {oppTeam || 'OPPONENT'}
                 </button>
                 <button type="button" onClick={() => setActiveLinkedTab('events')} className="tab-btn" style={tabStyle('events', '#8b5cf6')}>PLAYER EVENTS</button>
+                <button type="button" onClick={() => setActiveLinkedTab('motm')} className="tab-btn" style={tabStyle('motm', '#10b981')}>MOTM</button>
                 <button type="button" onClick={() => setActiveLinkedTab('gks')} className="tab-btn" style={tabStyle('gks', '#f59e0b')}>GK DETAILS</button>
                 <button type="button" onClick={() => setActiveLinkedTab('pens')} className="tab-btn" style={tabStyle('pens', '#ef4444')}>PENALTY MISSES</button>
             </div>
@@ -1064,6 +1065,29 @@ export default function AlAhlyEditor() {
                                     }}
                                 />
                             )}
+                            {activeLinkedTab === 'motm' && (
+                                <div style={{ padding: '20px', background: '#fafafa', borderRadius: '20px', border: '1px solid #eee', maxWidth: '500px', margin: '0 auto' }}>
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 20 }}>
+                                        <span style={{ fontSize: 24 }}>🏆</span>
+                                        <h3 style={{ margin: 0, fontFamily: "'Bebas Neue', sans-serif", fontSize: 20, letterSpacing: 2, color: '#0a0a0a' }}>
+                                            MAN OF THE MATCH
+                                        </h3>
+                                    </div>
+                                    <div className="field-label">SELECT MOTM PLAYER</div>
+                                    <AutocompleteInput
+                                        value={newMatchData.MOTM ?? ''}
+                                        options={allPlayersList}
+                                        placeholder="Search player name..."
+                                        onChange={val => setNewMatchData(prev => ({ ...prev, MOTM: val }))}
+                                        className="field-input"
+                                        accentColor="#c9a84c"
+                                        style={{ width: '100%', height: '40px', fontSize: '14px', background: '#fff' }}
+                                    />
+                                    <p style={{ fontSize: '11px', color: '#888', marginTop: '10px' }}>
+                                        * This searchable dropdown suggests all players in the system. Search and select the Man of the Match winner.
+                                    </p>
+                                </div>
+                            )}
                         </div>
                     </>
                 )}
@@ -1158,6 +1182,29 @@ export default function AlAhlyEditor() {
                                         "HOW MISSED?": howMissedOptions
                                     }}
                                 />
+                            )}
+                            {activeLinkedTab === 'motm' && (
+                                <div style={{ padding: '20px', background: '#fafafa', borderRadius: '20px', border: '1px solid #eee', maxWidth: '500px', margin: '0 auto' }}>
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 20 }}>
+                                        <span style={{ fontSize: 24 }}>🏆</span>
+                                        <h3 style={{ margin: 0, fontFamily: "'Bebas Neue', sans-serif", fontSize: 20, letterSpacing: 2, color: '#0a0a0a' }}>
+                                            MAN OF THE MATCH
+                                        </h3>
+                                    </div>
+                                    <div className="field-label">SELECT MOTM PLAYER</div>
+                                    <AutocompleteInput
+                                        value={matchData.MOTM ?? ''}
+                                        options={allPlayersList}
+                                        placeholder="Search player name..."
+                                        onChange={val => setMatchData(prev => ({ ...prev, MOTM: val }))}
+                                        className="field-input"
+                                        accentColor="#c9a84c"
+                                        style={{ width: '100%', height: '40px', fontSize: '14px', background: '#fff' }}
+                                    />
+                                    <p style={{ fontSize: '11px', color: '#888', marginTop: '10px' }}>
+                                        * This searchable dropdown suggests all players in the system. Search and select the Man of the Match winner.
+                                    </p>
+                                </div>
                             )}
                         </div>
                     </>

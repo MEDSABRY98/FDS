@@ -13,7 +13,7 @@ const EMPTY_MATCH = {
     "MATCH_ID": "", "AGE": "", "CHAMPION_SYSTEM": "", "SYSTEM_KIND": "", "DATE": "", "CHAMPION": "", "SEASON": "",
     "EGYPT MANAGER": "", "OPPONENT MANAGER": "", "REFREE": "", "ROUND": "", "PLACE": "",
     "H-A-N": "", "Egypt TEAM": "", "GF": "", "GA": "", "ET": "",
-    "PEN": "", "OPPONENT TEAM": "", "NOTE": ""
+    "PEN": "", "OPPONENT TEAM": "", "NOTE": "", "MOTM": ""
 };
 const EMPTY_LINEUP = { "MATCH_ID": "", "MATCH MINUTE": "", "TEAM": "", "PLAYER NAME": "", "STATU": "", "PLAYER NAME OUT": "", "OUT MINUTE": "", "TOTAL MINUTE": "" };
 const EMPTY_PLAYER = { "MATCH_ID": "", "EVENT_ID": "", "PARENT_EVENT_ID": "", "PLAYER NAME": "", "TEAM": "", "CLUB": "", "TYPE": "", "TYPE_SUB": "", "MINUTE": "" };
@@ -988,7 +988,7 @@ export default function EgyptNTEditor() {
         }
     };
 
-    const matchInfoFields = Object.keys(EMPTY_MATCH);
+    const matchInfoFields = Object.keys(EMPTY_MATCH).filter(field => field !== 'MOTM');
     const lineupCols = Object.keys(EMPTY_LINEUP);
     const lineupColsNoTeam = lineupCols.filter((col) => col !== 'TEAM' && col !== 'MATCH_ID');
     const playerCols = Object.keys(EMPTY_PLAYER);
@@ -1097,6 +1097,7 @@ export default function EgyptNTEditor() {
                                 <button onClick={() => setActiveLinkedTab('lineup_egy')} className="tab-btn" style={{ background: activeLinkedTab === 'lineup_egy' ? '#C8102E' : '#f8f8f8', color: activeLinkedTab === 'lineup_egy' ? '#fff' : '#888' }}>EGYPT LINEUP</button>
                                 <button onClick={() => setActiveLinkedTab('lineup_opp')} className="tab-btn" style={{ background: activeLinkedTab === 'lineup_opp' ? '#3b82f6' : '#f8f8f8', color: activeLinkedTab === 'lineup_opp' ? '#fff' : '#888' }}>OPPONENT LINEUP</button>
                                 <button onClick={() => setActiveLinkedTab('events')} className="tab-btn" style={{ background: activeLinkedTab === 'events' ? '#8b5cf6' : '#f8f8f8', color: activeLinkedTab === 'events' ? '#fff' : '#888' }}>PLAYER EVENTS</button>
+                                <button onClick={() => setActiveLinkedTab('motm')} className="tab-btn" style={{ background: activeLinkedTab === 'motm' ? '#10b981' : '#f8f8f8', color: activeLinkedTab === 'motm' ? '#fff' : '#888' }}>MOTM</button>
                                 <button onClick={() => setActiveLinkedTab('gks')} className="tab-btn" style={{ background: activeLinkedTab === 'gks' ? '#f59e0b' : '#f8f8f8', color: activeLinkedTab === 'gks' ? '#fff' : '#888' }}>GK DETAILS</button>
                                 <button onClick={() => setActiveLinkedTab('pens')} className="tab-btn" style={{ background: activeLinkedTab === 'pens' ? '#ef4444' : '#f8f8f8', color: activeLinkedTab === 'pens' ? '#fff' : '#888' }}>PENALTY MISSES</button>
                             </div>
@@ -1175,6 +1176,29 @@ export default function EgyptNTEditor() {
                                     }}
                                 />
                             )}
+                            {activeLinkedTab === 'motm' && (
+                                <div style={{ padding: '20px', background: '#fafafa', borderRadius: '20px', border: '1px solid #eee', maxWidth: '500px', margin: '0 auto' }}>
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 20 }}>
+                                        <span style={{ fontSize: 24 }}>🏆</span>
+                                        <h3 style={{ margin: 0, fontFamily: "'Bebas Neue', sans-serif", fontSize: 20, letterSpacing: 2, color: '#0a0a0a' }}>
+                                            MAN OF THE MATCH
+                                        </h3>
+                                    </div>
+                                    <div className="field-label">SELECT MOTM PLAYER</div>
+                                    <AutocompleteInput
+                                        value={newMatchData.MOTM ?? ''}
+                                        options={allPlayersList}
+                                        placeholder="Search player name..."
+                                        onChange={val => setNewMatchData(prev => ({ ...prev, MOTM: val }))}
+                                        className="field-input"
+                                        accentColor="#C8102E"
+                                        style={{ width: '100%', height: '40px', fontSize: '14px', background: '#fff' }}
+                                    />
+                                    <p style={{ fontSize: '11px', color: '#888', marginTop: '10px' }}>
+                                        * This searchable dropdown suggests all players in the system. Search and select the Man of the Match winner.
+                                    </p>
+                                </div>
+                            )}
                         </div>
                     </>
                 )}
@@ -1225,6 +1249,7 @@ export default function EgyptNTEditor() {
                                 <button onClick={() => setActiveLinkedTab('lineup_egy')} className="tab-btn" style={{ background: activeLinkedTab === 'lineup_egy' ? '#C8102E' : '#f8f8f8', color: activeLinkedTab === 'lineup_egy' ? '#fff' : '#888' }}>EGYPT LINEUP</button>
                                 <button onClick={() => setActiveLinkedTab('lineup_opp')} className="tab-btn" style={{ background: activeLinkedTab === 'lineup_opp' ? '#3b82f6' : '#f8f8f8', color: activeLinkedTab === 'lineup_opp' ? '#fff' : '#888' }}>OPPONENT LINEUP</button>
                                 <button onClick={() => setActiveLinkedTab('events')} className="tab-btn" style={{ background: activeLinkedTab === 'events' ? '#8b5cf6' : '#f8f8f8', color: activeLinkedTab === 'events' ? '#fff' : '#888' }}>PLAYER EVENTS</button>
+                                <button onClick={() => setActiveLinkedTab('motm')} className="tab-btn" style={{ background: activeLinkedTab === 'motm' ? '#10b981' : '#f8f8f8', color: activeLinkedTab === 'motm' ? '#fff' : '#888' }}>MOTM</button>
                                 <button onClick={() => setActiveLinkedTab('gks')} className="tab-btn" style={{ background: activeLinkedTab === 'gks' ? '#f59e0b' : '#f8f8f8', color: activeLinkedTab === 'gks' ? '#fff' : '#888' }}>GK DETAILS</button>
                                 <button onClick={() => setActiveLinkedTab('pens')} className="tab-btn" style={{ background: activeLinkedTab === 'pens' ? '#ef4444' : '#f8f8f8', color: activeLinkedTab === 'pens' ? '#fff' : '#888' }}>PENALTY MISSES</button>
                             </div>
@@ -1302,6 +1327,29 @@ export default function EgyptNTEditor() {
                                         "HOW MISSED?": howMissedOptions
                                     }}
                                 />
+                            )}
+                            {activeLinkedTab === 'motm' && (
+                                <div style={{ padding: '20px', background: '#fafafa', borderRadius: '20px', border: '1px solid #eee', maxWidth: '500px', margin: '0 auto' }}>
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 20 }}>
+                                        <span style={{ fontSize: 24 }}>🏆</span>
+                                        <h3 style={{ margin: 0, fontFamily: "'Bebas Neue', sans-serif", fontSize: 20, letterSpacing: 2, color: '#0a0a0a' }}>
+                                            MAN OF THE MATCH
+                                        </h3>
+                                    </div>
+                                    <div className="field-label">SELECT MOTM PLAYER</div>
+                                    <AutocompleteInput
+                                        value={matchData.MOTM ?? ''}
+                                        options={allPlayersList}
+                                        placeholder="Search player name..."
+                                        onChange={val => setMatchData(prev => ({ ...prev, MOTM: val }))}
+                                        className="field-input"
+                                        accentColor="#C8102E"
+                                        style={{ width: '100%', height: '40px', fontSize: '14px', background: '#fff' }}
+                                    />
+                                    <p style={{ fontSize: '11px', color: '#888', marginTop: '10px' }}>
+                                        * This searchable dropdown suggests all players in the system. Search and select the Man of the Match winner.
+                                    </p>
+                                </div>
                             )}
                         </div>
                     </>

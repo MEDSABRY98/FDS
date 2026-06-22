@@ -61,7 +61,7 @@ export default function EgyptNTMatchDetails({
     onRefresh
 }) {
 
-    const [activeTab, setActiveTab] = useState('lineup');
+    const [activeTab, setActiveTab] = useState('info');
     const [isReorderMode, setIsReorderMode] = useState(false);
     const [reorderRows, setReorderRows] = useState([]);
     const [orderDirty, setOrderDirty] = useState(false);
@@ -194,6 +194,21 @@ export default function EgyptNTMatchDetails({
         });
         setOrderDirty(true);
         setOrderError("");
+    }, []);
+
+    const handleMinuteBlur = useCallback(() => {
+        setReorderRows((prev) => {
+            return [...prev].sort((a, b) => {
+                const minA = parseTimelineMinute(a.MINUTE);
+                const minB = parseTimelineMinute(b.MINUTE);
+                if (minA !== null && minB !== null && minA !== minB) {
+                    return minA - minB;
+                }
+                if (minA !== null && minB === null) return -1;
+                if (minA === null && minB !== null) return 1;
+                return 0;
+            });
+        });
     }, []);
 
     const updateEventTypeSub = useCallback((index, typeSub) => {
@@ -374,7 +389,6 @@ export default function EgyptNTMatchDetails({
                             <span className="score-divider">-</span>
                             <span className="score-digit">{matchInfo.GA}</span>
                         </div>
-                        {matchNote && <div className="score-note">{matchNote}</div>}
                         {matchInfo.PEN && <div className="pen-result">{matchInfo.PEN}</div>}
                     </div>
 
@@ -388,38 +402,17 @@ export default function EgyptNTMatchDetails({
                         </div>
                     </div>
                 </div>
-
-                <div className="match-info-strip">
-                    <div className="info-item">
-                        <span className="label">DATE</span>
-                        <span className="value">{formatDate(matchInfo.DATE)}</span>
-                    </div>
-                    <div className="info-divider"></div>
-                    <div className="info-item">
-                        <span className="label">SEASON</span>
-                        <span className="value">{matchInfo["SEASON"]}</span>
-                    </div>
-                    <div className="info-divider"></div>
-                    <div className="info-item">
-                        <span className="label">ROUND</span>
-                        <span className="value">{matchInfo.ROUND}</span>
-                    </div>
-                    <div className="info-divider"></div>
-                    <div className="info-item">
-                        <span className="label">PLACE</span>
-                        <span className="value">{matchInfo.PLACE}</span>
-                    </div>
-                    <div className="info-divider"></div>
-                    <div className="info-item">
-                        <span className="label">REFEREE</span>
-                        <span className="value">{matchInfo.REFREE}</span>
-                    </div>
-                </div>
             </section>
 
             {/* Interactive Tabs Section */}
             <div className="match-details-container">
                 <div className="tabs-navigation">
+                    <button
+                        className={`tab-btn ${activeTab === 'info' ? 'active' : ''}`}
+                        onClick={() => setActiveTab('info')}
+                    >
+                        MATCH INFO
+                    </button>
                     <button
                         className={`tab-btn ${activeTab === 'lineup' ? 'active' : ''}`}
                         onClick={() => setActiveTab('lineup')}
@@ -438,7 +431,128 @@ export default function EgyptNTMatchDetails({
                     >
                         SUBS TIMELINE
                     </button>
+                    <button
+                        className={`tab-btn ${activeTab === 'motm' ? 'active' : ''}`}
+                        onClick={() => setActiveTab('motm')}
+                    >
+                        MAN OF THE MATCH
+                    </button>
                 </div>
+
+                {activeTab === 'info' && (
+                    <div className="match-info-tab-content fade-in">
+                        <div className="info-grid">
+                            {/* Card 1: Competition & Date */}
+                            <div className="info-card">
+                                <div className="info-card-header">
+                                    <span className="info-card-icon">🏆</span>
+                                    <h3>Competition Details</h3>
+                                </div>
+                                <div className="info-card-body">
+                                    <div className="info-row">
+                                        <span className="info-label">DATE</span>
+                                        <span className="info-value">{formatDate(matchInfo.DATE)}</span>
+                                    </div>
+                                    <div className="info-row">
+                                        <span className="info-label">CHAMPION</span>
+                                        <span className="info-value">{matchInfo.CHAMPION || "—"}</span>
+                                    </div>
+                                    <div className="info-row">
+                                        <span className="info-label">SEASON</span>
+                                        <span className="info-value">{matchInfo.SEASON || "—"}</span>
+                                    </div>
+                                    <div className="info-row">
+                                        <span className="info-label">ROUND</span>
+                                        <span className="info-value">{matchInfo.ROUND || "—"}</span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            {/* Card 2: Match Venue & Logistics */}
+                            <div className="info-card">
+                                <div className="info-card-header">
+                                    <span className="info-card-icon">📍</span>
+                                    <h3>Venue & Logistics</h3>
+                                </div>
+                                <div className="info-card-body">
+                                    <div className="info-row">
+                                        <span className="info-label">PLACE (STADIUM)</span>
+                                        <span className="info-value">{matchInfo.PLACE || "—"}</span>
+                                    </div>
+                                    <div className="info-row">
+                                        <span className="info-label">H-A-N (VENUE STATUS)</span>
+                                        <span className="info-value">
+                                            {matchInfo["H-A-N"] === "H" ? "Home" :
+                                             matchInfo["H-A-N"] === "A" ? "Away" :
+                                             matchInfo["H-A-N"] === "N" ? "Neutral" : matchInfo["H-A-N"] || "—"}
+                                        </span>
+                                    </div>
+                                    <div className="info-row">
+                                        <span className="info-label">AGE GROUP</span>
+                                        <span className="info-value">{matchInfo.AGE || "—"}</span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            {/* Card 3: Match Officials & Managers */}
+                            <div className="info-card">
+                                <div className="info-card-header">
+                                    <span className="info-card-icon">👔</span>
+                                    <h3>Officials & Staff</h3>
+                                </div>
+                                <div className="info-card-body">
+                                    <div className="info-row">
+                                        <span className="info-label">EGYPT MANAGER</span>
+                                        <span className="info-value">{matchInfo["EGYPT MANAGER"] || "—"}</span>
+                                    </div>
+                                    <div className="info-row">
+                                        <span className="info-label">OPPONENT MANAGER</span>
+                                        <span className="info-value">{matchInfo["OPPONENT MANAGER"] || "—"}</span>
+                                    </div>
+                                    <div className="info-row">
+                                        <span className="info-label">REFEREE</span>
+                                        <span className="info-value">{matchInfo.REFREE || "—"}</span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            {/* Card 4: Competition System */}
+                            <div className="info-card">
+                                <div className="info-card-header">
+                                    <span className="info-card-icon">⚙️</span>
+                                    <h3>System Details</h3>
+                                </div>
+                                <div className="info-card-body">
+                                    <div className="info-row">
+                                        <span className="info-label">CHAMPION SYSTEM</span>
+                                        <span className="info-value">{matchInfo.CHAMPION_SYSTEM || "—"}</span>
+                                    </div>
+                                    <div className="info-row">
+                                        <span className="info-label">SYSTEM KIND</span>
+                                        <span className="info-value">{matchInfo.SYSTEM_KIND || "—"}</span>
+                                    </div>
+                                    <div className="info-row">
+                                        <span className="info-label">EXTRA TIME (ET)</span>
+                                        <span className="info-value">{matchInfo.ET ? "Yes" : "No"}</span>
+                                    </div>
+                                    {matchInfo.PEN && (
+                                        <div className="info-row">
+                                            <span className="info-label">PENALTY SHOOTOUT</span>
+                                            <span className="info-value" style={{ color: 'var(--gold)', fontWeight: 'bold' }}>{matchInfo.PEN}</span>
+                                        </div>
+                                    )}
+                                </div>
+                            </div>
+                        </div>
+
+                        {matchInfo.NOTE && (
+                            <div className="info-note-section">
+                                <h3>📝 Match Notes</h3>
+                                <p>{matchInfo.NOTE}</p>
+                            </div>
+                        )}
+                    </div>
+                )}
 
                 {activeTab === 'lineup' && (
                     <>
@@ -710,6 +824,8 @@ export default function EgyptNTMatchDetails({
                                                                     className="event-reorder-minute-input"
                                                                     value={event.MINUTE ?? ""}
                                                                     onChange={(e) => updateEventMinute(index, e.target.value)}
+                                                                    onBlur={handleMinuteBlur}
+                                                                    onKeyDown={(e) => { if (e.key === 'Enter') e.target.blur(); }}
                                                                     disabled={savingOrder}
                                                                     placeholder="—"
                                                                     aria-label={`Minute for event ${index + 1}`}
@@ -916,6 +1032,56 @@ export default function EgyptNTMatchDetails({
                                 );
                             })()}
                         </div>
+                    </div>
+                )}
+
+                {activeTab === 'motm' && (
+                    <div className="motm-tab-content fade-in">
+                        {matchInfo.MOTM ? (
+                            <div className="motm-container">
+                                <div className="motm-trophy">🏆</div>
+                                <h2 className="motm-title">MAN OF THE MATCH</h2>
+                                <div className="motm-player-name">{matchInfo.MOTM}</div>
+                                {(() => {
+                                    const playerEvents = events.chronological.filter(
+                                        e => String(e["PLAYER NAME"] || "").trim().toLowerCase() === String(matchInfo.MOTM).trim().toLowerCase()
+                                    );
+                                    const goals = playerEvents.filter(e => {
+                                        const t = String(e.TYPE || "").trim().toLowerCase();
+                                        return t.includes("هدف") || t.includes("goal") || t === "penmakegoal";
+                                    }).length;
+                                    const assists = playerEvents.filter(e => {
+                                        const t = String(e.TYPE || "").trim().toLowerCase();
+                                        return t.includes("اسيست") || t.includes("assist") || t.includes("صنع") || t === "penassistgoal";
+                                    }).length;
+                                    const yellows = playerEvents.filter(e => {
+                                        const t = String(e.TYPE || "").trim().toLowerCase();
+                                        return t === "yellow" || t === "انذار";
+                                    }).length;
+                                    const reds = playerEvents.filter(e => {
+                                        const t = String(e.TYPE || "").trim().toLowerCase();
+                                        return t === "red" || t === "طرد";
+                                    }).length;
+
+                                    if (goals > 0 || assists > 0 || yellows > 0 || reds > 0) {
+                                        return (
+                                            <div className="motm-performance-summary">
+                                                <h3>Match Performance</h3>
+                                                <div className="motm-stats-row">
+                                                    {goals > 0 && <span className="motm-stat-item">⚽ {goals} Goal(s)</span>}
+                                                    {assists > 0 && <span className="motm-stat-item">🅰️ {assists} Assist(s)</span>}
+                                                    {yellows > 0 && <span className="motm-stat-item">🟨 {yellows} Yellow</span>}
+                                                    {reds > 0 && <span className="motm-stat-item">🟥 {reds} Red</span>}
+                                                </div>
+                                            </div>
+                                        );
+                                    }
+                                    return null;
+                                })()}
+                            </div>
+                        ) : (
+                            <NoData_db message="No Man of the Match awarded for this game." />
+                        )}
                     </div>
                 )}
             </div>
