@@ -38,6 +38,7 @@ export default function IntNtMatches({ matches }) {
                         <tr>
                             <th>ROW_ID</th>
                             <th>DATE</th>
+                            <th>HOST COUNTRY</th>
                             <th>SEASON</th>
                             <th>GAME</th>
                             <th>CATEGORY</th>
@@ -45,7 +46,6 @@ export default function IntNtMatches({ matches }) {
                             <th>TEAMA</th>
                             <th>SCORE</th>
                             <th>TEAMB</th>
-                            <th>HOST COUNTRY</th>
                             <th>W-D-L</th>
                         </tr>
                     </thead>
@@ -54,6 +54,7 @@ export default function IntNtMatches({ matches }) {
                             <tr key={m.ROW_ID || m.MATCH_ID}>
                                 <td className="mono">{m.ROW_ID}</td>
                                 <td>{m.DATE || "—"}</td>
+                                <td>{m["HOST COUNTRY"] || "—"}</td>
                                 <td>{m.SEASON || "—"}</td>
                                 <td>{m.GAME || "—"}</td>
                                 <td>{m.CATEGORY || "—"}</td>
@@ -64,7 +65,6 @@ export default function IntNtMatches({ matches }) {
                                     {m["PEN DISPLAY"] ? ` (${m["PEN DISPLAY"]})` : ""}
                                 </td>
                                 <td><strong>{m.TEAMB || "—"}</strong></td>
-                                <td>{m["HOST COUNTRY"] || "—"}</td>
                                 <td>{m["W-D-L"] || "—"}</td>
                             </tr>
                         ))}
