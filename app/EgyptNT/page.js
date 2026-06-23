@@ -95,6 +95,13 @@ export default function EgyptNTDatabase() {
 
     useEffect(() => {
         fetchMatchData();
+        if (typeof window !== "undefined") {
+            const params = new URLSearchParams(window.location.search);
+            const tabParam = params.get("tab");
+            if (tabParam) {
+                setActiveTab(tabParam);
+            }
+        }
     }, []);
 
     async function fetchMatchData(silent = false) {
@@ -649,19 +656,23 @@ export default function EgyptNTDatabase() {
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',
-                    padding: '20px'
+                    padding: '20px',
+                    boxSizing: 'border-box'
                 }}>
                     <div style={{
                         background: '#fff',
                         width: '100%',
                         maxWidth: '1200px',
-                        maxHeight: '90vh',
+                        height: 'min(720px, calc(100vh - 40px))',
+                        maxHeight: 'calc(100vh - 40px)',
                         borderRadius: '0',
                         position: 'relative',
                         display: 'flex',
                         flexDirection: 'column',
                         border: '5px solid #C8102E',
-                        boxShadow: 'none'
+                        boxShadow: 'none',
+                        boxSizing: 'border-box',
+                        overflow: 'hidden'
                     }}>
                         <div style={{
                             padding: '20px 30px',
@@ -692,7 +703,7 @@ export default function EgyptNTDatabase() {
                             </button>
                         </div>
 
-                        <div style={{ flex: 1, overflowY: 'auto' }}>
+                        <div style={{ flex: 1, overflowY: 'auto', minHeight: 0 }}>
                             <EgyptNTFilters
                                 dbFilters={dbFilters}
                                 updateFilter={updateFilter}

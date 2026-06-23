@@ -22,6 +22,14 @@ const MODULES = [
             { href: "/AIAssistant", label: "FOOTBALL AI ASSISTANT", icon: Sparkles },
         ],
     },
+    {
+        id: "check_data",
+        label: "CHECK DATA",
+        tag: "INTEGRITY",
+        links: [
+            { href: "/CheckData", label: "VALIDATE DATA RECORDS", icon: Shield },
+        ],
+    },
 
     {
         id: "alahly",

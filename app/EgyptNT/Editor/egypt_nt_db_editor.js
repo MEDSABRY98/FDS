@@ -413,6 +413,65 @@ export default function EgyptNTEditor() {
     }, []);
 
     useEffect(() => {
+        if (typeof window !== "undefined") {
+            const params = new URLSearchParams(window.location.search);
+            const querySearchId = params.get("searchId");
+            if (querySearchId) {
+                setSearchId(querySearchId);
+                triggerSearch(querySearchId);
+            }
+        }
+        
+        async function triggerSearch(id) {
+            setLoading(true);
+            try {
+                const [{ data: md }, { data: ld }, { data: pd }, { data: gd }, { data: pen }] = await Promise.all([
+                    supabase.from('egy_NT_MATCHDETAILS').select('*').eq('MATCH_ID', id).maybeSingle(),
+                    supabase.from('egy_NT_LINEUPDETAILS').select('*').eq('MATCH_ID', id),
+                    supabase.from('egy_NT_PLAYERDETAILS').select('*').eq('MATCH_ID', id),
+                    supabase.from('egy_NT_GKSDETAILS').select('*').eq('MATCH_ID', id),
+                    supabase.from('egy_NT_HOWPENMISSED').select('*').eq('MATCH_ID', id),
+                ]);
+                if (!md) { addToast(`Match ID "${id}" not found`, 'error'); setLoading(false); return; }
+                setMatchData({ ...md });
+                if (!ld || ld.length === 0) {
+                    const initialEgyLineup = Array.from({ length: 16 }, (_, i) => ({
+                        ...EMPTY_LINEUP,
+                        "MATCH MINUTE": "90",
+                        "TEAM": getDefaultEgyptTeamLabel(md),
+                        "STATU": i < 11 ? "اساسي" : "احتياطي",
+                        "TOTAL MINUTE": i < 11 ? "90" : "",
+                        MATCH_ID: id,
+                        _isNew: true,
+                        _key: Date.now() + i
+                    }));
+                    const initialOppLineup = Array.from({ length: 16 }, (_, i) => ({
+                        ...EMPTY_LINEUP,
+                        "MATCH MINUTE": "90",
+                        "TEAM": md?.["OPPONENT TEAM"] || "OPPONENT",
+                        "STATU": i < 11 ? "اساسي" : "احتياطي",
+                        "TOTAL MINUTE": i < 11 ? "90" : "",
+                        MATCH_ID: id,
+                        _isNew: true,
+                        _key: Date.now() + 100 + i
+                    }));
+                    setEgyLineupRows(applyLineupLogic(initialEgyLineup, initialEgyLineup));
+                    setOppLineupRows(applyLineupLogic(initialOppLineup, initialOppLineup));
+                } else {
+                    const { egy, opp } = splitLineupRowsByTeam(ld, md);
+                    setEgyLineupRows(sortRowsByRowId(egy.map((r, i) => attachEditorRowMeta(r, i))));
+                    setOppLineupRows(sortRowsByRowId(opp.map((r, i) => attachEditorRowMeta(r, 100 + i))));
+                }
+                setPlayerRows(sortRowsByEventId((pd || []).map((r, i) => attachEditorRowMeta(r, 1000 + i))));
+                setGkRows((gd || []).map((r, i) => attachEditorRowMeta(r, 2000 + i)));
+                setPenRows((pen || []).map((r, i) => attachEditorRowMeta(r, 3000 + i)));
+                setMode('edit');
+            } catch (e) { addToast('Error: ' + e.message, 'error'); }
+            setLoading(false);
+        }
+    }, []);
+
+    useEffect(() => {
         if (mode !== 'new') return;
         (async () => {
             let allMatchData = [];
