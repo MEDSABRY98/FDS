@@ -15,9 +15,10 @@ const FILTER_DEFS = [
     { key: "category", label: "CATEGORY", col: "CATEGORY", optionsKey: "categories" },
     { key: "round", label: "ROUND", col: "ROUND", optionsKey: "rounds" },
     { key: "team", label: "TEAM", optionsKey: "teams", type: "team" },
-    { key: "continent", label: "CONTINENT", optionsKey: "continents", type: "continent" },
     { key: "wdl", label: "W-D-L", col: "W-D-L", optionsKey: "wdl" },
     { key: "clean_sheet", label: "CLEAN SHEET", col: "CLEAN SHEET", optionsKey: "clean_sheets" },
+    { key: "country", label: "COUNTRY", optionsKey: "countries", type: "country" },
+    { key: "continent", label: "CONTINENT", optionsKey: "continents", type: "continent" },
 ];
 
 function SearchableDropdown({ label, options, value, onChange }) {
@@ -88,34 +89,119 @@ function SearchableDropdown({ label, options, value, onChange }) {
     );
 }
 
-function rowMatchesFilter(row, def, val) {
-    if (!val || val === "All") return true;
-    const selected = String(val);
-    if (def.type === "team") {
-        return String(row.TEAMA ?? "") === selected || String(row.TEAMB ?? "") === selected;
-    }
-    if (def.type === "continent") {
-        return String(row["TEAMA CONTINENT"] ?? "") === selected || String(row["TEAMB CONTINENT"] ?? "") === selected;
-    }
-    if (def.key === "wdl") {
-        const outcome = String(row.OUTCOME ?? "");
-        if (selected === "W") return outcome === "W";
-        if (selected === "L") return outcome === "L";
-        if (selected === "D") return outcome.startsWith("D");
-    }
-    return String(row[def.col] ?? "") === selected;
-}
-
-function applyFilters(data, filters) {
-    return (data || []).filter((row) => FILTER_DEFS.every((def) => rowMatchesFilter(row, def, filters[def.key])));
-}
-
-export default function IntNtFilters({ data, onFilter, isOpen, onClose }) {
+export default function IntNtFilters({ data, countries, onFilter, isOpen, onClose }) {
     const [filters, setFilters] = useState({});
 
+    const myRowMatchesFilter = (row, def, val, currentFilters) => {
+        if (!val || val === "All") return true;
+        const selected = String(val);
+        
+        if (def.type === "team") {
+            return String(row.TEAMA ?? "") === selected || String(row.TEAMB ?? "") === selected;
+        }
+        
+        if (def.key === "country") {
+            const tA = String(row.TEAMA ?? "").toLowerCase();
+            const tB = String(row.TEAMB ?? "").toLowerCase();
+            const targetRows = (countries || []).filter(c => c.COUNTRY_NAME === val);
+            return targetRows.some(c => 
+                (c.COUNTRY_NAME && (c.COUNTRY_NAME.toLowerCase() === tA || c.COUNTRY_NAME.toLowerCase() === tB)) ||
+                (c.COUNTRY_NAME_EN && (c.COUNTRY_NAME_EN.toLowerCase() === tA || c.COUNTRY_NAME_EN.toLowerCase() === tB))
+            );
+        }
+        
+        if (def.key === "continent") {
+            const tA = String(row.TEAMA ?? "").toLowerCase();
+            const tB = String(row.TEAMB ?? "").toLowerCase();
+            
+            const countryA = (countries || []).find(c => 
+                (c.COUNTRY_NAME && c.COUNTRY_NAME.toLowerCase() === tA) || 
+                (c.COUNTRY_NAME_EN && c.COUNTRY_NAME_EN.toLowerCase() === tA)
+            );
+            const countryB = (countries || []).find(c => 
+                (c.COUNTRY_NAME && c.COUNTRY_NAME.toLowerCase() === tB) || 
+                (c.COUNTRY_NAME_EN && c.COUNTRY_NAME_EN.toLowerCase() === tB)
+            );
+
+            if (val === "دول عربية") {
+                return (countryA && countryA.IS_ARAB === true) || (countryB && countryB.IS_ARAB === true);
+            } else {
+                return (countryA && countryA.CONTINENT === val) || (countryB && countryB.CONTINENT === val);
+            }
+        }
+        
+        if (def.key === "wdl") {
+            const teamFilter = currentFilters && currentFilters.team && currentFilters.team !== "All" ? currentFilters.team : null;
+            let outcome = String(row.OUTCOME ?? "");
+            
+            if (teamFilter) {
+                if (row.TEAMA === teamFilter) {
+                    // outcome is already relative to TEAMA
+                } else if (row.TEAMB === teamFilter) {
+                    if (outcome === "W") outcome = "L";
+                    else if (outcome === "L") outcome = "W";
+                }
+            }
+            
+            if (selected === "W") return outcome === "W";
+            if (selected === "L") return outcome === "L";
+            if (selected === "D") return outcome.startsWith("D");
+        }
+        
+        return String(row[def.col] ?? "") === selected;
+    };
+
+    const applyFilters = (data, filters) => {
+        return (data || []).filter((row) => FILTER_DEFS.every((def) => myRowMatchesFilter(row, def, filters[def.key], filters)));
+    };
+
+    const getExtendedUniqueFilters = (rows) => {
+        const base = IntNtService.getUniqueFilters(rows);
+        
+        const matchCountryNames = new Set();
+        rows.forEach(m => {
+            if (m.TEAMA) matchCountryNames.add(String(m.TEAMA).toLowerCase());
+            if (m.TEAMB) matchCountryNames.add(String(m.TEAMB).toLowerCase());
+        });
+        
+        const countryOpts = (countries || [])
+            .filter(c => c.COUNTRY_NAME && (
+                matchCountryNames.has(c.COUNTRY_NAME.toLowerCase()) ||
+                (c.COUNTRY_NAME_EN && matchCountryNames.has(c.COUNTRY_NAME_EN.toLowerCase()))
+            ))
+            .map(c => c.COUNTRY_NAME);
+            
+        base.countries = ["All", ...new Set(countryOpts)].sort((a, b) => a.localeCompare(b, 'ar'));
+        
+        const continentOpts = (countries || [])
+            .filter(c => c.CONTINENT && (
+                matchCountryNames.has(c.COUNTRY_NAME.toLowerCase()) ||
+                (c.COUNTRY_NAME_EN && matchCountryNames.has(c.COUNTRY_NAME_EN.toLowerCase()))
+            ))
+            .map(c => c.CONTINENT);
+            
+        const hasArab = (countries || []).some(c => c.IS_ARAB === true && (
+            matchCountryNames.has(c.COUNTRY_NAME.toLowerCase()) ||
+            (c.COUNTRY_NAME_EN && matchCountryNames.has(c.COUNTRY_NAME_EN.toLowerCase()))
+        ));
+        
+        const uniqueContinents = new Set(continentOpts);
+        if (hasArab) uniqueContinents.add("دول عربية");
+        
+        base.continents = ["All", ...uniqueContinents].sort((a, b) => a.localeCompare(b, 'ar'));
+        
+        return base;
+    };
+
     const filterOptions = useMemo(
-        () => buildCascadingFilterOptions(data, FILTER_DEFS, filters, (rows) => IntNtService.getUniqueFilters(rows), rowMatchesFilter),
-        [data, filters]
+        () => buildCascadingFilterOptions(
+            data, 
+            FILTER_DEFS, 
+            filters, 
+            getExtendedUniqueFilters, 
+            (row, def, val) => myRowMatchesFilter(row, def, val, filters)
+        ),
+        [data, filters, countries]
     );
 
     const handleFilterChange = (key, value) => {
@@ -123,7 +209,14 @@ export default function IntNtFilters({ data, onFilter, isOpen, onClose }) {
             const next = { ...prev };
             if (value === "All") delete next[key];
             else next[key] = value;
-            return pruneInvalidFilterSelections(data, FILTER_DEFS, next, (rows) => IntNtService.getUniqueFilters(rows), rowMatchesFilter, key);
+            return pruneInvalidFilterSelections(
+                data, 
+                FILTER_DEFS, 
+                next, 
+                getExtendedUniqueFilters, 
+                (row, def, val) => myRowMatchesFilter(row, def, val, next), 
+                key
+            );
         });
     };
 

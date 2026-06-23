@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { supabase } from "../Database";
 import {
     LayoutDashboard, Trophy, Users, Globe, GitCompare, Plus, Download, Filter, Award,
 } from "lucide-react";
@@ -25,6 +26,7 @@ export default function InternationalNTPage() {
     const [activeTab, setActiveTab] = useState("dashboard");
     const [matches, setMatches] = useState([]);
     const [filteredMatches, setFilteredMatches] = useState([]);
+    const [countries, setCountries] = useState([]);
     const [loading, setLoading] = useState(true);
     const [isFilterOpen, setIsFilterOpen] = useState(false);
 
@@ -33,9 +35,15 @@ export default function InternationalNTPage() {
     async function fetchData(silent = false) {
         if (!silent) setLoading(true);
         try {
-            const data = await IntNtService.getAllMatches();
+            const [data, countriesRes] = await Promise.all([
+                IntNtService.getAllMatches(),
+                supabase.from("db_COUNTRIES").select("*")
+            ]);
             setMatches(data);
             setFilteredMatches(data);
+            if (!countriesRes.error) {
+                setCountries(countriesRes.data || []);
+            }
         } catch (error) {
             console.error("Failed to load international NT data:", error);
         } finally {
@@ -117,7 +125,7 @@ export default function InternationalNTPage() {
                     renderContent()
                 )}
             </main>
-            <IntNtFilters data={matches} onFilter={setFilteredMatches} isOpen={isFilterOpen} onClose={() => setIsFilterOpen(false)} />
+            <IntNtFilters data={matches} countries={countries} onFilter={setFilteredMatches} isOpen={isFilterOpen} onClose={() => setIsFilterOpen(false)} />
         </SideBar_db>
     );
 }
