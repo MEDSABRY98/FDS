@@ -15,11 +15,27 @@ const FILTER_DEFS = [
     { key: "category", label: "CATEGORY", col: "CATEGORY", optionsKey: "categories" },
     { key: "round", label: "ROUND", col: "ROUND", optionsKey: "rounds" },
     { key: "team", label: "TEAM", optionsKey: "teams", type: "team" },
+    { key: "matchup", label: "MATCHUP", optionsKey: "matchups", type: "matchup" },
     { key: "wdl", label: "W-D-L", col: "W-D-L", optionsKey: "wdl" },
     { key: "clean_sheet", label: "CLEAN SHEET", col: "CLEAN SHEET", optionsKey: "clean_sheets" },
     { key: "country", label: "COUNTRY", optionsKey: "countries", type: "country" },
     { key: "continent", label: "CONTINENT", optionsKey: "continents", type: "continent" },
 ];
+
+function getRegionWeight(r) {
+    const lower = String(r).toLowerCase();
+    if (lower === "أفريقيا" || lower === "africa") return 1;
+    if (lower === "اسيا" || lower === "asia") return 2;
+    if (lower === "دول عربية") return 3;
+    return 10;
+}
+
+function sortMatchupRegions(a, b) {
+    const wa = getRegionWeight(a);
+    const wb = getRegionWeight(b);
+    if (wa !== wb) return wa - wb;
+    return a.localeCompare(b, 'ar');
+}
 
 function SearchableDropdown({ label, options, value, onChange }) {
     const [isOpen, setIsOpen] = useState(false);
@@ -92,6 +108,15 @@ function SearchableDropdown({ label, options, value, onChange }) {
 export default function IntNtFilters({ data, countries, onFilter, isOpen, onClose }) {
     const [filters, setFilters] = useState({});
 
+    const countryRowMap = useMemo(() => {
+        const map = new Map();
+        (countries || []).forEach(c => {
+            if (c.COUNTRY_NAME) map.set(c.COUNTRY_NAME.toLowerCase(), c);
+            if (c.COUNTRY_NAME_EN) map.set(c.COUNTRY_NAME_EN.toLowerCase(), c);
+        });
+        return map;
+    }, [countries]);
+
     const myRowMatchesFilter = (row, def, val, currentFilters) => {
         if (!val || val === "All") return true;
         const selected = String(val);
@@ -100,33 +125,49 @@ export default function IntNtFilters({ data, countries, onFilter, isOpen, onClos
             return String(row.TEAMA ?? "") === selected || String(row.TEAMB ?? "") === selected;
         }
         
+        if (def.key === "matchup") {
+            const tA = String(row.TEAMA ?? "").toLowerCase();
+            const tB = String(row.TEAMB ?? "").toLowerCase();
+
+            const cA = countryRowMap.get(tA);
+            const cB = countryRowMap.get(tB);
+
+            const rA = [];
+            if (cA?.CONTINENT) rA.push(cA.CONTINENT);
+            if (cA?.IS_ARAB) rA.push("دول عربية");
+
+            const rB = [];
+            if (cB?.CONTINENT) rB.push(cB.CONTINENT);
+            if (cB?.IS_ARAB) rB.push("دول عربية");
+
+            let matchesMatchup = false;
+            rA.forEach(a => {
+                rB.forEach(b => {
+                    const sorted = [a, b].sort(sortMatchupRegions);
+                    if (`${sorted[0]} VS ${sorted[1]}` === selected) matchesMatchup = true;
+                });
+            });
+            return matchesMatchup;
+        }
+        
         if (def.key === "country") {
             const tA = String(row.TEAMA ?? "").toLowerCase();
             const tB = String(row.TEAMB ?? "").toLowerCase();
-            const targetRows = (countries || []).filter(c => c.COUNTRY_NAME === val);
-            return targetRows.some(c => 
-                (c.COUNTRY_NAME && (c.COUNTRY_NAME.toLowerCase() === tA || c.COUNTRY_NAME.toLowerCase() === tB)) ||
-                (c.COUNTRY_NAME_EN && (c.COUNTRY_NAME_EN.toLowerCase() === tA || c.COUNTRY_NAME_EN.toLowerCase() === tB))
-            );
+            const cA = countryRowMap.get(tA);
+            const cB = countryRowMap.get(tB);
+            return (cA && cA.COUNTRY_NAME === val) || (cB && cB.COUNTRY_NAME === val);
         }
         
         if (def.key === "continent") {
             const tA = String(row.TEAMA ?? "").toLowerCase();
             const tB = String(row.TEAMB ?? "").toLowerCase();
-            
-            const countryA = (countries || []).find(c => 
-                (c.COUNTRY_NAME && c.COUNTRY_NAME.toLowerCase() === tA) || 
-                (c.COUNTRY_NAME_EN && c.COUNTRY_NAME_EN.toLowerCase() === tA)
-            );
-            const countryB = (countries || []).find(c => 
-                (c.COUNTRY_NAME && c.COUNTRY_NAME.toLowerCase() === tB) || 
-                (c.COUNTRY_NAME_EN && c.COUNTRY_NAME_EN.toLowerCase() === tB)
-            );
+            const cA = countryRowMap.get(tA);
+            const cB = countryRowMap.get(tB);
 
             if (val === "دول عربية") {
-                return (countryA && countryA.IS_ARAB === true) || (countryB && countryB.IS_ARAB === true);
+                return (cA?.IS_ARAB === true) || (cB?.IS_ARAB === true);
             } else {
-                return (countryA && countryA.CONTINENT === val) || (countryB && countryB.CONTINENT === val);
+                return (cA?.CONTINENT === val) || (cB?.CONTINENT === val);
             }
         }
         
@@ -159,10 +200,34 @@ export default function IntNtFilters({ data, countries, onFilter, isOpen, onClos
         const base = IntNtService.getUniqueFilters(rows);
         
         const matchCountryNames = new Set();
+        const matchupsSet = new Set();
+        
+        const getTeamRegions = (teamName) => {
+            if (!teamName) return [];
+            const c = countryRowMap.get(String(teamName).toLowerCase());
+            if (!c) return [];
+            const regions = [];
+            if (c.CONTINENT) regions.push(c.CONTINENT);
+            if (c.IS_ARAB) regions.push("دول عربية");
+            return regions;
+        };
+
         rows.forEach(m => {
             if (m.TEAMA) matchCountryNames.add(String(m.TEAMA).toLowerCase());
             if (m.TEAMB) matchCountryNames.add(String(m.TEAMB).toLowerCase());
+
+            const rA = getTeamRegions(m.TEAMA);
+            const rB = getTeamRegions(m.TEAMB);
+            
+            rA.forEach(a => {
+                rB.forEach(b => {
+                    const sorted = [a, b].sort(sortMatchupRegions);
+                    matchupsSet.add(`${sorted[0]} VS ${sorted[1]}`);
+                });
+            });
         });
+        
+        base.matchups = ["All", ...matchupsSet].sort((a, b) => a.localeCompare(b, 'ar'));
         
         const countryOpts = (countries || [])
             .filter(c => c.COUNTRY_NAME && (
@@ -220,8 +285,8 @@ export default function IntNtFilters({ data, countries, onFilter, isOpen, onClos
         });
     };
 
-    const handleApply = () => { onFilter(applyFilters(data, filters)); onClose(); };
-    const handleReset = () => { setFilters({}); onFilter(data || []); };
+    const handleApply = () => { onFilter(applyFilters(data, filters), filters); onClose(); };
+    const handleReset = () => { setFilters({}); onFilter(data || [], {}); };
 
     if (!isOpen) return null;
 

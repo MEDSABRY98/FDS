@@ -6,59 +6,67 @@
     margin: 0 0 8px;
 }
 .int-nt-page-header .gold { color: var(--gold, #c9a84c); }
-.int-nt-page-header { margin-bottom: 24px; }
-.int-nt-kpi-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
-    gap: 16px;
-    margin-bottom: 28px;
-}
-.int-nt-kpi-card {
-    background: #fff;
-    border: 1px solid #eee;
-    border-radius: 12px;
-    padding: 16px;
+.int-nt-page-header { 
     display: flex;
-    flex-direction: column;
-    gap: 8px;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 24px; 
+    flex-wrap: wrap;
+    gap: 16px;
 }
-.int-nt-kpi-card .label {
-    font-family: 'Space Mono', monospace;
-    font-size: 10px;
-    color: #888;
-    letter-spacing: 1px;
-}
-.int-nt-kpi-card .value {
-    font-family: 'Bebas Neue', sans-serif;
-    font-size: 32px;
-    color: #0a0a0a;
-}
-.int-nt-dashboard-panels {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-    gap: 20px;
-}
-.int-nt-panel {
+.int-nt-dashboard-table-wrap {
     background: #fff;
     border: 1px solid #eee;
     border-radius: 14px;
-    padding: 20px;
+    overflow-x: auto;
+    padding: 10px;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.02);
 }
-.int-nt-panel h3 {
+
+.int-nt-dashboard-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 13px;
+    text-align: center;
+}
+
+.int-nt-dashboard-table th {
+    background: #fafafa;
+    padding: 12px 10px;
     font-family: 'Space Mono', monospace;
     font-size: 11px;
-    letter-spacing: 1px;
-    color: var(--gold, #c9a84c);
-    margin: 0 0 16px;
+    color: #666;
+    font-weight: 600;
+    border-bottom: 2px solid #eee;
+    white-space: nowrap;
 }
-.int-nt-rank-list { list-style: none; margin: 0; padding: 0; }
-.int-nt-rank-list li {
-    display: flex;
-    justify-content: space-between;
-    gap: 12px;
-    padding: 10px 0;
+
+.int-nt-dashboard-table th.team-col {
+    text-align: center;
+}
+
+.int-nt-dashboard-table td {
+    padding: 12px 10px;
     border-bottom: 1px solid #f0f0f0;
+    color: #333;
+}
+
+.int-nt-dashboard-table td.team-col {
+    text-align: center;
+    font-weight: 600;
     font-size: 14px;
+}
+
+.int-nt-dashboard-table tr.total-row td {
+    background: #f8f8f8;
+    font-weight: 700;
+    color: #111;
+    border-top: 2px solid #ddd;
+    border-bottom: none;
+}
+
+.int-nt-dashboard-table tr:hover td {
+    background: #fafafa;
 }
 .fade-in { animation: fadeIn 0.3s ease; }
 @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }

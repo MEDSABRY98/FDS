@@ -26,6 +26,7 @@ export default function InternationalNTPage() {
     const [activeTab, setActiveTab] = useState("dashboard");
     const [matches, setMatches] = useState([]);
     const [filteredMatches, setFilteredMatches] = useState([]);
+    const [activeFilters, setActiveFilters] = useState({});
     const [countries, setCountries] = useState([]);
     const [loading, setLoading] = useState(true);
     const [isFilterOpen, setIsFilterOpen] = useState(false);
@@ -89,12 +90,12 @@ export default function InternationalNTPage() {
 
     const renderContent = () => {
         switch (activeTab) {
-            case "dashboard": return <IntNtDashboard matches={filteredMatches} />;
+            case "dashboard": return <IntNtDashboard matches={filteredMatches} activeFilters={activeFilters} countries={countries} />;
             case "matches": return <IntNtMatches matches={filteredMatches} />;
             case "add_matches": return <IntNtAddMatches matches={matches} onRefresh={() => fetchData(true)} />;
             case "teams": return <IntNtTeams matches={filteredMatches} />;
             case "competitions": return <IntNtCompetitions matches={filteredMatches} />;
-            case "continents": return <IntNtContinents matches={filteredMatches} />;
+            case "continents": return <IntNtContinents matches={filteredMatches} countries={countries} />;
             case "h2h": return <IntNtH2H matches={filteredMatches} />;
             default: return null;
         }
@@ -125,7 +126,16 @@ export default function InternationalNTPage() {
                     renderContent()
                 )}
             </main>
-            <IntNtFilters data={matches} countries={countries} onFilter={setFilteredMatches} isOpen={isFilterOpen} onClose={() => setIsFilterOpen(false)} />
+            <IntNtFilters 
+                data={matches} 
+                countries={countries} 
+                onFilter={(filtered, appliedFilters) => {
+                    setFilteredMatches(filtered);
+                    if (appliedFilters) setActiveFilters(appliedFilters);
+                }} 
+                isOpen={isFilterOpen} 
+                onClose={() => setIsFilterOpen(false)} 
+            />
         </SideBar_db>
     );
 }
