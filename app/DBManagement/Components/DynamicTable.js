@@ -1,4 +1,4 @@
-﻿import React from 'react';
+import React from 'react';
 import { Edit3, Trash2 } from 'lucide-react';
 import NoData_db from '../../lib/NoData_db';
 import { formatCatalogColumnLabel } from "../../Database";
@@ -59,16 +59,18 @@ export default function DynamicTable({
         return <NoData_db message="NO DATA RECORDS FOUND" height="280px" />;
     }
 
+    const displayColumns = columns.filter(col => col !== 'IS_ARAB');
+
     return (
         <div className="table-overflow">
             <table className="db-table" style={{
-                width: columns.length > 7 ? 'max-content' : '100%',
-                tableLayout: columns.length > 7 ? 'auto' : 'fixed'
+                width: displayColumns.length > 7 ? 'max-content' : '100%',
+                tableLayout: displayColumns.length > 7 ? 'auto' : 'fixed'
             }}>
                 <colgroup>
                     <col className="col-select" />
                     <col className="col-actions" />
-                    {columns.map(col => (
+                    {displayColumns.map(col => (
                         <col key={col} className={getColumnClass(col) || 'col-default'} />
                     ))}
                 </colgroup>
@@ -86,7 +88,7 @@ export default function DynamicTable({
                         >
                             ACTIONS
                         </th>
-                        {columns.map(col => (
+                        {displayColumns.map(col => (
                             <th
                                 key={col}
                                 className={getColumnClass(col)}
@@ -129,7 +131,7 @@ export default function DynamicTable({
                                         </button>
                                     </div>
                                 </td>
-                                {columns.map(col => {
+                                {displayColumns.map(col => {
                                     const val = row[col];
                                     const colClass = getColumnClass(col);
                                     const isEnglishNameCol = NAME_EN_COLUMNS.has(col);

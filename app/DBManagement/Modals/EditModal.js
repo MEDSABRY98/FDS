@@ -1,4 +1,4 @@
-﻿import React from 'react';
+import React from 'react';
 import { formatCatalogColumnLabel } from "../../Database";
 
 const NAME_EN_COLUMNS = new Set([
@@ -84,14 +84,27 @@ export default function EditModal({
                                 <label>
                                     {formatCatalogColumnLabel(col)} {disabled && '(READ ONLY)'}
                                 </label>
-                                <input
-                                    type="text"
-                                    value={editForm[col] || ''}
-                                    disabled={disabled}
-                                    dir={isEnglishName ? 'ltr' : 'auto'}
-                                    onChange={e => handleInputChange(col, e.target.value)}
-                                    placeholder={disabled ? '(Auto-generated)' : `Enter ${formatCatalogColumnLabel(col)}`}
-                                />
+                                {col === 'IS_ARAB' ? (
+                                    <div style={{ display: 'flex', alignItems: 'center', height: '40px', paddingLeft: '10px' }}>
+                                        <input
+                                            type="checkbox"
+                                            checked={editForm[col] === true || String(editForm[col]).toLowerCase() === 'true'}
+                                            disabled={disabled}
+                                            onChange={e => handleInputChange(col, e.target.checked)}
+                                            style={{ width: '20px', height: '20px', accentColor: '#c9a84c', cursor: 'pointer', margin: 0 }}
+                                        />
+                                        <span style={{ marginLeft: '10px', color: '#c9a84c', fontWeight: 'bold' }}>Yes / نعم</span>
+                                    </div>
+                                ) : (
+                                    <input
+                                        type="text"
+                                        value={editForm[col] || ''}
+                                        disabled={disabled}
+                                        dir={isEnglishName ? 'ltr' : 'auto'}
+                                        onChange={e => handleInputChange(col, e.target.value)}
+                                        placeholder={disabled ? '(Auto-generated)' : `Enter ${formatCatalogColumnLabel(col)}`}
+                                    />
+                                )}
                             </div>
                         );
                     })}
