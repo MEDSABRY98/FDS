@@ -183,7 +183,6 @@ export default function EgyptNTDatabase() {
             match_id: 'MATCH_ID',
             age: 'AGE',
             champion_system: 'CHAMPION_SYSTEM',
-            system_kind: 'SYSTEM_KIND',
             champion: 'CHAMPION',
             season: 'SEASON',
             egypt_manager: 'EGYPT MANAGER',
@@ -298,7 +297,6 @@ export default function EgyptNTDatabase() {
             match_ids: getOptionsForField('match_id', 'MATCH_ID'),
             ages: getOptionsForField('age', 'AGE'),
             champion_systems: getOptionsForField('champion_system', 'CHAMPION_SYSTEM'),
-            system_kinds: getOptionsForField('system_kind', 'SYSTEM_KIND'),
             years: getOptionsForField('year', null),
             champions: getOptionsForField('champion', 'CHAMPION'),
             seasons: getOptionsForField('season', 'SEASON'),
@@ -334,7 +332,6 @@ export default function EgyptNTDatabase() {
             match_id: 'All',
             age: 'All',
             champion_system: 'All',
-            system_kind: 'All',
             year: 'All',
             champion: 'All',
             season: 'All',
@@ -412,7 +409,6 @@ export default function EgyptNTDatabase() {
                 check('match_id', 'MATCH_ID') &&
                 check('age', 'AGE') &&
                 check('champion_system', 'CHAMPION_SYSTEM') &&
-                check('system_kind', 'SYSTEM_KIND') &&
                 check('champion', 'CHAMPION') &&
                 check('season', 'SEASON') &&
                 check('egypt_manager', 'EGYPT MANAGER') &&

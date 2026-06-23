@@ -528,10 +528,6 @@ export default function EgyptNTMatchDetails({
                                         <span className="info-value">{matchInfo.CHAMPION_SYSTEM || "—"}</span>
                                     </div>
                                     <div className="info-row">
-                                        <span className="info-label">SYSTEM KIND</span>
-                                        <span className="info-value">{matchInfo.SYSTEM_KIND || "—"}</span>
-                                    </div>
-                                    <div className="info-row">
                                         <span className="info-label">EXTRA TIME (ET)</span>
                                         <span className="info-value">{matchInfo.ET ? "Yes" : "No"}</span>
                                     </div>

@@ -292,7 +292,6 @@ export const EgyptNTService = {
             match_ids: getUnique('MATCH_ID'),
             ages: getUnique('AGE'),
             champion_systems: getUnique('CHAMPION_SYSTEM'),
-            system_kinds: getUnique('SYSTEM_KIND'),
             dates: getUnique('DATE', true),
             years: ["All", ...years],
             champions: getUnique('CHAMPION'),

@@ -33,7 +33,7 @@ const FILTER_FIELD_DEFS = [
     { key: "wdl", label: "W-D-L", type: "select", optionsKey: "wdl", dbColumn: "W-D-L" },
     { key: "clean_sheet", label: "CLEAN SHEET", type: "select", optionsKey: "clean_sheets", dbColumn: "CLEAN SHEET" },
     { key: "champion_system", label: "CHAMPION SYSTEM", type: "select", optionsKey: "champion_systems", dbColumn: "CHAMPION_SYSTEM" },
-    { key: "system_kind", label: "SYSTEM KIND", type: "select", optionsKey: "system_kinds", dbColumn: "SYSTEM_KIND" },
+
     { key: "note", label: "NOTE", type: "select", optionsKey: "notes", dbColumn: "NOTE" },
 ];
 

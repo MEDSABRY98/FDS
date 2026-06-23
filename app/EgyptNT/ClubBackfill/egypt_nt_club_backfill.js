@@ -12,16 +12,6 @@ const PAGE_SIZE = 50;
 
 const EGY_NT_BACKFILL_AGE = "الأول";
 
-const EGY_NT_OFFICIAL_KINDS = new Set([
-    "أسيوي",
-    "أفريقي",
-    "ت-عالمي",
-    "شمال أفريقيا",
-    "عالمي",
-    "عربي",
-]);
-
-const EGY_NT_FRIENDLY_KIND = "ودي";
 
 function parseNtMatchDate(dateInput) {
     const raw = String(dateInput ?? "").trim();
@@ -314,13 +304,13 @@ function buildClubBackfillRows({
 
     const officialMatchIds = new Set(
         ageMatches
-            .filter((m) => EGY_NT_OFFICIAL_KINDS.has(String(m.SYSTEM_KIND || "").trim()))
+            .filter((m) => String(m.CHAMPION_SYSTEM || "").trim() === "OFI")
             .map((m) => String(m.MATCH_ID))
     );
 
     const friendlyMatchIds = new Set(
         ageMatches
-            .filter((m) => String(m.SYSTEM_KIND || "").trim() === EGY_NT_FRIENDLY_KIND)
+            .filter((m) => String(m.CHAMPION_SYSTEM || "").trim() === "FRI")
             .map((m) => String(m.MATCH_ID))
     );
 
@@ -389,7 +379,6 @@ function buildClubBackfillRows({
             date,
             dateStr: match?.DATE || formatNtDate(date),
             champion: String(match?.CHAMPION || "").trim(),
-            systemKind: String(match?.SYSTEM_KIND || "").trim(),
             currentClub,
             suggestedClub,
             nearestHintClub,

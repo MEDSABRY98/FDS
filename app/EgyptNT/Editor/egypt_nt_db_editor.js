@@ -10,7 +10,7 @@ import { useNotification } from "../../lib/Notification_db";
 
 // â”€â”€ Helper â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 const EMPTY_MATCH = {
-    "MATCH_ID": "", "AGE": "", "CHAMPION_SYSTEM": "", "SYSTEM_KIND": "", "DATE": "", "CHAMPION": "", "SEASON": "",
+    "MATCH_ID": "", "AGE": "", "CHAMPION_SYSTEM": "", "DATE": "", "CHAMPION": "", "SEASON": "",
     "EGYPT MANAGER": "", "OPPONENT MANAGER": "", "REFREE": "", "ROUND": "", "PLACE": "",
     "H-A-N": "", "Egypt TEAM": "", "GF": "", "GA": "", "ET": "",
     "PEN": "", "OPPONENT TEAM": "", "NOTE": "", "MOTM": ""
@@ -356,7 +356,7 @@ export default function EgyptNTEditor() {
     const [allTeamsList, setAllTeamsList] = useState([]);
 
     const AUTOCOMPLETE_FIELDS = [
-        'AGE', 'CHAMPION_SYSTEM', 'SYSTEM_KIND', 'CHAMPION', 'SEASON', 'EGYPT MANAGER', 'OPPONENT MANAGER',
+        'AGE', 'CHAMPION_SYSTEM', 'CHAMPION', 'SEASON', 'EGYPT MANAGER', 'OPPONENT MANAGER',
         'REFREE', 'ROUND', 'PLACE', 'H-A-N', 'Egypt TEAM', 'ET', 'PEN', 'OPPONENT TEAM', 'NOTE'
     ];
 
