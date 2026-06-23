@@ -352,8 +352,9 @@ export default function EgyptScoreCheck({ onBack }) {
             // Count rows where TYPE = "GOAL" only
             const calcTotal = matchEvents.filter(isGoalEvent).length;
 
-            // Show mismatch card only when goal row count ≠ scoreline total AND calcTotal > 0 (data is present)
-            if (calcTotal > 0 && calcTotal !== dbTotal) {
+            // Flag any mismatch between calculated goals and scoreline total, 
+            // including cases where data hasn't been entered yet (calcTotal = 0 but dbTotal > 0)
+            if (calcTotal !== dbTotal) {
                 foundMismatches.push({
                     matchId,
                     date: match.DATE,
