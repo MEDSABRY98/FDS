@@ -23,6 +23,7 @@ function getColumnClass(col) {
     if (isCatalogEntityIdColumn(col)) return 'catalog-id-col';
     if (NAME_EN_COLUMNS.has(col)) return 'catalog-name-en-col';
     if (col.endsWith('_NAME')) return 'catalog-name-col';
+    if (upper.endsWith('_TYPE')) return 'catalog-name-col';
     return '';
 }
 

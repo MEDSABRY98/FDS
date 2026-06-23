@@ -73,6 +73,7 @@ export default function EgyptNTDatabase() {
         system_kind: 'All',
         year: 'All',
         champion: 'All',
+        champion_type: 'All',
         season: 'All',
         egypt_manager: 'All',
         opponent_manager: 'All',
@@ -110,13 +111,23 @@ export default function EgyptNTDatabase() {
         if (countriesData) setCountries(countriesData);
         
         const data = await EgyptNTService.getAllMatches();
+        
+        const { data: champTypes } = await supabase.from('db_CHAMPION_TYPE').select('*');
+        const mappedMatches = data.map(m => {
+            const champRow = champTypes?.find(c => c.CHAMPION_NAME === m.CHAMPION);
+            return {
+                ...m,
+                CHAMPION_TYPE: champRow ? champRow.CHAMPION_TYPE : 'غير محدد'
+            };
+        });
+
         const pData = await EgyptNTService.getAllPlayerDetails();
         const lData = await EgyptNTService.getAllLineupDetails();
         const gData = await EgyptNTService.getAllGKDetails();
         const hData = await EgyptNTService.getAllHowPenMissed();
         const sqData = await EgyptNTService.getAllSquad();
 
-        setMatches(data);
+        setMatches(mappedMatches);
         setPlayerDetails(pData);
         setLineupDetails(lData);
         setGkDetails(gData);
@@ -187,6 +198,7 @@ export default function EgyptNTDatabase() {
             age: 'AGE',
             champion_system: 'CHAMPION_SYSTEM',
             champion: 'CHAMPION',
+            champion_type: 'CHAMPION_TYPE',
             season: 'SEASON',
             egypt_manager: 'EGYPT MANAGER',
             opponent_manager: 'OPPONENT MANAGER',
@@ -310,6 +322,7 @@ export default function EgyptNTDatabase() {
             champion_systems: getOptionsForField('champion_system', 'CHAMPION_SYSTEM'),
             years: getOptionsForField('year', null),
             champions: getOptionsForField('champion', 'CHAMPION'),
+            champion_types: getOptionsForField('champion_type', 'CHAMPION_TYPE'),
             seasons: getOptionsForField('season', 'SEASON'),
             egy_managers: getOptionsForField('egypt_manager', 'EGYPT MANAGER'),
             opponent_managers: getOptionsForField('opponent_manager', 'OPPONENT MANAGER'),
@@ -345,6 +358,7 @@ export default function EgyptNTDatabase() {
             champion_system: 'All',
             year: 'All',
             champion: 'All',
+            champion_type: 'All',
             season: 'All',
             egypt_manager: 'All',
             opponent_manager: 'All',
@@ -425,6 +439,7 @@ export default function EgyptNTDatabase() {
                 check('age', 'AGE') &&
                 check('champion_system', 'CHAMPION_SYSTEM') &&
                 check('champion', 'CHAMPION') &&
+                check('champion_type', 'CHAMPION_TYPE') &&
                 check('season', 'SEASON') &&
                 check('egypt_manager', 'EGYPT MANAGER') &&
                 check('opponent_manager', 'OPPONENT MANAGER') &&
@@ -663,7 +678,9 @@ export default function EgyptNTDatabase() {
                     position: 'fixed',
                     top: 0, left: 0, right: 0, bottom: 0,
                     zIndex: 100000,
-                    background: 'transparent',
+                    background: 'rgba(0, 0, 0, 0.4)',
+                    backdropFilter: 'blur(4px)',
+                    WebkitBackdropFilter: 'blur(4px)',
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',

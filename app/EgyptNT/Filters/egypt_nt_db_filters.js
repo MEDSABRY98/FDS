@@ -17,6 +17,7 @@ const FILTER_FIELD_DEFS = [
     { key: "date_to", label: "DATE TO", type: "date", dbColumn: "DATE" },
     { key: "year", label: "YEAR", type: "select", optionsKey: "years", dbColumn: "DATE" },
     { key: "champion", label: "CHAMPION", type: "select", optionsKey: "champions", dbColumn: "CHAMPION" },
+    { key: "champion_type", label: "CHAMPION TYPE", type: "select", optionsKey: "champion_types", dbColumn: "CHAMPION" },
     { key: "season", label: "SEASON", type: "select", optionsKey: "seasons", dbColumn: "SEASON" },
     { key: "egypt_manager", label: "EGYPT MANAGER", type: "select", optionsKey: "egy_managers", dbColumn: "EGYPT MANAGER" },
     { key: "opponent_manager", label: "OPPONENT MANAGER", type: "select", optionsKey: "opponent_managers", dbColumn: "OPPONENT MANAGER" },
@@ -34,7 +35,7 @@ const FILTER_FIELD_DEFS = [
     { key: "clean_sheet", label: "CLEAN SHEET", type: "select", optionsKey: "clean_sheets", dbColumn: "CLEAN SHEET" },
     { key: "champion_system", label: "CHAMPION SYSTEM", type: "select", optionsKey: "champion_systems", dbColumn: "CHAMPION_SYSTEM" },
 
-    { key: "note", label: "NOTE", type: "select", optionsKey: "notes", dbColumn: "NOTE" },
+    { key: "note", label: "NOTE", type: "select", optionsKey: "notes", dbColumn: "CLEAN SHEET" },
 ];
 
 // --- SEARCHABLE SELECT COMPONENT ---

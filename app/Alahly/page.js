@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import { useState, useEffect, useMemo, useRef } from "react";
 import {
@@ -501,7 +501,9 @@ export default function AlAhlyDatabase() {
                     position: 'fixed',
                     top: 0, left: 0, right: 0, bottom: 0,
                     zIndex: 100000,
-                    background: 'transparent',
+                    background: 'rgba(0, 0, 0, 0.4)',
+                    backdropFilter: 'blur(4px)',
+                    WebkitBackdropFilter: 'blur(4px)',
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',
