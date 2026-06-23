@@ -27,7 +27,7 @@ const MODULES = [
         label: "CHECK DATA",
         tag: "INTEGRITY",
         links: [
-            { href: "/CheckData", label: "VALIDATE DATA RECORDS", icon: Shield },
+            { href: "/CheckData?module=egy_nt", label: "EGYPT NT VALIDATE", icon: Shield },
         ],
     },
 

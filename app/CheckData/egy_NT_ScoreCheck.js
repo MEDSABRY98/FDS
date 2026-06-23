@@ -89,7 +89,7 @@ export default function EgyptScoreCheck({ onBack }) {
     const [endDate, setEndDate] = useState("");
 
     // Pagination
-    const PAGE_SIZE = 50;
+    const PAGE_SIZE = 100;
     const [currentPage, setCurrentPage] = useState(1);
 
     // Helper functions for match filtering
@@ -431,9 +431,8 @@ export default function EgyptScoreCheck({ onBack }) {
             <div className="report-view-container">
                 <div className="report-view-header">
                     <div className="report-back-nav">
-                        <button className="report-btn-back" onClick={onBack}>
-                            <ArrowLeft size={16} />
-                            <span>Back to Reports</span>
+                        <button className="report-btn-back" onClick={onBack} style={{ padding: '10px', borderRadius: '50%' }} title="Back to Reports">
+                            <ArrowLeft size={20} />
                         </button>
                         <div className="report-title-wrap">
                             <h3>SCORE VS SCORERS MATCH CHECK</h3>
@@ -560,7 +559,7 @@ export default function EgyptScoreCheck({ onBack }) {
                                                 <>
                                                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
                                                         <p style={{ margin: 0, fontSize: "13px", color: "#64748b", fontWeight: 700 }}>
-                                                            CLICK ON A MATCH ID TO LOAD IT IN THE MATCH EDITOR — Showing {pageStart + 1}–{pageEnd} of {mismatches.length}
+                                                            CLICK ON A MATCH ID TO COPY IT — Showing {pageStart + 1}–{pageEnd} of {mismatches.length}
                                                         </p>
                                                         {totalPages > 1 && (
                                                             <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
@@ -581,10 +580,11 @@ export default function EgyptScoreCheck({ onBack }) {
 
                                                     <div className="mismatches-grid">
                                                         {pageMismatches.map((m) => (
-                                                            <Link
+                                                            <div
                                                                 key={m.matchId}
-                                                                href={`/EgyptNT?tab=editor&searchId=${m.matchId}`}
+                                                                onClick={() => navigator.clipboard.writeText(m.matchId)}
                                                                 className="mismatch-card"
+                                                                style={{ cursor: 'copy' }}
                                                             >
                                                                 <div className="mismatch-id">{m.matchId}</div>
                                                                 <div className="mismatch-details">
@@ -593,7 +593,7 @@ export default function EgyptScoreCheck({ onBack }) {
                                                                 <div className="mismatch-teams">
                                                                     {m.opponentTeam} ({new Date(m.date).getFullYear()})
                                                                 </div>
-                                                            </Link>
+                                                            </div>
                                                         ))}
                                                     </div>
 
