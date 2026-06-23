@@ -172,6 +172,9 @@ export default function EgyptNTDatabase() {
                 (c.COUNTRY_NAME && c.COUNTRY_NAME.toLowerCase() === mCountry) ||
                 (c.COUNTRY_NAME_EN && c.COUNTRY_NAME_EN.toLowerCase() === mCountry)
             );
+            if (val === 'دول عربية') {
+                return countryRow && countryRow.IS_ARAB === true;
+            }
             return countryRow && countryRow.CONTINENT === val;
         }
 
@@ -264,7 +267,15 @@ export default function EgyptNTDatabase() {
                 ))
                 .map(c => c.CONTINENT);
                 
-            return ["All", ...new Set(continentOpts)].sort((a, b) => a.localeCompare(b, 'ar'));
+            const hasArab = countries.some(c => c.IS_ARAB === true && (
+                matchCountryNames.includes(c.COUNTRY_NAME.toLowerCase()) || 
+                (c.COUNTRY_NAME_EN && matchCountryNames.includes(c.COUNTRY_NAME_EN.toLowerCase()))
+            ));
+            
+            const uniqueContinents = new Set(continentOpts);
+            if (hasArab) uniqueContinents.add("دول عربية");
+                
+            return ["All", ...uniqueContinents].sort((a, b) => a.localeCompare(b, 'ar'));
         }
 
         if (key === 'player_club') {
@@ -397,7 +408,11 @@ export default function EgyptNTDatabase() {
                         (c.COUNTRY_NAME && c.COUNTRY_NAME.toLowerCase() === mCountry) ||
                         (c.COUNTRY_NAME_EN && c.COUNTRY_NAME_EN.toLowerCase() === mCountry)
                     );
-                    passContinent = countryRow && countryRow.CONTINENT === dbFilters.continent;
+                    if (dbFilters.continent === "دول عربية") {
+                        passContinent = countryRow && countryRow.IS_ARAB === true;
+                    } else {
+                        passContinent = countryRow && countryRow.CONTINENT === dbFilters.continent;
+                    }
                 }
             }
 

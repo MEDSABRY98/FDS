@@ -19,9 +19,8 @@ envFile.split('\n').forEach(line => {
 
 const supabase = createClient(supabaseUrl, supabaseKey);
 
-async function checkSystems() {
-    const { data } = await supabase.from('egy_NT_MATCHDETAILS').select('CHAMPION_SYSTEM, SYSTEM_KIND').limit(50);
-    const unique = new Set(data.map(d => `${d.CHAMPION_SYSTEM} | ${d.SYSTEM_KIND}`));
-    console.log(Array.from(unique));
+async function checkCountries() {
+    const { data } = await supabase.from('db_COUNTRIES').select('*').limit(5);
+    console.log(JSON.stringify(data, null, 2));
 }
-checkSystems();
+checkCountries();
