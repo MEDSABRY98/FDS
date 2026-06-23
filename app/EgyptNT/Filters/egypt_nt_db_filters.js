@@ -150,7 +150,7 @@ function SearchableSelect({ label, value, options, onChange }) {
                 .custom-dropdown.down { top: calc(100% + 4px); border-top: none; }
                 .custom-dropdown.up { bottom: calc(100% + 4px); border-bottom: none; }
                 .dropdown-search-input { width: 100%; padding: 10px; border: none; border-bottom: 1px solid var(--border); outline: none; font-size: 13px; }
-                .options-list { max-height: 360px; overflow-y: auto; }
+                .options-list { max-height: 250px; overflow-y: auto; }
                 .option-item { padding: 10px 12px; font-size: 13px; cursor: pointer; }
                 .option-item:hover { background: var(--surface); color: var(--gold); }
                 .option-item.active { background: var(--gold-dim); color: var(--gold); font-weight: bold; }
@@ -198,7 +198,7 @@ export default function EgyptNTFilters({
 
     return (
         <div style={{ padding: '30px' }}>
-            <div className="filters-wrap" style={{ maxWidth: '1400px', width: '100%', margin: '0 auto' }}>
+            <div className="filters-wrap" style={{ maxWidth: '1400px', width: '100%', margin: '0 auto', paddingBottom: '250px' }}>
                 <div className="filter-grid-layout">
                     {SortedFields.map(renderField)}
                 </div>

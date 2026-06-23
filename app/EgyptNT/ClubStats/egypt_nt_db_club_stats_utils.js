@@ -35,7 +35,7 @@ export function buildMatchContextMap(matches) {
             egyptTeam: String(match["Egypt TEAM"] || match["EGYPT TEAM"] || "منتخب مصر").trim(),
             champion: String(match.CHAMPION || "Unknown").trim(),
             season: String(match.SEASON || "").trim(),
-
+            age: String(match.AGE || "Unknown").trim(),
         };
     });
     return map;

@@ -42,6 +42,7 @@ import EgyptNTMatchDetails from "./MatchDetails/egypt_nt_db_match_details";
 import EgyptNTChampions from "./Champions/egypt_nt_db_champions";
 import EgyptNTReferees from "./Referees/egypt_nt_db_referees";
 import EgyptNTH2H from "./HeadToHead/egypt_nt_db_h2h";
+import EgyptNTH2HDetails from "./HeadToHeadDetails/egypt_nt_db_h2h_details";
 import Loading_db from "../lib/Loading_db";
 import "./Sidebar/egypt_nt_sidebar.css";
 
@@ -58,6 +59,7 @@ export default function EgyptNTDatabase() {
     const [countries, setCountries] = useState([]);
     const [loading, setLoading] = useState(true);
     const [selectedMatchId, setSelectedMatchId] = useState(null);
+    const [selectedOpponent, setSelectedOpponent] = useState(null);
     const [isFilterOpen, setIsFilterOpen] = useState(false);
     const matchesListScrollY = useRef(0);
 
@@ -656,7 +658,30 @@ export default function EgyptNTDatabase() {
                             )}
                             {activeTab === 'gks' && <EgyptNTGKs gkDetails={gkDetails} howPenMissed={howPenMissed} filteredMatches={filteredMatches} playerDetails={playerDetails} />}
                             {activeTab === 'managers' && <EgyptNTManagers matches={filteredMatches} playerDetails={playerDetails} lineupDetails={lineupDetails} />}
-                            {activeTab === 'h2h' && <EgyptNTH2H matches={filteredMatches} />}
+                            {activeTab === 'h2h' && (
+                                <>
+                                    <div hidden={!!selectedOpponent}>
+                                        <EgyptNTH2H 
+                                            matches={filteredMatches} 
+                                            onOpponentClick={(opp) => {
+                                                window.scrollTo({ top: 0, behavior: 'smooth' });
+                                                setSelectedOpponent(opp);
+                                            }}
+                                        />
+                                    </div>
+                                    {selectedOpponent && (
+                                        <EgyptNTH2HDetails
+                                            opponent={selectedOpponent}
+                                            matches={filteredMatches}
+                                            playerDetails={playerDetails}
+                                            onBack={() => {
+                                                setSelectedOpponent(null);
+                                                window.scrollTo({ top: 0, behavior: 'smooth' });
+                                            }}
+                                        />
+                                    )}
+                                </>
+                            )}
                             {activeTab === 'referees' && <EgyptNTReferees matches={filteredMatches} playerDetails={playerDetails} howPenMissed={howPenMissed} />}
                             {activeTab === 'champions' && <EgyptNTChampions matchesData={filteredMatches} />}
                             {activeTab === 'editor' && <EgyptNTEditor />}
@@ -691,8 +716,8 @@ export default function EgyptNTDatabase() {
                         background: '#fff',
                         width: '100%',
                         maxWidth: '1200px',
-                        height: 'min(720px, calc(100vh - 40px))',
-                        maxHeight: 'calc(100vh - 40px)',
+                        height: 'min(900px, 95vh)',
+                        maxHeight: '95vh',
                         borderRadius: '0',
                         position: 'relative',
                         display: 'flex',

@@ -7,7 +7,7 @@ import { EgyptNTExcelExport } from "../ExportExcel/egypt_nt_export_excel";
 import NoData_db from "../../lib/NoData_db";
 import SearchBar_db from "../../lib/SearchBar_db";
 
-export default function EgyptNTH2H({ matches }) {
+export default function EgyptNTH2H({ matches, onOpponentClick }) {
     const [searchTerm, setSearchTerm] = useState("");
     const [sortConfig, setSortConfig] = useState({ key: 'matches', direction: 'desc' });
     const [currentPage, setCurrentPage] = useState(1);
@@ -222,9 +222,9 @@ export default function EgyptNTH2H({ matches }) {
                                 {paginatedStats.map((s, i) => {
                                     const actualIndex = (currentPage - 1) * pageSize + i;
                                     return (
-                                        <tr key={s.opponent}>
+                                        <tr key={s.opponent} className={onOpponentClick ? "h2h-clickable-row" : ""} onClick={() => onOpponentClick && onOpponentClick(s.opponent)}>
                                             <td><span className={`rank-badge-premium ${actualIndex < 3 ? 'rank-gold' : ''}`}>{actualIndex + 1}</span></td>
-                                            <td className="team-name-cell">{s.opponent}</td>
+                                            <td className="team-name-cell" style={onOpponentClick ? { cursor: 'pointer', textDecoration: 'underline', color: '#C8102E' } : {}}>{s.opponent}</td>
                                             <td>{s.matches}</td>
                                             <td className="win-text">{s.wins}</td>
                                             <td className="draw-text">{s.pDraws}</td>
