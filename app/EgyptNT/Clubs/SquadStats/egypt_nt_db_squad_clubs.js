@@ -1,8 +1,8 @@
 "use client";
 
 import { useState, useEffect, useMemo } from "react";
-import SearchBar_db from "../../lib/SearchBar_db";
-import NoData_db from "../../lib/NoData_db";
+import SearchBar_db from "../../../lib/SearchBar_db";
+import NoData_db from "../../../lib/NoData_db";
 import EgyptNTSquadClubDetails from "./egypt_nt_db_squad_club_details";
 
 export default function EgyptNTSquadClubs({ squadData, matches, lineupDetails, playerDetails, gkDetails, onDetailsViewChange }) {

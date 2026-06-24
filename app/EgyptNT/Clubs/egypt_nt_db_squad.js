@@ -3,18 +3,21 @@
 import { useState, useEffect, useMemo } from "react";
 import { EgyptNTService } from "../Service/egypt_nt_db_service";
 import { EgyptNTExcelExport } from "../ExportExcel/egypt_nt_export_excel";
-import EgyptNTSquadPlayers from "../SquadDetails/egypt_nt_db_squad_players";
-import EgyptNTSquadClubs from "../SquadDetails/egypt_nt_db_squad_clubs";
-import EgyptNTSquadClubPerformance from "../SquadDetails/egypt_nt_db_squad_club_performance";
-import EgyptNTSquadClubSeason from "../SquadDetails/egypt_nt_db_squad_club_season";
-import { buildClubPlayerPerformance, buildPlayerSeasonStatsMap } from "../SquadDetails/egypt_nt_db_squad_club_details";
-import { Filter, X } from "lucide-react";
+import EgyptNTSquadPlayers from "./SquadStats/egypt_nt_db_squad_players";
+import EgyptNTSquadClubs from "./SquadStats/egypt_nt_db_squad_clubs";
+import EgyptNTSquadClubPerformance from "./SquadStats/egypt_nt_db_squad_club_performance";
+import EgyptNTSquadClubSeason from "./SquadStats/egypt_nt_db_squad_club_season";
+import { buildClubPlayerPerformance, buildPlayerSeasonStatsMap } from "./SquadStats/egypt_nt_db_squad_club_details";
+import { Filter, X, ArrowLeft, Users, Building2, TrendingUp, Calendar, Target, Medal, Database } from "lucide-react";
 import "../../lib/Filters_db.css";
-import "../SquadDetails/egypt_nt_db_squad_details.css";
+import "./SquadStats/egypt_nt_db_squad_details.css";
 import "./egypt_nt_db_squad.css";
+import EgyptNTClubStatsClubs from "./ClubStats/egypt_nt_db_club_stats_clubs";
+import EgyptNTClubStatsPlayers from "./ClubStats/egypt_nt_db_club_stats_players";
+import EgyptNTSquadEditor from "./SquadEditor/egypt_nt_db_squad_editor";
 
-export default function EgyptNTSquad({ squadData, matches, lineupDetails, playerDetails, gkDetails }) {
-    const [activeSubTab, setActiveSubTab] = useState("players"); // "players" | "clubs" | "club_performance" | "club_season"
+export default function EgyptNTSquad({ squadData, filteredMatches, lineupDetails, playerDetails, gkDetails }) {
+    const [activeSubTab, setActiveSubTab] = useState("menu"); // "menu" | "editor" | "players" | "clubs" | "club_performance" | "club_season" | "club_stats_clubs" | "club_stats_players"
     const [isClubDetailsOpen, setIsClubDetailsOpen] = useState(false);
 
     const [selectedChampionships, setSelectedChampionships] = useState([]);
@@ -159,7 +162,7 @@ export default function EgyptNTSquad({ squadData, matches, lineupDetails, player
                 EgyptNTExcelExport.exportToExcel(exportData, "EgyptNT_Squad_Clubs_List");
             } else if (activeSubTab === "club_performance") {
                 const rows = buildClubPlayerPerformance(filteredSquadData, {
-                    matches,
+                    matches: filteredMatches,
                     lineupDetails,
                     playerDetails,
                     gkDetails
@@ -178,7 +181,7 @@ export default function EgyptNTSquad({ squadData, matches, lineupDetails, player
                 }));
                 EgyptNTExcelExport.exportToExcel(exportData, "EgyptNT_Squad_Club_Performance");
             } else if (activeSubTab === "club_season") {
-                const seasonStatsMap = buildPlayerSeasonStatsMap(matches, lineupDetails, playerDetails, gkDetails);
+                const seasonStatsMap = buildPlayerSeasonStatsMap(filteredMatches, lineupDetails, playerDetails, gkDetails);
                 const uniqueKeys = new Set();
                 const exportDataRaw = [];
 
@@ -240,7 +243,7 @@ export default function EgyptNTSquad({ squadData, matches, lineupDetails, player
 
         window.addEventListener('egyptnt-export-excel', handleGlobalExport);
         return () => window.removeEventListener('egyptnt-export-excel', handleGlobalExport);
-    }, [filteredSquadData, activeSubTab, matches, lineupDetails, playerDetails, gkDetails]);
+    }, [filteredSquadData, activeSubTab, filteredMatches, lineupDetails, playerDetails, gkDetails]);
 
     return (
         <div className="tab-content" id="tab-squad">
@@ -250,7 +253,7 @@ export default function EgyptNTSquad({ squadData, matches, lineupDetails, player
                 <div className="section-header" style={{ display: 'flex', flexDirection: 'column', gap: '15px', alignItems: 'flex-start' }}>
                     <div style={{ display: 'flex', flexDirection: 'row', alignItems: 'center', justifyContent: 'flex-start', flexWrap: 'wrap', gap: '30px', direction: 'ltr' }}>
                         <div className="section-title" style={{ margin: 0, display: 'flex', alignItems: 'center', gap: '15px' }}>
-                            EGYPT NT <span className="accent">SQUAD</span>
+                            EGYPT NT <span className="accent">CLUBS</span>
                             <button 
                                 className={`squad-filter-btn ${hasActiveFilters ? 'active' : ''}`}
                                 onClick={handleOpenFilter}
@@ -270,33 +273,22 @@ export default function EgyptNTSquad({ squadData, matches, lineupDetails, player
                             )}
                         </div>
 
-                        {!isClubDetailsOpen && (
-                            <div className="squad-subtabs-switcher">
-                                <button 
-                                    className={`subtab-btn ${activeSubTab === 'players' ? 'active' : ''}`}
-                                    onClick={() => setActiveSubTab('players')}
-                                >
-                                    Players List
-                                </button>
-                                <button 
-                                    className={`subtab-btn ${activeSubTab === 'clubs' ? 'active' : ''}`}
-                                    onClick={() => setActiveSubTab('clubs')}
-                                >
-                                    Clubs List
-                                </button>
-                                <button 
-                                    className={`subtab-btn ${activeSubTab === 'club_performance' ? 'active' : ''}`}
-                                    onClick={() => setActiveSubTab('club_performance')}
-                                >
-                                    Club Performance
-                                </button>
-                                <button 
-                                    className={`subtab-btn ${activeSubTab === 'club_season' ? 'active' : ''}`}
-                                    onClick={() => setActiveSubTab('club_season')}
-                                >
-                                    Club Season
-                                </button>
-                            </div>
+                        {activeSubTab !== "menu" && !isClubDetailsOpen && (
+                            <button 
+                                className="back-to-menu-btn"
+                                onClick={() => setActiveSubTab("menu")}
+                                style={{
+                                    display: 'flex', alignItems: 'center', gap: '8px', background: '#111',
+                                    border: '1px solid #111', color: '#fff', padding: '8px 15px',
+                                    borderRadius: '5px', cursor: 'pointer', fontFamily: "'Bebas Neue', sans-serif",
+                                    fontSize: '18px', letterSpacing: '1px', transition: '0.3s'
+                                }}
+                                onMouseOver={(e) => { e.currentTarget.style.background = '#C8102E'; e.currentTarget.style.borderColor = '#C8102E'; }}
+                                onMouseOut={(e) => { e.currentTarget.style.background = '#111'; e.currentTarget.style.borderColor = '#111'; }}
+                            >
+                                <ArrowLeft size={18} />
+                                BACK TO MENU
+                            </button>
                         )}
                     </div>
                     
@@ -305,13 +297,60 @@ export default function EgyptNTSquad({ squadData, matches, lineupDetails, player
 
                 {/* Sub-tab content render */}
                 <div style={{ marginTop: '10px' }}>
+                    {activeSubTab === "menu" && (
+                        <div style={{
+                            display: 'grid',
+                            gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))',
+                            gap: '20px',
+                            marginTop: '30px'
+                        }}>
+                            <div className="dashboard-card" onClick={() => setActiveSubTab("editor")}>
+                                <Database size={40} className="card-icon" />
+                                <h3>SQUAD EDITOR</h3>
+                                <p>Add, edit, or manage squad records in the database.</p>
+                            </div>
+                            <div className="dashboard-card" onClick={() => setActiveSubTab("players")}>
+                                <Users size={40} className="card-icon" />
+                                <h3>SQUAD PLAYERS</h3>
+                                <p>View all call-ups sorted by player name or total call-up count.</p>
+                            </div>
+                            <div className="dashboard-card" onClick={() => setActiveSubTab("clubs")}>
+                                <Building2 size={40} className="card-icon" />
+                                <h3>SQUAD CLUBS</h3>
+                                <p>Overview of clubs and how many players they contributed to the NT.</p>
+                            </div>
+                            <div className="dashboard-card" onClick={() => setActiveSubTab("club_performance")}>
+                                <TrendingUp size={40} className="card-icon" />
+                                <h3>CLUB PERFORMANCE</h3>
+                                <p>Detailed minutes, goals, and assists of players grouped by their clubs.</p>
+                            </div>
+                            <div className="dashboard-card" onClick={() => setActiveSubTab("club_season")}>
+                                <Calendar size={40} className="card-icon" />
+                                <h3>CLUB SEASONS</h3>
+                                <p>Season-by-season breakdown of player performances by club.</p>
+                            </div>
+                            <div className="dashboard-card" onClick={() => setActiveSubTab("club_stats_clubs")}>
+                                <Target size={40} className="card-icon" />
+                                <h3>SCORING CLUBS</h3>
+                                <p>Ranking of clubs based on goals and assists produced by their players.</p>
+                            </div>
+                            <div className="dashboard-card" onClick={() => setActiveSubTab("club_stats_players")}>
+                                <Medal size={40} className="card-icon" />
+                                <h3>SCORERS BY CLUB</h3>
+                                <p>Detailed goal contributions (G+A) for every player under each club.</p>
+                            </div>
+                        </div>
+                    )}
+                    {activeSubTab === "editor" && (
+                        <EgyptNTSquadEditor />
+                    )}
                     {activeSubTab === "players" && (
                         <EgyptNTSquadPlayers squadData={filteredSquadData} />
                     )}
                     {activeSubTab === "clubs" && (
                         <EgyptNTSquadClubs
                             squadData={filteredSquadData}
-                            matches={matches}
+                            matches={filteredMatches}
                             lineupDetails={lineupDetails}
                             playerDetails={playerDetails}
                             gkDetails={gkDetails}
@@ -321,7 +360,7 @@ export default function EgyptNTSquad({ squadData, matches, lineupDetails, player
                     {activeSubTab === "club_performance" && (
                         <EgyptNTSquadClubPerformance
                             squadData={filteredSquadData}
-                            matches={matches}
+                            matches={filteredMatches}
                             lineupDetails={lineupDetails}
                             playerDetails={playerDetails}
                             gkDetails={gkDetails}
@@ -330,10 +369,23 @@ export default function EgyptNTSquad({ squadData, matches, lineupDetails, player
                     {activeSubTab === "club_season" && (
                         <EgyptNTSquadClubSeason
                             squadData={filteredSquadData}
-                            matches={matches}
+                            matches={filteredMatches}
                             lineupDetails={lineupDetails}
                             playerDetails={playerDetails}
                             gkDetails={gkDetails}
+                        />
+                    )}
+                    {activeSubTab === "club_stats_clubs" && (
+                        <EgyptNTClubStatsClubs
+                            playerDetails={playerDetails}
+                            filteredMatches={filteredMatches}
+                            onDetailsViewChange={setIsClubDetailsOpen}
+                        />
+                    )}
+                    {activeSubTab === "club_stats_players" && (
+                        <EgyptNTClubStatsPlayers
+                            playerDetails={playerDetails}
+                            filteredMatches={filteredMatches}
                         />
                     )}
                 </div>
@@ -344,7 +396,7 @@ export default function EgyptNTSquad({ squadData, matches, lineupDetails, player
                 <div className="filter-popup-overlay" onClick={() => setIsFilterOpen(false)}>
                     <div className="filter-modal-card" onClick={e => e.stopPropagation()}>
                         <div className="modal-header">
-                            <h3>⚡ FILTER EGYPT NT SQUAD</h3>
+                            <h3>⚡ FILTER EGYPT NT CLUBS</h3>
                             <button className="close-modal-btn" onClick={() => setIsFilterOpen(false)}><X size={20} /></button>
                         </div>
                         <div className="filter-sections-wrap">

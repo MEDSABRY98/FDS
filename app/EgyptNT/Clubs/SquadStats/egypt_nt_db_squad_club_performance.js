@@ -1,8 +1,8 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import SearchBar_db from "../../lib/SearchBar_db";
-import NoData_db from "../../lib/NoData_db";
+import SearchBar_db from "../../../lib/SearchBar_db";
+import NoData_db from "../../../lib/NoData_db";
 import { buildClubOnlyPerformance, buildClubPlayerPerformance } from "./egypt_nt_db_squad_club_details";
 
 const VIEW_MODES = {

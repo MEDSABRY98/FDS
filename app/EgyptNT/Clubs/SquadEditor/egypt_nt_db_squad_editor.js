@@ -1,10 +1,10 @@
-﻿"use client";
+"use client";
 
 import { useState, useEffect } from "react";
 import { createPortal } from "react-dom";
-import { supabase, fetchCatalogDisplayNames } from "../../Database";
-import { useNotification } from "../../lib/Notification_db";
-import { Save, Plus, Trash2 } from "lucide-react";
+import { supabase, fetchCatalogDisplayNames } from "../../../Database";
+import { useNotification } from "../../../lib/Notification_db";
+import { Save, Plus, Trash2, Download, RefreshCw } from "lucide-react";
 import "./egypt_nt_db_squad_editor.css";
 
 const EMPTY_ROW = {
@@ -55,9 +55,12 @@ function AutocompleteInput({ value, onChange, options = [], placeholder, classNa
                 onChange={e => { setQuery(e.target.value); onChange(e.target.value); setOpen(true); }}
                 onFocus={() => { setOpen(true); if (ref.current) setRect(ref.current.getBoundingClientRect()); }}
                 onBlur={() => setTimeout(() => setOpen(false), 180)}
-                style={{ ...style, width: '100%', boxSizing: 'border-box' }}
+                style={{ ...style, width: '100%', boxSizing: 'border-box', paddingRight: '40px' }}
                 autoComplete="off"
             />
+            <div style={{ position: 'absolute', right: '15px', top: '50%', transform: 'translateY(-50%)', pointerEvents: 'none', color: '#999' }}>
+                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>
+            </div>
             {open && filtered.length > 0 && !disabled && rect && typeof window !== 'undefined' && createPortal(
                 (() => {
                     const spaceBelow = window.innerHeight - rect.bottom;
@@ -125,12 +128,15 @@ export default function EgyptNTSquadEditor() {
     const [rows, setRows] = useState([{ ...EMPTY_ROW }]);
     const [isSaving, setIsSaving] = useState(false);
     const { addNotification } = useNotification();
+    const [deletedRowIds, setDeletedRowIds] = useState([]);
+    const [selectedLoadOption, setSelectedLoadOption] = useState("");
     const [suggestions, setSuggestions] = useState({
         players: [],
         positions: [],
         clubs: [],
         seasons: [],
-        champions: []
+        champions: [],
+        loadOptions: []
     });
 
     useEffect(() => {
@@ -139,14 +145,23 @@ export default function EgyptNTSquadEditor() {
                 const { data: squadData, error: sErr } = await supabase.from('egy_NT_SQUAD').select('POSITION, CLUB, SEASON, CHAMPION');
                 if (sErr) throw sErr;
 
-                const players = await fetchCatalogDisplayNames('db_PLAYERS');
+                const optionsSet = new Set();
+                (squadData || []).forEach(d => {
+                    if (d.CHAMPION && d.SEASON) {
+                        optionsSet.add(`${d.CHAMPION} — ${d.SEASON}`);
+                    } else if (d.SEASON) {
+                        optionsSet.add(`${d.SEASON}`);
+                    }
+                });
 
+                const players = await fetchCatalogDisplayNames('db_PLAYERS');
                 setSuggestions({
                     players,
                     positions: [...new Set(squadData.map(d => d.POSITION).filter(Boolean))].sort(),
                     clubs: [...new Set(squadData.map(d => d.CLUB).filter(Boolean))].sort(),
                     seasons: [...new Set(squadData.map(d => d.SEASON).filter(Boolean))].sort(),
-                    champions: [...new Set(squadData.map(d => d.CHAMPION).filter(Boolean))].sort()
+                    champions: [...new Set(squadData.map(d => d.CHAMPION).filter(Boolean))].sort(),
+                    loadOptions: [...optionsSet].sort()
                 });
             } catch (err) {
                 console.error("Error fetching suggestions:", err);
@@ -158,12 +173,62 @@ export default function EgyptNTSquadEditor() {
         return () => window.removeEventListener("nameDisplayLangChanged", fetchSuggestions);
     }, []);
 
+    const handleLoadSquad = async () => {
+        if (!selectedLoadOption) return;
+        
+        let champ = "";
+        let season = "";
+        if (selectedLoadOption.includes(" — ")) {
+            const parts = selectedLoadOption.split(" — ");
+            champ = parts[0];
+            season = parts[1];
+        } else {
+            season = selectedLoadOption;
+        }
+
+        try {
+            setIsSaving(true);
+            let query = supabase.from('egy_NT_SQUAD').select('*');
+            if (champ) query = query.eq('CHAMPION', champ);
+            if (season) query = query.eq('SEASON', season);
+            
+            query = query.order('ROW_ID', { ascending: true });
+
+            const { data, error } = await query;
+            if (error) throw error;
+
+            if (data && data.length > 0) {
+                // sort by ID or just use as is
+                setRows(data);
+                setDeletedRowIds([]);
+                addNotification('Squad loaded successfully!', 'success');
+            } else {
+                addNotification('No data found for this selection.', 'error');
+            }
+        } catch (err) {
+            console.error(err);
+            addNotification('Error loading squad.', 'error');
+        } finally {
+            setIsSaving(false);
+        }
+    };
+
+    const handleClearSquad = () => {
+        setRows([{ ...EMPTY_ROW }]);
+        setDeletedRowIds([]);
+        setSelectedLoadOption("");
+    };
+
     const handleAddRow = () => {
         setRows([...rows, { ...EMPTY_ROW }]);
     };
 
     const handleRemoveRow = (index) => {
         const newRows = [...rows];
+        const rowToRemove = newRows[index];
+        if (rowToRemove.ROW_ID) {
+            setDeletedRowIds([...deletedRowIds, rowToRemove.ROW_ID]);
+        }
         newRows.splice(index, 1);
         if (newRows.length === 0) newRows.push({ ...EMPTY_ROW });
         setRows(newRows);
@@ -176,58 +241,68 @@ export default function EgyptNTSquadEditor() {
     };
 
     const handleSave = async () => {
-        // Filter out completely empty rows
         const validRows = rows.filter(r => r.PLAYERNAME.trim() !== "");
         
-        if (validRows.length === 0) {
-            addNotification('No valid data to save. Please enter at least a player name.', 'error');
+        if (validRows.length === 0 && deletedRowIds.length === 0) {
+            addNotification('No valid data to save or delete.', 'error');
             return;
         }
 
         setIsSaving(true);
 
         try {
-            // 1. Fetch all existing ROW_IDs to find the true max numeric value safely
-            const { data: existingIds, error: idError } = await supabase
-                .from("egy_NT_SQUAD")
-                .select("ROW_ID");
-
-            if (idError) throw idError;
-
-            let currentMaxNum = 0;
-            if (existingIds && existingIds.length > 0) {
-                existingIds.forEach(item => {
-                    if (item.ROW_ID) {
-                        const match = String(item.ROW_ID).match(/\d+/);
-                        if (match) {
-                            const num = parseInt(match[0], 10);
-                            if (num > currentMaxNum) {
-                                currentMaxNum = num;
-                            }
-                        }
-                    }
-                });
+            // Delete removed rows
+            if (deletedRowIds.length > 0) {
+                const { error: delError } = await supabase
+                    .from("egy_NT_SQUAD")
+                    .delete()
+                    .in("ROW_ID", deletedRowIds);
+                if (delError) throw delError;
             }
 
-            // 2. Assign the new incremented ROW_IDs to our valid rows
-            const rowsToInsert = validRows.map((row, index) => {
-                const nextNum = currentMaxNum + 1 + index;
-                const nextRowId = `R-${String(nextNum).padStart(4, '0')}`;
-                return {
-                    ...row,
-                    ROW_ID: nextRowId
-                };
+            // Assign new ROW_IDs for inserts
+            const newRows = validRows.filter(r => !r.ROW_ID);
+            let currentMaxNum = 0;
+            
+            if (newRows.length > 0) {
+                const { data: existingIds, error: idError } = await supabase
+                    .from("egy_NT_SQUAD")
+                    .select("ROW_ID");
+                if (idError) throw idError;
+
+                if (existingIds && existingIds.length > 0) {
+                    existingIds.forEach(item => {
+                        if (item.ROW_ID) {
+                            const match = String(item.ROW_ID).match(/\d+/);
+                            if (match) {
+                                const num = parseInt(match[0], 10);
+                                if (num > currentMaxNum) currentMaxNum = num;
+                            }
+                        }
+                    });
+                }
+            }
+
+            const rowsToUpsert = validRows.map((row) => {
+                if (row.ROW_ID) return row; // existing row
+                
+                currentMaxNum += 1;
+                const nextRowId = `R-${String(currentMaxNum).padStart(4, '0')}`;
+                return { ...row, ROW_ID: nextRowId };
             });
 
-            // 3. Insert into the database
-            const { data, error } = await supabase
-                .from("egy_NT_SQUAD")
-                .insert(rowsToInsert);
-
-            if (error) throw error;
+            if (rowsToUpsert.length > 0) {
+                const { error: upsertError } = await supabase
+                    .from("egy_NT_SQUAD")
+                    .upsert(rowsToUpsert, { onConflict: 'ROW_ID' });
+                if (upsertError) throw upsertError;
+            }
 
             addNotification('Squad data saved successfully!', 'success');
-            setRows([{ ...EMPTY_ROW }]); // Reset on success
+            setDeletedRowIds([]);
+            
+            // Re-sync rows with the new IDs to avoid double inserting on next save
+            setRows(rowsToUpsert.length > 0 ? rowsToUpsert : [{ ...EMPTY_ROW }]);
             
         } catch (error) {
             console.error("Error saving squad data:", error);
@@ -240,24 +315,47 @@ export default function EgyptNTSquadEditor() {
     return (
         <div className="tab-content" id="tab-add-squad">
             <div className="squad-wrap" style={{ maxWidth: '1400px', width: '95%', margin: '0 auto', paddingBottom: '50px' }}>
-                <div className="section-header" style={{ display: 'flex', flexDirection: 'column', gap: '15px', alignItems: 'flex-start' }}>
-                    <div style={{ display: 'flex', flexDirection: 'row', alignItems: 'center', justifyContent: 'flex-start', flexWrap: 'wrap', gap: '30px', direction: 'ltr' }}>
-                        <div className="section-title" style={{ margin: 0, display: 'flex', alignItems: 'center', gap: '15px' }}>
-                            ADD <span className="accent">SQUAD</span>
-                        </div>
-                    </div>
-                    <div className="gold-line"></div>
-                </div>
+
 
                 <div className="squad-editor-container">
+                    <div style={{ display: 'flex', flexDirection: 'row', alignItems: 'center', justifyContent: 'center', marginBottom: '30px', gap: '10px', width: '100%', padding: '0 20px', boxSizing: 'border-box' }}>
+                        <div style={{ width: '100%', maxWidth: '450px' }}>
+                            <AutocompleteInput 
+                                value={selectedLoadOption}
+                                options={suggestions.loadOptions || []}
+                                onChange={(val) => setSelectedLoadOption(val)}
+                                className="squad-editor-input"
+                                placeholder="Select Tournament — Season to load..."
+                                style={{ textAlign: 'center', height: '50px', fontSize: '16px', fontWeight: 'bold' }}
+                            />
+                        </div>
+                        <button 
+                            className="squad-editor-btn-add" 
+                            style={{ background: '#111', color: '#fff', padding: '0', borderRadius: '5px', display: 'flex', alignItems: 'center', justifyContent: 'center', width: '50px', height: '50px', border: '1px solid #111', flexShrink: 0, cursor: 'pointer', transition: '0.2s' }}
+                            onClick={handleLoadSquad}
+                            disabled={isSaving || !selectedLoadOption}
+                            title="Load squad from database"
+                        >
+                            <Download size={22} />
+                        </button>
+                        <button 
+                            className="squad-editor-btn-add" 
+                            style={{ background: 'transparent', border: '1px solid #111', color: '#111', padding: '0', borderRadius: '5px', display: 'flex', alignItems: 'center', justifyContent: 'center', width: '50px', height: '50px', flexShrink: 0, cursor: 'pointer', transition: '0.2s' }}
+                            onClick={handleClearSquad}
+                            title="Clear editor to add new squad"
+                        >
+                            <RefreshCw size={22} />
+                        </button>
+                    </div>
+
                     <table className="squad-editor-table">
                         <thead>
                             <tr>
                                 <th style={{ width: '25%' }}>PLAYER NAME</th>
                                 <th style={{ width: '15%' }}>POSITION</th>
-                                <th style={{ width: '25%' }}>CLUB</th>
+                                <th style={{ width: '20%' }}>CLUB</th>
                                 <th style={{ width: '15%' }}>CHAMPION</th>
-                                <th style={{ width: '15%' }}>SEASON</th>
+                                <th style={{ width: '20%' }}>SEASON</th>
                                 <th style={{ width: '5%', textAlign: 'center' }}></th>
                             </tr>
                         </thead>

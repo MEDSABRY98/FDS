@@ -7,7 +7,7 @@ import ClubDetailsPlayers from "./egypt_nt_db_squad_club_details_players";
 import ClubDetailsSeasonDetails from "./egypt_nt_db_squad_club_details_season_details";
 import ClubDetailsChampionships from "./egypt_nt_db_squad_club_details_championships";
 import ClubDetailsSeasons from "./egypt_nt_db_squad_club_details_seasons";
-import "../Squad/egypt_nt_db_squad.css";
+import "../egypt_nt_db_squad.css";
 
 const CLUB_TABS = [
     { id: "dashboard", label: "Dashboard" },
@@ -50,7 +50,19 @@ function isCountablePlayerGoal(type, subType) {
     return goalType === "GOAL" || goalType === "هدف" || goalSubType === "PENGOAL" || goalSubType === "هدف جزاء";
 }
 
+let cachedSeasonStatsMap = null;
+let lastCacheKey = null;
+
+function buildCacheKey(matches, lineupDetails, playerDetails, gkDetails) {
+    return `${(matches || []).length}|${(lineupDetails || []).length}|${(playerDetails || []).length}|${(gkDetails || []).length}`;
+}
+
 export function buildPlayerSeasonStatsMap(matches, lineupDetails, playerDetails, gkDetails) {
+    const cacheKey = buildCacheKey(matches, lineupDetails, playerDetails, gkDetails);
+    if (cachedSeasonStatsMap && cacheKey === lastCacheKey) {
+        return cachedSeasonStatsMap;
+    }
+
     const statsMap = {};
     const matchContextMap = {};
     const gkCountByMatchTeam = {};
@@ -135,6 +147,8 @@ export function buildPlayerSeasonStatsMap(matches, lineupDetails, playerDetails,
         }
     });
 
+    lastCacheKey = cacheKey;
+    cachedSeasonStatsMap = statsMap;
     return statsMap;
 }
 

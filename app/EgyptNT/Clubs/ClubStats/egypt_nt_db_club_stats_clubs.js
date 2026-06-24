@@ -1,8 +1,8 @@
 "use client";
 
 import { useState, useEffect, useMemo } from "react";
-import SearchBar_db from "../../lib/SearchBar_db";
-import NoData_db from "../../lib/NoData_db";
+import SearchBar_db from "../../../lib/SearchBar_db";
+import NoData_db from "../../../lib/NoData_db";
 import { buildScoringClubStats } from "./egypt_nt_db_club_stats_utils";
 import EgyptNTClubStatsDetails from "./ClubStatsDetails/egypt_nt_db_club_stats_details";
 

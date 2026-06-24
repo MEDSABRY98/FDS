@@ -5,7 +5,7 @@ import { ArrowLeft } from "lucide-react";
 import "./egypt_nt_h2h_details.css";
 import EgyptNTH2HDashboard from "./egypt_nt_db_h2h_dashboard";
 import EgyptNTH2HAges from "./egypt_nt_db_h2h_ages";
-import { buildMatchContextMap } from "../ClubStats/egypt_nt_db_club_stats_utils";
+import { buildMatchContextMap } from "../Clubs/ClubStats/egypt_nt_db_club_stats_utils";
 
 export default function EgyptNTH2HDetails({ opponent, matches, playerDetails, onBack }) {
     const [activeTab, setActiveTab] = useState("dashboard");

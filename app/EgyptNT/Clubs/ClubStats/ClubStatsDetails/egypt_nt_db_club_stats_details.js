@@ -9,8 +9,8 @@ import ClubStatsDetailsMatches from "./egypt_nt_db_club_stats_details_matches";
 import ClubStatsDetailsChampionships from "./egypt_nt_db_club_stats_details_championships";
 import ClubStatsDetailsVsTeams from "./egypt_nt_db_club_stats_details_vs_teams";
 import ClubStatsDetailsSeasons from "./egypt_nt_db_club_stats_details_seasons";
-import "../../Squad/egypt_nt_db_squad.css";
-import "../../SquadDetails/egypt_nt_db_squad_details.css";
+import "../../egypt_nt_db_squad.css";
+import "../../SquadStats/egypt_nt_db_squad_details.css";
 
 const CLUB_TABS = [
     { id: "dashboard", label: "Dashboard" },

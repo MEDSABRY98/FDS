@@ -1,9 +1,10 @@
 "use client";
 
-import { useMemo, useState, useEffect } from "react";
-import SearchBar_db from "../../lib/SearchBar_db";
-import NoData_db from "../../lib/NoData_db";
-import DropDownList_db from "../../lib/DropDownList_db";
+import { useMemo, useState, useEffect, useRef } from "react";
+import SearchBar_db from "../../../lib/SearchBar_db";
+import NoData_db from "../../../lib/NoData_db";
+import Loading_db from "../../../lib/Loading_db";
+import DropDownList_db from "../../../lib/DropDownList_db";
 import { buildPlayerSeasonStatsMap, isGkPosition } from "./egypt_nt_db_squad_club_details";
 
 const SORT_COLUMNS = [
@@ -211,10 +212,45 @@ export default function EgyptNTSquadClubSeason({ squadData, matches, lineupDetai
 
     const selectedTournament = selectedTournamentState || (uniqueTournaments.length > 0 ? uniqueTournaments[0] : "");
 
-    const seasonGroups = useMemo(() => {
-        if (!squadData || squadData.length === 0 || !selectedTournament) return [];
+    const [seasonStatsMap, setSeasonStatsMap] = useState(null);
+    const [isCalculating, setIsCalculating] = useState(true);
+    const bgDataRef = useRef({ matches, lineupDetails, playerDetails, gkDetails });
 
-        const seasonStatsMap = buildPlayerSeasonStatsMap(matches, lineupDetails, playerDetails, gkDetails);
+    // Effect 1: Show loading for 1 second on mount, then display data from cache
+    useEffect(() => {
+        setIsCalculating(true);
+        const timer = setTimeout(() => {
+            // Use whatever is in cache (or compute first time) - instant if cache hit
+            const map = buildPlayerSeasonStatsMap(
+                bgDataRef.current.matches,
+                bgDataRef.current.lineupDetails,
+                bgDataRef.current.playerDetails,
+                bgDataRef.current.gkDetails
+            );
+            setSeasonStatsMap(map);
+            setIsCalculating(false);
+        }, 1000);
+        return () => clearTimeout(timer);
+    }, []); // Only on mount
+
+    // Effect 2: Silent background revalidation - if data changed, update without freeze
+    useEffect(() => {
+        bgDataRef.current = { matches, lineupDetails, playerDetails, gkDetails };
+
+        if (isCalculating) return; // Still in initial load, skip
+
+        // Run silently in background after a tick - cache handles dedup, returns instantly if no change
+        const bgTimer = setTimeout(() => {
+            const newMap = buildPlayerSeasonStatsMap(matches, lineupDetails, playerDetails, gkDetails);
+            // Only trigger re-render if we got a genuinely new map object (cache miss = new data)
+            setSeasonStatsMap(prev => (prev === newMap ? prev : newMap));
+        }, 200);
+        return () => clearTimeout(bgTimer);
+    }, [matches, lineupDetails, playerDetails, gkDetails, isCalculating]);
+
+    const seasonGroups = useMemo(() => {
+        if (!squadData || squadData.length === 0 || !selectedTournament || !seasonStatsMap) return [];
+
         const seasonGroupsRaw = {};
 
         squadData.forEach(item => {
@@ -264,7 +300,7 @@ export default function EgyptNTSquadClubSeason({ squadData, matches, lineupDetai
                 clubs: [...group.clubs].sort()
             }))
             .sort((a, b) => b.season.localeCompare(a.season, undefined, { numeric: true }));
-    }, [squadData, matches, lineupDetails, playerDetails, gkDetails, selectedTournament]);
+    }, [squadData, selectedTournament, seasonStatsMap]);
 
     const filteredGroups = useMemo(() => {
         if (!searchTerm.trim()) return seasonGroups;
@@ -300,6 +336,10 @@ export default function EgyptNTSquadClubSeason({ squadData, matches, lineupDetai
 
     if (!selectedTournament) {
         return <NoData_db message="NO TOURNAMENT SELECTED" height="240px" />;
+    }
+
+    if (isCalculating || !seasonStatsMap) {
+        return <Loading_db title="EGYPT NT" subtitle="SQUAD STATS" message="CALCULATING SEASON STATS..." inline={true} />;
     }
 
     if (seasonGroups.length === 0) {

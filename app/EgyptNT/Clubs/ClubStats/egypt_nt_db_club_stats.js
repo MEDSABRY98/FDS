@@ -1,15 +1,15 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { EgyptNTExcelExport } from "../ExportExcel/egypt_nt_export_excel";
+import { EgyptNTExcelExport } from "../../ExportExcel/egypt_nt_export_excel";
 import {
     buildScoringClubStats,
     buildPlayerClubStats
 } from "./egypt_nt_db_club_stats_utils";
 import EgyptNTClubStatsClubs from "./egypt_nt_db_club_stats_clubs";
 import EgyptNTClubStatsPlayers from "./egypt_nt_db_club_stats_players";
-import "../Squad/egypt_nt_db_squad.css";
-import "../SquadDetails/egypt_nt_db_squad_details.css";
+import "../egypt_nt_db_squad.css";
+import "../SquadStats/egypt_nt_db_squad_details.css";
 import "./egypt_nt_db_club_stats.css";
 
 export default function EgyptNTClubStats({ playerDetails, filteredMatches }) {

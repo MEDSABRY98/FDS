@@ -31,12 +31,10 @@ import EgyptNTPlayers from "./Players/egypt_nt_db_players";
 import EgyptNTGKs from "./Gks/egypt_nt_db_gks";
 import EgyptNTManagers from "./Managers/egypt_nt_db_managers";
 import EgyptNTFilters from "./Filters/egypt_nt_db_filters";
-import EgyptNTSquad from "./Squad/egypt_nt_db_squad";
-import EgyptNTSquadEditor from "./SquadEditor/egypt_nt_db_squad_editor";
+import EgyptNTSquad from "./Clubs/egypt_nt_db_squad";
 import EgyptNTEditor from "./Editor/egypt_nt_db_editor";
 import EgyptNTClubBackfill from "./ClubBackfill/egypt_nt_club_backfill";
-import EgyptNTClubStats from "./ClubStats/egypt_nt_db_club_stats";
-import { buildMatchContextMap, isEgyptScorerEvent } from "./ClubStats/egypt_nt_db_club_stats_utils";
+import { buildMatchContextMap, isEgyptScorerEvent } from "./Clubs/ClubStats/egypt_nt_db_club_stats_utils";
 
 import EgyptNTMatchDetails from "./MatchDetails/egypt_nt_db_match_details";
 import EgyptNTChampions from "./Champions/egypt_nt_db_champions";
@@ -44,6 +42,7 @@ import EgyptNTReferees from "./Referees/egypt_nt_db_referees";
 import EgyptNTH2H from "./HeadToHead/egypt_nt_db_h2h";
 import EgyptNTH2HDetails from "./HeadToHeadDetails/egypt_nt_db_h2h_details";
 import Loading_db from "../lib/Loading_db";
+import { buildPlayerSeasonStatsMap } from "./Clubs/SquadStats/egypt_nt_db_squad_club_details";
 import "./Sidebar/egypt_nt_sidebar.css";
 
 export default function EgyptNTDatabase() {
@@ -136,6 +135,12 @@ export default function EgyptNTDatabase() {
         setHowPenMissed(hData);
         setSquadData(sqData);
         if (!silent) setLoading(false);
+
+        // Pre-warm the heavy stats cache in the background after UI is rendered
+        // so the Clubs > Season Stats tab opens instantly without freezing
+        setTimeout(() => {
+            buildPlayerSeasonStatsMap(mappedMatches, lData, pData, gData);
+        }, 5500);
     }
 
     const matchContextMap = useMemo(() => buildMatchContextMap(matches), [matches]);
@@ -467,13 +472,11 @@ export default function EgyptNTDatabase() {
         { id: 'matches', label: 'Matches', icon: Trophy },
         { id: 'editor', label: 'Editor', icon: Edit },
         { id: 'club_backfill', label: 'Club Backfill', icon: Building2 },
-        { id: 'squad', label: 'Squad List', icon: Users },
-        { id: 'add_squad', label: 'Add Squad', icon: Users },
         { id: 'champions', label: 'Champions', icon: Award },
         { id: 'seasons', label: 'Seasons', icon: Calendar },
         { id: 'years', label: 'Years', icon: Calendar },
         { id: 'players', label: 'Players', icon: Users },
-        { id: 'club_stats', label: 'Club Stats', icon: Building2 },
+        { id: 'squad', label: 'Clubs', icon: Users },
         { id: 'gks', label: 'Gks', icon: Shield },
         { id: 'managers', label: 'Managers', icon: User },
         { id: 'referees', label: 'Referees', icon: Shield },
@@ -640,22 +643,15 @@ export default function EgyptNTDatabase() {
                             {activeTab === 'squad' && (
                                 <EgyptNTSquad
                                     squadData={squadData}
-                                    matches={matches}
+                                    filteredMatches={filteredMatches}
                                     lineupDetails={lineupDetails}
                                     playerDetails={playerDetails}
                                     gkDetails={gkDetails}
                                 />
                             )}
-                            {activeTab === 'add_squad' && <EgyptNTSquadEditor />}
                             {activeTab === 'seasons' && <EgyptNTSeasons matches={filteredMatches} />}
                             {activeTab === 'years' && <EgyptNTYears matches={filteredMatches} />}
                             {activeTab === 'players' && <EgyptNTPlayers playerDetails={playerDetails} lineupDetails={lineupDetails} filteredMatches={filteredMatches} gkDetails={gkDetails} howPenMissed={howPenMissed} />}
-                            {activeTab === 'club_stats' && (
-                                <EgyptNTClubStats
-                                    playerDetails={playerDetails}
-                                    filteredMatches={filteredMatches}
-                                />
-                            )}
                             {activeTab === 'gks' && <EgyptNTGKs gkDetails={gkDetails} howPenMissed={howPenMissed} filteredMatches={filteredMatches} playerDetails={playerDetails} />}
                             {activeTab === 'managers' && <EgyptNTManagers matches={filteredMatches} playerDetails={playerDetails} lineupDetails={lineupDetails} />}
                             {activeTab === 'h2h' && (

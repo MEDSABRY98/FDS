@@ -1,8 +1,8 @@
 "use client";
 
 import { useState, useMemo } from "react";
-import SearchBar_db from "../../lib/SearchBar_db";
-import NoData_db from "../../lib/NoData_db";
+import SearchBar_db from "../../../lib/SearchBar_db";
+import NoData_db from "../../../lib/NoData_db";
 
 export default function EgyptNTSquadPlayers({ squadData }) {
     const [searchTerm, setSearchTerm] = useState("");
