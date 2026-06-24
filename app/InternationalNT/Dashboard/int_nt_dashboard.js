@@ -7,56 +7,80 @@ import "./int_nt_dashboard.css";
 
 export default function IntNtDashboard({ matches, activeFilters, countries }) {
     const [search, setSearch] = useState("");
+    const [limitType, setLimitType] = useState("last");
+    const [limitCount, setLimitCount] = useState("");
 
     const statsArray = useMemo(() => {
         if (!matches?.length) return [];
 
-        const statsMap = {};
+        const teamMatchesMap = {};
 
         matches.forEach((m) => {
             const tA = String(m.TEAMA || "").trim();
             const tB = String(m.TEAMB || "").trim();
             if (!tA || !tB) return;
 
-            if (!statsMap[tA]) statsMap[tA] = { team: tA, p: 0, w: 0, d: 0, l: 0, gf: 0, ga: 0, csf: 0, csa: 0 };
-            if (!statsMap[tB]) statsMap[tB] = { team: tB, p: 0, w: 0, d: 0, l: 0, gf: 0, ga: 0, csf: 0, csa: 0 };
+            if (!teamMatchesMap[tA]) teamMatchesMap[tA] = [];
+            teamMatchesMap[tA].push({ team: tA, opponent: tB, match: m, isHome: true });
 
-            statsMap[tA].p++;
-            statsMap[tB].p++;
-
-            const out = String(m.OUTCOME || "");
-            if (out === "W") {
-                statsMap[tA].w++;
-                statsMap[tB].l++;
-            } else if (out === "L") {
-                statsMap[tA].l++;
-                statsMap[tB].w++;
-            } else if (out.startsWith("D")) {
-                statsMap[tA].d++;
-                statsMap[tB].d++;
-            }
-
-            const sA = parseInt(m.TEAMASCORE, 10);
-            const sB = parseInt(m.TEAMBSCORE, 10);
-
-            if (!Number.isNaN(sA) && !Number.isNaN(sB)) {
-                statsMap[tA].gf += sA;
-                statsMap[tA].ga += sB;
-                statsMap[tB].gf += sB;
-                statsMap[tB].ga += sA;
-
-                if (sB === 0) {
-                    statsMap[tA].csf++;
-                    statsMap[tB].csa++;
-                }
-                if (sA === 0) {
-                    statsMap[tB].csf++;
-                    statsMap[tA].csa++;
-                }
-            }
+            if (!teamMatchesMap[tB]) teamMatchesMap[tB] = [];
+            teamMatchesMap[tB].push({ team: tB, opponent: tA, match: m, isHome: false });
         });
 
-        let results = Object.values(statsMap);
+        const statsMap = {};
+        const limit = parseInt(limitCount, 10);
+        const hasLimit = !isNaN(limit) && limit > 0;
+
+        Object.keys(teamMatchesMap).forEach(team => {
+            let tMatches = teamMatchesMap[team];
+            if (hasLimit) {
+                // Since 'matches' is sorted newest-first, the most recent matches ('last' matches chronologically) 
+                // are at the beginning of the array. The oldest matches ('first' matches chronologically) are at the end.
+                if (limitType === 'last') {
+                    tMatches = tMatches.slice(0, limit);
+                } else if (limitType === 'first') {
+                    tMatches = tMatches.slice(-limit);
+                }
+            }
+
+            statsMap[team] = { team: team, p: 0, w: 0, d: 0, l: 0, gf: 0, ga: 0, csf: 0, csa: 0 };
+
+            tMatches.forEach(tm => {
+                const m = tm.match;
+                const out = String(m.OUTCOME || "");
+                const sA = parseInt(m.TEAMASCORE, 10);
+                const sB = parseInt(m.TEAMBSCORE, 10);
+                const validScores = !Number.isNaN(sA) && !Number.isNaN(sB);
+
+                statsMap[team].p++;
+
+                if (tm.isHome) {
+                    if (out === "W") statsMap[team].w++;
+                    else if (out === "L") statsMap[team].l++;
+                    else if (out.startsWith("D")) statsMap[team].d++;
+
+                    if (validScores) {
+                        statsMap[team].gf += sA;
+                        statsMap[team].ga += sB;
+                        if (sB === 0) statsMap[team].csf++;
+                        if (sA === 0) statsMap[team].csa++;
+                    }
+                } else {
+                    if (out === "W") statsMap[team].l++;
+                    else if (out === "L") statsMap[team].w++;
+                    else if (out.startsWith("D")) statsMap[team].d++;
+
+                    if (validScores) {
+                        statsMap[team].gf += sB;
+                        statsMap[team].ga += sA;
+                        if (sA === 0) statsMap[team].csf++;
+                        if (sB === 0) statsMap[team].csa++;
+                    }
+                }
+            });
+        });
+
+        let results = Object.values(statsMap).filter(row => row.p > 0);
 
         if (activeFilters) {
             const getTeamRegions = (teamName) => {
@@ -108,7 +132,7 @@ export default function IntNtDashboard({ matches, activeFilters, countries }) {
 
             return a.team.localeCompare(b.team, 'ar');
         });
-    }, [matches, activeFilters, countries]);
+    }, [matches, activeFilters, countries, limitCount, limitType]);
 
     const filteredStats = useMemo(() => {
         if (!search.trim()) return statsArray;
@@ -138,7 +162,25 @@ export default function IntNtDashboard({ matches, activeFilters, countries }) {
                 <div>
                     <h1>DASHBOARD</h1>
                 </div>
-                <SearchBar_db value={search} onChange={setSearch} placeholder="Search team..." />
+                <div style={{ display: "flex", gap: "12px", alignItems: "center", flexWrap: "nowrap" }}>
+                    <select 
+                        value={limitType} 
+                        onChange={(e) => setLimitType(e.target.value)}
+                        style={{ padding: "8px 12px", borderRadius: "8px", border: "1px solid #e0e0e0", background: "#f9f9f9", color: "#333", fontSize: "14px", outline: "none", cursor: "pointer", fontFamily: "inherit" }}
+                    >
+                        <option value="last">Last</option>
+                        <option value="first">First</option>
+                    </select>
+                    <input 
+                        type="number" 
+                        value={limitCount} 
+                        onChange={(e) => setLimitCount(e.target.value)} 
+                        placeholder="Match count (e.g. 9)"
+                        style={{ width: "160px", padding: "8px 12px", borderRadius: "8px", border: "1px solid #e0e0e0", background: "#f9f9f9", color: "#333", fontSize: "14px", outline: "none", fontFamily: "inherit" }}
+                        min="1"
+                    />
+                    <SearchBar_db value={search} onChange={setSearch} placeholder="Search team..." />
+                </div>
             </div>
             
             <div className="int-nt-dashboard-table-wrap">
