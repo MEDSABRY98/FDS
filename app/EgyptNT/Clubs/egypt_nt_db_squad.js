@@ -3,17 +3,16 @@
 import { useState, useEffect, useMemo } from "react";
 import { EgyptNTService } from "../Service/egypt_nt_db_service";
 import { EgyptNTExcelExport } from "../ExportExcel/egypt_nt_export_excel";
-import EgyptNTSquadPlayers from "./SquadStats/egypt_nt_db_squad_players";
-import EgyptNTSquadClubs from "./SquadStats/egypt_nt_db_squad_clubs";
-import EgyptNTSquadClubPerformance from "./SquadStats/egypt_nt_db_squad_club_performance";
-import EgyptNTSquadClubSeason from "./SquadStats/egypt_nt_db_squad_club_season";
-import { buildClubPlayerPerformance, buildPlayerSeasonStatsMap } from "./SquadStats/egypt_nt_db_squad_club_details";
+import EgyptNTSquadPlayers from "./egypt_nt_db_squad_players";
+import EgyptNTSquadClubs from "./egypt_nt_db_squad_clubs";
+import EgyptNTSquadClubPerformance from "./egypt_nt_db_squad_club_performance";
+import EgyptNTSquadClubSeason from "./egypt_nt_db_squad_club_season";
+import { buildClubPlayerPerformance, buildPlayerSeasonStatsMap } from "./egypt_nt_db_squad_club_details";
 import { Filter, X, ArrowLeft, Users, Building2, TrendingUp, Calendar, Target, Medal, Database } from "lucide-react";
 import "../../lib/Filters_db.css";
-import "./SquadStats/egypt_nt_db_squad_details.css";
 import "./egypt_nt_db_squad.css";
-import EgyptNTClubStatsClubs from "./ClubStats/egypt_nt_db_club_stats_clubs";
-import EgyptNTClubStatsPlayers from "./ClubStats/egypt_nt_db_club_stats_players";
+import EgyptNTClubStatsClubs from "./egypt_nt_db_club_stats_clubs";
+import EgyptNTClubStatsPlayers from "./egypt_nt_db_club_stats_players";
 import EgyptNTSquadEditor from "./SquadEditor/egypt_nt_db_squad_editor";
 
 export default function EgyptNTSquad({ squadData, filteredMatches, lineupDetails, playerDetails, gkDetails }) {
@@ -105,7 +104,7 @@ export default function EgyptNTSquad({ squadData, filteredMatches, lineupDetails
                     }
 
                     stats[name].callups += 1;
-                    
+
                     const club = String(item.CLUB || "Unknown").trim();
                     stats[name].clubs[club] = (stats[name].clubs[club] || 0) + 1;
 
@@ -199,7 +198,7 @@ export default function EgyptNTSquad({ squadData, filteredMatches, lineupDetails
                     uniqueKeys.add(rowKey);
 
                     const raw = seasonStatsMap[`${name}|${season}`] || { mp: 0, mins: 0, goals: 0, assists: 0, ga: 0, cs: 0, gkCaps: 0 };
-                    
+
                     const valuePos = position.toLowerCase();
                     const isGk = valuePos.includes("gk") || valuePos.includes("goalkeeper") || valuePos.includes("حارس") || valuePos.includes("حراس") || raw.gkCaps > 0;
 
@@ -224,8 +223,8 @@ export default function EgyptNTSquad({ squadData, filteredMatches, lineupDetails
                     });
                 });
 
-                exportDataRaw.sort((a, b) => 
-                    a.Tournament.localeCompare(b.Tournament) || 
+                exportDataRaw.sort((a, b) =>
+                    a.Tournament.localeCompare(b.Tournament) ||
                     b.Season.localeCompare(a.Season, undefined, { numeric: true }) ||
                     b["G+A"] - a["G+A"] ||
                     b.MINS - a.MINS ||
@@ -248,13 +247,13 @@ export default function EgyptNTSquad({ squadData, filteredMatches, lineupDetails
     return (
         <div className="tab-content" id="tab-squad">
             <div className="squad-wrap" style={{ maxWidth: '1400px', width: '95%', margin: '0 auto' }}>
-                
+
                 {/* Header Section */}
                 <div className="section-header" style={{ display: 'flex', flexDirection: 'column', gap: '15px', alignItems: 'flex-start' }}>
                     <div style={{ display: 'flex', flexDirection: 'row', alignItems: 'center', justifyContent: 'flex-start', flexWrap: 'wrap', gap: '30px', direction: 'ltr' }}>
                         <div className="section-title" style={{ margin: 0, display: 'flex', alignItems: 'center', gap: '15px' }}>
                             EGYPT NT <span className="accent">CLUBS</span>
-                            <button 
+                            <button
                                 className={`squad-filter-btn ${hasActiveFilters ? 'active' : ''}`}
                                 onClick={handleOpenFilter}
                                 title="Filter Squad"
@@ -263,7 +262,7 @@ export default function EgyptNTSquad({ squadData, filteredMatches, lineupDetails
                                 {hasActiveFilters && <span className="filter-badge-dot"></span>}
                             </button>
                             {hasActiveFilters && (
-                                <button 
+                                <button
                                     className="squad-clear-filter-btn"
                                     onClick={() => { setSelectedChampionships([]); setSelectedSeasons([]); }}
                                     title="Clear Filters"
@@ -274,7 +273,7 @@ export default function EgyptNTSquad({ squadData, filteredMatches, lineupDetails
                         </div>
 
                         {activeSubTab !== "menu" && !isClubDetailsOpen && (
-                            <button 
+                            <button
                                 className="back-to-menu-btn"
                                 onClick={() => setActiveSubTab("menu")}
                                 style={{
@@ -291,7 +290,7 @@ export default function EgyptNTSquad({ squadData, filteredMatches, lineupDetails
                             </button>
                         )}
                     </div>
-                    
+
                     <div className="gold-line"></div>
                 </div>
 
@@ -400,7 +399,7 @@ export default function EgyptNTSquad({ squadData, filteredMatches, lineupDetails
                             <button className="close-modal-btn" onClick={() => setIsFilterOpen(false)}><X size={20} /></button>
                         </div>
                         <div className="filter-sections-wrap">
-                            
+
                             {/* Championships Section */}
                             {uniqueTournaments.length > 0 && (
                                 <div className="filter-section">
@@ -409,8 +408,8 @@ export default function EgyptNTSquad({ squadData, filteredMatches, lineupDetails
                                         {uniqueTournaments.map(champ => {
                                             const isSelected = tempChampionships.includes(champ);
                                             return (
-                                                <div 
-                                                    key={champ} 
+                                                <div
+                                                    key={champ}
                                                     className={`filter-pill ${isSelected ? 'selected' : ''}`}
                                                     onClick={() => handleToggleTempChampionship(champ)}
                                                 >
@@ -430,8 +429,8 @@ export default function EgyptNTSquad({ squadData, filteredMatches, lineupDetails
                                         {uniqueSeasons.map(season => {
                                             const isSelected = tempSeasons.includes(season);
                                             return (
-                                                <div 
-                                                    key={season} 
+                                                <div
+                                                    key={season}
                                                     className={`filter-pill ${isSelected ? 'selected' : ''}`}
                                                     onClick={() => handleToggleTempSeason(season)}
                                                 >

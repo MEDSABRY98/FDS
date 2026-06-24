@@ -1,10 +1,10 @@
 "use client";
 
 import { useMemo, useState, useEffect, useRef } from "react";
-import SearchBar_db from "../../../lib/SearchBar_db";
-import NoData_db from "../../../lib/NoData_db";
-import Loading_db from "../../../lib/Loading_db";
-import DropDownList_db from "../../../lib/DropDownList_db";
+import SearchBar_db from "../../lib/SearchBar_db";
+import NoData_db from "../../lib/NoData_db";
+import Loading_db from "../../lib/Loading_db";
+import DropDownList_db from "../../lib/DropDownList_db";
 import { buildPlayerSeasonStatsMap, isGkPosition } from "./egypt_nt_db_squad_club_details";
 
 const SORT_COLUMNS = [

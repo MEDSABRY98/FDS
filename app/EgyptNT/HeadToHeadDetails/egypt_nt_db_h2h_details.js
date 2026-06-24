@@ -5,7 +5,7 @@ import { ArrowLeft } from "lucide-react";
 import "./egypt_nt_h2h_details.css";
 import EgyptNTH2HDashboard from "./egypt_nt_db_h2h_dashboard";
 import EgyptNTH2HAges from "./egypt_nt_db_h2h_ages";
-import { buildMatchContextMap } from "../Clubs/ClubStats/egypt_nt_db_club_stats_utils";
+import { buildMatchContextMap } from "../Clubs/egypt_nt_db_club_stats_utils";
 
 export default function EgyptNTH2HDetails({ opponent, matches, playerDetails, onBack }) {
     const [activeTab, setActiveTab] = useState("dashboard");
@@ -33,13 +33,13 @@ export default function EgyptNTH2HDetails({ opponent, matches, playerDetails, on
             </div>
 
             <div className="h2h-details-tabs">
-                <button 
+                <button
                     className={`h2h-tab-btn ${activeTab === "dashboard" ? "active" : ""}`}
                     onClick={() => setActiveTab("dashboard")}
                 >
                     DASHBOARD
                 </button>
-                <button 
+                <button
                     className={`h2h-tab-btn ${activeTab === "ages" ? "active" : ""}`}
                     onClick={() => setActiveTab("ages")}
                 >
@@ -49,15 +49,15 @@ export default function EgyptNTH2HDetails({ opponent, matches, playerDetails, on
 
             <div className="h2h-details-content">
                 {activeTab === "dashboard" && (
-                    <EgyptNTH2HDashboard 
-                        opponent={opponent} 
-                        matches={opponentMatches} 
+                    <EgyptNTH2HDashboard
+                        opponent={opponent}
+                        matches={opponentMatches}
                     />
                 )}
                 {activeTab === "ages" && (
-                    <EgyptNTH2HAges 
-                        matches={opponentMatches} 
-                        playerDetails={playerDetails} 
+                    <EgyptNTH2HAges
+                        matches={opponentMatches}
+                        playerDetails={playerDetails}
                         matchContextMap={matchContextMap}
                     />
                 )}

@@ -1,19 +1,19 @@
 "use client";
 
 import { useState, useEffect, useMemo, useRef } from "react";
-import { 
-    Download, 
-    SlidersHorizontal, 
-    X, 
-    LayoutDashboard, 
-    Trophy, 
-    Calendar, 
-    CalendarDays, 
-    Users, 
-    Shield, 
-    User, 
-    GitCompare, 
-    Menu, 
+import {
+    Download,
+    SlidersHorizontal,
+    X,
+    LayoutDashboard,
+    Trophy,
+    Calendar,
+    CalendarDays,
+    Users,
+    Shield,
+    User,
+    GitCompare,
+    Menu,
     ArrowLeft,
     Award,
     Edit,
@@ -34,7 +34,7 @@ import EgyptNTFilters from "./Filters/egypt_nt_db_filters";
 import EgyptNTSquad from "./Clubs/egypt_nt_db_squad";
 import EgyptNTEditor from "./Editor/egypt_nt_db_editor";
 import EgyptNTClubBackfill from "./ClubBackfill/egypt_nt_club_backfill";
-import { buildMatchContextMap, isEgyptScorerEvent } from "./Clubs/ClubStats/egypt_nt_db_club_stats_utils";
+import { buildMatchContextMap, isEgyptScorerEvent } from "./Clubs/egypt_nt_db_club_stats_utils";
 
 import EgyptNTMatchDetails from "./MatchDetails/egypt_nt_db_match_details";
 import EgyptNTChampions from "./Champions/egypt_nt_db_champions";
@@ -42,7 +42,7 @@ import EgyptNTReferees from "./Referees/egypt_nt_db_referees";
 import EgyptNTH2H from "./HeadToHead/egypt_nt_db_h2h";
 import EgyptNTH2HDetails from "./HeadToHeadDetails/egypt_nt_db_h2h_details";
 import Loading_db from "../lib/Loading_db";
-import { buildPlayerSeasonStatsMap } from "./Clubs/SquadStats/egypt_nt_db_squad_club_details";
+import { buildPlayerSeasonStatsMap } from "./Clubs/egypt_nt_db_squad_club_details";
 import "./Sidebar/egypt_nt_sidebar.css";
 
 export default function EgyptNTDatabase() {
@@ -110,9 +110,9 @@ export default function EgyptNTDatabase() {
         if (!silent) setLoading(true);
         const { data: countriesData } = await supabase.from('db_COUNTRIES').select('*');
         if (countriesData) setCountries(countriesData);
-        
+
         const data = await EgyptNTService.getAllMatches();
-        
+
         const { data: champTypes } = await supabase.from('db_CHAMPION_TYPE').select('*');
         const mappedMatches = data.map(m => {
             const champRow = champTypes?.find(c => c.CHAMPION_NAME === m.CHAMPION);
@@ -166,23 +166,23 @@ export default function EgyptNTDatabase() {
 
     const checkMatchPassesFilter = (m, key, val, countriesList, startD, endD) => {
         if (val === 'All') return true;
-        
+
         if (key === 'year') {
             if (!m.DATE) return false;
             const mYear = new Date(m.DATE).getFullYear().toString();
             return mYear === val;
         }
-        
+
         if (key === 'country') {
             const mCountry = getMatchCountryName(m["OPPONENT TEAM"]);
             if (!mCountry) return false;
             const targetRows = countriesList.filter(c => c.COUNTRY_NAME === val);
-            return targetRows.some(c => 
+            return targetRows.some(c =>
                 (c.COUNTRY_NAME && c.COUNTRY_NAME.toLowerCase() === mCountry) ||
                 (c.COUNTRY_NAME_EN && c.COUNTRY_NAME_EN.toLowerCase() === mCountry)
             );
         }
-        
+
         if (key === 'continent') {
             const mCountry = getMatchCountryName(m["OPPONENT TEAM"]);
             if (!mCountry) return false;
@@ -199,7 +199,7 @@ export default function EgyptNTDatabase() {
         if (key === 'player_club') {
             return matchHasPlayerClub(m, val);
         }
-        
+
         const colMap = {
             match_id: 'MATCH_ID',
             age: 'AGE',
@@ -223,7 +223,7 @@ export default function EgyptNTDatabase() {
             clean_sheet: 'CLEAN SHEET',
             note: 'NOTE'
         };
-        
+
         const colName = colMap[key];
         if (!colName) return true;
         return String(m[colName]) === String(val);
@@ -254,46 +254,46 @@ export default function EgyptNTDatabase() {
             const years = partialMatches.map(m => m.DATE ? new Date(m.DATE).getFullYear() : null).filter(Boolean);
             return ["All", ...new Set(years)].sort((a, b) => b - a);
         }
-        
+
         if (key === 'country') {
             const matchCountryNames = partialMatches.map(m => {
                 if (!m["OPPONENT TEAM"]) return null;
                 const parts = m["OPPONENT TEAM"].split(' - ');
                 return parts[parts.length - 1].trim().toLowerCase();
             }).filter(Boolean);
-            
+
             const countryOpts = countries
                 .filter(c => c.COUNTRY_NAME && (
-                    matchCountryNames.includes(c.COUNTRY_NAME.toLowerCase()) || 
+                    matchCountryNames.includes(c.COUNTRY_NAME.toLowerCase()) ||
                     (c.COUNTRY_NAME_EN && matchCountryNames.includes(c.COUNTRY_NAME_EN.toLowerCase()))
                 ))
                 .map(c => c.COUNTRY_NAME);
-                
+
             return ["All", ...new Set(countryOpts)].sort((a, b) => a.localeCompare(b, 'ar'));
         }
-        
+
         if (key === 'continent') {
             const matchCountryNames = partialMatches.map(m => {
                 if (!m["OPPONENT TEAM"]) return null;
                 const parts = m["OPPONENT TEAM"].split(' - ');
                 return parts[parts.length - 1].trim().toLowerCase();
             }).filter(Boolean);
-            
+
             const continentOpts = countries
                 .filter(c => c.CONTINENT && (
-                    matchCountryNames.includes(c.COUNTRY_NAME.toLowerCase()) || 
+                    matchCountryNames.includes(c.COUNTRY_NAME.toLowerCase()) ||
                     (c.COUNTRY_NAME_EN && matchCountryNames.includes(c.COUNTRY_NAME_EN.toLowerCase()))
                 ))
                 .map(c => c.CONTINENT);
-                
+
             const hasArab = countries.some(c => c.IS_ARAB === true && (
-                matchCountryNames.includes(c.COUNTRY_NAME.toLowerCase()) || 
+                matchCountryNames.includes(c.COUNTRY_NAME.toLowerCase()) ||
                 (c.COUNTRY_NAME_EN && matchCountryNames.includes(c.COUNTRY_NAME_EN.toLowerCase()))
             ));
-            
+
             const uniqueContinents = new Set(continentOpts);
             if (hasArab) uniqueContinents.add("دول عربية");
-                
+
             return ["All", ...uniqueContinents].sort((a, b) => a.localeCompare(b, 'ar'));
         }
 
@@ -311,7 +311,7 @@ export default function EgyptNTDatabase() {
             });
             return ["All", ...[...clubs].sort((a, b) => a.localeCompare(b, 'ar'))];
         }
-        
+
         const vals = partialMatches.map(m => m[colName]).filter(v => v !== null && v !== undefined && v !== '');
         const uniqueVals = [...new Set(vals)].sort();
         if (['SEASON', 'DATE'].includes(colName)) {
@@ -412,7 +412,7 @@ export default function EgyptNTDatabase() {
                     passCountry = false;
                 } else {
                     const targetRows = countries.filter(c => c.COUNTRY_NAME === dbFilters.country);
-                    passCountry = targetRows.some(c => 
+                    passCountry = targetRows.some(c =>
                         (c.COUNTRY_NAME && c.COUNTRY_NAME.toLowerCase() === mCountry) ||
                         (c.COUNTRY_NAME_EN && c.COUNTRY_NAME_EN.toLowerCase() === mCountry)
                     );
@@ -486,8 +486,8 @@ export default function EgyptNTDatabase() {
     return (
         <div id="main-app" className={`egypt-container ${isSidebarCollapsed ? 'sidebar-collapsed' : ''}`}>
             {/* Backdrop for mobile drawer */}
-            <div 
-                className={`egypt-sidebar-backdrop ${isSidebarMobileOpen ? 'active' : ''}`} 
+            <div
+                className={`egypt-sidebar-backdrop ${isSidebarMobileOpen ? 'active' : ''}`}
                 onClick={() => setIsSidebarMobileOpen(false)}
             />
 
@@ -502,8 +502,8 @@ export default function EgyptNTDatabase() {
                             EGYPT <span>NT</span>
                         </div>
                     </Link>
-                    <button 
-                        className="egypt-sidebar-close-btn" 
+                    <button
+                        className="egypt-sidebar-close-btn"
                         onClick={() => setIsSidebarMobileOpen(false)}
                         title="CLOSE MENU"
                     >
@@ -539,8 +539,8 @@ export default function EgyptNTDatabase() {
                         <ArrowLeft size={14} style={{ transform: isSidebarCollapsed ? 'rotate(180deg)' : 'none', transition: 'transform 0.3s' }} />
                         <span>COLLAPSE MENU</span>
                     </button>
-                    <button 
-                        className="egypt-sidebar-action-btn export-btn" 
+                    <button
+                        className="egypt-sidebar-action-btn export-btn"
                         onClick={() => window.dispatchEvent(new CustomEvent('egyptnt-export-excel'))}
                         title="DOWNLOAD CURRENT VIEW AS EXCEL"
                         disabled={loading}
@@ -549,8 +549,8 @@ export default function EgyptNTDatabase() {
                         <Download size={14} />
                         <span>EXPORT TO EXCEL</span>
                     </button>
-                    <button 
-                        className="egypt-sidebar-action-btn filter-btn" 
+                    <button
+                        className="egypt-sidebar-action-btn filter-btn"
                         onClick={() => setIsFilterOpen(true)}
                         title="OPEN DATABASE FILTERS"
                         disabled={loading}
@@ -567,8 +567,8 @@ export default function EgyptNTDatabase() {
                 {/* Mobile Top Bar */}
                 <header className="egypt-mobile-top-bar">
                     <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                        <button 
-                            className="egypt-menu-toggle-btn" 
+                        <button
+                            className="egypt-menu-toggle-btn"
                             onClick={() => setIsSidebarMobileOpen(true)}
                             title="OPEN MENU"
                         >
@@ -581,8 +581,8 @@ export default function EgyptNTDatabase() {
                         </Link>
                     </div>
                     <div className="egypt-mobile-actions">
-                        <button 
-                            onClick={() => window.dispatchEvent(new CustomEvent('egyptnt-export-excel'))} 
+                        <button
+                            onClick={() => window.dispatchEvent(new CustomEvent('egyptnt-export-excel'))}
                             className="egypt-mobile-action-icon"
                             title="DOWNLOAD CURRENT VIEW AS EXCEL"
                             disabled={loading}
@@ -590,8 +590,8 @@ export default function EgyptNTDatabase() {
                         >
                             <Download size={16} />
                         </button>
-                        <button 
-                            onClick={() => setIsFilterOpen(true)} 
+                        <button
+                            onClick={() => setIsFilterOpen(true)}
                             className="egypt-mobile-action-icon"
                             title="OPEN DATABASE FILTERS"
                             disabled={loading}
@@ -657,8 +657,8 @@ export default function EgyptNTDatabase() {
                             {activeTab === 'h2h' && (
                                 <>
                                     <div hidden={!!selectedOpponent}>
-                                        <EgyptNTH2H 
-                                            matches={filteredMatches} 
+                                        <EgyptNTH2H
+                                            matches={filteredMatches}
                                             onOpponentClick={(opp) => {
                                                 window.scrollTo({ top: 0, behavior: 'smooth' });
                                                 setSelectedOpponent(opp);

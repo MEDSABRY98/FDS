@@ -1,8 +1,8 @@
 "use client";
 
 import { useState, useMemo } from "react";
-import SearchBar_db from "../../../lib/SearchBar_db";
-import NoData_db from "../../../lib/NoData_db";
+import SearchBar_db from "../../lib/SearchBar_db";
+import NoData_db from "../../lib/NoData_db";
 
 export default function EgyptNTSquadPlayers({ squadData }) {
     const [searchTerm, setSearchTerm] = useState("");
@@ -15,7 +15,7 @@ export default function EgyptNTSquadPlayers({ squadData }) {
     // Process player statistics
     const playerStats = useMemo(() => {
         const stats = {};
-        
+
         (squadData || []).forEach(item => {
             const name = String(item.PLAYERNAME || "").trim();
             if (!name) return;
@@ -31,7 +31,7 @@ export default function EgyptNTSquadPlayers({ squadData }) {
             }
 
             stats[name].callups += 1;
-            
+
             const club = String(item.CLUB || "Unknown").trim();
             stats[name].clubs[club] = (stats[name].clubs[club] || 0) + 1;
 
@@ -81,10 +81,10 @@ export default function EgyptNTSquadPlayers({ squadData }) {
     return (
         <div className="squad-subtab-container fade-in">
             <div className="squad-search-wrap">
-                <SearchBar_db 
-                     value={searchTerm} 
-                     onChange={handleSearchChange} 
-                     placeholder="Search player name..." 
+                <SearchBar_db
+                    value={searchTerm}
+                    onChange={handleSearchChange}
+                    placeholder="Search player name..."
                 />
             </div>
 
@@ -160,25 +160,25 @@ export default function EgyptNTSquadPlayers({ squadData }) {
             </div>
 
             {totalPages > 1 && filteredPlayers.length > 0 && (
-                        <div className="squad-pagination">
-                            <button 
-                                className="pag-btn"
-                                onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
-                                disabled={currentPage === 1}
-                            >
-                                ←
-                            </button>
-                            <span className="pag-info">
-                                Page <strong>{currentPage}</strong> of {totalPages}
-                            </span>
-                            <button 
-                                className="pag-btn"
-                                onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
-                                disabled={currentPage === totalPages}
-                            >
-                                →
-                            </button>
-                        </div>
+                <div className="squad-pagination">
+                    <button
+                        className="pag-btn"
+                        onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+                        disabled={currentPage === 1}
+                    >
+                        ←
+                    </button>
+                    <span className="pag-info">
+                        Page <strong>{currentPage}</strong> of {totalPages}
+                    </span>
+                    <button
+                        className="pag-btn"
+                        onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+                        disabled={currentPage === totalPages}
+                    >
+                        →
+                    </button>
+                </div>
             )}
 
             {/* Club Pop-up Modal */}
@@ -186,7 +186,7 @@ export default function EgyptNTSquadPlayers({ squadData }) {
                 <div className="squad-modal-overlay" onClick={() => setClubModalPlayer(null)}>
                     <div className="squad-modal-card" onClick={e => e.stopPropagation()}>
                         <div className="modal-header">
-                            <h3>🏢 Clubs representation for: <br/><span className="gold">{clubModalPlayer.name}</span></h3>
+                            <h3>🏢 Clubs representation for: <br /><span className="gold">{clubModalPlayer.name}</span></h3>
                             <button className="close-modal-btn" onClick={() => setClubModalPlayer(null)}>×</button>
                         </div>
                         <div className="modal-body">
@@ -218,7 +218,7 @@ export default function EgyptNTSquadPlayers({ squadData }) {
                 <div className="squad-modal-overlay" onClick={() => setChampModalPlayer(null)}>
                     <div className="squad-modal-card" onClick={e => e.stopPropagation()}>
                         <div className="modal-header">
-                            <h3>🏆 Tournaments call-ups for: <br/><span className="gold">{champModalPlayer.name}</span></h3>
+                            <h3>🏆 Tournaments call-ups for: <br /><span className="gold">{champModalPlayer.name}</span></h3>
                             <button className="close-modal-btn" onClick={() => setChampModalPlayer(null)}>×</button>
                         </div>
                         <div className="modal-body">
@@ -250,7 +250,7 @@ export default function EgyptNTSquadPlayers({ squadData }) {
                 <div className="squad-modal-overlay" onClick={() => setSeasonsModalPlayer(null)}>
                     <div className="squad-modal-card" onClick={e => e.stopPropagation()}>
                         <div className="modal-header">
-                            <h3>🗓️ Participated Seasons for: <br/><span className="gold">{seasonsModalPlayer.name}</span></h3>
+                            <h3>🗓️ Participated Seasons for: <br /><span className="gold">{seasonsModalPlayer.name}</span></h3>
                             <button className="close-modal-btn" onClick={() => setSeasonsModalPlayer(null)}>×</button>
                         </div>
                         <div className="modal-body">

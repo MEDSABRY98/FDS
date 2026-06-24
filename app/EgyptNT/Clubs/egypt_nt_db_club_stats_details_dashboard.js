@@ -1,6 +1,6 @@
 "use client";
 
-import NoData_db from "../../../../lib/NoData_db";
+import NoData_db from "../../lib/NoData_db";
 
 export default function ClubStatsDetailsDashboard({ clubStats }) {
     if (!clubStats || clubStats.goals === 0 && clubStats.assists === 0) {

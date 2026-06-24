@@ -1,8 +1,8 @@
 "use client";
 
 import { useState, useEffect, useMemo } from "react";
-import SearchBar_db from "../../../lib/SearchBar_db";
-import NoData_db from "../../../lib/NoData_db";
+import SearchBar_db from "../../lib/SearchBar_db";
+import NoData_db from "../../lib/NoData_db";
 import EgyptNTSquadClubDetails from "./egypt_nt_db_squad_club_details";
 
 export default function EgyptNTSquadClubs({ squadData, matches, lineupDetails, playerDetails, gkDetails, onDetailsViewChange }) {
@@ -88,10 +88,10 @@ export default function EgyptNTSquadClubs({ squadData, matches, lineupDetails, p
     return (
         <div className="squad-subtab-container fade-in">
             <div className="squad-search-wrap">
-                <SearchBar_db 
-                    value={searchTerm} 
-                    onChange={handleSearchChange} 
-                    placeholder="Search club name..." 
+                <SearchBar_db
+                    value={searchTerm}
+                    onChange={handleSearchChange}
+                    placeholder="Search club name..."
                 />
             </div>
 
@@ -143,25 +143,25 @@ export default function EgyptNTSquadClubs({ squadData, matches, lineupDetails, p
             </div>
 
             {totalPages > 1 && filteredClubs.length > 0 && (
-                        <div className="squad-pagination">
-                            <button 
-                                className="pag-btn"
-                                onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
-                                disabled={currentPage === 1}
-                            >
-                                ←
-                            </button>
-                            <span className="pag-info">
-                                Page <strong>{currentPage}</strong> of {totalPages}
-                            </span>
-                            <button 
-                                className="pag-btn"
-                                onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
-                                disabled={currentPage === totalPages}
-                            >
-                                →
-                            </button>
-                        </div>
+                <div className="squad-pagination">
+                    <button
+                        className="pag-btn"
+                        onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+                        disabled={currentPage === 1}
+                    >
+                        ←
+                    </button>
+                    <span className="pag-info">
+                        Page <strong>{currentPage}</strong> of {totalPages}
+                    </span>
+                    <button
+                        className="pag-btn"
+                        onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+                        disabled={currentPage === totalPages}
+                    >
+                        →
+                    </button>
+                </div>
             )}
 
         </div>

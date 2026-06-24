@@ -2,8 +2,8 @@
 
 import { useMemo, useState } from "react";
 import { Info } from "lucide-react";
-import SearchBar_db from "../../../../lib/SearchBar_db";
-import NoData_db from "../../../../lib/NoData_db";
+import SearchBar_db from "../../lib/SearchBar_db";
+import NoData_db from "../../lib/NoData_db";
 
 export default function ClubStatsDetailsMatches({ clubStats }) {
     const [searchTerm, setSearchTerm] = useState("");
@@ -204,9 +204,8 @@ export default function ClubStatsDetailsMatches({ clubStats }) {
                                                 <td className="item-name">{event.player}</td>
                                                 <td>
                                                     <span
-                                                        className={`club-stats-event-type ${
-                                                            event.kind === "goal" ? "is-goal" : "is-assist"
-                                                        }`}
+                                                        className={`club-stats-event-type ${event.kind === "goal" ? "is-goal" : "is-assist"
+                                                            }`}
                                                     >
                                                         {event.typeLabel}
                                                     </span>

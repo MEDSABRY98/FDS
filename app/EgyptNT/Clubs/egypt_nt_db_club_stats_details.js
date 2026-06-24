@@ -2,15 +2,14 @@
 
 import { useState, useMemo, useEffect } from "react";
 import { ArrowLeft } from "lucide-react";
-import { buildScoringClubDetailStats } from "../egypt_nt_db_club_stats_utils";
+import { buildScoringClubDetailStats } from "./egypt_nt_db_club_stats_utils";
 import ClubStatsDetailsDashboard from "./egypt_nt_db_club_stats_details_dashboard";
 import ClubStatsDetailsPlayers from "./egypt_nt_db_club_stats_details_players";
 import ClubStatsDetailsMatches from "./egypt_nt_db_club_stats_details_matches";
 import ClubStatsDetailsChampionships from "./egypt_nt_db_club_stats_details_championships";
 import ClubStatsDetailsVsTeams from "./egypt_nt_db_club_stats_details_vs_teams";
 import ClubStatsDetailsSeasons from "./egypt_nt_db_club_stats_details_seasons";
-import "../../egypt_nt_db_squad.css";
-import "../../SquadStats/egypt_nt_db_squad_details.css";
+import "./egypt_nt_db_squad.css";
 
 const CLUB_TABS = [
     { id: "dashboard", label: "Dashboard" },

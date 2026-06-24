@@ -1,9 +1,9 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import SearchBar_db from "../../../../lib/SearchBar_db";
-import NoData_db from "../../../../lib/NoData_db";
-import { compareSeasonStatsRows } from "../egypt_nt_db_club_stats_utils";
+import SearchBar_db from "../../lib/SearchBar_db";
+import NoData_db from "../../lib/NoData_db";
+import { compareSeasonStatsRows } from "./egypt_nt_db_club_stats_utils";
 
 const SORT_COLUMNS = [
     { key: "name", label: "SEASON" },

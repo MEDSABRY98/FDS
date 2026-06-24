@@ -7,7 +7,7 @@ import ClubDetailsPlayers from "./egypt_nt_db_squad_club_details_players";
 import ClubDetailsSeasonDetails from "./egypt_nt_db_squad_club_details_season_details";
 import ClubDetailsChampionships from "./egypt_nt_db_squad_club_details_championships";
 import ClubDetailsSeasons from "./egypt_nt_db_squad_club_details_seasons";
-import "../egypt_nt_db_squad.css";
+import "./egypt_nt_db_squad.css";
 
 const CLUB_TABS = [
     { id: "dashboard", label: "Dashboard" },
