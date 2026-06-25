@@ -716,19 +716,29 @@ function isCatalogReferenceColumn(col, tableName) {
     const catalog = getCatalogForColumn(col);
     if (!catalog) return false;
 
-    const playerCols = playerColumnsMap[tableName];
-    const teamCols = teamColumnsMap[tableName];
+    if (catalog === 'db_STADIUMS') {
+        return ['STAD', 'PLACE'].includes(col);
+    }
 
-    if (playerCols?.includes(col)) return catalog === 'db_PLAYERS';
-    if (teamCols?.includes(col)) return catalog === 'db_TEAMS';
+    if (catalog === 'db_MANAGERS') {
+        return ['AHLY MANAGER', 'OPPONENT MANAGER', 'ZAMALEK MANAGER', 'EGYPT MANAGER'].includes(col);
+    }
 
-    const matchDetailCols = [
-        'AHLY MANAGER', 'OPPONENT MANAGER', 'ZAMALEK MANAGER', 'EGYPT MANAGER',
-        'REFREE', 'REFEREE'
-    ];
-    if (matchDetailCols.includes(col)) return true;
+    if (catalog === 'db_REFEREES') {
+        return ['REFREE', 'REFEREE'].includes(col);
+    }
 
-    return !!catalog;
+    if (catalog === 'db_PLAYERS') {
+        const playerCols = playerColumnsMap[tableName];
+        return playerCols ? playerCols.includes(col) : false;
+    }
+
+    if (catalog === 'db_TEAMS') {
+        const teamCols = teamColumnsMap[tableName];
+        return teamCols ? teamCols.includes(col) : false;
+    }
+
+    return false;
 }
 
 // Resolve catalog names to IDs â€” reject unknown names (no auto-register)
