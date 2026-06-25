@@ -12,15 +12,135 @@ export default function PlayerDashboard({
     sortedSeasons,
     maxVal
 }) {
+    const totalApps = stats.caps || 0;
+    const totalGoals = stats.goals || 0;
+    const totalAssists = stats.assists || 0;
+    const totalGA = totalGoals + totalAssists;
+    const totalPenGoals = stats.penGoals || 0;
+    const totalPenMissed = stats.penMissed || 0;
+    const totalPenSaved = stats.penSaved || 0;
+
+    const totalContributions = totalGoals + totalAssists;
+    const goalsPct = totalContributions > 0 ? (totalGoals / totalContributions) * 100 : 0;
+    const assistsPct = totalContributions > 0 ? (totalAssists / totalContributions) * 100 : 0;
+
+    // Filter comps that have data
+    const activeComps = Object.keys(stats.compStats).sort();
+    const maxCompVal = Math.max(...activeComps.map(comp => Math.max(stats.compStats[comp].apps, stats.compStats[comp].goals, stats.compStats[comp].assists)), 1);
+
     return (
-        <div className="dashboard-grid fade-in">
+        <div className="dashboard-grid fade-in" style={{ display: 'flex', flexDirection: 'column', gap: '30px', padding: "10px 0" }}>
+            <style>{`
+                .kpi-card-modern {
+                    background: #ffffff;
+                    border: 1px solid #f0f0f0;
+                    border-radius: 16px;
+                    padding: 20px;
+                    box-shadow: 0 4px 20px rgba(0,0,0,0.02);
+                    display: flex;
+                    align-items: center;
+                    gap: 20px;
+                    transition: transform 0.3s ease, box-shadow 0.3s ease;
+                }
+                .kpi-card-modern:hover {
+                    transform: translateY(-5px);
+                    box-shadow: 0 12px 30px rgba(0,0,0,0.06);
+                }
+                .kpi-icon-wrap {
+                    width: 48px;
+                    height: 48px;
+                    border-radius: 12px;
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    font-size: 20px;
+                }
+                .dashboard-grid-modern {
+                    display: grid;
+                    grid-template-columns: repeat(2, 1fr);
+                    gap: 30px;
+                }
+                @media (max-width: 1024px) {
+                    .dashboard-grid-modern {
+                        grid-template-columns: 1fr;
+                    }
+                }
+                .chart-card-modern {
+                    background: #ffffff;
+                    border: 1px solid #f0f0f0;
+                    border-radius: 20px;
+                    padding: 25px;
+                    box-shadow: 0 4px 25px rgba(0,0,0,0.02);
+                }
+                .chart-row-modern {
+                    display: flex;
+                    flex-direction: column;
+                    align-items: stretch;
+                    gap: 8px;
+                    margin-bottom: 20px;
+                    padding: 10px;
+                    border-radius: 10px;
+                    transition: background-color 0.2s ease;
+                }
+                .chart-row-modern:hover {
+                    background-color: #fafafa;
+                }
+                .chart-label-modern {
+                    width: 100%;
+                    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+                    font-size: 15px;
+                    font-weight: 800;
+                    color: #111;
+                    text-align: start;
+                    white-space: normal;
+                    letter-spacing: normal;
+                }
+                .chart-bars-wrap {
+                    flex: 1;
+                    display: flex;
+                    flex-direction: column;
+                    gap: 6px;
+                }
+                .bar-container-modern {
+                    display: flex;
+                    align-items: center;
+                    gap: 12px;
+                    width: 100%;
+                }
+                .bar-track-modern {
+                    flex: 1;
+                    height: 10px;
+                    background-color: rgba(0, 0, 0, 0.04);
+                    border-radius: 5px;
+                    overflow: hidden;
+                    display: flex;
+                }
+                .bar-fill-modern {
+                    height: 100%;
+                    border-radius: 5px;
+                    animation: growWidth 1s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+                    width: 0;
+                }
+                .bar-value-modern {
+                    font-family: 'Outfit', 'Inter', 'Segoe UI', Tahoma, sans-serif;
+                    font-size: 18px;
+                    font-weight: 900;
+                    min-width: 40px;
+                    text-align: left;
+                    letter-spacing: normal;
+                }
+                @keyframes growWidth {
+                    from { width: 0; }
+                    to { width: var(--target-width); }
+                }
+            `}</style>
+
+            {/* FILTERS BAR */}
             <div className="dashboard-filters-container" style={{
-                gridColumn: '1 / -1',
                 display: 'flex',
                 justifyContent: 'center',
                 alignItems: 'center',
                 gap: '40px',
-                marginBottom: '20px',
                 padding: '20px',
                 background: '#fff',
                 borderRadius: '20px',
@@ -28,6 +148,7 @@ export default function PlayerDashboard({
                 border: '1px solid #f0f0f0',
                 flexWrap: 'wrap'
             }}>
+                {/* Tournament Multi-Select */}
                 <div style={{ display: 'flex', alignItems: 'center', gap: '15px' }}>
                     <span style={{ fontSize: '12px', fontWeight: '800', fontFamily: 'Space Mono', color: '#999', letterSpacing: '1px' }}>COMPETITIONS:</span>
                     <div style={{ position: 'relative' }}>
@@ -38,10 +159,10 @@ export default function PlayerDashboard({
                                 borderRadius: '12px',
                                 border: '1px solid #eee',
                                 background: '#f9f9f9',
-                                fontFamily: 'Space Mono',
-                                fontSize: '11px',
+                                fontFamily: 'Outfit, Inter, sans-serif',
+                                fontSize: '12px',
                                 fontWeight: '800',
-                                color: '#111',
+                                color: 'var(--player-dark)',
                                 cursor: 'pointer',
                                 display: 'flex',
                                 alignItems: 'center',
@@ -75,8 +196,8 @@ export default function PlayerDashboard({
                                     onClick={() => setSelectedComps([])}
                                     style={{
                                         padding: '8px 10px',
-                                        fontSize: '11px',
-                                        fontFamily: 'Space Mono',
+                                        fontSize: '12px',
+                                        fontFamily: 'Outfit, Inter, sans-serif',
                                         fontWeight: '800',
                                         color: 'var(--player-gold)',
                                         cursor: 'pointer',
@@ -100,7 +221,7 @@ export default function PlayerDashboard({
                                             }}
                                             style={{ width: '16px', height: '16px', cursor: 'pointer', accentColor: 'var(--player-gold)' }}
                                         />
-                                        <span style={{ fontSize: '11px', fontFamily: 'Space Mono', fontWeight: '700', textTransform: 'uppercase' }}>{comp}</span>
+                                        <span style={{ fontSize: '12px', fontFamily: 'Outfit, Inter, sans-serif', fontWeight: '700', textTransform: 'uppercase' }}>{comp}</span>
                                     </label>
                                 ))}
                             </div>
@@ -108,8 +229,10 @@ export default function PlayerDashboard({
                     </div>
                 </div>
 
+                {/* Vertical Divider */}
                 <div style={{ width: '1px', height: '30px', background: '#eee' }}></div>
 
+                {/* Seasonal Filter Input */}
                 <div className="seasonal-filter-group" style={{ display: 'flex', alignItems: 'center', gap: '15px' }}>
                     <span style={{ fontSize: '12px', fontWeight: '800', fontFamily: 'Space Mono', color: '#999', letterSpacing: '1px' }}>VIEW LAST:</span>
                     <input
@@ -135,178 +258,275 @@ export default function PlayerDashboard({
                 </div>
             </div>
 
-            <div className="dashboard-card" style={{ gridColumn: '1 / -1' }}>
-                <div className="dashboard-header-modern" style={{ display: 'flex', justifyContent: 'flex-start', alignItems: 'center', marginBottom: '30px' }}>
-                    <div className="history-title" style={{ marginBottom: 0, paddingLeft: '20px' }}>TOURNAMENT PERFORMANCE</div>
-                </div>
-
-                <div className="chart-legend" style={{ display: 'flex', gap: '35px', marginBottom: '35px', justifyContent: 'center' }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                        <div style={{ width: '16px', height: '16px', borderRadius: '4px', background: 'var(--player-gold)' }}></div>
-                        <span style={{ fontSize: '13px', fontWeight: '800', fontFamily: 'Space Mono', color: '#333', letterSpacing: '1px' }}>APPS</span>
-                    </div>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                        <div style={{ width: '16px', height: '16px', borderRadius: '4px', background: '#27ae60' }}></div>
-                        <span style={{ fontSize: '13px', fontWeight: '800', fontFamily: 'Space Mono', color: '#333', letterSpacing: '1px' }}>GOALS</span>
-                    </div>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                        <div style={{ width: '16px', height: '16px', borderRadius: '4px', background: '#2980b9' }}></div>
-                        <span style={{ fontSize: '13px', fontWeight: '800', fontFamily: 'Space Mono', color: '#333', letterSpacing: '1px' }}>ASSISTS</span>
+            {/* KPI CARDS ROW */}
+            <div style={{
+                display: 'grid',
+                gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
+                gap: '20px',
+                marginTop: '10px',
+                marginBottom: '10px'
+            }}>
+                <div className="kpi-card-modern">
+                    <div className="kpi-icon-wrap" style={{ background: 'rgba(211, 30, 54, 0.08)', color: '#D31E36' }}>🏃‍♂️</div>
+                    <div>
+                        <div style={{ fontSize: '11px', color: '#999', fontWeight: '800', fontFamily: 'Space Mono', letterSpacing: '1px' }}>MATCHES</div>
+                        <div style={{ fontSize: '28px', fontWeight: '900', color: '#111', fontFamily: 'Bebas Neue', letterSpacing: '1px' }}>{totalApps}</div>
                     </div>
                 </div>
-
-                <div className="seasonal-chart-container" style={{ display: 'flex', height: '400px', alignItems: 'flex-end', gap: '50px', paddingBottom: '20px', paddingTop: '50px', overflowX: 'auto', overflowY: 'visible' }}>
-                    {Object.keys(stats.compStats).sort().map(comp => {
-                        const maxCompVal = Math.max(...Object.values(stats.compStats).map(c => Math.max(c.apps, c.goals, c.assists)), 1);
-                        return (
-                            <div key={comp} className="chart-item-season" style={{ flex: 1, minWidth: '180px', textAlign: 'center' }}>
-                                <div className="bar-group" style={{ display: 'flex', height: '320px', alignItems: 'flex-end', justifyContent: 'center', gap: '16px', position: 'relative', overflow: 'visible' }}>
-                                    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', height: '100%', justifyContent: 'flex-end' }}>
-                                        <span style={{ fontSize: '24px', fontWeight: '900', marginBottom: '10px', color: 'var(--player-gold)', fontFamily: 'Space Mono' }}>{stats.compStats[comp].apps}</span>
-                                        <div className="bar-single" style={{ height: `${(stats.compStats[comp].apps / maxCompVal) * 85}%`, width: '22px', background: 'var(--player-gold)', borderRadius: '6px 6px 0 0' }} title={`Apps: ${stats.compStats[comp].apps}`}></div>
-                                    </div>
-                                    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', height: '100%', justifyContent: 'flex-end' }}>
-                                        <span style={{ fontSize: '24px', fontWeight: '900', marginBottom: '10px', color: '#27ae60', fontFamily: 'Space Mono' }}>{stats.compStats[comp].goals}</span>
-                                        <div className="bar-single" style={{ height: `${(stats.compStats[comp].goals / maxCompVal) * 85}%`, width: '22px', background: '#27ae60', borderRadius: '6px 6px 0 0' }} title={`Goals: ${stats.compStats[comp].goals}`}></div>
-                                    </div>
-                                    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', height: '100%', justifyContent: 'flex-end' }}>
-                                        <span style={{ fontSize: '24px', fontWeight: '900', marginBottom: '10px', color: '#2980b9', fontFamily: 'Space Mono' }}>{stats.compStats[comp].assists}</span>
-                                        <div className="bar-single" style={{ height: `${(stats.compStats[comp].assists / maxCompVal) * 85}%`, width: '22px', background: '#2980b9', borderRadius: '6px 6px 0 0' }} title={`Assists: ${stats.compStats[comp].assists}`}></div>
-                                    </div>
-                                </div>
-                                <div style={{ marginTop: '20px', fontSize: '15px', fontWeight: '900', fontFamily: 'Space Mono', color: '#000', whiteSpace: 'nowrap', textTransform: 'uppercase' }}>{comp}</div>
-                            </div>
-                        );
-                    })}
+                <div className="kpi-card-modern">
+                    <div className="kpi-icon-wrap" style={{ background: 'rgba(46, 204, 113, 0.08)', color: '#2ecc71' }}>⚽</div>
+                    <div>
+                        <div style={{ fontSize: '11px', color: '#999', fontWeight: '800', fontFamily: 'Space Mono', letterSpacing: '1px' }}>GOALS</div>
+                        <div style={{ fontSize: '28px', fontWeight: '900', color: '#111', fontFamily: 'Bebas Neue', letterSpacing: '1px' }}>{totalGoals}</div>
+                    </div>
+                </div>
+                <div className="kpi-card-modern">
+                    <div className="kpi-icon-wrap" style={{ background: 'rgba(52, 152, 219, 0.08)', color: '#3498db' }}>👟</div>
+                    <div>
+                        <div style={{ fontSize: '11px', color: '#999', fontWeight: '800', fontFamily: 'Space Mono', letterSpacing: '1px' }}>ASSISTS</div>
+                        <div style={{ fontSize: '28px', fontWeight: '900', color: '#111', fontFamily: 'Bebas Neue', letterSpacing: '1px' }}>{totalAssists}</div>
+                    </div>
+                </div>
+                <div className="kpi-card-modern">
+                    <div className="kpi-icon-wrap" style={{ background: 'rgba(201, 168, 76, 0.08)', color: 'var(--player-gold)' }}>⭐</div>
+                    <div>
+                        <div style={{ fontSize: '11px', color: '#999', fontWeight: '800', fontFamily: 'Space Mono', letterSpacing: '1px' }}>GOALS + ASSISTS</div>
+                        <div style={{ fontSize: '28px', fontWeight: '900', color: '#111', fontFamily: 'Bebas Neue', letterSpacing: '1px' }}>{totalGA}</div>
+                    </div>
                 </div>
             </div>
 
-            <div className="dashboard-card" style={{ gridColumn: '1 / -1' }}>
-                <div className="dashboard-header-modern" style={{ display: 'flex', justifyContent: 'flex-start', alignItems: 'center', marginBottom: '30px' }}>
-                    <div className="history-title" style={{ marginBottom: 0, paddingLeft: '20px' }}>SEASONAL PERFORMANCE</div>
-                </div>
-
-                <div className="chart-legend" style={{ display: 'flex', gap: '35px', marginBottom: '35px', justifyContent: 'center' }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                        <div style={{ width: '16px', height: '16px', borderRadius: '4px', background: 'var(--player-gold)' }}></div>
-                        <span style={{ fontSize: '13px', fontWeight: '800', fontFamily: 'Space Mono', color: '#333', letterSpacing: '1px' }}>APPS</span>
-                    </div>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                        <div style={{ width: '16px', height: '16px', borderRadius: '4px', background: '#27ae60' }}></div>
-                        <span style={{ fontSize: '13px', fontWeight: '800', fontFamily: 'Space Mono', color: '#333', letterSpacing: '1px' }}>GOALS</span>
-                    </div>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                        <div style={{ width: '16px', height: '16px', borderRadius: '4px', background: '#2980b9' }}></div>
-                        <span style={{ fontSize: '13px', fontWeight: '800', fontFamily: 'Space Mono', color: '#333', letterSpacing: '1px' }}>ASSISTS</span>
-                    </div>
-                </div>
-
-                <div className="seasonal-chart-container" style={{ display: 'flex', height: '400px', alignItems: 'flex-end', gap: '50px', paddingBottom: '20px', paddingTop: '50px', overflowX: 'auto', overflowY: 'visible' }}>
-                    {sortedSeasons.map(season => (
-                        <div key={season} className="chart-item-season" style={{ flex: 1, minWidth: '150px', textAlign: 'center' }}>
-                            <div className="bar-group" style={{ display: 'flex', height: '320px', alignItems: 'flex-end', justifyContent: 'center', gap: '16px', position: 'relative', overflow: 'visible' }}>
-                                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', height: '100%', justifyContent: 'flex-end' }}>
-                                    <span style={{ fontSize: '20px', fontWeight: '900', marginBottom: '12px', color: 'var(--player-gold)', fontFamily: 'Space Mono' }}>{stats.seasonalStats[season].apps}</span>
-                                    <div className="bar-single" style={{ height: `${(stats.seasonalStats[season].apps / maxVal) * 85}%`, width: '28px', background: 'var(--player-gold)', borderRadius: '8px 8px 0 0' }} title={`Apps: ${stats.seasonalStats[season].apps}`}></div>
-                                </div>
-                                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', height: '100%', justifyContent: 'flex-end' }}>
-                                    <span style={{ fontSize: '20px', fontWeight: '900', marginBottom: '12px', color: '#27ae60', fontFamily: 'Space Mono' }}>{stats.seasonalStats[season].goals}</span>
-                                    <div className="bar-single" style={{ height: `${(stats.seasonalStats[season].goals / maxVal) * 85}%`, width: '28px', background: '#27ae60', borderRadius: '8px 8px 0 0' }} title={`Goals: ${stats.seasonalStats[season].goals}`}></div>
-                                </div>
-                                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', height: '100%', justifyContent: 'flex-end' }}>
-                                    <span style={{ fontSize: '20px', fontWeight: '900', marginBottom: '12px', color: '#2980b9', fontFamily: 'Space Mono' }}>{stats.seasonalStats[season].assists}</span>
-                                    <div className="bar-single" style={{ height: `${(stats.seasonalStats[season].assists / maxVal) * 85}%`, width: '28px', background: '#2980b9', borderRadius: '8px 8px 0 0' }} title={`Assists: ${stats.seasonalStats[season].assists}`}></div>
-                                </div>
-                            </div>
-                            <div style={{ marginTop: '20px', fontSize: '16px', fontWeight: '900', fontFamily: 'Space Mono', color: '#111', whiteSpace: 'nowrap' }}>{season}</div>
+            {/* CHARTS CONTAINER */}
+            <div className="dashboard-grid-modern">
+                {/* Tournament Performance - Vertical List of Horizontal Bars */}
+                <div className="chart-card-modern">
+                    <div style={{ fontSize: '15px', fontWeight: '800', fontFamily: 'Space Mono', color: '#111', letterSpacing: '1px', marginBottom: '25px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                        <span>TOURNAMENT BREAKDOWN</span>
+                        <div style={{ display: 'flex', gap: '15px', fontSize: '10px' }}>
+                            <span style={{ color: 'var(--player-gold)' }}>■ APPS</span>
+                            <span style={{ color: '#2ecc71' }}>■ GOALS</span>
+                            <span style={{ color: '#3498db' }}>■ ASSISTS</span>
                         </div>
-                    ))}
+                    </div>
+
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '5px' }}>
+                        {activeComps.map(comp => (
+                            <div key={comp} className="chart-row-modern">
+                                <div className="chart-label-modern" title={comp}>{comp}</div>
+                                <div className="chart-bars-wrap">
+                                    {/* Apps Bar */}
+                                    <div className="bar-container-modern">
+                                        <div className="bar-track-modern">
+                                            <div className="bar-fill-modern" style={{
+                                                '--target-width': `${(stats.compStats[comp].apps / maxCompVal) * 100}%`,
+                                                background: 'var(--player-gold)'
+                                            }} title={`Apps: ${stats.compStats[comp].apps}`} />
+                                        </div>
+                                        <span className="bar-value-modern" style={{ color: 'var(--player-gold)' }}>{stats.compStats[comp].apps}</span>
+                                    </div>
+                                    {/* Goals Bar */}
+                                    {stats.compStats[comp].goals > 0 && (
+                                        <div className="bar-container-modern">
+                                            <div className="bar-track-modern">
+                                                <div className="bar-fill-modern" style={{
+                                                    '--target-width': `${(stats.compStats[comp].goals / maxCompVal) * 100}%`,
+                                                    background: '#2ecc71'
+                                                }} title={`Goals: ${stats.compStats[comp].goals}`} />
+                                            </div>
+                                            <span className="bar-value-modern" style={{ color: '#2ecc71' }}>{stats.compStats[comp].goals}</span>
+                                        </div>
+                                    )}
+                                    {/* Assists Bar */}
+                                    {stats.compStats[comp].assists > 0 && (
+                                        <div className="bar-container-modern">
+                                            <div className="bar-track-modern">
+                                                <div className="bar-fill-modern" style={{
+                                                    '--target-width': `${(stats.compStats[comp].assists / maxCompVal) * 100}%`,
+                                                    background: '#3498db'
+                                                }} title={`Assists: ${stats.compStats[comp].assists}`} />
+                                            </div>
+                                            <span className="bar-value-modern" style={{ color: '#3498db' }}>{stats.compStats[comp].assists}</span>
+                                        </div>
+                                    )}
+                                </div>
+                            </div>
+                        ))}
+                    </div>
+                </div>
+
+                {/* Seasonal Performance - Vertical List of Horizontal Bars */}
+                <div className="chart-card-modern">
+                    <div style={{ fontSize: '15px', fontWeight: '800', fontFamily: 'Space Mono', color: '#111', letterSpacing: '1px', marginBottom: '25px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                        <span>SEASONAL BREAKDOWN</span>
+                        <div style={{ display: 'flex', gap: '15px', fontSize: '10px' }}>
+                            <span style={{ color: 'var(--player-gold)' }}>■ APPS</span>
+                            <span style={{ color: '#2ecc71' }}>■ GOALS</span>
+                            <span style={{ color: '#3498db' }}>■ ASSISTS</span>
+                        </div>
+                    </div>
+
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '5px' }}>
+                        {sortedSeasons.map(season => (
+                            <div key={season} className="chart-row-modern">
+                                <div className="chart-label-modern" style={{ direction: 'ltr' }}>{season}</div>
+                                <div className="chart-bars-wrap">
+                                    {/* Apps Bar */}
+                                    <div className="bar-container-modern">
+                                        <div className="bar-track-modern">
+                                            <div className="bar-fill-modern" style={{
+                                                '--target-width': `${(stats.seasonalStats[season].apps / maxVal) * 100}%`,
+                                                background: 'var(--player-gold)'
+                                            }} title={`Apps: ${stats.seasonalStats[season].apps}`} />
+                                        </div>
+                                        <span className="bar-value-modern" style={{ color: 'var(--player-gold)' }}>{stats.seasonalStats[season].apps}</span>
+                                    </div>
+                                    {/* Goals Bar */}
+                                    {stats.seasonalStats[season].goals > 0 && (
+                                        <div className="bar-container-modern">
+                                            <div className="bar-track-modern">
+                                                <div className="bar-fill-modern" style={{
+                                                    '--target-width': `${(stats.seasonalStats[season].goals / maxVal) * 100}%`,
+                                                    background: '#2ecc71'
+                                                }} title={`Goals: ${stats.seasonalStats[season].goals}`} />
+                                            </div>
+                                            <span className="bar-value-modern" style={{ color: '#2ecc71' }}>{stats.seasonalStats[season].goals}</span>
+                                        </div>
+                                    )}
+                                    {/* Assists Bar */}
+                                    {stats.seasonalStats[season].assists > 0 && (
+                                        <div className="bar-container-modern">
+                                            <div className="bar-track-modern">
+                                                <div className="bar-fill-modern" style={{
+                                                    '--target-width': `${(stats.seasonalStats[season].assists / maxVal) * 100}%`,
+                                                    background: '#3498db'
+                                                }} title={`Assists: ${stats.seasonalStats[season].assists}`} />
+                                            </div>
+                                            <span className="bar-value-modern" style={{ color: '#3498db' }}>{stats.seasonalStats[season].assists}</span>
+                                        </div>
+                                    )}
+                                </div>
+                            </div>
+                        ))}
+                    </div>
                 </div>
             </div>
 
-            <div className="dashboard-card" style={{ gridColumn: '1 / -1' }}>
-                <div className="dashboard-header-modern" style={{ display: 'flex', justifyContent: 'flex-start', alignItems: 'center', marginBottom: '20px' }}>
-                    <div className="history-title" style={{ marginBottom: 0, paddingLeft: '20px' }}>PENALTIES BY TOURNAMENT</div>
-                </div>
-
-                <div className="chart-legend" style={{ display: 'flex', gap: '35px', marginBottom: '35px', justifyContent: 'center' }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                        <div style={{ width: '16px', height: '16px', borderRadius: '4px', background: '#27ae60' }}></div>
-                        <span style={{ fontSize: '13px', fontWeight: '800', fontFamily: 'Space Mono', color: '#333', letterSpacing: '1px' }}>SCORED</span>
+            {/* PENALTIES & PROFILE GRID */}
+            <div className="dashboard-grid-modern" style={{ marginTop: '0px' }}>
+                {/* Penalties By Tournament - Horizontal Bar Chart */}
+                <div className="chart-card-modern">
+                    <div style={{ fontSize: '15px', fontWeight: '800', fontFamily: 'Space Mono', color: '#111', letterSpacing: '1px', marginBottom: '25px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                        <span>PENALTIES BY TOURNAMENT</span>
+                        <div style={{ display: 'flex', gap: '15px', fontSize: '10px' }}>
+                            <span style={{ color: '#2ecc71' }}>■ SCORED</span>
+                            <span style={{ color: '#e74c3c' }}>■ MISSED</span>
+                        </div>
                     </div>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                        <div style={{ width: '16px', height: '16px', borderRadius: '4px', background: '#e74c3c' }}></div>
-                        <span style={{ fontSize: '13px', fontWeight: '800', fontFamily: 'Space Mono', color: '#333', letterSpacing: '1px' }}>MISSED</span>
-                    </div>
-                </div>
 
-                <div className="seasonal-chart-container" style={{ display: 'flex', height: '400px', alignItems: 'flex-end', gap: '50px', paddingBottom: '20px', paddingTop: '50px', overflowX: 'auto', overflowY: 'visible' }}>
-                    {Object.keys(stats.compStats).sort().map(comp => {
-                        const c = stats.compStats[comp];
-                        const allCompVals = Object.values(stats.compStats);
-                        const maxCompPenVal = Math.max(...allCompVals.map(v => Math.max(v.penGoals || 0, v.penMissed || 0)), 1);
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '5px' }}>
+                        {activeComps.map(comp => {
+                            const c = stats.compStats[comp];
+                            const maxPenVal = Math.max(...activeComps.map(k => Math.max(stats.compStats[k].penGoals || 0, stats.compStats[k].penMissed || 0)), 1);
 
-                        if (!c || ((c.penGoals || 0) === 0 && (c.penMissed || 0) === 0)) return null;
+                            if (!c || ((c.penGoals || 0) === 0 && (c.penMissed || 0) === 0)) return null;
 
-                        return (
-                            <div key={comp} className="chart-item-season" style={{ flex: 1, minWidth: '200px', textAlign: 'center' }}>
-                                <div className="bar-group" style={{ display: 'flex', height: '320px', alignItems: 'flex-end', justifyContent: 'center', gap: '20px', position: 'relative', overflow: 'visible' }}>
-                                    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', height: '100%', justifyContent: 'flex-end' }}>
-                                        <span style={{ fontSize: '24px', fontWeight: '900', marginBottom: '10px', color: '#27ae60', fontFamily: 'Space Mono' }}>{c.penGoals || 0}</span>
-                                        <div className="bar-single" style={{ height: `${((c.penGoals || 0) / maxCompPenVal) * 280}px`, minHeight: (c.penGoals > 0 ? '10px' : '0'), width: '28px', background: '#27ae60', borderRadius: '6px 6px 0 0' }}></div>
-                                    </div>
-                                    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', height: '100%', justifyContent: 'flex-end' }}>
-                                        <span style={{ fontSize: '24px', fontWeight: '900', marginBottom: '10px', color: '#e74c3c', fontFamily: 'Space Mono' }}>{c.penMissed || 0}</span>
-                                        <div className="bar-single" style={{ height: `${((c.penMissed || 0) / maxCompPenVal) * 280}px`, minHeight: (c.penMissed > 0 ? '10px' : '0'), width: '28px', background: '#e74c3c', borderRadius: '6px 6px 0 0' }}></div>
-                                    </div>
-                                </div>
-                                <div style={{ marginTop: '20px', fontSize: '15px', fontWeight: '900', fontFamily: 'Space Mono', color: '#000', whiteSpace: 'nowrap', textTransform: 'uppercase' }}>{comp}</div>
-                            </div>
-                        );
-                    })}
-                </div>
-            </div>
-
-            <div className="dashboard-card" style={{ gridColumn: '1 / -1' }}>
-                <div className="dashboard-header-modern" style={{ display: 'flex', justifyContent: 'flex-start', alignItems: 'center', marginBottom: '20px' }}>
-                    <div className="history-title" style={{ marginBottom: 0, paddingLeft: '20px' }}>PENALTIES BY SEASON</div>
-                </div>
-
-                <div className="chart-legend" style={{ display: 'flex', gap: '35px', marginBottom: '35px', justifyContent: 'center' }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                        <div style={{ width: '16px', height: '16px', borderRadius: '4px', background: '#27ae60' }}></div>
-                        <span style={{ fontSize: '13px', fontWeight: '800', fontFamily: 'Space Mono', color: '#333' }}>SCORED</span>
-                    </div>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                        <div style={{ width: '16px', height: '16px', borderRadius: '4px', background: '#e74c3c' }}></div>
-                        <span style={{ fontSize: '13px', fontWeight: '800', fontFamily: 'Space Mono', color: '#333' }}>MISSED</span>
-                    </div>
-                </div>
-
-                <div className="seasonal-chart-container" style={{ display: 'flex', height: '400px', alignItems: 'flex-end', gap: '50px', paddingBottom: '20px', paddingTop: '50px', overflowX: 'auto', overflowY: 'visible' }}>
-                    {sortedSeasons.map(season => {
-                        const s = stats.seasonalStats[season];
-                        const seasonsWithData = sortedSeasons.filter(k => stats.seasonalStats[k]);
-                        const maxPenVal = Math.max(...seasonsWithData.map(key => Math.max(stats.seasonalStats[key].penGoals || 0, stats.seasonalStats[key].penMissed || 0)), 1);
-
-                        if (!s || ((s.penGoals || 0) === 0 && (s.penMissed || 0) === 0)) return null;
-
-                        return (
-                            <div key={season} className="chart-item-season" style={{ flex: 1, minWidth: '150px', textAlign: 'center' }}>
-                                <div className="bar-group" style={{ display: 'flex', height: '320px', alignItems: 'flex-end', justifyContent: 'center', gap: '20px', position: 'relative', overflow: 'visible' }}>
-                                    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', height: '100%', justifyContent: 'flex-end' }}>
-                                        <span style={{ fontSize: '20px', fontWeight: '900', marginBottom: '12px', color: '#27ae60', fontFamily: 'Space Mono' }}>{s.penGoals || 0}</span>
-                                        <div className="bar-single" style={{ height: `${((s.penGoals || 0) / maxPenVal) * 280}px`, minHeight: (s.penGoals > 0 ? '10px' : '0'), width: '32px', background: '#27ae60', borderRadius: '8px 8px 0 0' }}></div>
-                                    </div>
-                                    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', height: '100%', justifyContent: 'flex-end' }}>
-                                        <span style={{ fontSize: '20px', fontWeight: '900', marginBottom: '12px', color: '#e74c3c', fontFamily: 'Space Mono' }}>{s.penMissed || 0}</span>
-                                        <div className="bar-single" style={{ height: `${((s.penMissed || 0) / maxPenVal) * 280}px`, minHeight: (s.penMissed > 0 ? '10px' : '0'), width: '32px', background: '#e74c3c', borderRadius: '8px 8px 0 0' }}></div>
+                            return (
+                                <div key={comp} className="chart-row-modern">
+                                    <div className="chart-label-modern" title={comp}>{comp}</div>
+                                    <div className="chart-bars-wrap">
+                                        {c.penGoals > 0 && (
+                                            <div className="bar-container-modern">
+                                                <div className="bar-track-modern">
+                                                    <div className="bar-fill-modern" style={{
+                                                        '--target-width': `${(c.penGoals / maxPenVal) * 100}%`,
+                                                        background: '#2ecc71'
+                                                    }} />
+                                                </div>
+                                                <span className="bar-value-modern" style={{ color: '#2ecc71' }}>{c.penGoals}</span>
+                                            </div>
+                                        )}
+                                        {c.penMissed > 0 && (
+                                            <div className="bar-container-modern">
+                                                <div className="bar-track-modern">
+                                                    <div className="bar-fill-modern" style={{
+                                                        '--target-width': `${(c.penMissed / maxPenVal) * 100}%`,
+                                                        background: '#e74c3c'
+                                                    }} />
+                                                </div>
+                                                <span className="bar-value-modern" style={{ color: '#e74c3c' }}>{c.penMissed}</span>
+                                            </div>
+                                        )}
                                     </div>
                                 </div>
-                                <div style={{ marginTop: '20px', fontSize: '16px', fontWeight: '900', fontFamily: 'Space Mono', color: '#111' }}>{season}</div>
+                            );
+                        })}
+                        {Object.values(stats.compStats).every(c => (c.penGoals || 0) === 0 && (c.penMissed || 0) === 0) && (
+                            <div style={{ textAlign: 'center', color: '#999', fontSize: '13px', fontFamily: 'Space Mono', padding: '30px' }}>
+                                NO PENALTIES TAKEN IN COMPETITIONS
                             </div>
-                        );
-                    })}
+                        )}
+                    </div>
+                </div>
+
+                {/* Playstyle Profile Donut Ratio */}
+                <div className="chart-card-modern" style={{ display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
+                    <div style={{ fontSize: '15px', fontWeight: '800', fontFamily: 'Space Mono', color: '#111', letterSpacing: '1px', marginBottom: '25px', textAlign: 'center' }}>
+                        PLAYSTYLE PROFILE (SCORER VS PLAYMAKER)
+                    </div>
+                    
+                    {totalContributions > 0 ? (
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '20px', padding: '10px 20px' }}>
+                            <div style={{ display: 'flex', height: '36px', borderRadius: '18px', overflow: 'hidden', boxShadow: '0 4px 15px rgba(0,0,0,0.05)', border: '1px solid #eee' }}>
+                                {goalsPct > 0 && (
+                                    <div style={{
+                                        width: `${goalsPct}%`,
+                                        background: 'linear-gradient(90deg, #D31E36, #ff4d6d)',
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        justifyContent: 'center',
+                                        color: '#fff',
+                                        fontWeight: '900',
+                                        fontFamily: 'Space Mono',
+                                        fontSize: '13px',
+                                        transition: 'width 1s ease'
+                                    }}>
+                                        {goalsPct.toFixed(0)}% GOALS
+                                    </div>
+                                )}
+                                {assistsPct > 0 && (
+                                    <div style={{
+                                        width: `${assistsPct}%`,
+                                        background: 'linear-gradient(90deg, #3498db, #5dade2)',
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        justifyContent: 'center',
+                                        color: '#fff',
+                                        fontWeight: '900',
+                                        fontFamily: 'Space Mono',
+                                        fontSize: '13px',
+                                        transition: 'width 1s ease'
+                                    }}>
+                                        {assistsPct.toFixed(0)}% ASSISTS
+                                    </div>
+                                )}
+                            </div>
+                            
+                            <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '11px', fontFamily: 'Space Mono', color: '#888', fontWeight: '700' }}>
+                                <div style={{ textAlign: 'left' }}>
+                                    🎯 GOALS: <strong>{totalGoals}</strong>
+                                    <div style={{ color: '#D31E36', fontSize: '13px', fontWeight: '800', marginTop: '4px' }}>SCORER ROLE</div>
+                                </div>
+                                <div style={{ textAlign: 'right' }}>
+                                    👟 ASSISTS: <strong>{totalAssists}</strong>
+                                    <div style={{ color: '#3498db', fontSize: '13px', fontWeight: '800', marginTop: '4px' }}>PLAYMAKER ROLE</div>
+                                </div>
+                            </div>
+                        </div>
+                    ) : (
+                        <div style={{ textAlign: 'center', color: '#999', fontSize: '13px', fontFamily: 'Space Mono', padding: '30px' }}>
+                            NO GOALS OR ASSISTS RECORDED TO PLOT PROFILE
+                        </div>
+                    )}
                 </div>
             </div>
         </div>

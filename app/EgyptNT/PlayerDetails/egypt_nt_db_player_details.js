@@ -25,12 +25,12 @@ import { computePlayerAssistImpact } from "./egypt_nt_db_player_details_assist_i
 export default function EgyptNTPlayerDetails({ playerName, playerDetails, lineupDetails, masterMatches, gkDetails, howPenMissed, onBack }) {
     const [activeTab, setActiveTab] = useState('overview');
     const [seasonLimit, setSeasonLimit] = useState('');
+    const [isCompOpen, setIsCompOpen] = useState(false);
     const [selectedTeams, setSelectedTeams] = useState([]);
     const [selectedComps, setSelectedComps] = useState([]);
     const [selectedSYs, setSelectedSYs] = useState([]); // Selected seasons (using SEASON column)
     const [selectedOpps, setSelectedOpps] = useState([]);
     const [isFilterModalOpen, setIsFilterModalOpen] = useState(false);
-    const [isCompOpen, setIsCompOpen] = useState(false);
 
     useEffect(() => {
         window.scrollTo(0, 0);
@@ -734,14 +734,6 @@ export default function EgyptNTPlayerDetails({ playerName, playerDetails, lineup
 
     if (!playerName) return null;
 
-    // Seasonal stats calculations
-    let sortedSeasons = Object.keys(stats.seasonalStats).sort();
-    if (seasonLimit && !isNaN(seasonLimit)) {
-        const limit = parseInt(seasonLimit);
-        if (limit > 0) sortedSeasons = sortedSeasons.slice(-limit);
-    }
-    const maxVal = Math.max(...sortedSeasons.map(s => Math.max(stats.seasonalStats[s].apps, stats.seasonalStats[s].goals, stats.seasonalStats[s].assists)), 1);
-
     const renderEventsCell = (m) => {
         const hasEvents = (m.goals > 0 || m.assists > 0 || m.penGoals > 0 || m.penMissed > 0 || m.penSaved > 0 || m.wonGoal > 0 || m.wonMiss > 0 || m.makeGoal > 0 || m.makeMiss > 0);
 
@@ -760,6 +752,14 @@ export default function EgyptNTPlayerDetails({ playerName, playerDetails, lineup
             </div>
         );
     };
+
+    // Process Seasons for Display (Chronological order)
+    let sortedSeasons = Object.keys(stats.seasonalStats).sort();
+    if (seasonLimit && !isNaN(seasonLimit)) {
+        const limit = parseInt(seasonLimit);
+        if (limit > 0) sortedSeasons = sortedSeasons.slice(-limit);
+    }
+    const maxVal = Math.max(...sortedSeasons.map(s => Math.max(stats.seasonalStats[s].apps, stats.seasonalStats[s].goals, stats.seasonalStats[s].assists)), 1);
 
     return (
         <div className="player-details-container">

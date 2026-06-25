@@ -7,6 +7,7 @@ import NoData_db from "../../lib/NoData_db";
 export default function ClubDetailsChampionships({ squadClubStats, scoringClubStats }) {
     const [searchTerm, setSearchTerm] = useState("");
     const [currentPage, setCurrentPage] = useState(1);
+    const [sortConfig, setSortConfig] = useState({ key: "ga", direction: "desc" });
     const pageSize = 50;
 
     // Merge championships from both squad and scoring stats
@@ -47,11 +48,7 @@ export default function ClubDetailsChampionships({ squadClubStats, scoringClubSt
             }
         });
 
-        return Object.values(champMap).sort((a, b) => {
-            if (b.callups !== a.callups) return b.callups - a.callups;
-            if (b.goals !== a.goals) return b.goals - a.goals;
-            return a.name.localeCompare(b.name);
-        });
+        return Object.values(champMap);
     }, [squadClubStats, scoringClubStats]);
 
     const filteredChampionships = useMemo(() => {
@@ -60,10 +57,44 @@ export default function ClubDetailsChampionships({ squadClubStats, scoringClubSt
         return mergedChampionships.filter(c => c.name.toLowerCase().includes(query));
     }, [mergedChampionships, searchTerm]);
 
+    const sortedChamps = useMemo(() => {
+        const list = [...filteredChampionships];
+        if (!sortConfig.key) return list;
+
+        list.sort((a, b) => {
+            let valA = a[sortConfig.key];
+            let valB = b[sortConfig.key];
+
+            if (sortConfig.key === "name") {
+                const strA = String(valA || "");
+                const strB = String(valB || "");
+                const comp = strA.localeCompare(strB, "ar");
+                if (comp !== 0) {
+                    return sortConfig.direction === "asc" ? comp : -comp;
+                }
+            } else {
+                const numA = Number(valA) || 0;
+                const numB = Number(valB) || 0;
+                if (numA !== numB) {
+                    return sortConfig.direction === "asc" ? numA - numB : numB - numA;
+                }
+            }
+
+            // Fallback stable sorting:
+            if (b.ga !== a.ga) return b.ga - a.ga;
+            if (b.goals !== a.goals) return b.goals - a.goals;
+            if (b.assists !== a.assists) return b.assists - a.assists;
+            if (b.callups !== a.callups) return b.callups - a.callups;
+            return a.name.localeCompare(b.name, "ar");
+        });
+
+        return list;
+    }, [filteredChampionships, sortConfig]);
+
     const paginatedChamps = useMemo(() => {
         const start = (currentPage - 1) * pageSize;
-        return filteredChampionships.slice(start, start + pageSize);
-    }, [filteredChampionships, currentPage]);
+        return sortedChamps.slice(start, start + pageSize);
+    }, [sortedChamps, currentPage]);
 
     const totalPages = Math.ceil(filteredChampionships.length / pageSize);
 
@@ -83,6 +114,28 @@ export default function ClubDetailsChampionships({ squadClubStats, scoringClubSt
     const handleSearchChange = (val) => {
         setSearchTerm(val);
         setCurrentPage(1);
+    };
+
+    const handleSort = (key) => {
+        setSortConfig(prev => {
+            let direction = "desc";
+            if (prev.key === key) {
+                direction = prev.direction === "desc" ? "asc" : "desc";
+            }
+            return { key, direction };
+        });
+        setCurrentPage(1);
+    };
+
+    const renderSortIcon = (key) => {
+        if (sortConfig.key !== key) {
+            return <span style={{ marginLeft: "6px", opacity: 0.3, fontSize: "11px" }}>⇅</span>;
+        }
+        return sortConfig.direction === "asc" ? (
+            <span style={{ marginLeft: "6px", color: "var(--gold)", fontSize: "11px" }}>▲</span>
+        ) : (
+            <span style={{ marginLeft: "6px", color: "var(--gold)", fontSize: "11px" }}>▼</span>
+        );
     };
 
     if (mergedChampionships.length === 0) {
@@ -113,12 +166,24 @@ export default function ClubDetailsChampionships({ squadClubStats, scoringClubSt
                     <thead>
                         <tr>
                             <th>#</th>
-                            <th>TOURNAMENT NAME</th>
-                            <th style={{ textAlign: "center" }}>CALL-UPS</th>
-                            <th style={{ textAlign: "center" }}>SQUAD PLAYERS</th>
-                            <th>G+A</th>
-                            <th>G</th>
-                            <th>A</th>
+                            <th className="sortable-header" onClick={() => handleSort("name")}>
+                                TOURNAMENT NAME {renderSortIcon("name")}
+                            </th>
+                            <th className="sortable-header" onClick={() => handleSort("callups")} style={{ textAlign: "center" }}>
+                                CALL-UPS {renderSortIcon("callups")}
+                            </th>
+                            <th className="sortable-header" onClick={() => handleSort("squadPlayers")} style={{ textAlign: "center" }}>
+                                SQUAD PLAYERS {renderSortIcon("squadPlayers")}
+                            </th>
+                            <th className="sortable-header" onClick={() => handleSort("ga")}>
+                                G+A {renderSortIcon("ga")}
+                            </th>
+                            <th className="sortable-header" onClick={() => handleSort("goals")}>
+                                G {renderSortIcon("goals")}
+                            </th>
+                            <th className="sortable-header" onClick={() => handleSort("assists")}>
+                                A {renderSortIcon("assists")}
+                            </th>
                         </tr>
                     </thead>
                     <tbody>

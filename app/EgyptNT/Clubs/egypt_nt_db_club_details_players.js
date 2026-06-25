@@ -8,6 +8,7 @@ export default function ClubDetailsPlayers({ squadClubStats, scoringClubStats })
     const [searchTerm, setSearchTerm] = useState("");
     const [currentPage, setCurrentPage] = useState(1);
     const [seasonsModalPlayer, setSeasonsModalPlayer] = useState(null);
+    const [sortConfig, setSortConfig] = useState({ key: "ga", direction: "desc" });
     const pageSize = 50;
 
     // Merge players from both squad call-ups and scoring stats
@@ -51,12 +52,7 @@ export default function ClubDetailsPlayers({ squadClubStats, scoringClubStats })
             }
         });
 
-        return Object.values(playerMap).sort((a, b) => {
-            // Sort by callups desc, then by goals desc, then name asc
-            if (b.callups !== a.callups) return b.callups - a.callups;
-            if (b.goals !== a.goals) return b.goals - a.goals;
-            return a.name.localeCompare(b.name);
-        });
+        return Object.values(playerMap);
     }, [squadClubStats, scoringClubStats]);
 
     const filteredPlayers = useMemo(() => {
@@ -68,10 +64,44 @@ export default function ClubDetailsPlayers({ squadClubStats, scoringClubStats })
         );
     }, [mergedPlayers, searchTerm]);
 
+    const sortedPlayers = useMemo(() => {
+        const list = [...filteredPlayers];
+        if (!sortConfig.key) return list;
+
+        list.sort((a, b) => {
+            let valA = a[sortConfig.key];
+            let valB = b[sortConfig.key];
+
+            if (sortConfig.key === "name" || sortConfig.key === "position") {
+                const strA = String(valA || "");
+                const strB = String(valB || "");
+                const comp = strA.localeCompare(strB, "ar");
+                if (comp !== 0) {
+                    return sortConfig.direction === "asc" ? comp : -comp;
+                }
+            } else {
+                const numA = Number(valA) || 0;
+                const numB = Number(valB) || 0;
+                if (numA !== numB) {
+                    return sortConfig.direction === "asc" ? numA - numB : numB - numA;
+                }
+            }
+
+            // Fallback stable sorting:
+            if (b.ga !== a.ga) return b.ga - a.ga;
+            if (b.goals !== a.goals) return b.goals - a.goals;
+            if (b.assists !== a.assists) return b.assists - a.assists;
+            if (b.callups !== a.callups) return b.callups - a.callups;
+            return a.name.localeCompare(b.name, "ar");
+        });
+
+        return list;
+    }, [filteredPlayers, sortConfig]);
+
     const paginatedPlayers = useMemo(() => {
         const start = (currentPage - 1) * pageSize;
-        return filteredPlayers.slice(start, start + pageSize);
-    }, [filteredPlayers, currentPage]);
+        return sortedPlayers.slice(start, start + pageSize);
+    }, [sortedPlayers, currentPage]);
 
     const totalPages = Math.ceil(filteredPlayers.length / pageSize);
 
@@ -92,6 +122,28 @@ export default function ClubDetailsPlayers({ squadClubStats, scoringClubStats })
     const handleSearchChange = (val) => {
         setSearchTerm(val);
         setCurrentPage(1);
+    };
+
+    const handleSort = (key) => {
+        setSortConfig(prev => {
+            let direction = "desc";
+            if (prev.key === key) {
+                direction = prev.direction === "desc" ? "asc" : "desc";
+            }
+            return { key, direction };
+        });
+        setCurrentPage(1);
+    };
+
+    const renderSortIcon = (key) => {
+        if (sortConfig.key !== key) {
+            return <span style={{ marginLeft: "6px", opacity: 0.3, fontSize: "11px" }}>⇅</span>;
+        }
+        return sortConfig.direction === "asc" ? (
+            <span style={{ marginLeft: "6px", color: "var(--gold)", fontSize: "11px" }}>▲</span>
+        ) : (
+            <span style={{ marginLeft: "6px", color: "var(--gold)", fontSize: "11px" }}>▼</span>
+        );
     };
 
     return (
@@ -120,13 +172,27 @@ export default function ClubDetailsPlayers({ squadClubStats, scoringClubStats })
                     <thead>
                         <tr>
                             <th>#</th>
-                            <th>PLAYER NAME</th>
-                            <th>POSITION</th>
-                            <th style={{ textAlign: "center" }}>CALL-UPS</th>
-                            <th>G+A</th>
-                            <th>G</th>
-                            <th>A</th>
-                            <th>PEN G</th>
+                            <th className="sortable-header" onClick={() => handleSort("name")}>
+                                PLAYER NAME {renderSortIcon("name")}
+                            </th>
+                            <th className="sortable-header" onClick={() => handleSort("position")}>
+                                POSITION {renderSortIcon("position")}
+                            </th>
+                            <th className="sortable-header" onClick={() => handleSort("callups")} style={{ textAlign: "center" }}>
+                                CALL-UPS {renderSortIcon("callups")}
+                            </th>
+                            <th className="sortable-header" onClick={() => handleSort("ga")}>
+                                G+A {renderSortIcon("ga")}
+                            </th>
+                            <th className="sortable-header" onClick={() => handleSort("goals")}>
+                                G {renderSortIcon("goals")}
+                            </th>
+                            <th className="sortable-header" onClick={() => handleSort("assists")}>
+                                A {renderSortIcon("assists")}
+                            </th>
+                            <th className="sortable-header" onClick={() => handleSort("penGoals")}>
+                                PEN G {renderSortIcon("penGoals")}
+                            </th>
                             <th style={{ textAlign: "center" }}>SEASONS</th>
                         </tr>
                     </thead>

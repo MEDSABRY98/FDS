@@ -402,6 +402,15 @@
     font-size: 13px;
     text-align: center;
 }
+.luxury-squad-table th.sortable-header {
+    cursor: pointer;
+    user-select: none;
+    transition: background-color 0.2s ease, color 0.2s ease;
+}
+.luxury-squad-table th.sortable-header:hover {
+    background: #111;
+    color: var(--gold);
+}
 
 .luxury-squad-table td {
     padding: 16px 24px;

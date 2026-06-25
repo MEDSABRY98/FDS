@@ -1,14 +1,21 @@
 "use client";
 
+import { useState } from "react";
 import NoData_db from "../../lib/NoData_db";
 
 export default function ClubDetailsDashboard({ squadClubStats, scoringClubStats }) {
     const hasSquadData = squadClubStats && squadClubStats.totalCallups > 0;
     const hasScoringData = scoringClubStats && (scoringClubStats.goals > 0 || scoringClubStats.assists > 0);
 
+    const [activeTab, setActiveTab] = useState("callups");
+
     if (!hasSquadData && !hasScoringData) {
         return <NoData_db message="NO DATA AVAILABLE FOR THIS CLUB" height="240px" />;
     }
+
+    const resolvedTab = (activeTab === "callups" && !hasSquadData) ? "scoring" : 
+                        (activeTab === "scoring" && !hasScoringData) ? "callups" : 
+                        activeTab;
 
     // Process squad highlights
     const squadCards = hasSquadData ? [
@@ -44,14 +51,13 @@ export default function ClubDetailsDashboard({ squadClubStats, scoringClubStats 
 
     // Process scoring highlights
     const scoringCards = hasScoringData ? [
+        { label: "Goals + Assists", value: scoringClubStats.ga, color: "var(--gold)" },
         { label: "Total Goals", value: scoringClubStats.goals, color: "#2ecc71" },
         { label: "Total Assists", value: scoringClubStats.assists, color: "#3498db" },
-        { label: "Goals + Assists", value: scoringClubStats.ga, color: "var(--gold)" },
         { label: "Penalty Goals", value: scoringClubStats.penGoals, color: "#e74c3c" },
         { label: "Unique Scorers", value: scoringClubStats.scorersCount, color: "#0066cc" },
-        { label: "Contributors", value: scoringClubStats.contributorsCount, color: "#111" },
-        { label: "Matches Played", value: scoringClubStats.matchCount, color: "var(--gold)" },
         { label: "Tournaments Scored In", value: scoringClubStats.championshipCount, color: "var(--gold)" },
+        { label: "Seasons Scored In", value: scoringClubStats.seasons?.length || 0, color: "var(--gold)" },
         {
             label: "Top Scorer",
             value: scoringClubStats.highlights.topScorer?.goals ?? "—",
@@ -73,9 +79,30 @@ export default function ClubDetailsDashboard({ squadClubStats, scoringClubStats 
     ] : [];
 
     return (
-        <div className="fade-in" style={{ display: 'flex', flexDirection: 'column', gap: '30px' }}>
+        <div className="fade-in" style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
             
-            {hasSquadData && (
+            {hasSquadData && hasScoringData && (
+                <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '10px' }}>
+                    <div className="squad-subtabs-switcher">
+                        <button
+                            type="button"
+                            className={`subtab-btn ${resolvedTab === "callups" ? "active" : ""}`}
+                            onClick={() => setActiveTab("callups")}
+                        >
+                            📋 Call-up Stats
+                        </button>
+                        <button
+                            type="button"
+                            className={`subtab-btn ${resolvedTab === "scoring" ? "active" : ""}`}
+                            onClick={() => setActiveTab("scoring")}
+                        >
+                            ⚽ Goal Scoring
+                        </button>
+                    </div>
+                </div>
+            )}
+
+            {resolvedTab === "callups" && hasSquadData && (
                 <div>
                     <h3 className="club-details-section-title" style={{ color: 'var(--gold)', letterSpacing: '1px', fontSize: '20px', marginBottom: '15px' }}>
                         📋 CALL-UP STATS OVERVIEW
@@ -100,7 +127,7 @@ export default function ClubDetailsDashboard({ squadClubStats, scoringClubStats 
                 </div>
             )}
 
-            {hasScoringData && (
+            {resolvedTab === "scoring" && hasScoringData && (
                 <div>
                     <h3 className="club-details-section-title" style={{ color: '#2ecc71', letterSpacing: '1px', fontSize: '20px', marginBottom: '15px' }}>
                         ⚽ GOAL SCORING OVERVIEW
