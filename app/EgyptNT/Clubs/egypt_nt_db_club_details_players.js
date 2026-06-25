@@ -4,21 +4,69 @@ import { useState, useMemo } from "react";
 import SearchBar_db from "../../lib/SearchBar_db";
 import NoData_db from "../../lib/NoData_db";
 
-export default function ClubDetailsPlayers({ clubStats }) {
+export default function ClubDetailsPlayers({ squadClubStats, scoringClubStats }) {
     const [searchTerm, setSearchTerm] = useState("");
     const [currentPage, setCurrentPage] = useState(1);
     const [seasonsModalPlayer, setSeasonsModalPlayer] = useState(null);
     const pageSize = 50;
 
+    // Merge players from both squad call-ups and scoring stats
+    const mergedPlayers = useMemo(() => {
+        const playerMap = {};
+
+        // 1. Process squad call-ups
+        const squadPlayersList = squadClubStats?.players || [];
+        squadPlayersList.forEach(p => {
+            playerMap[p.name] = {
+                name: p.name,
+                position: p.position || "—",
+                callups: p.callups,
+                seasonsByChamp: p.seasonsByChamp || {},
+                goals: 0,
+                assists: 0,
+                penGoals: 0,
+                ga: 0
+            };
+        });
+
+        // 2. Process scoring stats
+        const scoringPlayersList = scoringClubStats?.players || [];
+        scoringPlayersList.forEach(p => {
+            if (!playerMap[p.name]) {
+                playerMap[p.name] = {
+                    name: p.name,
+                    position: "—",
+                    callups: 0,
+                    seasonsByChamp: {},
+                    goals: p.goals,
+                    assists: p.assists,
+                    penGoals: p.penGoals,
+                    ga: p.ga
+                };
+            } else {
+                playerMap[p.name].goals = p.goals;
+                playerMap[p.name].assists = p.assists;
+                playerMap[p.name].penGoals = p.penGoals;
+                playerMap[p.name].ga = p.ga;
+            }
+        });
+
+        return Object.values(playerMap).sort((a, b) => {
+            // Sort by callups desc, then by goals desc, then name asc
+            if (b.callups !== a.callups) return b.callups - a.callups;
+            if (b.goals !== a.goals) return b.goals - a.goals;
+            return a.name.localeCompare(b.name);
+        });
+    }, [squadClubStats, scoringClubStats]);
+
     const filteredPlayers = useMemo(() => {
-        const list = clubStats?.players || [];
-        if (!searchTerm) return list;
+        if (!searchTerm.trim()) return mergedPlayers;
         const query = searchTerm.toLowerCase().trim();
-        return list.filter(p =>
+        return mergedPlayers.filter(p =>
             p.name.toLowerCase().includes(query) ||
-            String(p.position || "").toLowerCase().includes(query)
+            p.position.toLowerCase().includes(query)
         );
-    }, [clubStats, searchTerm]);
+    }, [mergedPlayers, searchTerm]);
 
     const paginatedPlayers = useMemo(() => {
         const start = (currentPage - 1) * pageSize;
@@ -26,6 +74,20 @@ export default function ClubDetailsPlayers({ clubStats }) {
     }, [filteredPlayers, currentPage]);
 
     const totalPages = Math.ceil(filteredPlayers.length / pageSize);
+
+    const totals = useMemo(() => {
+        return filteredPlayers.reduce(
+            (acc, player) => {
+                acc.callups += player.callups;
+                acc.ga += player.ga;
+                acc.goals += player.goals;
+                acc.assists += player.assists;
+                acc.penGoals += player.penGoals;
+                return acc;
+            },
+            { callups: 0, ga: 0, goals: 0, assists: 0, penGoals: 0 }
+        );
+    }, [filteredPlayers]);
 
     const handleSearchChange = (val) => {
         setSearchTerm(val);
@@ -46,25 +108,33 @@ export default function ClubDetailsPlayers({ clubStats }) {
                 <table className="luxury-squad-table">
                     <colgroup>
                         <col style={{ width: "5%" }} />
-                        <col style={{ width: "35%" }} />
-                        <col style={{ width: "15%" }} />
-                        <col style={{ width: "20%" }} />
                         <col style={{ width: "25%" }} />
+                        <col style={{ width: "15%" }} />
+                        <col style={{ width: "15%" }} />
+                        <col style={{ width: "8%" }} />
+                        <col style={{ width: "8%" }} />
+                        <col style={{ width: "8%" }} />
+                        <col style={{ width: "8%" }} />
+                        <col style={{ width: "8%" }} />
                     </colgroup>
                     <thead>
                         <tr>
                             <th>#</th>
                             <th>PLAYER NAME</th>
-                            <th>CALL-UPS</th>
                             <th>POSITION</th>
-                            <th style={{ textAlign: "center" }}>VIEW</th>
+                            <th style={{ textAlign: "center" }}>CALL-UPS</th>
+                            <th>G+A</th>
+                            <th>G</th>
+                            <th>A</th>
+                            <th>PEN G</th>
+                            <th style={{ textAlign: "center" }}>SEASONS</th>
                         </tr>
                     </thead>
                     <tbody>
                         {paginatedPlayers.length === 0 ? (
                             <NoData_db
                                 isTable
-                                colSpan={5}
+                                colSpan={9}
                                 message="No players found matching your query."
                                 height="200px"
                             />
@@ -73,19 +143,39 @@ export default function ClubDetailsPlayers({ clubStats }) {
                                 <tr key={player.name}>
                                     <td className="row-num">{(currentPage - 1) * pageSize + idx + 1}</td>
                                     <td className="player-name-cell">{player.name}</td>
-                                    <td className="callups-count">{player.callups} Times</td>
                                     <td>{player.position}</td>
+                                    <td className="callups-count" style={{ textAlign: "center" }}>
+                                        {player.callups > 0 ? `${player.callups} Times` : "—"}
+                                    </td>
+                                    <td className="club-stat-cell highlight-gold">{player.ga > 0 ? player.ga : "—"}</td>
+                                    <td className="club-stat-cell g-val">{player.goals > 0 ? player.goals : "—"}</td>
+                                    <td className="club-stat-cell a-val">{player.assists > 0 ? player.assists : "—"}</td>
+                                    <td className="club-stat-cell">{player.penGoals > 0 ? player.penGoals : "—"}</td>
                                     <td style={{ textAlign: "center" }}>
-                                        <button
-                                            type="button"
-                                            className="club-view-btn"
-                                            onClick={() => setSeasonsModalPlayer(player)}
-                                        >
-                                            View
-                                        </button>
+                                        {player.callups > 0 ? (
+                                            <button
+                                                type="button"
+                                                className="club-view-btn"
+                                                onClick={() => setSeasonsModalPlayer(player)}
+                                            >
+                                                View
+                                            </button>
+                                        ) : "—"}
                                     </td>
                                 </tr>
                             ))
+                        )}
+                        {paginatedPlayers.length > 0 && filteredPlayers.length > 0 && (
+                            <tr className="club-stats-total-row">
+                                <td />
+                                <td colSpan={2} className="player-name-cell">TOTAL</td>
+                                <td style={{ textAlign: "center", fontWeight: "bold" }}>{totals.callups}</td>
+                                <td className="club-stat-cell highlight-gold">{totals.ga}</td>
+                                <td className="club-stat-cell g-val">{totals.goals}</td>
+                                <td className="club-stat-cell a-val">{totals.assists}</td>
+                                <td className="club-stat-cell">{totals.penGoals}</td>
+                                <td />
+                            </tr>
                         )}
                     </tbody>
                 </table>

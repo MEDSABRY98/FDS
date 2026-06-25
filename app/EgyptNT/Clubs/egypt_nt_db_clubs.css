@@ -1,6 +1,6 @@
 /* ──────────────────────────────────────────────────────────────────────────
-   egypt_nt_db_squad.css
-   Unified stylesheet for Egypt NT Clubs & Squad Views
+   egypt_nt_db_clubs.css
+   Unified stylesheet for Egypt NT Clubs View
    ────────────────────────────────────────────────────────────────────────── */
 
 .squad-subtabs-switcher {
@@ -252,7 +252,6 @@
 
 /* ──────────────────────────────────────────────────────────────────────────
    Club Stats Extends
-   (Originally from ClubStats/egypt_nt_db_club_stats.css)
    ────────────────────────────────────────────────────────────────────────── */
 
 .club-stat-cell.g-val {
@@ -365,7 +364,6 @@
 
 /* ──────────────────────────────────────────────────────────────────────────
    Squad Details, Shell & Tables Extends
-   (Originally from SquadStats/egypt_nt_db_squad_details.css)
    ────────────────────────────────────────────────────────────────────────── */
 
 .squad-subtab-container {

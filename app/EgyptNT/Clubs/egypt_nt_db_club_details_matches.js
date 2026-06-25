@@ -5,7 +5,7 @@ import { Info } from "lucide-react";
 import SearchBar_db from "../../lib/SearchBar_db";
 import NoData_db from "../../lib/NoData_db";
 
-export default function ClubStatsDetailsMatches({ clubStats }) {
+export default function ClubDetailsMatches({ clubStats }) {
     const [searchTerm, setSearchTerm] = useState("");
     const [currentPage, setCurrentPage] = useState(1);
     const [selectedMatch, setSelectedMatch] = useState(null);
@@ -17,7 +17,8 @@ export default function ClubStatsDetailsMatches({ clubStats }) {
         const query = searchTerm.toLowerCase().trim();
         return list.filter(m =>
             String(m.opponent || "").toLowerCase().includes(query) ||
-            String(m.champion || "").toLowerCase().includes(query) ||
+            String(m.matchId || "").toLowerCase().includes(query) ||
+            String(m.season || "").toLowerCase().includes(query) ||
             String(m.date || "").toLowerCase().includes(query)
         );
     }, [clubStats, searchTerm]);
@@ -52,7 +53,7 @@ export default function ClubStatsDetailsMatches({ clubStats }) {
                 <SearchBar_db
                     value={searchTerm}
                     onChange={handleSearchChange}
-                    placeholder="Search opponent, tournament, date..."
+                    placeholder="Search opponent, Match ID, season, date..."
                 />
             </div>
 
@@ -60,10 +61,10 @@ export default function ClubStatsDetailsMatches({ clubStats }) {
                 <table className="luxury-squad-table">
                     <colgroup>
                         <col style={{ width: "5%" }} />
+                        <col style={{ width: "15%" }} />
                         <col style={{ width: "12%" }} />
-                        <col style={{ width: "22%" }} />
-                        <col style={{ width: "22%" }} />
                         <col style={{ width: "12%" }} />
+                        <col style={{ width: "24%" }} />
                         <col style={{ width: "7%" }} />
                         <col style={{ width: "7%" }} />
                         <col style={{ width: "7%" }} />
@@ -72,10 +73,10 @@ export default function ClubStatsDetailsMatches({ clubStats }) {
                     <thead>
                         <tr>
                             <th>#</th>
+                            <th>MATCH ID</th>
                             <th>DATE</th>
-                            <th>OPPONENT</th>
-                            <th>TOURNAMENT</th>
                             <th>SEASON</th>
+                            <th>OPPONENT</th>
                             <th>G+A</th>
                             <th>G</th>
                             <th>A</th>
@@ -96,10 +97,10 @@ export default function ClubStatsDetailsMatches({ clubStats }) {
                             paginatedMatches.map((match, idx) => (
                                 <tr key={match.matchId}>
                                     <td className="row-num">{(currentPage - 1) * pageSize + idx + 1}</td>
+                                    <td><span style={{ fontFamily: 'monospace', fontSize: '11px', color: '#666' }}>{match.matchId || "—"}</span></td>
                                     <td className="date-cell">{match.date || "—"}</td>
-                                    <td className="player-name-cell">{match.opponent || "—"}</td>
-                                    <td>{match.champion || "—"}</td>
                                     <td>{match.season || "—"}</td>
+                                    <td className="player-name-cell">{match.opponent || "—"}</td>
                                     <td className="club-stat-cell highlight-gold">{match.goals + match.assists}</td>
                                     <td className="club-stat-cell g-val">{match.goals}</td>
                                     <td className="club-stat-cell a-val">{match.assists}</td>

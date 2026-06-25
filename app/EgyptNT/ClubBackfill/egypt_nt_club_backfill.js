@@ -90,14 +90,14 @@ function buildClubPeriods(collapsedAnchors) {
             i === 0
                 ? null
                 : new Date(
-                      (collapsedAnchors[i - 1].date.getTime() + anchor.date.getTime()) / 2
-                  );
+                    (collapsedAnchors[i - 1].date.getTime() + anchor.date.getTime()) / 2
+                );
         const end =
             i === collapsedAnchors.length - 1
                 ? null
                 : new Date(
-                      (anchor.date.getTime() + collapsedAnchors[i + 1].date.getTime()) / 2
-                  );
+                    (anchor.date.getTime() + collapsedAnchors[i + 1].date.getTime()) / 2
+                );
         periods.push({
             club: anchor.club,
             start,
@@ -267,10 +267,10 @@ function buildUnresolvedReason({ friDateStr, friDate, allAnchors = [] }) {
             nearestSide === "before" && after
                 ? "الأقرب زمنياً (هدف قبل)"
                 : nearestSide === "after" && before
-                  ? "الأقرب زمنياً (هدف بعد)"
-                  : nearestSide === "before"
-                    ? "هدف رسمي قبل فقط"
-                    : "هدف رسمي بعد فقط";
+                    ? "الأقرب زمنياً (هدف بعد)"
+                    : nearestSide === "before"
+                        ? "هدف رسمي قبل فقط"
+                        : "هدف رسمي بعد فقط";
         lines.push("");
         lines.push(`اقتراح للاختيار: ${nearestHint.club}`);
         lines.push(`(${sideLabel})`);
@@ -314,6 +314,10 @@ function buildClubBackfillRows({
             .map((m) => String(m.MATCH_ID))
     );
 
+    const allAgeMatchIds = new Set(
+        ageMatches.map((m) => String(m.MATCH_ID))
+    );
+
     const anchorsByPlayer = buildOfAnchorsByPlayer(
         playerDetails,
         matchMap,
@@ -331,7 +335,7 @@ function buildClubBackfillRows({
         if (!isCountableGoal(row)) return;
 
         const matchId = String(row.MATCH_ID || "");
-        if (!friendlyMatchIds.has(matchId)) return;
+        if (!allAgeMatchIds.has(matchId)) return;
 
         const currentClub = String(row.CLUB || "").trim();
         if (onlyMissingClub && currentClub) return;

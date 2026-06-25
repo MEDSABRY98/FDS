@@ -42,7 +42,7 @@ function sortRows(rows, sortConfig) {
     });
 }
 
-export default function ClubStatsDetailsVsTeams({ clubStats }) {
+export default function ClubDetailsVsTeams({ clubStats }) {
     const [searchTerm, setSearchTerm] = useState("");
     const [currentPage, setCurrentPage] = useState(1);
     const [sortConfig, setSortConfig] = useState({ key: "goals", direction: "desc" });

@@ -5,7 +5,7 @@ import SearchBar_db from "../../lib/SearchBar_db";
 import NoData_db from "../../lib/NoData_db";
 import Loading_db from "../../lib/Loading_db";
 import DropDownList_db from "../../lib/DropDownList_db";
-import { buildPlayerSeasonStatsMap, isGkPosition } from "./egypt_nt_db_squad_club_details";
+import { buildPlayerSeasonStatsMap, isGkPosition } from "./egypt_nt_db_clubs_utils";
 
 const SORT_COLUMNS = [
     { key: "club", label: "CLUB" },
@@ -190,7 +190,7 @@ function SeasonPlayersTable({ players }) {
     );
 }
 
-export default function EgyptNTSquadClubSeason({ squadData, matches, lineupDetails, playerDetails, gkDetails }) {
+export default function EgyptNTClubsSeasons({ squadData, matches, lineupDetails, playerDetails, gkDetails }) {
     const [searchTerm, setSearchTerm] = useState("");
     const [selectedTournamentState, setSelectedTournamentState] = useState("");
     const [currentPage, setCurrentPage] = useState(1);
@@ -220,7 +220,6 @@ export default function EgyptNTSquadClubSeason({ squadData, matches, lineupDetai
     useEffect(() => {
         setIsCalculating(true);
         const timer = setTimeout(() => {
-            // Use whatever is in cache (or compute first time) - instant if cache hit
             const map = buildPlayerSeasonStatsMap(
                 bgDataRef.current.matches,
                 bgDataRef.current.lineupDetails,
@@ -239,10 +238,8 @@ export default function EgyptNTSquadClubSeason({ squadData, matches, lineupDetai
 
         if (isCalculating) return; // Still in initial load, skip
 
-        // Run silently in background after a tick - cache handles dedup, returns instantly if no change
         const bgTimer = setTimeout(() => {
             const newMap = buildPlayerSeasonStatsMap(matches, lineupDetails, playerDetails, gkDetails);
-            // Only trigger re-render if we got a genuinely new map object (cache miss = new data)
             setSeasonStatsMap(prev => (prev === newMap ? prev : newMap));
         }, 200);
         return () => clearTimeout(bgTimer);

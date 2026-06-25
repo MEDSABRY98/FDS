@@ -1,22 +1,20 @@
 "use client";
 
 import { useState, useEffect, useMemo } from "react";
-import { EgyptNTService } from "../Service/egypt_nt_db_service";
 import { EgyptNTExcelExport } from "../ExportExcel/egypt_nt_export_excel";
-import EgyptNTSquadPlayers from "./egypt_nt_db_squad_players";
-import EgyptNTSquadClubs from "./egypt_nt_db_squad_clubs";
-import EgyptNTSquadClubPerformance from "./egypt_nt_db_squad_club_performance";
-import EgyptNTSquadClubSeason from "./egypt_nt_db_squad_club_season";
-import { buildClubPlayerPerformance, buildPlayerSeasonStatsMap } from "./egypt_nt_db_squad_club_details";
-import { Filter, X, ArrowLeft, Users, Building2, TrendingUp, Calendar, Target, Medal, Database } from "lucide-react";
+import { buildClubPlayerPerformance, buildPlayerSeasonStatsMap } from "./egypt_nt_db_clubs_utils";
+import { Filter, X, ArrowLeft, Users, Building2, TrendingUp, Calendar, Database } from "lucide-react";
 import "../../lib/Filters_db.css";
-import "./egypt_nt_db_squad.css";
-import EgyptNTClubStatsClubs from "./egypt_nt_db_club_stats_clubs";
-import EgyptNTClubStatsPlayers from "./egypt_nt_db_club_stats_players";
+import "./egypt_nt_db_clubs.css";
+
+import EgyptNTClubsList from "./egypt_nt_db_clubs_list";
+import EgyptNTClubsPlayers from "./egypt_nt_db_clubs_players";
+import EgyptNTClubsPerformance from "./egypt_nt_db_clubs_performance";
+import EgyptNTClubsSeasons from "./egypt_nt_db_clubs_seasons";
 import EgyptNTSquadEditor from "./SquadEditor/egypt_nt_db_squad_editor";
 
-export default function EgyptNTSquad({ squadData, filteredMatches, lineupDetails, playerDetails, gkDetails }) {
-    const [activeSubTab, setActiveSubTab] = useState("menu"); // "menu" | "editor" | "players" | "clubs" | "club_performance" | "club_season" | "club_stats_clubs" | "club_stats_players"
+export default function EgyptNTClubs({ squadData, filteredMatches, lineupDetails, playerDetails, gkDetails }) {
+    const [activeSubTab, setActiveSubTab] = useState("menu"); // "menu" | "editor" | "clubs" | "players" | "club_performance" | "club_season"
     const [isClubDetailsOpen, setIsClubDetailsOpen] = useState(false);
 
     const [selectedChampionships, setSelectedChampionships] = useState([]);
@@ -256,7 +254,7 @@ export default function EgyptNTSquad({ squadData, filteredMatches, lineupDetails
                             <button
                                 className={`squad-filter-btn ${hasActiveFilters ? 'active' : ''}`}
                                 onClick={handleOpenFilter}
-                                title="Filter Squad"
+                                title="Filter Clubs Data"
                             >
                                 <Filter size={18} />
                                 {hasActiveFilters && <span className="filter-badge-dot"></span>}
@@ -308,15 +306,15 @@ export default function EgyptNTSquad({ squadData, filteredMatches, lineupDetails
                                 <h3>SQUAD EDITOR</h3>
                                 <p>Add, edit, or manage squad records in the database.</p>
                             </div>
-                            <div className="dashboard-card" onClick={() => setActiveSubTab("players")}>
-                                <Users size={40} className="card-icon" />
-                                <h3>SQUAD PLAYERS</h3>
-                                <p>View all call-ups sorted by player name or total call-up count.</p>
-                            </div>
                             <div className="dashboard-card" onClick={() => setActiveSubTab("clubs")}>
                                 <Building2 size={40} className="card-icon" />
-                                <h3>SQUAD CLUBS</h3>
-                                <p>Overview of clubs and how many players they contributed to the NT.</p>
+                                <h3>CLUBS DIRECTORY</h3>
+                                <p>Overview of clubs, player selections, tournaments, and scoring metrics.</p>
+                            </div>
+                            <div className="dashboard-card" onClick={() => setActiveSubTab("players")}>
+                                <Users size={40} className="card-icon" />
+                                <h3>PLAYERS DIRECTORY</h3>
+                                <p>View player call-ups counts and detailed goal scoring statistics by club.</p>
                             </div>
                             <div className="dashboard-card" onClick={() => setActiveSubTab("club_performance")}>
                                 <TrendingUp size={40} className="card-icon" />
@@ -328,26 +326,13 @@ export default function EgyptNTSquad({ squadData, filteredMatches, lineupDetails
                                 <h3>CLUB SEASONS</h3>
                                 <p>Season-by-season breakdown of player performances by club.</p>
                             </div>
-                            <div className="dashboard-card" onClick={() => setActiveSubTab("club_stats_clubs")}>
-                                <Target size={40} className="card-icon" />
-                                <h3>SCORING CLUBS</h3>
-                                <p>Ranking of clubs based on goals and assists produced by their players.</p>
-                            </div>
-                            <div className="dashboard-card" onClick={() => setActiveSubTab("club_stats_players")}>
-                                <Medal size={40} className="card-icon" />
-                                <h3>SCORERS BY CLUB</h3>
-                                <p>Detailed goal contributions (G+A) for every player under each club.</p>
-                            </div>
                         </div>
                     )}
                     {activeSubTab === "editor" && (
                         <EgyptNTSquadEditor />
                     )}
-                    {activeSubTab === "players" && (
-                        <EgyptNTSquadPlayers squadData={filteredSquadData} />
-                    )}
                     {activeSubTab === "clubs" && (
-                        <EgyptNTSquadClubs
+                        <EgyptNTClubsList
                             squadData={filteredSquadData}
                             matches={filteredMatches}
                             lineupDetails={lineupDetails}
@@ -356,8 +341,15 @@ export default function EgyptNTSquad({ squadData, filteredMatches, lineupDetails
                             onDetailsViewChange={setIsClubDetailsOpen}
                         />
                     )}
+                    {activeSubTab === "players" && (
+                        <EgyptNTClubsPlayers
+                            squadData={filteredSquadData}
+                            playerDetails={playerDetails}
+                            filteredMatches={filteredMatches}
+                        />
+                    )}
                     {activeSubTab === "club_performance" && (
-                        <EgyptNTSquadClubPerformance
+                        <EgyptNTClubsPerformance
                             squadData={filteredSquadData}
                             matches={filteredMatches}
                             lineupDetails={lineupDetails}
@@ -366,25 +358,12 @@ export default function EgyptNTSquad({ squadData, filteredMatches, lineupDetails
                         />
                     )}
                     {activeSubTab === "club_season" && (
-                        <EgyptNTSquadClubSeason
+                        <EgyptNTClubsSeasons
                             squadData={filteredSquadData}
                             matches={filteredMatches}
                             lineupDetails={lineupDetails}
                             playerDetails={playerDetails}
                             gkDetails={gkDetails}
-                        />
-                    )}
-                    {activeSubTab === "club_stats_clubs" && (
-                        <EgyptNTClubStatsClubs
-                            playerDetails={playerDetails}
-                            filteredMatches={filteredMatches}
-                            onDetailsViewChange={setIsClubDetailsOpen}
-                        />
-                    )}
-                    {activeSubTab === "club_stats_players" && (
-                        <EgyptNTClubStatsPlayers
-                            playerDetails={playerDetails}
-                            filteredMatches={filteredMatches}
                         />
                     )}
                 </div>

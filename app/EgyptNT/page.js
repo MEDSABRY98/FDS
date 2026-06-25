@@ -31,10 +31,10 @@ import EgyptNTPlayers from "./Players/egypt_nt_db_players";
 import EgyptNTGKs from "./Gks/egypt_nt_db_gks";
 import EgyptNTManagers from "./Managers/egypt_nt_db_managers";
 import EgyptNTFilters from "./Filters/egypt_nt_db_filters";
-import EgyptNTSquad from "./Clubs/egypt_nt_db_squad";
+import EgyptNTClubs from "./Clubs/egypt_nt_db_clubs";
 import EgyptNTEditor from "./Editor/egypt_nt_db_editor";
 import EgyptNTClubBackfill from "./ClubBackfill/egypt_nt_club_backfill";
-import { buildMatchContextMap, isEgyptScorerEvent } from "./Clubs/egypt_nt_db_club_stats_utils";
+import { buildMatchContextMap, isEgyptScorerEvent } from "./Clubs/egypt_nt_db_clubs_utils";
 
 import EgyptNTMatchDetails from "./MatchDetails/egypt_nt_db_match_details";
 import EgyptNTChampions from "./Champions/egypt_nt_db_champions";
@@ -42,7 +42,7 @@ import EgyptNTReferees from "./Referees/egypt_nt_db_referees";
 import EgyptNTH2H from "./HeadToHead/egypt_nt_db_h2h";
 import EgyptNTH2HDetails from "./HeadToHeadDetails/egypt_nt_db_h2h_details";
 import Loading_db from "../lib/Loading_db";
-import { buildPlayerSeasonStatsMap } from "./Clubs/egypt_nt_db_squad_club_details";
+import { buildPlayerSeasonStatsMap } from "./Clubs/egypt_nt_db_clubs_utils";
 import "./Sidebar/egypt_nt_sidebar.css";
 
 export default function EgyptNTDatabase() {
@@ -641,7 +641,7 @@ export default function EgyptNTDatabase() {
                                 </>
                             )}
                             {activeTab === 'squad' && (
-                                <EgyptNTSquad
+                                <EgyptNTClubs
                                     squadData={squadData}
                                     filteredMatches={filteredMatches}
                                     lineupDetails={lineupDetails}

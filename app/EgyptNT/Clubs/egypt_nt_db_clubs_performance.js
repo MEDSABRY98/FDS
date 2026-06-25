@@ -3,7 +3,7 @@
 import { useMemo, useState } from "react";
 import SearchBar_db from "../../lib/SearchBar_db";
 import NoData_db from "../../lib/NoData_db";
-import { buildClubOnlyPerformance, buildClubPlayerPerformance } from "./egypt_nt_db_squad_club_details";
+import { buildClubOnlyPerformance, buildClubPlayerPerformance } from "./egypt_nt_db_clubs_utils";
 
 const VIEW_MODES = {
     player: "player",
@@ -92,7 +92,7 @@ function sortRows(rows, sortConfig, viewMode) {
     });
 }
 
-export default function EgyptNTSquadClubPerformance({
+export default function EgyptNTClubsPerformance({
     squadData,
     matches,
     lineupDetails,
@@ -301,6 +301,7 @@ export default function EgyptNTSquadClubPerformance({
             {totalPages > 1 && sortedRows.length > 0 && (
                 <div className="squad-pagination">
                     <button
+                        type="button"
                         className="pag-btn"
                         onClick={() => setCurrentPage(page => Math.max(1, page - 1))}
                         disabled={currentPage === 1}
@@ -311,6 +312,7 @@ export default function EgyptNTSquadClubPerformance({
                         Page <strong>{currentPage}</strong> of {totalPages}
                     </span>
                     <button
+                        type="button"
                         className="pag-btn"
                         onClick={() => setCurrentPage(page => Math.min(totalPages, page + 1))}
                         disabled={currentPage === totalPages}
