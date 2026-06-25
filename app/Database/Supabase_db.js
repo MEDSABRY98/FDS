@@ -73,7 +73,7 @@ const teamColumnsMap = {
     'egy_NT_HOWPENMISSED': ['TEAM'],
     'egy_NT_LINEUPDETAILS': ['TEAM'],
     'egy_NT_MATCHDETAILS': ['Egypt TEAM', 'OPPONENT TEAM'],
-    'egy_NT_PLAYERDETAILS': ['TEAM'],
+    'egy_NT_PLAYERDETAILS': ['TEAM', 'CLUB'],
     'egy_NT_SQUAD': ['CLUB']
 };
 
