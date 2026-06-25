@@ -311,11 +311,6 @@ export default function EgyptNTClubs({ squadData, filteredMatches, lineupDetails
                                 <h3>CLUBS DIRECTORY</h3>
                                 <p>Overview of clubs, player selections, tournaments, and scoring metrics.</p>
                             </div>
-                            <div className="dashboard-card" onClick={() => setActiveSubTab("players")}>
-                                <Users size={40} className="card-icon" />
-                                <h3>PLAYERS DIRECTORY</h3>
-                                <p>View player call-ups counts and detailed goal scoring statistics by club.</p>
-                            </div>
                             <div className="dashboard-card" onClick={() => setActiveSubTab("club_performance")}>
                                 <TrendingUp size={40} className="card-icon" />
                                 <h3>CLUB PERFORMANCE</h3>
@@ -325,6 +320,11 @@ export default function EgyptNTClubs({ squadData, filteredMatches, lineupDetails
                                 <Calendar size={40} className="card-icon" />
                                 <h3>CLUB SEASONS</h3>
                                 <p>Season-by-season breakdown of player performances by club.</p>
+                            </div>
+                            <div className="dashboard-card" onClick={() => setActiveSubTab("players")}>
+                                <Users size={40} className="card-icon" />
+                                <h3>PLAYERS DIRECTORY</h3>
+                                <p>View player call-ups counts and detailed goal scoring statistics by club.</p>
                             </div>
                         </div>
                     )}
