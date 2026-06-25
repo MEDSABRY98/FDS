@@ -3,18 +3,18 @@
 import { useState, useEffect, useMemo } from "react";
 import { EgyptNTExcelExport } from "../ExportExcel/egypt_nt_export_excel";
 import { buildClubPlayerPerformance, buildPlayerSeasonStatsMap } from "./egypt_nt_db_clubs_utils";
-import { Filter, X, ArrowLeft, Users, Building2, TrendingUp, Calendar, Database } from "lucide-react";
+import { Filter, X, ArrowLeft, Users, Building2, TrendingUp, Calendar, Database, Trophy } from "lucide-react";
 import "../../lib/Filters_db.css";
 import "./egypt_nt_db_clubs.css";
 
 import EgyptNTClubsList from "./egypt_nt_db_clubs_list";
 import EgyptNTClubsPlayers from "./egypt_nt_db_clubs_players";
-import EgyptNTClubsPerformance from "./egypt_nt_db_clubs_performance";
 import EgyptNTClubsSeasons from "./egypt_nt_db_clubs_seasons";
+import EgyptNTClubsChampionships from "./egypt_nt_db_clubs_championships";
 import EgyptNTSquadEditor from "./SquadEditor/egypt_nt_db_squad_editor";
 
 export default function EgyptNTClubs({ squadData, filteredMatches, lineupDetails, playerDetails, gkDetails }) {
-    const [activeSubTab, setActiveSubTab] = useState("menu"); // "menu" | "editor" | "clubs" | "players" | "club_performance" | "club_season"
+    const [activeSubTab, setActiveSubTab] = useState("menu"); // "menu" | "editor" | "clubs" | "players" | "club_season"
     const [isClubDetailsOpen, setIsClubDetailsOpen] = useState(false);
 
     const [selectedChampionships, setSelectedChampionships] = useState([]);
@@ -157,26 +157,64 @@ export default function EgyptNTClubs({ squadData, filteredMatches, lineupDetails
                     "Number of Tournaments": c.championCount
                 }));
                 EgyptNTExcelExport.exportToExcel(exportData, "EgyptNT_Squad_Clubs_List");
-            } else if (activeSubTab === "club_performance") {
-                const rows = buildClubPlayerPerformance(filteredSquadData, {
-                    matches: filteredMatches,
-                    lineupDetails,
-                    playerDetails,
-                    gkDetails
+            } else if (activeSubTab === "club_championships") {
+                const seasonStatsMap = buildPlayerSeasonStatsMap(filteredMatches, lineupDetails, playerDetails, gkDetails);
+                const uniqueKeys = new Set();
+                const exportDataRaw = [];
+
+                (filteredSquadData || []).forEach(item => {
+                    const name = String(item.PLAYERNAME || "").trim();
+                    const club = String(item.CLUB || "Unknown").trim();
+                    const position = String(item.POSITION || "—").trim();
+                    const season = String(item.SEASON || "Unknown").trim();
+                    const champion = String(item.CHAMPION || "Unknown").trim();
+
+                    if (!name) return;
+
+                    const rowKey = `${champion}|${season}|${club}|${name}|${position}`;
+                    if (uniqueKeys.has(rowKey)) return;
+                    uniqueKeys.add(rowKey);
+
+                    const raw = seasonStatsMap[`${name}|${season}`] || { mp: 0, mins: 0, goals: 0, assists: 0, ga: 0, cs: 0, gkCaps: 0 };
+
+                    const valuePos = position.toLowerCase();
+                    const isGk = valuePos.includes("gk") || valuePos.includes("goalkeeper") || valuePos.includes("حارس") || valuePos.includes("حراس") || raw.gkCaps > 0;
+
+                    const mp = isGk ? raw.gkCaps : raw.mp;
+                    const ga = isGk ? raw.ga : "—";
+                    const cs = isGk ? raw.cs : "—";
+                    const gPlusA = (raw.goals ?? 0) + (raw.assists ?? 0);
+
+                    exportDataRaw.push({
+                        "Tournament": champion,
+                        "Season": season,
+                        "Club Name": club,
+                        "Player Name": name,
+                        "Position": position,
+                        "MP": mp,
+                        "MINS": raw.mins ?? 0,
+                        "G+A": gPlusA,
+                        "Goals": raw.goals ?? 0,
+                        "Assists": raw.assists ?? 0,
+                        "Goals Conceded": ga,
+                        "Clean Sheets": cs
+                    });
                 });
-                const exportData = rows.map((row, idx) => ({
+
+                exportDataRaw.sort((a, b) =>
+                    a.Tournament.localeCompare(b.Tournament) ||
+                    b.Season.localeCompare(a.Season, undefined, { numeric: true }) ||
+                    b["G+A"] - a["G+A"] ||
+                    b.MINS - a.MINS ||
+                    a["Player Name"].localeCompare(b["Player Name"])
+                );
+
+                const finalExportData = exportDataRaw.map((row, idx) => ({
                     "Rank": idx + 1,
-                    "Club Name": row.club,
-                    "Player Name": row.name,
-                    "Position": row.position,
-                    "Matches": row.ntStats.mp,
-                    "Minutes": row.ntStats.mins,
-                    "Goals": row.ntStats.goals,
-                    "Assists": row.ntStats.assists,
-                    "Goals Conceded": row.ntStats.isGk ? row.ntStats.ga : "—",
-                    "Clean Sheets": row.ntStats.isGk ? row.ntStats.cs : "—"
+                    ...row
                 }));
-                EgyptNTExcelExport.exportToExcel(exportData, "EgyptNT_Squad_Club_Performance");
+
+                EgyptNTExcelExport.exportToExcel(finalExportData, "EgyptNT_Squad_Club_Tournament");
             } else if (activeSubTab === "club_season") {
                 const seasonStatsMap = buildPlayerSeasonStatsMap(filteredMatches, lineupDetails, playerDetails, gkDetails);
                 const uniqueKeys = new Set();
@@ -311,10 +349,10 @@ export default function EgyptNTClubs({ squadData, filteredMatches, lineupDetails
                                 <h3>CLUBS DIRECTORY</h3>
                                 <p>Overview of clubs, player selections, tournaments, and scoring metrics.</p>
                             </div>
-                            <div className="dashboard-card" onClick={() => setActiveSubTab("club_performance")}>
-                                <TrendingUp size={40} className="card-icon" />
-                                <h3>CLUB PERFORMANCE</h3>
-                                <p>Detailed minutes, goals, and assists of players grouped by their clubs.</p>
+                            <div className="dashboard-card" onClick={() => setActiveSubTab("club_championships")}>
+                                <Trophy size={40} className="card-icon" />
+                                <h3>CLUB TOURNAMENTS</h3>
+                                <p>Tournament-by-tournament breakdown of player performances by club.</p>
                             </div>
                             <div className="dashboard-card" onClick={() => setActiveSubTab("club_season")}>
                                 <Calendar size={40} className="card-icon" />
@@ -348,8 +386,8 @@ export default function EgyptNTClubs({ squadData, filteredMatches, lineupDetails
                             filteredMatches={filteredMatches}
                         />
                     )}
-                    {activeSubTab === "club_performance" && (
-                        <EgyptNTClubsPerformance
+                    {activeSubTab === "club_championships" && (
+                        <EgyptNTClubsChampionships
                             squadData={filteredSquadData}
                             matches={filteredMatches}
                             lineupDetails={lineupDetails}

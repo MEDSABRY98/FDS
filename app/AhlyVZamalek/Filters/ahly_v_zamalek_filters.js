@@ -41,12 +41,48 @@ function SearchableDropdown({ label, options, value, onChange }) {
         [options]
     );
 
+    const selectedValues = useMemo(() => {
+        if (!value) return [];
+        if (Array.isArray(value)) return value;
+        if (value === "All") return [];
+        return [value];
+    }, [value]);
+
     const filteredOptions = useMemo(() => {
         if (!searchTerm) return normalizedOptions;
         return normalizedOptions.filter(opt =>
             String(opt).toLowerCase().includes(searchTerm.toLowerCase())
         );
     }, [normalizedOptions, searchTerm]);
+
+    const handleToggleOption = (opt) => {
+        if (opt === "All") {
+            onChange("All");
+            return;
+        }
+
+        let nextValues;
+        if (selectedValues.includes(opt)) {
+            nextValues = selectedValues.filter(v => v !== opt);
+        } else {
+            nextValues = [...selectedValues, opt];
+        }
+
+        if (nextValues.length === 0) {
+            onChange("All");
+        } else {
+            onChange(nextValues);
+        }
+    };
+
+    const isAllSelected = selectedValues.length === 0 || selectedValues.includes("All");
+
+    const displayLabel = useMemo(() => {
+        if (isAllSelected) return "All";
+        if (selectedValues.length === 1) return selectedValues[0];
+        if (selectedValues.length <= 2) return selectedValues.join(", ");
+        return `${selectedValues.length} Selected`;
+    }, [selectedValues, isAllSelected]);
 
     return (
         <div className="custom-dropdown-container" ref={dropdownRef}>
@@ -55,7 +91,9 @@ function SearchableDropdown({ label, options, value, onChange }) {
                 className={`dropdown-trigger ${isOpen ? "active" : ""}`}
                 onClick={handleToggle}
             >
-                <span className="current-value">{value || "All"}</span>
+                <span className="current-value" style={{ whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", maxWidth: "85%" }}>
+                    {displayLabel}
+                </span>
                 <span className="arrow">▼</span>
             </div>
 
@@ -71,22 +109,46 @@ function SearchableDropdown({ label, options, value, onChange }) {
                         onClick={(e) => e.stopPropagation()}
                     />
                     <div className="options-list">
+                        {!normalizedOptions.includes("All") && (
+                            <div
+                                className={`option-item ${isAllSelected ? "selected" : ""}`}
+                                onClick={() => handleToggleOption("All")}
+                                style={{ display: "flex", alignItems: "center", gap: "10px" }}
+                            >
+                                <input
+                                    type="checkbox"
+                                    checked={isAllSelected}
+                                    onChange={() => {}}
+                                    onClick={(e) => e.stopPropagation()}
+                                    style={{ width: "14px", height: "14px", cursor: "pointer", accentColor: "var(--gold)" }}
+                                />
+                                <span>All</span>
+                            </div>
+                        )}
                         {filteredOptions.length === 0 ? (
                             <div className="no-results">No results</div>
                         ) : (
-                            filteredOptions.map((opt, index) => (
-                                <div
-                                    key={`${opt}-${index}`}
-                                    className={`option-item ${value === opt ? "selected" : ""}`}
-                                    onClick={() => {
-                                        onChange(opt);
-                                        setIsOpen(false);
-                                        setSearchTerm("");
-                                    }}
-                                >
-                                    {opt}
-                                </div>
-                            ))
+                            filteredOptions.map((opt, index) => {
+                                if (opt === "All") return null;
+                                const isChecked = selectedValues.includes(opt);
+                                return (
+                                    <div
+                                        key={`${opt}-${index}`}
+                                        className={`option-item ${isChecked ? "selected" : ""}`}
+                                        onClick={() => handleToggleOption(opt)}
+                                        style={{ display: "flex", alignItems: "center", gap: "10px" }}
+                                    >
+                                        <input
+                                            type="checkbox"
+                                            checked={isChecked}
+                                            onChange={() => {}}
+                                            onClick={(e) => e.stopPropagation()}
+                                            style={{ width: "14px", height: "14px", cursor: "pointer", accentColor: "var(--gold)" }}
+                                        />
+                                        <span>{opt}</span>
+                                    </div>
+                                );
+                            })
                         )}
                     </div>
                 </div>
@@ -128,18 +190,24 @@ export default function AhlyVZamalekFilters({ data, onFilter, isOpen, onClose })
                 return isNaN(date.getFullYear()) ? null : String(date.getFullYear());
             })();
 
-            if (selectedFilters.champion_system !== "All" && m["CHAMPION SYSTEM"] !== selectedFilters.champion_system) return false;
-            if (selectedFilters.year !== "All" && matchYear !== selectedFilters.year) return false;
-            if (selectedFilters.champion !== "All" && m["CHAMPION"] !== selectedFilters.champion) return false;
-            if (selectedFilters.season !== "All" && m["SEASON - NAME"] !== selectedFilters.season) return false;
-            if (selectedFilters.ahly_manager !== "All" && m["AHLY MANAGER"] !== selectedFilters.ahly_manager) return false;
-            if (selectedFilters.zamalek_manager !== "All" && m["ZAMALEK MANAGER"] !== selectedFilters.zamalek_manager) return false;
-            if (selectedFilters.referee !== "All" && m["REFEREE"] !== selectedFilters.referee) return false;
-            if (selectedFilters.round !== "All" && m["ROUND"] !== selectedFilters.round) return false;
-            if (selectedFilters.han !== "All" && m["H-A-N"] !== selectedFilters.han) return false;
-            if (selectedFilters.stad !== "All" && m["STAD"] !== selectedFilters.stad) return false;
-            if (selectedFilters.wdl !== "All" && m["W-D-L"] !== selectedFilters.wdl) return false;
-            if (selectedFilters.clean_sheet !== "All" && m["CLEAN SHEET"] !== selectedFilters.clean_sheet) return false;
+            const check = (key, val) => {
+                const filterVal = selectedFilters[key];
+                if (filterVal === "All" || (Array.isArray(filterVal) && (filterVal.length === 0 || filterVal.includes("All")))) return true;
+                return Array.isArray(filterVal) ? filterVal.map(String).includes(String(val)) : String(val) === String(filterVal);
+            };
+
+            if (!check("champion_system", m["CHAMPION SYSTEM"])) return false;
+            if (!check("year", matchYear)) return false;
+            if (!check("champion", m["CHAMPION"])) return false;
+            if (!check("season", m["SEASON - NAME"])) return false;
+            if (!check("ahly_manager", m["AHLY MANAGER"])) return false;
+            if (!check("zamalek_manager", m["ZAMALEK MANAGER"])) return false;
+            if (!check("referee", m["REFEREE"])) return false;
+            if (!check("round", m["ROUND"])) return false;
+            if (!check("han", m["H-A-N"])) return false;
+            if (!check("stad", m["STAD"])) return false;
+            if (!check("wdl", m["W-D-L"])) return false;
+            if (!check("clean_sheet", m["CLEAN SHEET"])) return false;
 
             return true;
         });

@@ -90,17 +90,17 @@ export default function EgyptClubDatabase() {
     };
 
     const checkMatchPassesFilter = (m, key, val, countriesList, startD, endD) => {
-        if (val === 'All') return true;
+        if (val === 'All' || (Array.isArray(val) && (val.length === 0 || val.includes('All')))) return true;
         
         if (key === 'year') {
             const mYear = m.YEAR || (m.DATE ? new Date(m.DATE).getFullYear().toString() : null);
-            return mYear === val;
+            return Array.isArray(val) ? val.includes(mYear) : mYear === val;
         }
         
         if (key === 'country') {
             const mCountry = getMatchCountryName(m["OPPONENT TEAM"]);
             if (!mCountry) return false;
-            const targetRows = countriesList.filter(c => c.COUNTRY_NAME === val);
+            const targetRows = countriesList.filter(c => Array.isArray(val) ? val.includes(c.COUNTRY_NAME) : c.COUNTRY_NAME === val);
             return targetRows.some(c => 
                 (c.COUNTRY_NAME && c.COUNTRY_NAME.toLowerCase() === mCountry) ||
                 (c.COUNTRY_NAME_EN && c.COUNTRY_NAME_EN.toLowerCase() === mCountry)
@@ -114,7 +114,20 @@ export default function EgyptClubDatabase() {
                 (c.COUNTRY_NAME && c.COUNTRY_NAME.toLowerCase() === mCountry) ||
                 (c.COUNTRY_NAME_EN && c.COUNTRY_NAME_EN.toLowerCase() === mCountry)
             );
-            return countryRow && countryRow.CONTINENT === val;
+            return countryRow && (Array.isArray(val) ? val.includes(countryRow.CONTINENT) : countryRow.CONTINENT === val);
+        }
+
+        if (key === 'pen') {
+            const penVal = String(m['PEN'] || '').toUpperCase();
+            if (Array.isArray(val)) {
+                if (val.includes('Win') && penVal.startsWith('W')) return true;
+                if (val.includes('Loss') && penVal.startsWith('L')) return true;
+                return val.includes(penVal);
+            } else {
+                if (val === 'Win') return penVal.startsWith('W');
+                if (val === 'Loss') return penVal.startsWith('L');
+                return penVal === String(val);
+            }
         }
         
         const colMap = {
@@ -139,7 +152,7 @@ export default function EgyptClubDatabase() {
         
         const colName = colMap[key];
         if (!colName) return true;
-        return String(m[colName]) === String(val);
+        return Array.isArray(val) ? val.map(String).includes(String(m[colName])) : String(m[colName]) === String(val);
     };
 
     const getOptionsForField = (key, colName) => {
@@ -196,6 +209,14 @@ export default function EgyptClubDatabase() {
                 .map(c => c.CONTINENT);
                 
             return ["All", ...new Set(continentOpts)].sort((a, b) => a.localeCompare(b, 'ar'));
+        }
+        
+        if (key === 'pen') {
+            const hasPenalties = partialMatches.some(m => m.PEN && m.PEN.trim() !== "");
+            if (hasPenalties) {
+                return ["All", "Win", "Loss"];
+            }
+            return ["All"];
         }
         
         const vals = partialMatches.map(m => m[colName]).filter(v => v !== null && v !== undefined && v !== '');
@@ -266,7 +287,26 @@ export default function EgyptClubDatabase() {
     // Filter matches
     const filteredMatches = useMemo(() => {
         return matches.filter(m => {
-            const check = (key, col) => dbFilters[key] === 'All' || String(m[col]) === String(dbFilters[key]);
+            const check = (key, col) => {
+                const val = dbFilters[key];
+                if (val === 'All' || (Array.isArray(val) && (val.length === 0 || val.includes('All')))) return true;
+
+                if (key === 'pen') {
+                    const penVal = String(m['PEN'] || '').toUpperCase();
+                    if (Array.isArray(val)) {
+                        if (val.includes('Win') && penVal.startsWith('W')) return true;
+                        if (val.includes('Loss') && penVal.startsWith('L')) return true;
+                        return val.includes(penVal);
+                    } else {
+                        if (val === 'Win') return penVal.startsWith('W');
+                        if (val === 'Loss') return penVal.startsWith('L');
+                        return penVal === String(val);
+                    }
+                }
+
+                const matchVal = String(m[col]);
+                return Array.isArray(val) ? val.map(String).includes(matchVal) : matchVal === String(val);
+            };
 
             const matchDateStr = m.DATE ? m.DATE : null;
             let withinRange = true;
@@ -274,7 +314,7 @@ export default function EgyptClubDatabase() {
                 const mDate = new Date(matchDateStr);
                 const mYear = m.YEAR || mDate.getFullYear().toString();
 
-                if (dbFilters.year !== 'All' && mYear !== dbFilters.year) withinRange = false;
+                if (dbFilters.year !== 'All' && !(Array.isArray(dbFilters.year) ? dbFilters.year.includes(mYear) : mYear === dbFilters.year)) withinRange = false;
                 if (startDate && mDate < new Date(startDate)) withinRange = false;
                 if (endDate && mDate > new Date(endDate)) withinRange = false;
             } else if (startDate || endDate || dbFilters.year !== 'All') {
@@ -282,12 +322,12 @@ export default function EgyptClubDatabase() {
             }
 
             let passCountry = true;
-            if (dbFilters.country !== 'All') {
+            if (dbFilters.country !== 'All' && !(Array.isArray(dbFilters.country) && (dbFilters.country.length === 0 || dbFilters.country.includes('All')))) {
                 const mCountry = getMatchCountryName(m["OPPONENT TEAM"]);
                 if (!mCountry) {
                     passCountry = false;
                 } else {
-                    const targetRows = countries.filter(c => c.COUNTRY_NAME === dbFilters.country);
+                    const targetRows = countries.filter(c => Array.isArray(dbFilters.country) ? dbFilters.country.includes(c.COUNTRY_NAME) : c.COUNTRY_NAME === dbFilters.country);
                     passCountry = targetRows.some(c => 
                         (c.COUNTRY_NAME && c.COUNTRY_NAME.toLowerCase() === mCountry) ||
                         (c.COUNTRY_NAME_EN && c.COUNTRY_NAME_EN.toLowerCase() === mCountry)
@@ -296,7 +336,7 @@ export default function EgyptClubDatabase() {
             }
 
             let passContinent = true;
-            if (dbFilters.continent !== 'All') {
+            if (dbFilters.continent !== 'All' && !(Array.isArray(dbFilters.continent) && (dbFilters.continent.length === 0 || dbFilters.continent.includes('All')))) {
                 const mCountry = getMatchCountryName(m["OPPONENT TEAM"]);
                 if (!mCountry) {
                     passContinent = false;
@@ -305,7 +345,7 @@ export default function EgyptClubDatabase() {
                         (c.COUNTRY_NAME && c.COUNTRY_NAME.toLowerCase() === mCountry) ||
                         (c.COUNTRY_NAME_EN && c.COUNTRY_NAME_EN.toLowerCase() === mCountry)
                     );
-                    passContinent = countryRow && countryRow.CONTINENT === dbFilters.continent;
+                    passContinent = countryRow && (Array.isArray(dbFilters.continent) ? dbFilters.continent.includes(countryRow.CONTINENT) : countryRow.CONTINENT === dbFilters.continent);
                 }
             }
 
@@ -324,7 +364,6 @@ export default function EgyptClubDatabase() {
                 check('gf', 'GF') &&
                 check('ga', 'GA') &&
                 check('et', 'ET') &&
-                check('pen', 'PEN') &&
                 check('opponent_team', 'OPPONENT TEAM') &&
                 check('wdl', 'W-D-L') &&
                 check('clean_sheet', 'CLEAN SHEET') &&

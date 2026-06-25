@@ -64,6 +64,8 @@ function getSortValue(player, key) {
             return String(player.position || "").toLowerCase();
         case "season":
             return String(player.season || "").toLowerCase();
+        case "players_count":
+            return player.playerCount ?? 0;
         case "mp":
             return stats.mp ?? 0;
         case "mins":
@@ -95,7 +97,7 @@ function sortPlayers(players, sortConfig) {
         if (typeof valueA === "number" && typeof valueB === "number") {
             primaryDiff = (valueA - valueB) * multiplier;
         } else {
-            primaryDiff = valueA.localeCompare(valueB, undefined, { numeric: true, sensitivity: "base" }) * multiplier;
+            primaryDiff = String(valueA).localeCompare(String(valueB), undefined, { numeric: true, sensitivity: "base" }) * multiplier;
         }
 
         if (primaryDiff !== 0) return primaryDiff;
@@ -109,16 +111,67 @@ function sortPlayers(players, sortConfig) {
         const minsB = b.ntStats?.mins ?? 0;
         if (minsA !== minsB) return minsB - minsA;
 
-        return a.name.localeCompare(b.name);
+        return String(a.name || "").localeCompare(String(b.name || ""));
     });
 }
 
-function SeasonPlayersTable({ players }) {
+function SeasonPlayersTable({ players, viewMode = "player" }) {
     const [sortConfig, setSortConfig] = useState({ key: "g_plus_a", direction: "desc" });
 
+    const clubGroupedPlayers = useMemo(() => {
+        if (viewMode === "player") return players;
+
+        const groups = {};
+        players.forEach(p => {
+            const key = p.club;
+            if (!groups[key]) {
+                groups[key] = {
+                    club: p.club,
+                    season: p.season,
+                    playersSet: new Set(),
+                    mp: 0,
+                    mins: 0,
+                    goals: 0,
+                    assists: 0,
+                    ga: 0,
+                    cs: 0,
+                    hasGk: false
+                };
+            }
+            if (p.name) {
+                groups[key].playersSet.add(p.name);
+            }
+            const stats = p.ntStats || {};
+            groups[key].mp += stats.mp ?? 0;
+            groups[key].mins += stats.mins ?? 0;
+            groups[key].goals += stats.goals ?? 0;
+            groups[key].assists += stats.assists ?? 0;
+            if (stats.isGk) {
+                groups[key].ga += stats.ga ?? 0;
+                groups[key].cs += stats.cs ?? 0;
+                groups[key].hasGk = true;
+            }
+        });
+
+        return Object.values(groups).map(g => ({
+            club: g.club,
+            season: g.season,
+            playerCount: g.playersSet.size,
+            ntStats: {
+                mp: g.mp,
+                mins: g.mins,
+                goals: g.goals,
+                assists: g.assists,
+                ga: g.hasGk ? g.ga : null,
+                cs: g.hasGk ? g.cs : null,
+                isGk: g.hasGk
+            }
+        }));
+    }, [players, viewMode]);
+
     const sortedPlayers = useMemo(
-        () => sortPlayers(players, sortConfig),
-        [players, sortConfig]
+        () => sortPlayers(clubGroupedPlayers, sortConfig),
+        [clubGroupedPlayers, sortConfig]
     );
 
     const handleSort = (key) => {
@@ -133,27 +186,89 @@ function SeasonPlayersTable({ players }) {
         return sortConfig.direction === "asc" ? "↑" : "↓";
     };
 
+    const activeColumns = useMemo(() => {
+        if (viewMode === "player") {
+            return SORT_COLUMNS;
+        }
+        // Insert players_count column right after club column
+        const filtered = SORT_COLUMNS.filter(col => col.key !== "name" && col.key !== "position");
+        const clubIdx = filtered.findIndex(col => col.key === "club");
+        if (clubIdx !== -1) {
+            filtered.splice(clubIdx + 1, 0, { key: "players_count", label: "PLAYERS" });
+        }
+        return filtered;
+    }, [viewMode]);
+
+    const totals = useMemo(() => {
+        const acc = {
+            playerCount: 0,
+            mp: 0,
+            mins: 0,
+            goals: 0,
+            assists: 0,
+            ga: 0,
+            cs: 0,
+            hasGk: false
+        };
+
+        sortedPlayers.forEach(p => {
+            const stats = p.ntStats || {};
+            acc.mp += stats.mp ?? 0;
+            acc.mins += stats.mins ?? 0;
+            acc.goals += stats.goals ?? 0;
+            acc.assists += stats.assists ?? 0;
+            if (viewMode === "club") {
+                acc.playerCount += p.playerCount ?? 0;
+            }
+            if (stats.isGk) {
+                acc.ga += stats.ga ?? 0;
+                acc.cs += stats.cs ?? 0;
+                acc.hasGk = true;
+            }
+        });
+
+        return acc;
+    }, [sortedPlayers, viewMode]);
+
     return (
         <div className="squad-table-container club-season-table-wrap" style={{ border: "none", borderRadius: 0, boxShadow: "none" }}>
             <table className="luxury-squad-table club-season-stats-table">
                 <colgroup>
-                    <col style={{ width: "4%" }} />
-                    <col style={{ width: "16%" }} />
-                    <col style={{ width: "16%" }} />
-                    <col style={{ width: "10%" }} />
-                    <col style={{ width: "14%" }} />
-                    <col style={{ width: "5%" }} />
-                    <col style={{ width: "7%" }} />
-                    <col style={{ width: "5%" }} />
-                    <col style={{ width: "5%" }} />
-                    <col style={{ width: "5%" }} />
-                    <col style={{ width: "6%" }} />
-                    <col style={{ width: "6%" }} />
+                    {viewMode === "player" ? (
+                        <>
+                            <col style={{ width: "4%" }} />
+                            <col style={{ width: "16%" }} />
+                            <col style={{ width: "16%" }} />
+                            <col style={{ width: "10%" }} />
+                            <col style={{ width: "14%" }} />
+                            <col style={{ width: "5%" }} />
+                            <col style={{ width: "7%" }} />
+                            <col style={{ width: "5%" }} />
+                            <col style={{ width: "5%" }} />
+                            <col style={{ width: "5%" }} />
+                            <col style={{ width: "6%" }} />
+                            <col style={{ width: "6%" }} />
+                        </>
+                    ) : (
+                        <>
+                            <col style={{ width: "4%" }} />
+                            <col style={{ width: "16%" }} />
+                            <col style={{ width: "10%" }} />
+                            <col style={{ width: "20%" }} />
+                            <col style={{ width: "6%" }} />
+                            <col style={{ width: "9%" }} />
+                            <col style={{ width: "6%" }} />
+                            <col style={{ width: "6%" }} />
+                            <col style={{ width: "6%" }} />
+                            <col style={{ width: "9%" }} />
+                            <col style={{ width: "9%" }} />
+                        </>
+                    )}
                 </colgroup>
                 <thead>
                     <tr>
                         <th>#</th>
-                        {SORT_COLUMNS.map(column => (
+                        {activeColumns.map(column => (
                             <th
                                 key={column.key}
                                 className="club-sortable-header"
@@ -168,11 +283,17 @@ function SeasonPlayersTable({ players }) {
                     {sortedPlayers.map((player, idx) => {
                         const stats = player.ntStats || {};
                         return (
-                            <tr key={`${player.club}-${player.name}-${player.season}-${player.position}-${idx}`}>
+                            <tr key={`${player.club}-${player.name || ""}-${player.season}-${player.position || ""}-${idx}`}>
                                 <td className="row-num club-row-num">{idx + 1}</td>
                                 <td className="highlight-blue">{player.club}</td>
-                                <td className="player-name-cell">{player.name}</td>
-                                <td>{player.position}</td>
+                                {viewMode === "player" ? (
+                                    <>
+                                        <td className="player-name-cell">{player.name}</td>
+                                        <td>{player.position}</td>
+                                    </>
+                                ) : (
+                                    <td className="club-stat-cell">{player.playerCount}</td>
+                                )}
                                 <td>{player.season}</td>
                                 <StatCell value={stats.mp} />
                                 <StatCell value={stats.mins} />
@@ -184,6 +305,28 @@ function SeasonPlayersTable({ players }) {
                             </tr>
                         );
                     })}
+                    {sortedPlayers.length > 0 && (
+                        <tr className="club-stats-total-row">
+                            <td />
+                            <td className="player-name-cell">TOTAL</td>
+                            {viewMode === "player" ? (
+                                <>
+                                    <td>—</td>
+                                    <td>—</td>
+                                </>
+                            ) : (
+                                <td className="club-stat-cell">{totals.playerCount}</td>
+                            )}
+                            <td>—</td>
+                            <StatCell value={totals.mp} />
+                            <StatCell value={totals.mins} />
+                            <StatCell value={totals.goals + totals.assists} />
+                            <StatCell value={totals.goals} />
+                            <StatCell value={totals.assists} />
+                            <StatCell value={totals.ga} isGkOnly active={totals.hasGk} />
+                            <StatCell value={totals.cs} isGkOnly active={totals.hasGk} />
+                        </tr>
+                    )}
                 </tbody>
             </table>
         </div>
@@ -191,6 +334,7 @@ function SeasonPlayersTable({ players }) {
 }
 
 export default function EgyptNTClubsSeasons({ squadData, matches, lineupDetails, playerDetails, gkDetails }) {
+    const [viewMode, setViewMode] = useState("player"); // "player" | "club"
     const [searchTerm, setSearchTerm] = useState("");
     const [selectedTournamentState, setSelectedTournamentState] = useState("");
     const [currentPage, setCurrentPage] = useState(1);
@@ -309,21 +453,23 @@ export default function EgyptNTClubsSeasons({ squadData, matches, lineupDetails,
                 const players = seasonMatch
                     ? group.players
                     : group.players.filter(player =>
-                        player.name.toLowerCase().includes(query) ||
                         player.club.toLowerCase().includes(query) ||
-                        String(player.position || "").toLowerCase().includes(query) ||
-                        player.season.toLowerCase().includes(query)
+                        player.season.toLowerCase().includes(query) ||
+                        (viewMode === "player" && (
+                            player.name.toLowerCase().includes(query) ||
+                            String(player.position || "").toLowerCase().includes(query)
+                        ))
                     );
 
                 if (players.length === 0) return null;
                 return { ...group, players };
             })
             .filter(Boolean);
-    }, [seasonGroups, searchTerm]);
+    }, [seasonGroups, searchTerm, viewMode]);
 
     useEffect(() => {
         setCurrentPage(1);
-    }, [searchTerm, selectedTournament]);
+    }, [searchTerm, selectedTournament, viewMode]);
 
     const totalPages = Math.ceil(filteredGroups.length / tablesPerPage);
     const paginatedGroups = filteredGroups.slice(
@@ -345,6 +491,22 @@ export default function EgyptNTClubsSeasons({ squadData, matches, lineupDetails,
 
     return (
         <div className="fade-in">
+            {/* Sub-tab switcher */}
+            <div className="squad-subtabs-switcher" style={{ display: 'flex', justifyContent: 'center', marginBottom: '20px', width: 'fit-content', margin: '0 auto 20px auto' }}>
+                <button
+                    className={`subtab-btn ${viewMode === "player" ? "active" : ""}`}
+                    onClick={() => { setViewMode("player"); setCurrentPage(1); setSearchTerm(""); }}
+                >
+                    👤 By Player
+                </button>
+                <button
+                    className={`subtab-btn ${viewMode === "club" ? "active" : ""}`}
+                    onClick={() => { setViewMode("club"); setCurrentPage(1); setSearchTerm(""); }}
+                >
+                    🏢 By Club
+                </button>
+            </div>
+
             <div className="squad-search-wrap" style={{ marginBottom: "20px", display: "flex", justifyContent: "center", alignItems: "center", gap: "20px", flexWrap: "wrap" }}>
                 <div style={{ minWidth: "250px", width: "300px" }}>
                     <DropDownList_db
@@ -360,7 +522,7 @@ export default function EgyptNTClubsSeasons({ squadData, matches, lineupDetails,
                     <SearchBar_db
                         value={searchTerm}
                         onChange={setSearchTerm}
-                        placeholder="Search season, club, player, position..."
+                        placeholder={viewMode === "player" ? "Search season, club, player, position..." : "Search season, club..."}
                     />
                 </div>
             </div>
@@ -376,12 +538,14 @@ export default function EgyptNTClubsSeasons({ squadData, matches, lineupDetails,
                                     {group.season}
                                 </div>
                                 <div className="club-season-block-meta" style={{ fontSize: "14px", color: "#666", display: "flex", gap: "20px" }}>
-                                    <span><strong style={{ color: "#c9a84c" }}>{group.players.length}</strong> players</span>
+                                    {viewMode === "player" && (
+                                        <span><strong style={{ color: "#c9a84c" }}>{group.players.length}</strong> players</span>
+                                    )}
                                     <span><strong style={{ color: "#c9a84c" }}>{group.clubs.length}</strong> clubs</span>
                                     <span><strong style={{ color: "#c9a84c" }}>{group.champions.length}</strong> tournaments</span>
                                 </div>
                             </div>
-                            <SeasonPlayersTable players={group.players} />
+                            <SeasonPlayersTable players={group.players} viewMode={viewMode} />
                         </div>
                     ))}
 

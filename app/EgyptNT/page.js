@@ -145,17 +145,96 @@ export default function EgyptNTDatabase() {
 
     const matchContextMap = useMemo(() => buildMatchContextMap(matches), [matches]);
 
-    const matchHasPlayerClub = (m, clubName) => {
-        if (!clubName || clubName === 'All') return true;
-        const matchId = String(m.MATCH_ID || "");
-        const ctx = matchContextMap[matchId];
-        if (!ctx) return false;
-        return playerDetails.some(row => {
-            if (String(row.MATCH_ID || "") !== matchId) return false;
-            const club = String(row.CLUB || "").trim();
-            if (!club || club !== clubName) return false;
-            return isEgyptScorerEvent(row, ctx);
+    const matchToClubsMap = useMemo(() => {
+        const map = {}; // key: matchId, value: Set of clubs
+
+        // 1. First, let's map player names to clubs using squadData
+        const squadMap = {}; // key: "playerName|champion|season", value: club
+        const playerFallbackMap = {}; // key: "playerName", value: Set of clubs
+        (squadData || []).forEach(item => {
+            const name = String(item.PLAYERNAME || "").trim().toLowerCase();
+            const champion = String(item.CHAMPION || "").trim().toLowerCase();
+            const season = String(item.SEASON || "").trim().toLowerCase();
+            const club = String(item.CLUB || "").trim();
+            if (name && club) {
+                if (champion && season) {
+                    squadMap[`${name}|${champion}|${season}`] = club;
+                }
+                if (!playerFallbackMap[name]) playerFallbackMap[name] = new Set();
+                playerFallbackMap[name].add(club);
+            }
         });
+
+        // Helper to get club for a player in a match
+        const getPlayerClub = (playerName, champion, season) => {
+            const nameKey = playerName.toLowerCase();
+            const champKey = champion.toLowerCase();
+            const seasonKey = season.toLowerCase();
+            
+            // Try exact match
+            const exactClub = squadMap[`${nameKey}|${champKey}|${seasonKey}`];
+            if (exactClub) return exactClub;
+
+            // Try fallback to any club registered for this player
+            const fallbacks = playerFallbackMap[nameKey];
+            if (fallbacks && fallbacks.size > 0) {
+                return Array.from(fallbacks)[0];
+            }
+            return null;
+        };
+
+        // 2. Now let's populate the map for each match
+        (matches || []).forEach(m => {
+            const matchId = String(m.MATCH_ID || "");
+            const champion = String(m.CHAMPION || "");
+            const season = String(m.SEASON || "");
+            const clubsSet = new Set();
+
+            // Check lineupDetails for this match
+            (lineupDetails || []).forEach(row => {
+                if (String(row.MATCH_ID || "") !== matchId) return;
+                const playerName = String(row["PLAYER NAME"] || "").trim();
+                if (!playerName) return;
+
+                const club = getPlayerClub(playerName, champion, season);
+                if (club) {
+                    clubsSet.add(club);
+                }
+            });
+
+            // Check playerDetails for this match
+            (playerDetails || []).forEach(row => {
+                if (String(row.MATCH_ID || "") !== matchId) return;
+                const playerName = String(row["PLAYER NAME"] || "").trim();
+                if (!playerName) return;
+
+                const club = getPlayerClub(playerName, champion, season);
+                if (club) {
+                    clubsSet.add(club);
+                }
+                
+                // Also check if the row itself has a CLUB column as a fallback
+                const rowClub = String(row.CLUB || "").trim();
+                if (rowClub && rowClub !== "Unknown" && rowClub !== "—") {
+                    clubsSet.add(rowClub);
+                }
+            });
+
+            map[matchId] = clubsSet;
+        });
+
+        return map;
+    }, [matches, squadData, lineupDetails, playerDetails]);
+
+    const matchHasPlayerClub = (m, clubName) => {
+        if (!clubName || clubName === 'All' || (Array.isArray(clubName) && (clubName.length === 0 || clubName.includes('All')))) return true;
+        const matchId = String(m.MATCH_ID || "");
+        const clubs = matchToClubsMap[matchId];
+        if (!clubs) return false;
+        if (Array.isArray(clubName)) {
+            return clubName.some(c => clubs.has(c));
+        }
+        return clubs.has(clubName);
     };
 
     const getMatchCountryName = (opponentTeam) => {
@@ -165,18 +244,18 @@ export default function EgyptNTDatabase() {
     };
 
     const checkMatchPassesFilter = (m, key, val, countriesList, startD, endD) => {
-        if (val === 'All') return true;
+        if (val === 'All' || (Array.isArray(val) && (val.length === 0 || val.includes('All')))) return true;
 
         if (key === 'year') {
             if (!m.DATE) return false;
             const mYear = new Date(m.DATE).getFullYear().toString();
-            return mYear === val;
+            return Array.isArray(val) ? val.includes(mYear) : mYear === val;
         }
 
         if (key === 'country') {
             const mCountry = getMatchCountryName(m["OPPONENT TEAM"]);
             if (!mCountry) return false;
-            const targetRows = countriesList.filter(c => c.COUNTRY_NAME === val);
+            const targetRows = countriesList.filter(c => Array.isArray(val) ? val.includes(c.COUNTRY_NAME) : c.COUNTRY_NAME === val);
             return targetRows.some(c =>
                 (c.COUNTRY_NAME && c.COUNTRY_NAME.toLowerCase() === mCountry) ||
                 (c.COUNTRY_NAME_EN && c.COUNTRY_NAME_EN.toLowerCase() === mCountry)
@@ -190,14 +269,32 @@ export default function EgyptNTDatabase() {
                 (c.COUNTRY_NAME && c.COUNTRY_NAME.toLowerCase() === mCountry) ||
                 (c.COUNTRY_NAME_EN && c.COUNTRY_NAME_EN.toLowerCase() === mCountry)
             );
-            if (val === 'دول عربية') {
-                return countryRow && countryRow.IS_ARAB === true;
+            if (Array.isArray(val)) {
+                if (val.includes('دول عربية') && countryRow && countryRow.IS_ARAB === true) return true;
+                return countryRow && val.includes(countryRow.CONTINENT);
+            } else {
+                if (val === 'دول عربية') {
+                    return countryRow && countryRow.IS_ARAB === true;
+                }
+                return countryRow && countryRow.CONTINENT === val;
             }
-            return countryRow && countryRow.CONTINENT === val;
         }
 
         if (key === 'player_club') {
             return matchHasPlayerClub(m, val);
+        }
+
+        if (key === 'pen') {
+            const penVal = String(m['PEN'] || '').toUpperCase();
+            if (Array.isArray(val)) {
+                if (val.includes('Win') && penVal.startsWith('W')) return true;
+                if (val.includes('Loss') && penVal.startsWith('L')) return true;
+                return val.includes(penVal);
+            } else {
+                if (val === 'Win') return penVal.startsWith('W');
+                if (val === 'Loss') return penVal.startsWith('L');
+                return penVal === String(val);
+            }
         }
 
         const colMap = {
@@ -226,7 +323,7 @@ export default function EgyptNTDatabase() {
 
         const colName = colMap[key];
         if (!colName) return true;
-        return String(m[colName]) === String(val);
+        return Array.isArray(val) ? val.map(String).includes(String(m[colName])) : String(m[colName]) === String(val);
     };
 
     const getOptionsForField = (key, colName) => {
@@ -300,16 +397,21 @@ export default function EgyptNTDatabase() {
         if (key === 'player_club') {
             const partialMatchIds = new Set(partialMatches.map(m => String(m.MATCH_ID)));
             const clubs = new Set();
-            playerDetails.forEach(row => {
-                const matchId = String(row.MATCH_ID || "");
-                if (!partialMatchIds.has(matchId)) return;
-                const club = String(row.CLUB || "").trim();
-                if (!club) return;
-                const ctx = matchContextMap[matchId];
-                if (!ctx || !isEgyptScorerEvent(row, ctx)) return;
-                clubs.add(club);
+            partialMatchIds.forEach(matchId => {
+                const matchClubs = matchToClubsMap[matchId];
+                if (matchClubs) {
+                    matchClubs.forEach(c => clubs.add(c));
+                }
             });
             return ["All", ...[...clubs].sort((a, b) => a.localeCompare(b, 'ar'))];
+        }
+
+        if (key === 'pen') {
+            const hasPenalties = partialMatches.some(m => m.PEN && m.PEN.trim() !== "");
+            if (hasPenalties) {
+                return ["All", "Win", "Loss"];
+            }
+            return ["All"];
         }
 
         const vals = partialMatches.map(m => m[colName]).filter(v => v !== null && v !== undefined && v !== '');
@@ -390,57 +492,42 @@ export default function EgyptNTDatabase() {
     // Filter matches
     const filteredMatches = useMemo(() => {
         return matches.filter(m => {
-            const check = (key, col) => dbFilters[key] === 'All' || String(m[col]) === String(dbFilters[key]);
+            const check = (key, col) => {
+                const val = dbFilters[key];
+                if (val === 'All' || (Array.isArray(val) && (val.length === 0 || val.includes('All')))) return true;
+
+                if (key === 'pen') {
+                    const penVal = String(m['PEN'] || '').toUpperCase();
+                    if (Array.isArray(val)) {
+                        if (val.includes('Win') && penVal.startsWith('W')) return true;
+                        if (val.includes('Loss') && penVal.startsWith('L')) return true;
+                        return val.includes(penVal);
+                    } else {
+                        if (val === 'Win') return penVal.startsWith('W');
+                        if (val === 'Loss') return penVal.startsWith('L');
+                        return penVal === String(val);
+                    }
+                }
+
+                const matchVal = String(m[col]);
+                return Array.isArray(val) ? val.map(String).includes(matchVal) : matchVal === String(val);
+            };
 
             const matchDateStr = m.DATE ? m.DATE : null;
             let withinRange = true;
             if (matchDateStr) {
                 const mDate = new Date(matchDateStr);
-                const mYear = mDate.getFullYear().toString();
-
-                if (dbFilters.year !== 'All' && mYear !== dbFilters.year) withinRange = false;
                 if (startDate && mDate < new Date(startDate)) withinRange = false;
                 if (endDate && mDate > new Date(endDate)) withinRange = false;
-            } else if (startDate || endDate || dbFilters.year !== 'All') {
+            } else if (startDate || endDate) {
                 withinRange = false;
-            }
-
-            let passCountry = true;
-            if (dbFilters.country !== 'All') {
-                const mCountry = getMatchCountryName(m["OPPONENT TEAM"]);
-                if (!mCountry) {
-                    passCountry = false;
-                } else {
-                    const targetRows = countries.filter(c => c.COUNTRY_NAME === dbFilters.country);
-                    passCountry = targetRows.some(c =>
-                        (c.COUNTRY_NAME && c.COUNTRY_NAME.toLowerCase() === mCountry) ||
-                        (c.COUNTRY_NAME_EN && c.COUNTRY_NAME_EN.toLowerCase() === mCountry)
-                    );
-                }
-            }
-
-            let passContinent = true;
-            if (dbFilters.continent !== 'All') {
-                const mCountry = getMatchCountryName(m["OPPONENT TEAM"]);
-                if (!mCountry) {
-                    passContinent = false;
-                } else {
-                    const countryRow = countries.find(c =>
-                        (c.COUNTRY_NAME && c.COUNTRY_NAME.toLowerCase() === mCountry) ||
-                        (c.COUNTRY_NAME_EN && c.COUNTRY_NAME_EN.toLowerCase() === mCountry)
-                    );
-                    if (dbFilters.continent === "دول عربية") {
-                        passContinent = countryRow && countryRow.IS_ARAB === true;
-                    } else {
-                        passContinent = countryRow && countryRow.CONTINENT === dbFilters.continent;
-                    }
-                }
             }
 
             return (
                 withinRange &&
-                passCountry &&
-                passContinent &&
+                checkMatchPassesFilter(m, 'year', dbFilters.year, countries) &&
+                checkMatchPassesFilter(m, 'country', dbFilters.country, countries) &&
+                checkMatchPassesFilter(m, 'continent', dbFilters.continent, countries) &&
                 matchHasPlayerClub(m, dbFilters.player_club) &&
                 check('match_id', 'MATCH_ID') &&
                 check('age', 'AGE') &&
@@ -465,7 +552,41 @@ export default function EgyptNTDatabase() {
                 check('note', 'NOTE')
             );
         });
-    }, [matches, dbFilters, startDate, endDate, countries, playerDetails, matchContextMap]);
+    }, [matches, dbFilters, startDate, endDate, countries, matchToClubsMap]);
+
+    const filteredSquadData = useMemo(() => {
+        // 1. Get all unique champion-season pairs from filteredMatches
+        const activeChampSeasons = new Set();
+        (filteredMatches || []).forEach(m => {
+            const champ = String(m.CHAMPION || "").trim().toLowerCase();
+            const season = String(m.SEASON || "").trim().toLowerCase();
+            if (champ && season) {
+                activeChampSeasons.add(`${champ}|${season}`);
+            }
+        });
+
+        return (squadData || []).filter(item => {
+            // Filter by player_club if selected
+            const clubVal = dbFilters.player_club;
+            if (clubVal !== 'All' && !(Array.isArray(clubVal) && (clubVal.length === 0 || clubVal.includes('All')))) {
+                const itemClub = String(item.CLUB || "").trim();
+                if (Array.isArray(clubVal)) {
+                    if (!clubVal.includes(itemClub)) return false;
+                } else {
+                    if (itemClub !== clubVal) return false;
+                }
+            }
+
+            // Filter by active champion and season from filteredMatches
+            const champ = String(item.CHAMPION || "").trim().toLowerCase();
+            const season = String(item.SEASON || "").trim().toLowerCase();
+            if (!activeChampSeasons.has(`${champ}|${season}`)) {
+                return false;
+            }
+
+            return true;
+        });
+    }, [squadData, filteredMatches, dbFilters.player_club]);
 
     const tabs = [
         { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
@@ -642,7 +763,7 @@ export default function EgyptNTDatabase() {
                             )}
                             {activeTab === 'squad' && (
                                 <EgyptNTClubs
-                                    squadData={squadData}
+                                    squadData={filteredSquadData}
                                     filteredMatches={filteredMatches}
                                     lineupDetails={lineupDetails}
                                     playerDetails={playerDetails}

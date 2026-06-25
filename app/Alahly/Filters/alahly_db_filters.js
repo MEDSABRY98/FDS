@@ -66,9 +66,46 @@ function SearchableSelect({ label, value, options, onChange }) {
         return () => document.removeEventListener("mousedown", handleClickOutside);
     }, []);
 
+    // Ensure value is treated as an array of selected options
+    const selectedValues = useMemo(() => {
+        if (!value) return [];
+        if (Array.isArray(value)) return value;
+        if (value === "All") return [];
+        return [value];
+    }, [value]);
+
     const filteredOptions = options.filter(opt =>
         String(opt).toLowerCase().includes(searchTerm.toLowerCase())
     );
+
+    const handleToggleOption = (opt) => {
+        if (opt === "All") {
+            onChange("All");
+            return;
+        }
+
+        let nextValues;
+        if (selectedValues.includes(opt)) {
+            nextValues = selectedValues.filter(v => v !== opt);
+        } else {
+            nextValues = [...selectedValues, opt];
+        }
+
+        if (nextValues.length === 0) {
+            onChange("All");
+        } else {
+            onChange(nextValues);
+        }
+    };
+
+    const isAllSelected = selectedValues.length === 0 || selectedValues.includes("All");
+
+    const displayLabel = useMemo(() => {
+        if (isAllSelected) return "All";
+        if (selectedValues.length === 1) return selectedValues[0];
+        if (selectedValues.length <= 2) return selectedValues.join(", ");
+        return `${selectedValues.length} Selected`;
+    }, [selectedValues, isAllSelected]);
 
     return (
         <div className="filter-group" ref={dropdownRef}>
@@ -79,7 +116,7 @@ function SearchableSelect({ label, value, options, onChange }) {
                     className={`custom-select-box ${isOpen ? 'open' : ''}`}
                     onClick={() => setIsOpen(!isOpen)}
                 >
-                    {value}
+                    <span className="select-display-text">{displayLabel}</span>
                     <span className="select-arrow">▼</span>
                 </div>
 
@@ -95,20 +132,45 @@ function SearchableSelect({ label, value, options, onChange }) {
                             onClick={(e) => e.stopPropagation()}
                         />
                         <div className="options-list">
+                            {/* Render 'All' option first if not already in options */}
+                            {!options.includes("All") && (
+                                <div
+                                    className={`option-item ${isAllSelected ? 'active' : ''}`}
+                                    onClick={() => handleToggleOption("All")}
+                                    style={{ display: "flex", alignItems: "center", gap: "10px" }}
+                                >
+                                    <input
+                                        type="checkbox"
+                                        checked={isAllSelected}
+                                        onChange={() => {}}
+                                        onClick={(e) => e.stopPropagation()}
+                                        style={{ accentColor: "var(--gold)" }}
+                                    />
+                                    <span>All</span>
+                                </div>
+                            )}
                             {filteredOptions.length > 0 ? (
-                                filteredOptions.map((opt, idx) => (
-                                    <div
-                                        key={idx}
-                                        className={`option-item ${value === opt ? 'active' : ''}`}
-                                        onClick={() => {
-                                            onChange(opt);
-                                            setIsOpen(false);
-                                            setSearchTerm("");
-                                        }}
-                                    >
-                                        {opt}
-                                    </div>
-                                ))
+                                filteredOptions.map((opt, idx) => {
+                                    if (opt === "All") return null; // Handled above
+                                    const isChecked = selectedValues.includes(opt);
+                                    return (
+                                        <div
+                                            key={idx}
+                                            className={`option-item ${isChecked ? 'active' : ''}`}
+                                            onClick={() => handleToggleOption(opt)}
+                                            style={{ display: "flex", alignItems: "center", gap: "10px" }}
+                                        >
+                                            <input
+                                                type="checkbox"
+                                                checked={isChecked}
+                                                onChange={() => {}}
+                                                onClick={(e) => e.stopPropagation()}
+                                                style={{ accentColor: "var(--gold)" }}
+                                            />
+                                            <span>{opt}</span>
+                                        </div>
+                                    );
+                                })
                             ) : (
                                 <div className="no-options">No matches found</div>
                             )}
@@ -135,6 +197,12 @@ function SearchableSelect({ label, value, options, onChange }) {
                 }
                 .custom-select-box:hover { border-color: var(--gold); }
                 .custom-select-box.open { border-color: var(--gold); background: #fff; }
+                .select-display-text {
+                    white-space: nowrap;
+                    overflow: hidden;
+                    text-overflow: ellipsis;
+                    max-width: 85%;
+                }
                 .select-arrow { font-size: 8px; opacity: 0.5; }
                 .custom-dropdown {
                     position: absolute;
@@ -148,12 +216,17 @@ function SearchableSelect({ label, value, options, onChange }) {
                 .custom-dropdown.up { bottom: calc(100% + 4px); border-bottom: none; }
                 .dropdown-search-input { width: 100%; padding: 10px; border: none; border-bottom: 1px solid var(--border); outline: none; font-size: 13px; }
                 .options-list { max-height: 360px; overflow-y: auto; }
-                .option-item { padding: 10px 12px; font-size: 13px; cursor: pointer; }
+                .option-item { padding: 10px 12px; font-size: 13px; cursor: pointer; display: flex; align-items: center; gap: 10px; }
                 .option-item:hover { background: var(--surface); color: var(--gold); }
                 .option-item.active { background: var(--gold-dim); color: var(--gold); font-weight: bold; }
                 .no-options { padding: 12px; font-size: 12px; color: var(--text-muted); text-align: center; }
                 .options-list::-webkit-scrollbar { width: 4px; }
                 .options-list::-webkit-scrollbar-thumb { background: var(--gold); border-radius: 10px; }
+                .option-item input[type="checkbox"] {
+                    width: 14px;
+                    height: 14px;
+                    cursor: pointer;
+                }
             `}</style>
         </div>
     );

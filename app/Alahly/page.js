@@ -118,18 +118,18 @@ export default function AlAhlyDatabase() {
     };
 
     const checkMatchPassesFilter = (m, key, val, countriesList, startD, endD) => {
-        if (val === 'All') return true;
+        if (val === 'All' || (Array.isArray(val) && (val.length === 0 || val.includes('All')))) return true;
         
         if (key === 'year') {
             if (!m.DATE) return false;
             const mYear = new Date(m.DATE).getFullYear().toString();
-            return mYear === val;
+            return Array.isArray(val) ? val.includes(mYear) : mYear === val;
         }
         
         if (key === 'country') {
             const mCountry = getMatchCountryName(m["OPPONENT TEAM"]);
             if (!mCountry) return false;
-            const targetRows = countriesList.filter(c => c.COUNTRY_NAME === val);
+            const targetRows = countriesList.filter(c => Array.isArray(val) ? val.includes(c.COUNTRY_NAME) : c.COUNTRY_NAME === val);
             return targetRows.some(c => 
                 (c.COUNTRY_NAME && c.COUNTRY_NAME.toLowerCase() === mCountry) ||
                 (c.COUNTRY_NAME_EN && c.COUNTRY_NAME_EN.toLowerCase() === mCountry)
@@ -143,7 +143,20 @@ export default function AlAhlyDatabase() {
                 (c.COUNTRY_NAME && c.COUNTRY_NAME.toLowerCase() === mCountry) ||
                 (c.COUNTRY_NAME_EN && c.COUNTRY_NAME_EN.toLowerCase() === mCountry)
             );
-            return countryRow && countryRow.CONTINENT === val;
+            return countryRow && (Array.isArray(val) ? val.includes(countryRow.CONTINENT) : countryRow.CONTINENT === val);
+        }
+
+        if (key === 'pen') {
+            const penVal = String(m['PEN'] || '').toUpperCase();
+            if (Array.isArray(val)) {
+                if (val.includes('Win') && penVal.startsWith('W')) return true;
+                if (val.includes('Loss') && penVal.startsWith('L')) return true;
+                return val.includes(penVal);
+            } else {
+                if (val === 'Win') return penVal.startsWith('W');
+                if (val === 'Loss') return penVal.startsWith('L');
+                return penVal === String(val);
+            }
         }
         
         const colMap = {
@@ -171,7 +184,7 @@ export default function AlAhlyDatabase() {
         
         const colName = colMap[key];
         if (!colName) return true;
-        return String(m[colName]) === String(val);
+        return Array.isArray(val) ? val.map(String).includes(String(m[colName])) : String(m[colName]) === String(val);
     };
 
     const getOptionsForField = (key, colName) => {
@@ -232,6 +245,14 @@ export default function AlAhlyDatabase() {
                 .map(c => c.CONTINENT);
                 
             return ["All", ...new Set(continentOpts)].sort((a, b) => a.localeCompare(b, 'ar'));
+        }
+        
+        if (key === 'pen') {
+            const hasPenalties = partialMatches.some(m => m.PEN && m.PEN.trim() !== "");
+            if (hasPenalties) {
+                return ["All", "Win", "Loss"];
+            }
+            return ["All"];
         }
         
         const vals = partialMatches.map(m => m[colName]).filter(v => v !== null && v !== undefined && v !== '');
@@ -308,7 +329,26 @@ export default function AlAhlyDatabase() {
     // Advanced Comprehensive Filter Logic with Date Range & Year
     const filteredMatches = useMemo(() => {
         return matches.filter(m => {
-            const check = (key, col) => dbFilters[key] === 'All' || String(m[col]) === String(dbFilters[key]);
+            const check = (key, col) => {
+                const val = dbFilters[key];
+                if (val === 'All' || (Array.isArray(val) && (val.length === 0 || val.includes('All')))) return true;
+
+                if (key === 'pen') {
+                    const penVal = String(m['PEN'] || '').toUpperCase();
+                    if (Array.isArray(val)) {
+                        if (val.includes('Win') && penVal.startsWith('W')) return true;
+                        if (val.includes('Loss') && penVal.startsWith('L')) return true;
+                        return val.includes(penVal);
+                    } else {
+                        if (val === 'Win') return penVal.startsWith('W');
+                        if (val === 'Loss') return penVal.startsWith('L');
+                        return penVal === String(val);
+                    }
+                }
+
+                const matchVal = String(m[col]);
+                return Array.isArray(val) ? val.map(String).includes(matchVal) : matchVal === String(val);
+            };
 
             // Date Range Check
             const matchDateStr = m.DATE ? m.DATE : null;

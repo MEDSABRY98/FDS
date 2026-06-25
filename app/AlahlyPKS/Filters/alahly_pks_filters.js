@@ -42,12 +42,48 @@ function SearchableDropdown({ label, options, value, onChange }) {
         [options]
     );
 
+    const selectedValues = useMemo(() => {
+        if (!value) return [];
+        if (Array.isArray(value)) return value;
+        if (value === "All") return [];
+        return [value];
+    }, [value]);
+
     const filteredOptions = useMemo(() => {
         if (!searchTerm) return normalizedOptions;
         return normalizedOptions.filter(opt =>
             String(opt).toLowerCase().includes(searchTerm.toLowerCase())
         );
     }, [normalizedOptions, searchTerm]);
+
+    const handleToggleOption = (opt) => {
+        if (opt === "All") {
+            onChange("All");
+            return;
+        }
+
+        let nextValues;
+        if (selectedValues.includes(opt)) {
+            nextValues = selectedValues.filter(v => v !== opt);
+        } else {
+            nextValues = [...selectedValues, opt];
+        }
+
+        if (nextValues.length === 0) {
+            onChange("All");
+        } else {
+            onChange(nextValues);
+        }
+    };
+
+    const isAllSelected = selectedValues.length === 0 || selectedValues.includes("All");
+
+    const displayLabel = useMemo(() => {
+        if (isAllSelected) return "All";
+        if (selectedValues.length === 1) return selectedValues[0];
+        if (selectedValues.length <= 2) return selectedValues.join(", ");
+        return `${selectedValues.length} Selected`;
+    }, [selectedValues, isAllSelected]);
 
     return (
         <div className="custom-dropdown-container" ref={dropdownRef}>
@@ -56,7 +92,9 @@ function SearchableDropdown({ label, options, value, onChange }) {
                 className={`dropdown-trigger ${isOpen ? 'active' : ''}`} 
                 onClick={handleToggle}
             >
-                <span className="current-value">{value || "All"}</span>
+                <span className="current-value" style={{ whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", maxWidth: "85%" }}>
+                    {displayLabel}
+                </span>
                 <span className="arrow">▼</span>
             </div>
 
@@ -72,22 +110,46 @@ function SearchableDropdown({ label, options, value, onChange }) {
                         onClick={(e) => e.stopPropagation()}
                     />
                     <div className="options-list">
+                        {!normalizedOptions.includes("All") && (
+                            <div
+                                className={`option-item ${isAllSelected ? "selected" : ""}`}
+                                onClick={() => handleToggleOption("All")}
+                                style={{ display: "flex", alignItems: "center", gap: "10px" }}
+                            >
+                                <input
+                                    type="checkbox"
+                                    checked={isAllSelected}
+                                    onChange={() => {}}
+                                    onClick={(e) => e.stopPropagation()}
+                                    style={{ width: "14px", height: "14px", cursor: "pointer", accentColor: "var(--gold)" }}
+                                />
+                                <span>All</span>
+                            </div>
+                        )}
                         {filteredOptions.length === 0 ? (
                             <div className="no-results">No results</div>
                         ) : (
-                            filteredOptions.map((opt, index) => (
-                                <div 
-                                    key={`${opt}-${index}`} 
-                                    className={`option-item ${value === opt ? 'selected' : ''}`}
-                                    onClick={() => {
-                                        onChange(opt);
-                                        setIsOpen(false);
-                                        setSearchTerm("");
-                                    }}
-                                >
-                                    {opt}
-                                </div>
-                            ))
+                            filteredOptions.map((opt, index) => {
+                                if (opt === "All") return null;
+                                const isChecked = selectedValues.includes(opt);
+                                return (
+                                    <div 
+                                        key={`${opt}-${index}`} 
+                                        className={`option-item ${isChecked ? 'selected' : ''}`}
+                                        onClick={() => handleToggleOption(opt)}
+                                        style={{ display: "flex", alignItems: "center", gap: "10px" }}
+                                    >
+                                        <input
+                                            type="checkbox"
+                                            checked={isChecked}
+                                            onChange={() => {}}
+                                            onClick={(e) => e.stopPropagation()}
+                                            style={{ width: "14px", height: "14px", cursor: "pointer", accentColor: "var(--gold)" }}
+                                        />
+                                        <span>{opt}</span>
+                                    </div>
+                                );
+                            })
                         )}
                     </div>
                 </div>
@@ -130,7 +192,15 @@ export default function AlAhlyPKsFilter({ data, onFilter, isOpen, onClose }) {
     const handleApply = () => {
         let filtered = [...data];
         Object.keys(activeFilters).forEach(col => {
-            filtered = filtered.filter(item => String(item[col] || "") === activeFilters[col]);
+            const filterVal = activeFilters[col];
+            if (filterVal === "All" || (Array.isArray(filterVal) && (filterVal.length === 0 || filterVal.includes("All")))) {
+                // Keep all
+            } else {
+                filtered = filtered.filter(item => {
+                    const itemVal = String(item[col] || "");
+                    return Array.isArray(filterVal) ? filterVal.map(String).includes(itemVal) : itemVal === String(filterVal);
+                });
+            }
         });
         onFilter(filtered);
         onClose();

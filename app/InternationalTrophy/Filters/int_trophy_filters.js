@@ -21,19 +21,69 @@ const FILTER_DEFS = [
 function SearchableDropdown({ label, options, value, onChange }) {
     const [isOpen, setIsOpen] = useState(false);
     const [searchTerm, setSearchTerm] = useState("");
+    const dropdownRef = useRef(null);
+
+    useEffect(() => {
+        function handleClickOutside(event) {
+            if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
+                setIsOpen(false);
+            }
+        }
+        document.addEventListener("mousedown", handleClickOutside);
+        return () => document.removeEventListener("mousedown", handleClickOutside);
+    }, []);
 
     const normalizedOptions = useMemo(() => NormalizeFilterDropdownOptions(options), [options]);
+
+    const selectedValues = useMemo(() => {
+        if (!value) return [];
+        if (Array.isArray(value)) return value;
+        if (value === "All") return [];
+        return [value];
+    }, [value]);
+
     const filteredOptions = useMemo(() => {
         if (!searchTerm) return normalizedOptions;
         const q = searchTerm.toLowerCase();
         return normalizedOptions.filter((opt) => String(opt).toLowerCase().includes(q));
     }, [normalizedOptions, searchTerm]);
 
+    const handleToggleOption = (opt) => {
+        if (opt === "All") {
+            onChange("All");
+            return;
+        }
+
+        let nextValues;
+        if (selectedValues.includes(opt)) {
+            nextValues = selectedValues.filter(v => v !== opt);
+        } else {
+            nextValues = [...selectedValues, opt];
+        }
+
+        if (nextValues.length === 0) {
+            onChange("All");
+        } else {
+            onChange(nextValues);
+        }
+    };
+
+    const isAllSelected = selectedValues.length === 0 || selectedValues.includes("All");
+
+    const displayLabel = useMemo(() => {
+        if (isAllSelected) return "All";
+        if (selectedValues.length === 1) return selectedValues[0];
+        if (selectedValues.length <= 2) return selectedValues.join(", ");
+        return `${selectedValues.length} Selected`;
+    }, [selectedValues, isAllSelected]);
+
     return (
-        <div className="custom-dropdown-container">
+        <div className="custom-dropdown-container" ref={dropdownRef}>
             <label className="dropdown-label">{label}</label>
             <div className={`dropdown-trigger ${isOpen ? "active" : ""}`} onClick={() => setIsOpen((p) => !p)}>
-                <span className="current-value">{value || "All"}</span>
+                <span className="current-value" style={{ whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", maxWidth: "85%" }}>
+                    {displayLabel}
+                </span>
                 <span className="arrow">▼</span>
             </div>
             {isOpen && (
@@ -48,15 +98,47 @@ function SearchableDropdown({ label, options, value, onChange }) {
                         onClick={(e) => e.stopPropagation()}
                     />
                     <div className="options-list">
-                        {filteredOptions.map((opt, index) => (
+                        {!normalizedOptions.includes("All") && (
                             <div
-                                key={`${opt}-${index}`}
-                                className={`option-item ${value === opt ? "selected" : ""}`}
-                                onClick={() => { onChange(opt); setIsOpen(false); setSearchTerm(""); }}
+                                className={`option-item ${isAllSelected ? "selected" : ""}`}
+                                onClick={() => handleToggleOption("All")}
+                                style={{ display: "flex", alignItems: "center", gap: "10px" }}
                             >
-                                {opt}
+                                <input
+                                    type="checkbox"
+                                    checked={isAllSelected}
+                                    onChange={() => {}}
+                                    onClick={(e) => e.stopPropagation()}
+                                    style={{ width: "14px", height: "14px", cursor: "pointer", accentColor: "var(--gold)" }}
+                                />
+                                <span>All</span>
                             </div>
-                        ))}
+                        )}
+                        {filteredOptions.length === 0 ? (
+                            <div className="no-results">No results</div>
+                        ) : (
+                            filteredOptions.map((opt, index) => {
+                                if (opt === "All") return null;
+                                const isChecked = selectedValues.includes(opt);
+                                return (
+                                    <div
+                                        key={`${opt}-${index}`}
+                                        className={`option-item ${isChecked ? "selected" : ""}`}
+                                        onClick={() => handleToggleOption(opt)}
+                                        style={{ display: "flex", alignItems: "center", gap: "10px" }}
+                                    >
+                                        <input
+                                            type="checkbox"
+                                            checked={isChecked}
+                                            onChange={() => {}}
+                                            onClick={(e) => e.stopPropagation()}
+                                            style={{ width: "14px", height: "14px", cursor: "pointer", accentColor: "var(--gold)" }}
+                                        />
+                                        <span>{opt}</span>
+                                    </div>
+                                );
+                            })
+                        )}
                     </div>
                 </div>
             )}
@@ -65,12 +147,15 @@ function SearchableDropdown({ label, options, value, onChange }) {
 }
 
 function rowMatchesFilter(row, def, val) {
-    if (!val || val === "All") return true;
+    if (!val || val === "All" || (Array.isArray(val) && (val.length === 0 || val.includes("All")))) return true;
     const selected = String(val);
     if (def.type === "team") {
-        return String(row.CHAMPION ?? "") === selected || String(row["RUNNER-UP"] ?? "") === selected;
+        const champ = String(row.CHAMPION ?? "");
+        const runnerUp = String(row["RUNNER-UP"] ?? "");
+        return Array.isArray(val) ? (val.includes(champ) || val.includes(runnerUp)) : (champ === val || runnerUp === val);
     }
-    return String(row[def.col] ?? "") === selected;
+    const rowVal = String(row[def.col] ?? "");
+    return Array.isArray(val) ? val.map(String).includes(rowVal) : rowVal === val;
 }
 
 function applyFilters(data, filters) {
@@ -88,7 +173,7 @@ export default function IntTrophyFilters({ data, onFilter, isOpen, onClose }) {
     const handleFilterChange = (key, value) => {
         setFilters((prev) => {
             const next = { ...prev };
-            if (value === "All") delete next[key];
+            if (value === "All" || (Array.isArray(value) && value.length === 0)) delete next[key];
             else next[key] = value;
             return pruneInvalidFilterSelections(data, FILTER_DEFS, next, (rows) => IntTrophyService.getUniqueFilters(rows), rowMatchesFilter, key);
         });
