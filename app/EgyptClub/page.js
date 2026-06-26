@@ -25,6 +25,7 @@ import EgyptClubMatches from "./Matches/egy_c_matches";
 import EgyptClubClubs from "./EgyptClubs/egy_c_egypt_clubs";
 import EgyptClubOpponents from "./Opponents/egy_c_opponents_club";
 import EgyptClubH2H from "./HeadToHead/egy_c_h2h";
+import EgyptClubChampionships from "./Championships/egy_c_championships";
 import EgyptClubSeasons from "./Seasons/egy_c_seasons";
 import EgyptClubYears from "./Years/egy_c_years";
 import EgyptClubAddMatches from "./AddMatches/egy_c_add_matches";
@@ -394,6 +395,7 @@ export default function EgyptClubDatabase() {
         { id: 'clubs', label: 'Egyptian Clubs', icon: Shield },
         { id: 'opponents', label: 'Opponents Club', icon: Users },
         { id: 'h2h', label: 'H2H Comparison', icon: GitCompare },
+        { id: 'championships', label: 'Championships', icon: Award },
         { id: 'seasons', label: 'Seasons', icon: Calendar },
         { id: 'years', label: 'Years', icon: Calendar },
     ];
@@ -527,6 +529,7 @@ export default function EgyptClubDatabase() {
                             {activeTab === 'clubs' && <EgyptClubClubs matches={filteredMatches} />}
                             {activeTab === 'opponents' && <EgyptClubOpponents matches={filteredMatches} />}
                             {activeTab === 'h2h' && <EgyptClubH2H matches={filteredMatches} />}
+                            {activeTab === 'championships' && <EgyptClubChampionships matches={filteredMatches} />}
                             {activeTab === 'seasons' && <EgyptClubSeasons matches={filteredMatches} />}
                             {activeTab === 'years' && <EgyptClubYears matches={filteredMatches} />}
                             {activeTab === 'add_matches' && (
