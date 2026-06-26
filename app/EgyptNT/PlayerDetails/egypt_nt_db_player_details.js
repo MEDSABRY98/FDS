@@ -68,8 +68,8 @@ export default function EgyptNTPlayerDetails({ playerName, playerDetails, lineup
             statsByGK: {},
             playerWithPlayerStats: { assistsFrom: {}, assistsTo: {} },
             impactStats: { 
-                presence: { matches: 0, wins: 0, draws: 0, losses: 0, gf: 0, ga: 0, cleanSheets: 0, failedToScore: 0 },
-                absence: { matches: 0, wins: 0, draws: 0, losses: 0, gf: 0, ga: 0, cleanSheets: 0, failedToScore: 0 },
+                presence: { matches: 0, wins: 0, draws: 0, losses: 0, gf: 0, ga: 0, cleanSheets: 0, failedToScore: 0, playerGoals: 0, playerAssists: 0 },
+                absence: { matches: 0, wins: 0, draws: 0, losses: 0, gf: 0, ga: 0, cleanSheets: 0, failedToScore: 0, playerGoals: 0, playerAssists: 0 },
                 careerRange: { start: "—", end: "—" }
             },
             statsByMinute: {},
@@ -524,6 +524,8 @@ export default function EgyptNTPlayerDetails({ playerName, playerDetails, lineup
                 summary.impactStats.presence.matches += 1;
                 summary.impactStats.presence.gf += pSideGF;
                 summary.impactStats.presence.ga += pSideGA;
+                summary.impactStats.presence.playerGoals += data.goals;
+                summary.impactStats.presence.playerAssists += data.assists;
                 if (pSideGA === 0) summary.impactStats.presence.cleanSheets += 1;
                 if (pSideGF === 0) summary.impactStats.presence.failedToScore += 1;
 

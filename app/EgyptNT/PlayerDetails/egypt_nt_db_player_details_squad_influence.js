@@ -13,15 +13,21 @@ export default function PlayerPresenceTable({ impactStats }) {
         ? ((data.wins / data.matches) * 100).toFixed(1) 
         : 0;
 
+    const playerGoals = data.playerGoals ?? 0;
+    const playerAssists = data.playerAssists ?? 0;
+    const playerGoalsPct = data.gf > 0
+        ? ((playerGoals / data.gf) * 100).toFixed(1)
+        : "0.0";
+
     const statsConfig = [
         { label: "Matches Involved", value: data.matches, color: 'var(--player-gold)', sub: subTab === 'presence' ? "Matches in squad/lineup" : "Matches missed during career" },
         { label: "Team Wins", value: data.wins, color: '#27ae60', sub: "Team victories" },
         { label: "Win Rate %", value: `${winRate}%`, color: '#2ecc71', sub: "Success percentage" },
         { label: "Team Draws", value: data.draws, color: '#f39c12', sub: "Tied matches" },
         { label: "Team Losses", value: data.losses, color: '#e74c3c', sub: "Defeats sustained" },
-        { label: "Goals For", value: data.gf, color: '#27ae60', sub: "Total team goals scored" },
-        { label: "Goals Against", value: data.ga, color: '#e74c3c', sub: "Total team goals conceded" },
-        { label: "Clean Sheets", value: data.cleanSheets, color: '#2980b9', sub: "Shutouts achieved" },
+        { label: "اهداف الفريق", value: data.gf, color: '#27ae60', sub: "إجمالي أهداف الفريق" },
+        { label: "اهداف اللاعب", value: playerGoals, color: '#2ecc71', sub: `${playerGoalsPct}% من اهداف الفريق` },
+        { label: "اسيستات اللاعب", value: playerAssists, color: '#3498db', sub: "إجمالي اسيستات اللاعب" },
         { label: "Opponent CS", value: data.failedToScore, color: '#95a5a6', sub: "Failed to score matches" }
     ];
 
