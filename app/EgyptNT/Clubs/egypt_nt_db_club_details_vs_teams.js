@@ -6,7 +6,6 @@ import NoData_db from "../../lib/NoData_db";
 
 const SORT_COLUMNS = [
     { key: "name", label: "OPPONENT TEAM" },
-    { key: "matches", label: "MATCHES" },
     { key: "ga", label: "G+A" },
     { key: "goals", label: "G" },
     { key: "assists", label: "A" },
@@ -70,14 +69,13 @@ export default function ClubDetailsVsTeams({ clubStats }) {
     const totals = useMemo(() => {
         return filteredTeams.reduce(
             (acc, team) => {
-                acc.matches += team.matches;
                 acc.ga += team.ga;
                 acc.goals += team.goals;
                 acc.assists += team.assists;
                 acc.penGoals += team.penGoals;
                 return acc;
             },
-            { matches: 0, ga: 0, goals: 0, assists: 0, penGoals: 0 }
+            { ga: 0, goals: 0, assists: 0, penGoals: 0 }
         );
     }, [filteredTeams]);
 
@@ -117,13 +115,12 @@ export default function ClubDetailsVsTeams({ clubStats }) {
                 <table className="luxury-squad-table">
                     <colgroup>
                         <col style={{ width: "5%" }} />
-                        <col style={{ width: "28%" }} />
-                        <col style={{ width: "10%" }} />
-                        <col style={{ width: "10%" }} />
-                        <col style={{ width: "10%" }} />
-                        <col style={{ width: "10%" }} />
-                        <col style={{ width: "10%" }} />
-                        <col style={{ width: "12%" }} />
+                        <col style={{ width: "32%" }} />
+                        <col style={{ width: "11%" }} />
+                        <col style={{ width: "11%" }} />
+                        <col style={{ width: "11%" }} />
+                        <col style={{ width: "11%" }} />
+                        <col style={{ width: "14%" }} />
                     </colgroup>
                     <thead>
                         <tr>
@@ -153,7 +150,6 @@ export default function ClubDetailsVsTeams({ clubStats }) {
                                 <tr key={team.name}>
                                     <td className="row-num">{(currentPage - 1) * PAGE_SIZE + idx + 1}</td>
                                     <td className="player-name-cell">{team.name}</td>
-                                    <td className="club-stat-cell">{team.matches}</td>
                                     <td className="club-stat-cell highlight-gold">{team.ga}</td>
                                     <td className="club-stat-cell g-val">{team.goals}</td>
                                     <td className="club-stat-cell a-val">{team.assists}</td>
@@ -166,7 +162,6 @@ export default function ClubDetailsVsTeams({ clubStats }) {
                             <tr className="club-stats-total-row">
                                 <td />
                                 <td className="player-name-cell">TOTAL</td>
-                                <td className="club-stat-cell">{totals.matches}</td>
                                 <td className="club-stat-cell highlight-gold">{totals.ga}</td>
                                 <td className="club-stat-cell g-val">{totals.goals}</td>
                                 <td className="club-stat-cell a-val">{totals.assists}</td>

@@ -1,19 +1,21 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import SearchBar_db from "../../lib/SearchBar_db";
 import DropDownList_db from "../../lib/DropDownList_db";
 import NoData_db from "../../lib/NoData_db";
-import { buildPlayerClubStats } from "./egypt_nt_db_clubs_utils";
+import { buildPlayerClubStats, getGroupKey, getGroupColumnLabel, GROUPING_MODES } from "./egypt_nt_db_clubs_utils";
 
-const SORT_COLUMNS_SCORING = [
-    { key: "club", label: "CLUB NAME" },
-    { key: "player", label: "PLAYER NAME" },
-    { key: "ga", label: "G+A" },
-    { key: "goals", label: "G" },
-    { key: "assists", label: "A" },
-    { key: "penGoals", label: "PEN G" }
-];
+function buildScoringSortColumns(groupColumnLabel) {
+    return [
+        { key: "club", label: groupColumnLabel },
+        { key: "player", label: "PLAYER NAME" },
+        { key: "ga", label: "G+A" },
+        { key: "goals", label: "G" },
+        { key: "assists", label: "A" },
+        { key: "penGoals", label: "PEN G" }
+    ];
+}
 
 const PAGE_SIZE = 50;
 
@@ -48,10 +50,13 @@ function sortRows(rows, sortConfig) {
     });
 }
 
-export default function EgyptNTClubsPlayers({ squadData, playerDetails, filteredMatches }) {
+export default function EgyptNTClubsPlayers({ squadData, playerDetails, filteredMatches, groupingMode = GROUPING_MODES.CLUB }) {
     const [viewMode, setViewMode] = useState("callups"); // "callups" | "scoring"
     const [searchTerm, setSearchTerm] = useState("");
     const [currentPage, setCurrentPage] = useState(1);
+    const groupColumnLabel = getGroupColumnLabel(groupingMode);
+    const scoringSortColumns = useMemo(() => buildScoringSortColumns(groupColumnLabel), [groupColumnLabel]);
+    const isCountryMode = groupingMode === GROUPING_MODES.COUNTRY;
     
     // Callup-specific states
     const [clubModalPlayer, setClubModalPlayer] = useState(null);
@@ -61,6 +66,12 @@ export default function EgyptNTClubsPlayers({ squadData, playerDetails, filtered
     // Scoring-specific states
     const [clubFilter, setClubFilter] = useState("all");
     const [sortConfig, setSortConfig] = useState({ key: "goals", direction: "desc" });
+
+    useEffect(() => {
+        setClubFilter("all");
+        setCurrentPage(1);
+        setSearchTerm("");
+    }, [groupingMode]);
 
     // 1. Process Callup player statistics
     const callupPlayerStats = useMemo(() => {
@@ -75,6 +86,7 @@ export default function EgyptNTClubsPlayers({ squadData, playerDetails, filtered
                     name,
                     callups: 0,
                     clubs: {},
+                    clubsRaw: {},
                     champions: {},
                     seasonsByChamp: {}
                 };
@@ -82,8 +94,10 @@ export default function EgyptNTClubsPlayers({ squadData, playerDetails, filtered
 
             stats[name].callups += 1;
 
-            const club = String(item.CLUB || "Unknown").trim();
-            stats[name].clubs[club] = (stats[name].clubs[club] || 0) + 1;
+            const clubRaw = String(item.CLUB || "Unknown").trim();
+            const groupKey = getGroupKey(clubRaw, groupingMode) || "Unknown";
+            stats[name].clubs[groupKey] = (stats[name].clubs[groupKey] || 0) + 1;
+            stats[name].clubsRaw[clubRaw] = (stats[name].clubsRaw[clubRaw] || 0) + 1;
 
             const champ = String(item.CHAMPION || "Unknown").trim();
             stats[name].champions[champ] = (stats[name].champions[champ] || 0) + 1;
@@ -105,21 +119,21 @@ export default function EgyptNTClubsPlayers({ squadData, playerDetails, filtered
         });
 
         return Object.values(stats).sort((a, b) => b.callups - a.callups || a.name.localeCompare(b.name));
-    }, [squadData]);
+    }, [squadData, groupingMode]);
 
     // 2. Process Scoring player statistics
     const scoringPlayerRows = useMemo(
-        () => buildPlayerClubStats(playerDetails, filteredMatches),
-        [playerDetails, filteredMatches]
+        () => buildPlayerClubStats(playerDetails, filteredMatches, groupingMode),
+        [playerDetails, filteredMatches, groupingMode]
     );
 
     const clubOptions = useMemo(() => {
         const clubs = [...new Set(scoringPlayerRows.map(r => r.club))].sort((a, b) => a.localeCompare(b));
         return [
-            { value: "all", label: "All Clubs" },
+            { value: "all", label: isCountryMode ? "All Countries" : "All Clubs" },
             ...clubs.map(club => ({ value: club, label: club }))
         ];
-    }, [scoringPlayerRows]);
+    }, [scoringPlayerRows, isCountryMode]);
 
     // Filtering call-up players
     const filteredCallupPlayers = useMemo(() => {
@@ -233,7 +247,7 @@ export default function EgyptNTClubsPlayers({ squadData, playerDetails, filtered
                         value={clubFilter}
                         onChange={handleClubFilterChange}
                         options={clubOptions}
-                        placeholder="Filter by club..."
+                        placeholder={isCountryMode ? "Filter by country..." : "Filter by club..."}
                         searchable={true}
                     />
                 )}
@@ -241,7 +255,7 @@ export default function EgyptNTClubsPlayers({ squadData, playerDetails, filtered
                     className="club-performance-search"
                     value={searchTerm}
                     onChange={handleSearchChange}
-                    placeholder={viewMode === "callups" ? "Search player name..." : "Search club or player..."}
+                    placeholder={viewMode === "callups" ? "Search player name..." : `Search ${groupColumnLabel.toLowerCase()} or player...`}
                 />
             </div>
 
@@ -262,7 +276,7 @@ export default function EgyptNTClubsPlayers({ squadData, playerDetails, filtered
                                 <th>#</th>
                                 <th>PLAYER NAME</th>
                                 <th>CALL-UPS COUNT</th>
-                                <th style={{ textAlign: "center" }}>CLUBS DETAILS</th>
+                                <th style={{ textAlign: "center" }}>{isCountryMode ? "COUNTRIES DETAILS" : "CLUBS DETAILS"}</th>
                                 <th style={{ textAlign: "center" }}>CHAMPIONS DETAILS</th>
                                 <th style={{ textAlign: "center" }}>SEASONS DETAILS</th>
                             </tr>
@@ -333,7 +347,7 @@ export default function EgyptNTClubsPlayers({ squadData, playerDetails, filtered
                         <thead>
                             <tr>
                                 <th>#</th>
-                                {SORT_COLUMNS_SCORING.map(column => (
+                                {scoringSortColumns.map(column => (
                                     <th
                                         key={column.key}
                                         className="club-sortable-header"
@@ -349,7 +363,7 @@ export default function EgyptNTClubsPlayers({ squadData, playerDetails, filtered
                             {paginatedScoring.length === 0 ? (
                                 <NoData_db
                                     isTable
-                                    colSpan={SORT_COLUMNS_SCORING.length + 1}
+                                    colSpan={scoringSortColumns.length + 1}
                                     message="No player × club rows found matching your query."
                                     height="200px"
                                 />
@@ -411,14 +425,14 @@ export default function EgyptNTClubsPlayers({ squadData, playerDetails, filtered
                 <div className="squad-modal-overlay" onClick={() => setClubModalPlayer(null)}>
                     <div className="squad-modal-card" onClick={e => e.stopPropagation()}>
                         <div className="modal-header">
-                            <h3>🏢 Clubs representation for: <br /><span className="gold">{clubModalPlayer.name}</span></h3>
+                            <h3>🏢 {isCountryMode ? "Countries" : "Clubs"} representation for: <br /><span className="gold">{clubModalPlayer.name}</span></h3>
                             <button className="close-modal-btn" onClick={() => setClubModalPlayer(null)}>×</button>
                         </div>
                         <div className="modal-body">
                             <table className="modal-data-table">
                                 <thead>
                                     <tr>
-                                        <th>Club Name</th>
+                                        <th>{isCountryMode ? "Country" : "Club Name"}</th>
                                         <th style={{ width: "100px", textAlign: "center" }}>Call-ups</th>
                                     </tr>
                                 </thead>
@@ -433,6 +447,29 @@ export default function EgyptNTClubsPlayers({ squadData, playerDetails, filtered
                                         ))}
                                 </tbody>
                             </table>
+                            {isCountryMode && Object.keys(clubModalPlayer.clubsRaw || {}).length > 0 && (
+                                <div style={{ marginTop: "24px" }}>
+                                    <h4 style={{ margin: "0 0 12px 0", fontSize: "14px", textTransform: "uppercase", letterSpacing: "0.5px" }}>Clubs Breakdown</h4>
+                                    <table className="modal-data-table">
+                                        <thead>
+                                            <tr>
+                                                <th>Club Name</th>
+                                                <th style={{ width: "100px", textAlign: "center" }}>Call-ups</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            {Object.entries(clubModalPlayer.clubsRaw)
+                                                .sort((a, b) => b[1] - a[1])
+                                                .map(([club, count]) => (
+                                                    <tr key={club}>
+                                                        <td className="item-name">{club}</td>
+                                                        <td className="item-count">{count}</td>
+                                                    </tr>
+                                                ))}
+                                        </tbody>
+                                    </table>
+                                </div>
+                            )}
                         </div>
                     </div>
                 </div>

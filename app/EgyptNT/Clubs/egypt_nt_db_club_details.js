@@ -2,7 +2,7 @@
 
 import { useState, useMemo, useEffect } from "react";
 import { ArrowLeft } from "lucide-react";
-import { buildClubStats, buildScoringClubDetailStats } from "./egypt_nt_db_clubs_utils";
+import { buildClubStats, buildScoringClubDetailStats, getGroupDetailTitle, GROUPING_MODES } from "./egypt_nt_db_clubs_utils";
 
 import ClubDetailsDashboard from "./egypt_nt_db_club_details_dashboard";
 import ClubDetailsPlayers from "./egypt_nt_db_club_details_players";
@@ -17,15 +17,17 @@ import "./egypt_nt_db_clubs.css";
 const CLUB_TABS = [
     { id: "dashboard", label: "Dashboard" },
     { id: "players", label: "Players" },
-    { id: "season_details", label: "Season Details" },
     { id: "matches", label: "Matches" },
     { id: "vs_teams", label: "Vs Teams" },
     { id: "championships", label: "Championships" },
-    { id: "seasons", label: "Seasons" }
+    { id: "seasons", label: "Seasons" },
+    { id: "season_details", label: "Season Details" }
 ];
 
 export default function EgyptNTClubDetails({
+    groupKey,
     clubName,
+    groupingMode = GROUPING_MODES.CLUB,
     squadData,
     matches,
     lineupDetails,
@@ -33,23 +35,25 @@ export default function EgyptNTClubDetails({
     gkDetails,
     onBack
 }) {
+    const resolvedGroupKey = String(groupKey || clubName || "").trim();
     const [activeTab, setActiveTab] = useState("dashboard");
+    const detailTitle = getGroupDetailTitle(groupingMode);
 
     // 1. Build squad/callups stats for this club
     const squadClubStats = useMemo(
-        () => buildClubStats(clubName, squadData, { matches, lineupDetails, playerDetails, gkDetails }),
-        [clubName, squadData, matches, lineupDetails, playerDetails, gkDetails]
+        () => buildClubStats(resolvedGroupKey, squadData, { matches, lineupDetails, playerDetails, gkDetails }, groupingMode),
+        [resolvedGroupKey, squadData, matches, lineupDetails, playerDetails, gkDetails, groupingMode]
     );
 
     // 2. Build scoring stats for this club
     const scoringClubStats = useMemo(
-        () => buildScoringClubDetailStats(clubName, playerDetails, matches, squadData),
-        [clubName, playerDetails, matches, squadData]
+        () => buildScoringClubDetailStats(resolvedGroupKey, playerDetails, matches, squadData, groupingMode),
+        [resolvedGroupKey, playerDetails, matches, squadData, groupingMode]
     );
 
     useEffect(() => {
         window.scrollTo(0, 0);
-    }, [clubName, activeTab]);
+    }, [resolvedGroupKey, activeTab, groupingMode]);
 
     return (
         <div className="club-details-wrap fade-in">
@@ -59,7 +63,7 @@ export default function EgyptNTClubDetails({
                     Back to Clubs
                 </button>
                 <div className="club-details-title">
-                    CLUB <span className="accent">{clubName}</span>
+                    {detailTitle} <span className="accent">{resolvedGroupKey}</span>
                 </div>
             </div>
 

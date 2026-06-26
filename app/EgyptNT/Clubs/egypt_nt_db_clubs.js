@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useMemo } from "react";
 import { EgyptNTExcelExport } from "../ExportExcel/egypt_nt_export_excel";
-import { buildClubPlayerPerformance, buildPlayerSeasonStatsMap } from "./egypt_nt_db_clubs_utils";
+import { buildClubPlayerPerformance, buildPlayerSeasonStatsMap, getGroupKey, getGroupColumnLabel, GROUPING_MODES } from "./egypt_nt_db_clubs_utils";
 import { Filter, X, ArrowLeft, Users, Building2, TrendingUp, Calendar, Database, Trophy } from "lucide-react";
 import "../../lib/Filters_db.css";
 import "./egypt_nt_db_clubs.css";
@@ -20,6 +20,16 @@ export default function EgyptNTClubs({ squadData, filteredMatches, lineupDetails
     const [selectedChampionships, setSelectedChampionships] = useState([]);
     const [selectedSeasons, setSelectedSeasons] = useState([]);
     const [isFilterOpen, setIsFilterOpen] = useState(false);
+    const [groupingMode, setGroupingMode] = useState(GROUPING_MODES.CLUB);
+
+    const isStatsSubTab = ["clubs", "players", "club_championships", "club_season"].includes(activeSubTab);
+    const groupColumnLabel = getGroupColumnLabel(groupingMode);
+    const isCountryMode = groupingMode === GROUPING_MODES.COUNTRY;
+
+    const handleGroupingModeChange = (mode) => {
+        setGroupingMode(mode);
+        setIsClubDetailsOpen(false);
+    };
 
     // Temp state for editing filters inside modal before applying
     const [tempChampionships, setTempChampionships] = useState([]);
@@ -103,8 +113,9 @@ export default function EgyptNTClubs({ squadData, filteredMatches, lineupDetails
 
                     stats[name].callups += 1;
 
-                    const club = String(item.CLUB || "Unknown").trim();
-                    stats[name].clubs[club] = (stats[name].clubs[club] || 0) + 1;
+                    const clubRaw = String(item.CLUB || "Unknown").trim();
+                    const groupKey = getGroupKey(clubRaw, groupingMode) || "Unknown";
+                    stats[name].clubs[groupKey] = (stats[name].clubs[groupKey] || 0) + 1;
 
                     const champ = String(item.CHAMPION || "Unknown").trim();
                     stats[name].champions[champ] = (stats[name].champions[champ] || 0) + 1;
@@ -115,30 +126,38 @@ export default function EgyptNTClubs({ squadData, filteredMatches, lineupDetails
                     "Rank": idx + 1,
                     "Player Name": p.name,
                     "Call-ups Count": p.callups,
-                    "Clubs Summary": Object.entries(p.clubs).map(([c, count]) => `${c} (${count} times)`).join(", "),
+                    [`${isCountryMode ? "Countries" : "Clubs"} Summary`]: Object.entries(p.clubs).map(([c, count]) => `${c} (${count} times)`).join(", "),
                     "Tournaments Summary": Object.entries(p.champions).map(([c, count]) => `${c} (${count} times)`).join(", ")
                 }));
                 EgyptNTExcelExport.exportToExcel(exportData, "EgyptNT_Squad_Players_List");
             } else if (activeSubTab === "clubs") {
                 const stats = {};
                 (filteredSquadData || []).forEach(item => {
-                    const club = String(item.CLUB || "").trim();
-                    if (!club) return;
+                    const clubRaw = String(item.CLUB || "").trim();
+                    if (!clubRaw) return;
 
-                    if (!stats[club]) {
-                        stats[club] = {
-                            name: club,
+                    const groupKey = getGroupKey(clubRaw, groupingMode);
+                    if (!groupKey) return;
+
+                    if (!stats[groupKey]) {
+                        stats[groupKey] = {
+                            name: groupKey,
                             players: new Set(),
-                            champions: new Set()
+                            champions: new Set(),
+                            seasons: new Set()
                         };
                     }
 
                     if (item.PLAYERNAME) {
-                        stats[club].players.add(String(item.PLAYERNAME).trim());
+                        stats[groupKey].players.add(String(item.PLAYERNAME).trim());
                     }
 
                     if (item.CHAMPION) {
-                        stats[club].champions.add(String(item.CHAMPION).trim());
+                        stats[groupKey].champions.add(String(item.CHAMPION).trim());
+                    }
+
+                    if (item.SEASON) {
+                        stats[groupKey].seasons.add(String(item.SEASON).trim());
                     }
                 });
 
@@ -146,17 +165,24 @@ export default function EgyptNTClubs({ squadData, filteredMatches, lineupDetails
                     .map(c => ({
                         name: c.name,
                         playerCount: c.players.size,
-                        championCount: c.champions.size
+                        championCount: c.champions.size,
+                        seasonCount: c.seasons.size
                     }))
-                    .sort((a, b) => b.playerCount - a.playerCount || b.championCount - a.championCount || a.name.localeCompare(b.name));
+                    .sort((a, b) =>
+                        b.playerCount - a.playerCount ||
+                        b.championCount - a.championCount ||
+                        b.seasonCount - a.seasonCount ||
+                        a.name.localeCompare(b.name)
+                    );
 
                 const exportData = clubStats.map((c, idx) => ({
                     "Rank": idx + 1,
-                    "Club Name": c.name,
+                    [groupColumnLabel]: c.name,
                     "Number of Players": c.playerCount,
-                    "Number of Tournaments": c.championCount
+                    "Number of Tournaments": c.championCount,
+                    "Number of Seasons": c.seasonCount
                 }));
-                EgyptNTExcelExport.exportToExcel(exportData, "EgyptNT_Squad_Clubs_List");
+                EgyptNTExcelExport.exportToExcel(exportData, isCountryMode ? "EgyptNT_Squad_Countries_List" : "EgyptNT_Squad_Clubs_List");
             } else if (activeSubTab === "club_championships") {
                 const seasonStatsMap = buildPlayerSeasonStatsMap(filteredMatches, lineupDetails, playerDetails, gkDetails);
                 const uniqueKeys = new Set();
@@ -164,14 +190,15 @@ export default function EgyptNTClubs({ squadData, filteredMatches, lineupDetails
 
                 (filteredSquadData || []).forEach(item => {
                     const name = String(item.PLAYERNAME || "").trim();
-                    const club = String(item.CLUB || "Unknown").trim();
+                    const clubRaw = String(item.CLUB || "Unknown").trim();
+                    const groupKey = getGroupKey(clubRaw, groupingMode) || "Unknown";
                     const position = String(item.POSITION || "—").trim();
                     const season = String(item.SEASON || "Unknown").trim();
                     const champion = String(item.CHAMPION || "Unknown").trim();
 
                     if (!name) return;
 
-                    const rowKey = `${champion}|${season}|${club}|${name}|${position}`;
+                    const rowKey = `${champion}|${season}|${groupKey}|${name}|${position}`;
                     if (uniqueKeys.has(rowKey)) return;
                     uniqueKeys.add(rowKey);
 
@@ -188,7 +215,7 @@ export default function EgyptNTClubs({ squadData, filteredMatches, lineupDetails
                     exportDataRaw.push({
                         "Tournament": champion,
                         "Season": season,
-                        "Club Name": club,
+                        [groupColumnLabel]: groupKey,
                         "Player Name": name,
                         "Position": position,
                         "MP": mp,
@@ -222,14 +249,15 @@ export default function EgyptNTClubs({ squadData, filteredMatches, lineupDetails
 
                 (filteredSquadData || []).forEach(item => {
                     const name = String(item.PLAYERNAME || "").trim();
-                    const club = String(item.CLUB || "Unknown").trim();
+                    const clubRaw = String(item.CLUB || "Unknown").trim();
+                    const groupKey = getGroupKey(clubRaw, groupingMode) || "Unknown";
                     const position = String(item.POSITION || "—").trim();
                     const season = String(item.SEASON || "Unknown").trim();
                     const champion = String(item.CHAMPION || "Unknown").trim();
 
                     if (!name) return;
 
-                    const rowKey = `${champion}|${season}|${club}|${name}|${position}`;
+                    const rowKey = `${champion}|${season}|${groupKey}|${name}|${position}`;
                     if (uniqueKeys.has(rowKey)) return;
                     uniqueKeys.add(rowKey);
 
@@ -246,7 +274,7 @@ export default function EgyptNTClubs({ squadData, filteredMatches, lineupDetails
                     exportDataRaw.push({
                         "Tournament": champion,
                         "Season": season,
-                        "Club Name": club,
+                        [groupColumnLabel]: groupKey,
                         "Player Name": name,
                         "Position": position,
                         "MP": mp,
@@ -278,7 +306,7 @@ export default function EgyptNTClubs({ squadData, filteredMatches, lineupDetails
 
         window.addEventListener('egyptnt-export-excel', handleGlobalExport);
         return () => window.removeEventListener('egyptnt-export-excel', handleGlobalExport);
-    }, [filteredSquadData, activeSubTab, filteredMatches, lineupDetails, playerDetails, gkDetails]);
+    }, [filteredSquadData, activeSubTab, filteredMatches, lineupDetails, playerDetails, gkDetails, groupingMode, groupColumnLabel, isCountryMode]);
 
     return (
         <div className="tab-content" id="tab-squad">
@@ -324,6 +352,25 @@ export default function EgyptNTClubs({ squadData, filteredMatches, lineupDetails
                                 <ArrowLeft size={18} />
                                 BACK TO MENU
                             </button>
+                        )}
+
+                        {isStatsSubTab && !isClubDetailsOpen && (
+                            <div className="squad-subtabs-switcher club-grouping-switcher">
+                                <button
+                                    type="button"
+                                    className={`subtab-btn ${groupingMode === GROUPING_MODES.CLUB ? "active" : ""}`}
+                                    onClick={() => handleGroupingModeChange(GROUPING_MODES.CLUB)}
+                                >
+                                    By Club
+                                </button>
+                                <button
+                                    type="button"
+                                    className={`subtab-btn ${groupingMode === GROUPING_MODES.COUNTRY ? "active" : ""}`}
+                                    onClick={() => handleGroupingModeChange(GROUPING_MODES.COUNTRY)}
+                                >
+                                    By Country
+                                </button>
+                            </div>
                         )}
                     </div>
 
@@ -376,6 +423,7 @@ export default function EgyptNTClubs({ squadData, filteredMatches, lineupDetails
                             lineupDetails={lineupDetails}
                             playerDetails={playerDetails}
                             gkDetails={gkDetails}
+                            groupingMode={groupingMode}
                             onDetailsViewChange={setIsClubDetailsOpen}
                         />
                     )}
@@ -384,6 +432,7 @@ export default function EgyptNTClubs({ squadData, filteredMatches, lineupDetails
                             squadData={filteredSquadData}
                             playerDetails={playerDetails}
                             filteredMatches={filteredMatches}
+                            groupingMode={groupingMode}
                         />
                     )}
                     {activeSubTab === "club_championships" && (
@@ -393,6 +442,7 @@ export default function EgyptNTClubs({ squadData, filteredMatches, lineupDetails
                             lineupDetails={lineupDetails}
                             playerDetails={playerDetails}
                             gkDetails={gkDetails}
+                            groupingMode={groupingMode}
                         />
                     )}
                     {activeSubTab === "club_season" && (
@@ -402,6 +452,7 @@ export default function EgyptNTClubs({ squadData, filteredMatches, lineupDetails
                             lineupDetails={lineupDetails}
                             playerDetails={playerDetails}
                             gkDetails={gkDetails}
+                            groupingMode={groupingMode}
                         />
                     )}
                 </div>

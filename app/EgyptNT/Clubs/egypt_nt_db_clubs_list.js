@@ -3,7 +3,7 @@
 import { useState, useEffect, useMemo, useRef } from "react";
 import SearchBar_db from "../../lib/SearchBar_db";
 import NoData_db from "../../lib/NoData_db";
-import { buildScoringClubStats } from "./egypt_nt_db_clubs_utils";
+import { buildScoringClubStats, getGroupKey, getGroupColumnLabel, GROUPING_MODES } from "./egypt_nt_db_clubs_utils";
 import EgyptNTClubDetails from "./egypt_nt_db_club_details";
 
 const SORT_COLUMNS_SCORING = [
@@ -236,6 +236,7 @@ export default function EgyptNTClubsList({
     lineupDetails,
     playerDetails,
     gkDetails,
+    groupingMode = GROUPING_MODES.CLUB,
     onDetailsViewChange
 }) {
     const [selectedClub, setSelectedClub] = useState(null);
@@ -249,6 +250,22 @@ export default function EgyptNTClubsList({
         onDetailsViewChange?.(Boolean(selectedClub));
         return () => onDetailsViewChange?.(false);
     }, [selectedClub, onDetailsViewChange]);
+
+    useEffect(() => {
+        setSelectedClub(null);
+        setCurrentPage(1);
+        setSearchTerm("");
+    }, [groupingMode]);
+
+    const groupColumnLabel = getGroupColumnLabel(groupingMode);
+
+    const scoringSortColumns = useMemo(() => (
+        SORT_COLUMNS_SCORING.map(column => (
+            column.key === "club"
+                ? { ...column, label: groupColumnLabel }
+                : column
+        ))
+    ), [groupColumnLabel]);
 
     const uniqueChampionships = useMemo(() => {
         const champs = (squadData || []).map(item => String(item.CHAMPION || "").trim()).filter(Boolean);
@@ -270,23 +287,31 @@ export default function EgyptNTClubsList({
         const stats = {};
 
         (filteredSquadData || []).forEach(item => {
-            const club = String(item.CLUB || "").trim();
-            if (!club) return;
+            const clubRaw = String(item.CLUB || "").trim();
+            if (!clubRaw) return;
 
-            if (!stats[club]) {
-                stats[club] = {
-                    name: club,
+            const groupKey = getGroupKey(clubRaw, groupingMode);
+            if (!groupKey) return;
+
+            if (!stats[groupKey]) {
+                stats[groupKey] = {
+                    name: groupKey,
                     players: new Set(),
-                    champions: new Set()
+                    champions: new Set(),
+                    seasons: new Set()
                 };
             }
 
             if (item.PLAYERNAME) {
-                stats[club].players.add(String(item.PLAYERNAME).trim());
+                stats[groupKey].players.add(String(item.PLAYERNAME).trim());
             }
 
             if (item.CHAMPION) {
-                stats[club].champions.add(String(item.CHAMPION).trim());
+                stats[groupKey].champions.add(String(item.CHAMPION).trim());
+            }
+
+            if (item.SEASON) {
+                stats[groupKey].seasons.add(String(item.SEASON).trim());
             }
         });
 
@@ -294,15 +319,21 @@ export default function EgyptNTClubsList({
             .map(c => ({
                 name: c.name,
                 playerCount: c.players.size,
-                championCount: c.champions.size
+                championCount: c.champions.size,
+                seasonCount: c.seasons.size
             }))
-            .sort((a, b) => b.playerCount - a.playerCount || b.championCount - a.championCount || a.name.localeCompare(b.name));
-    }, [filteredSquadData]);
+            .sort((a, b) =>
+                b.playerCount - a.playerCount ||
+                b.championCount - a.championCount ||
+                b.seasonCount - a.seasonCount ||
+                a.name.localeCompare(b.name)
+            );
+    }, [filteredSquadData, groupingMode]);
 
     // Process scoring club stats
     const scoringClubStats = useMemo(() => {
-        return buildScoringClubStats(playerDetails, filteredMatches);
-    }, [playerDetails, filteredMatches]);
+        return buildScoringClubStats(playerDetails, filteredMatches, groupingMode);
+    }, [playerDetails, filteredMatches, groupingMode]);
 
     // Search and sort call-up clubs
     const filteredCallupClubs = useMemo(() => {
@@ -375,7 +406,8 @@ export default function EgyptNTClubsList({
     if (selectedClub) {
         return (
             <EgyptNTClubDetails
-                clubName={selectedClub}
+                groupKey={selectedClub}
+                groupingMode={groupingMode}
                 squadData={filteredSquadData}
                 matches={filteredMatches}
                 lineupDetails={lineupDetails}
@@ -434,23 +466,25 @@ export default function EgyptNTClubsList({
                     <table className="luxury-squad-table">
                         <colgroup>
                             <col style={{ width: "5%" }} />
-                            <col style={{ width: "45%" }} />
-                            <col style={{ width: "25%" }} />
-                            <col style={{ width: "25%" }} />
+                            <col style={{ width: "35%" }} />
+                            <col style={{ width: "20%" }} />
+                            <col style={{ width: "20%" }} />
+                            <col style={{ width: "20%" }} />
                         </colgroup>
                         <thead>
                             <tr>
                                 <th>#</th>
-                                <th>CLUB NAME</th>
+                                <th>{groupColumnLabel}</th>
                                 <th style={{ textAlign: "center" }}>NUMBER OF PLAYERS</th>
                                 <th style={{ textAlign: "center" }}>NUMBER OF TOURNAMENTS</th>
+                                <th style={{ textAlign: "center" }}>NUMBER OF SEASONS</th>
                             </tr>
                         </thead>
                         <tbody>
                             {paginatedCallups.length === 0 ? (
                                 <NoData_db
                                     isTable
-                                    colSpan={4}
+                                    colSpan={5}
                                     message="No clubs found matching your query."
                                     height="200px"
                                 />
@@ -470,6 +504,7 @@ export default function EgyptNTClubsList({
                                         </td>
                                         <td className="count-cell highlight-blue">{club.playerCount} Players</td>
                                         <td className="count-cell highlight-gold">{club.championCount} Tournaments</td>
+                                        <td className="count-cell">{club.seasonCount} Seasons</td>
                                     </tr>
                                 ))
                             )}
@@ -492,7 +527,7 @@ export default function EgyptNTClubsList({
                         <thead>
                             <tr>
                                 <th>#</th>
-                                {SORT_COLUMNS_SCORING.map(column => (
+                                {scoringSortColumns.map(column => (
                                     <th
                                         key={column.key}
                                         className="club-sortable-header"
@@ -508,7 +543,7 @@ export default function EgyptNTClubsList({
                             {paginatedScoring.length === 0 ? (
                                 <NoData_db
                                     isTable
-                                    colSpan={SORT_COLUMNS_SCORING.length + 1}
+                                    colSpan={scoringSortColumns.length + 1}
                                     message="No clubs found matching your query."
                                     height="200px"
                                 />

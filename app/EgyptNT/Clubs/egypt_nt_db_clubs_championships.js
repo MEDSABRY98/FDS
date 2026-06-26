@@ -5,7 +5,7 @@ import SearchBar_db from "../../lib/SearchBar_db";
 import DropDownList_db from "../../lib/DropDownList_db";
 import NoData_db from "../../lib/NoData_db";
 import Loading_db from "../../lib/Loading_db";
-import { buildPlayerSeasonStatsMap, isGkPosition } from "./egypt_nt_db_clubs_utils";
+import { buildPlayerSeasonStatsMap, isGkPosition, getGroupKey, getGroupColumnLabel, GROUPING_MODES } from "./egypt_nt_db_clubs_utils";
 
 const SORT_COLUMNS = [
     { key: "club", label: "CLUB" },
@@ -283,7 +283,7 @@ function MultiSelectDropdown({ options, selectedValues, onChange, placeholder = 
     );
 }
 
-export default function EgyptNTClubsChampionships({ squadData, matches, lineupDetails, playerDetails, gkDetails }) {
+export default function EgyptNTClubsChampionships({ squadData, matches, lineupDetails, playerDetails, gkDetails, groupingMode = GROUPING_MODES.CLUB }) {
     const [viewMode, setViewMode] = useState("player"); // "player" | "club"
     const [searchTerm, setSearchTerm] = useState("");
     const [sortConfig, setSortConfig] = useState({ key: "g_plus_a", direction: "desc" });
@@ -291,6 +291,14 @@ export default function EgyptNTClubsChampionships({ squadData, matches, lineupDe
 
     const [selectedChampionships, setSelectedChampionships] = useState([]);
     const [selectedClub, setSelectedClub] = useState("");
+    const groupColumnLabel = getGroupColumnLabel(groupingMode);
+    const isCountryMode = groupingMode === GROUPING_MODES.COUNTRY;
+
+    useEffect(() => {
+        setSelectedClub("");
+        setCurrentPage(1);
+        setSearchTerm("");
+    }, [groupingMode]);
 
     const [seasonStatsMap, setSeasonStatsMap] = useState(null);
     const [isCalculating, setIsCalculating] = useState(true);
@@ -325,34 +333,52 @@ export default function EgyptNTClubsChampionships({ squadData, matches, lineupDe
     const allRows = useMemo(() => {
         if (!squadData || squadData.length === 0 || !seasonStatsMap) return [];
 
-        const seenKeys = new Set();
-        const rows = [];
+        const rowsMap = {};
+
+        const mergeNtStats = (target, source) => {
+            target.mp += source.mp ?? 0;
+            target.mins += source.mins ?? 0;
+            target.goals += source.goals ?? 0;
+            target.assists += source.assists ?? 0;
+            target.isGk = target.isGk || source.isGk;
+            if (source.isGk) {
+                target.ga = (target.ga ?? 0) + (source.ga ?? 0);
+                target.cs = (target.cs ?? 0) + (source.cs ?? 0);
+            }
+        };
 
         squadData.forEach(item => {
             const name = String(item.PLAYERNAME || "").trim();
-            const club = String(item.CLUB || "Unknown").trim();
+            const clubRaw = String(item.CLUB || "Unknown").trim();
+            const groupKey = getGroupKey(clubRaw, groupingMode) || "Unknown";
             const position = String(item.POSITION || "—").trim();
             const champion = String(item.CHAMPION || "Unknown").trim();
             const season = String(item.SEASON || "Unknown").trim();
 
             if (!name) return;
 
-            const rowKey = `${club}|${name}|${position}|${champion}`;
-            if (seenKeys.has(rowKey)) return;
-            seenKeys.add(rowKey);
+            const rowKey = `${groupKey}|${name}|${position}|${champion}`;
+            const ntStats = resolvePlayerSeasonStats(name, season, position, seasonStatsMap);
 
-            rows.push({
+            if (rowsMap[rowKey]) {
+                if (isCountryMode) {
+                    mergeNtStats(rowsMap[rowKey].ntStats, ntStats);
+                }
+                return;
+            }
+
+            rowsMap[rowKey] = {
                 name,
-                club,
+                club: groupKey,
                 position: position || "—",
                 champion,
                 season,
-                ntStats: resolvePlayerSeasonStats(name, season, position, seasonStatsMap)
-            });
+                ntStats: { ...ntStats }
+            };
         });
 
-        return rows;
-    }, [squadData, seasonStatsMap]);
+        return Object.values(rowsMap);
+    }, [squadData, seasonStatsMap, groupingMode, isCountryMode]);
 
     const clubRows = useMemo(() => {
         const groups = {};
@@ -506,17 +532,20 @@ export default function EgyptNTClubsChampionships({ squadData, matches, lineupDe
     };
 
     const activeColumns = useMemo(() => {
+        const baseColumns = SORT_COLUMNS.map(column => (
+            column.key === "club" ? { ...column, label: groupColumnLabel } : column
+        ));
+
         if (viewMode === "player") {
-            return SORT_COLUMNS;
+            return baseColumns;
         }
-        // Insert players_count column right after club column
-        const filtered = SORT_COLUMNS.filter(col => col.key !== "name" && col.key !== "position");
+        const filtered = baseColumns.filter(col => col.key !== "name" && col.key !== "position");
         const clubIdx = filtered.findIndex(col => col.key === "club");
         if (clubIdx !== -1) {
             filtered.splice(clubIdx + 1, 0, { key: "players_count", label: "PLAYERS" });
         }
         return filtered;
-    }, [viewMode]);
+    }, [viewMode, groupColumnLabel]);
 
     if (isCalculating || !seasonStatsMap) {
         return <Loading_db title="EGYPT NT" subtitle="SQUAD STATS" message="CALCULATING TOURNAMENT STATS..." inline={true} />;
@@ -540,7 +569,7 @@ export default function EgyptNTClubsChampionships({ squadData, matches, lineupDe
                     className={`subtab-btn ${viewMode === "club" ? "active" : ""}`}
                     onClick={() => { setViewMode("club"); setCurrentPage(1); setSearchTerm(""); }}
                 >
-                    🏢 By Club
+                    🏢 By {isCountryMode ? "Country" : "Club"}
                 </button>
             </div>
 
@@ -562,7 +591,7 @@ export default function EgyptNTClubsChampionships({ squadData, matches, lineupDe
                         options={clubOptions}
                         value={selectedClub}
                         onChange={setSelectedClub}
-                        placeholder="All Clubs"
+                        placeholder={isCountryMode ? "All Countries" : "All Clubs"}
                         searchable={true}
                     />
                 </div>
@@ -572,7 +601,7 @@ export default function EgyptNTClubsChampionships({ squadData, matches, lineupDe
                     <SearchBar_db
                         value={searchTerm}
                         onChange={setSearchTerm}
-                        placeholder={viewMode === "player" ? "Search player, position..." : "Search club, tournament..."}
+                        placeholder={viewMode === "player" ? "Search player, position..." : `Search ${groupColumnLabel.toLowerCase()}, tournament...`}
                     />
                 </div>
 

@@ -2,6 +2,51 @@ function normalizeTeamLabel(value) {
     return String(value || "").trim().toLowerCase();
 }
 
+const CLUB_COUNTRY_SEPARATOR = " - ";
+const UNKNOWN_COUNTRY = "Unknown";
+
+export const GROUPING_MODES = {
+    CLUB: "club",
+    COUNTRY: "country"
+};
+
+/** Parse "الأهلي - مصر" => { full, name, country } */
+export function parseClubLabel(clubRaw) {
+    const full = String(clubRaw || "").trim();
+    if (!full) {
+        return { full: "", name: "", country: UNKNOWN_COUNTRY };
+    }
+
+    const sepIndex = full.lastIndexOf(CLUB_COUNTRY_SEPARATOR);
+    if (sepIndex === -1) {
+        return { full, name: full, country: UNKNOWN_COUNTRY };
+    }
+
+    const name = full.slice(0, sepIndex).trim();
+    const country = full.slice(sepIndex + CLUB_COUNTRY_SEPARATOR.length).trim() || UNKNOWN_COUNTRY;
+    return { full, name: name || full, country };
+}
+
+export function getGroupKey(clubRaw, groupingMode = GROUPING_MODES.CLUB) {
+    const parsed = parseClubLabel(clubRaw);
+    if (!parsed.full) return "";
+    return groupingMode === GROUPING_MODES.COUNTRY ? parsed.country : parsed.full;
+}
+
+export function clubsMatchGroup(clubRaw, selectedKey, groupingMode = GROUPING_MODES.CLUB) {
+    const key = String(selectedKey || "").trim();
+    if (!key) return false;
+    return getGroupKey(clubRaw, groupingMode) === key;
+}
+
+export function getGroupColumnLabel(groupingMode = GROUPING_MODES.CLUB) {
+    return groupingMode === GROUPING_MODES.COUNTRY ? "COUNTRY" : "CLUB NAME";
+}
+
+export function getGroupDetailTitle(groupingMode = GROUPING_MODES.CLUB) {
+    return groupingMode === GROUPING_MODES.COUNTRY ? "COUNTRY" : "CLUB";
+}
+
 export function isEgyptScorerEvent(row, matchContext = {}) {
     const team = String(row?.TEAM || "").trim();
     if (!team) return false;
@@ -134,7 +179,7 @@ export function compareSeasonStatsRows(a, b) {
     return a.name.localeCompare(b.name, undefined, { numeric: true });
 }
 
-function processScoringEvents(playerDetails, matchContextMap) {
+function processScoringEvents(playerDetails, matchContextMap, groupingMode = GROUPING_MODES.CLUB) {
     const clubs = {};
     const playerClubs = {};
 
@@ -145,8 +190,11 @@ function processScoringEvents(playerDetails, matchContextMap) {
 
         if (!isEgyptScorerEvent(row, ctx)) return;
 
-        const club = String(row.CLUB || "").trim();
-        if (!club) return;
+        const clubRaw = String(row.CLUB || "").trim();
+        if (!clubRaw) return;
+
+        const groupKey = getGroupKey(clubRaw, groupingMode);
+        if (!groupKey) return;
 
         const playerName = String(row["PLAYER NAME"] || "").trim();
         if (!playerName || playerName.toLowerCase() === "unknown") return;
@@ -158,9 +206,9 @@ function processScoringEvents(playerDetails, matchContextMap) {
 
         if (!isGoal && !isAssistEvent) return;
 
-        if (!clubs[club]) {
-            clubs[club] = {
-                club,
+        if (!clubs[groupKey]) {
+            clubs[groupKey] = {
+                club: groupKey,
                 scorers: new Set(),
                 contributors: new Set(),
                 goals: 0,
@@ -172,7 +220,7 @@ function processScoringEvents(playerDetails, matchContextMap) {
             };
         }
 
-        const clubEntry = clubs[club];
+        const clubEntry = clubs[groupKey];
         clubEntry.contributors.add(playerName);
         if (isGoal) clubEntry.scorers.add(playerName);
         if (isGoal) clubEntry.goals += 1;
@@ -189,11 +237,11 @@ function processScoringEvents(playerDetails, matchContextMap) {
             }
         }
 
-        const playerClubKey = `${playerName}|${club}`;
+        const playerClubKey = `${playerName}|${groupKey}`;
         if (!playerClubs[playerClubKey]) {
             playerClubs[playerClubKey] = {
                 player: playerName,
-                club,
+                club: groupKey,
                 goals: 0,
                 assists: 0,
                 penGoals: 0
@@ -209,9 +257,9 @@ function processScoringEvents(playerDetails, matchContextMap) {
     return { clubs, playerClubs };
 }
 
-export function buildScoringClubStats(playerDetails, filteredMatches) {
+export function buildScoringClubStats(playerDetails, filteredMatches, groupingMode = GROUPING_MODES.CLUB) {
     const matchContextMap = buildMatchContextMap(filteredMatches);
-    const { clubs } = processScoringEvents(playerDetails, matchContextMap);
+    const { clubs } = processScoringEvents(playerDetails, matchContextMap, groupingMode);
 
     return Object.values(clubs)
         .map(entry => ({
@@ -233,9 +281,9 @@ export function buildScoringClubStats(playerDetails, filteredMatches) {
         );
 }
 
-export function buildPlayerClubStats(playerDetails, filteredMatches) {
+export function buildPlayerClubStats(playerDetails, filteredMatches, groupingMode = GROUPING_MODES.CLUB) {
     const matchContextMap = buildMatchContextMap(filteredMatches);
-    const { playerClubs } = processScoringEvents(playerDetails, matchContextMap);
+    const { playerClubs } = processScoringEvents(playerDetails, matchContextMap, groupingMode);
 
     return Object.values(playerClubs)
         .map(entry => ({
@@ -264,32 +312,54 @@ function buildSquadPlayerSeasonClubLookup(squadData) {
     return lookup;
 }
 
-function isPlayerInSquadClubForSeason(squadLookup, playerName, season, clubName) {
+function isPlayerInSquadGroupForSeason(squadLookup, playerName, season, groupKey, groupingMode = GROUPING_MODES.CLUB) {
     const key = `${String(playerName || "").trim()}|${String(season || "").trim()}`;
     const clubs = squadLookup[key];
-    return clubs ? clubs.has(clubName) : false;
+    if (!clubs) return false;
+
+    if (groupingMode === GROUPING_MODES.COUNTRY) {
+        for (const club of clubs) {
+            if (getGroupKey(club, GROUPING_MODES.COUNTRY) === groupKey) return true;
+        }
+        return false;
+    }
+
+    return clubs.has(groupKey);
 }
 
 /** Goals: event CLUB when set, else squad club. Assists: event CLUB or squad club. */
-function isScoringEventAttributedToClub(row, playerName, ctx, clubName, squadLookup, isGoal, isAssistEvent) {
+function isScoringEventAttributedToGroup(row, playerName, ctx, groupKey, squadLookup, isGoal, isAssistEvent, groupingMode = GROUPING_MODES.CLUB) {
     const eventClub = String(row.CLUB || "").trim();
     const season = ctx.season || "Unknown";
-    const inSquad = isPlayerInSquadClubForSeason(squadLookup, playerName, season, clubName);
+    const inSquad = isPlayerInSquadGroupForSeason(squadLookup, playerName, season, groupKey, groupingMode);
+
+    if (groupingMode === GROUPING_MODES.COUNTRY) {
+        const eventGroup = eventClub ? getGroupKey(eventClub, GROUPING_MODES.COUNTRY) : "";
+        if (isGoal) {
+            if (eventClub) return eventGroup === groupKey;
+            return inSquad;
+        }
+        if (isAssistEvent) {
+            if (eventGroup === groupKey) return true;
+            return inSquad;
+        }
+        return false;
+    }
 
     if (isGoal) {
-        if (eventClub) return eventClub === clubName;
+        if (eventClub) return eventClub === groupKey;
         return inSquad;
     }
     if (isAssistEvent) {
-        if (eventClub === clubName) return true;
+        if (eventClub === groupKey) return true;
         return inSquad;
     }
     return false;
 }
 
-export function buildScoringClubDetailStats(clubName, playerDetails, filteredMatches, squadData = []) {
+export function buildScoringClubDetailStats(groupKey, playerDetails, filteredMatches, squadData = [], groupingMode = GROUPING_MODES.CLUB) {
     const matchContextMap = buildMatchContextMap(filteredMatches);
-    const normalizedClub = String(clubName || "").trim();
+    const normalizedKey = String(groupKey || "").trim();
     const squadLookup = buildSquadPlayerSeasonClubLookup(squadData);
 
     const playerMap = {};
@@ -322,7 +392,7 @@ export function buildScoringClubDetailStats(clubName, playerDetails, filteredMat
 
         if (!isGoal && !isAssistEvent) return;
 
-        if (!isScoringEventAttributedToClub(row, playerName, ctx, normalizedClub, squadLookup, isGoal, isAssistEvent)) {
+        if (!isScoringEventAttributedToGroup(row, playerName, ctx, normalizedKey, squadLookup, isGoal, isAssistEvent, groupingMode)) {
             return;
         }
 
@@ -479,7 +549,8 @@ export function buildScoringClubDetailStats(clubName, playerDetails, filteredMat
         : null;
 
     return {
-        club: normalizedClub,
+        club: normalizedKey,
+        groupingMode,
         goals,
         assists,
         penGoals,
@@ -640,7 +711,7 @@ function resolvePlayerSeasonStats(playerName, season, position, seasonStatsMap) 
     };
 }
 
-export function buildClubPlayerPerformance(squadData, matchData = {}) {
+export function buildClubPlayerPerformance(squadData, matchData = {}, groupingMode = GROUPING_MODES.CLUB) {
     const seasonStatsMap = buildPlayerSeasonStatsMap(
         matchData.matches,
         matchData.lineupDetails,
@@ -652,14 +723,17 @@ export function buildClubPlayerPerformance(squadData, matchData = {}) {
 
     (squadData || []).forEach(item => {
         const name = String(item.PLAYERNAME || "").trim();
-        const club = String(item.CLUB || "").trim();
+        const clubRaw = String(item.CLUB || "").trim();
         const season = String(item.SEASON || "").trim();
         const position = String(item.POSITION || "").trim();
-        if (!name || !club) return;
+        if (!name || !clubRaw) return;
 
-        const key = `${name}|${club}`;
+        const groupKey = getGroupKey(clubRaw, groupingMode);
+        if (!groupKey) return;
+
+        const key = `${name}|${groupKey}`;
         if (!entries[key]) {
-            entries[key] = { name, club, seasons: {}, positions: new Set() };
+            entries[key] = { name, club: groupKey, seasons: {}, positions: new Set() };
         }
 
         if (season) {
@@ -730,8 +804,8 @@ export function buildClubPlayerPerformance(squadData, matchData = {}) {
         );
 }
 
-export function buildClubOnlyPerformance(squadData, matchData = {}) {
-    const playerRows = buildClubPlayerPerformance(squadData, matchData);
+export function buildClubOnlyPerformance(squadData, matchData = {}, groupingMode = GROUPING_MODES.CLUB) {
+    const playerRows = buildClubPlayerPerformance(squadData, matchData, groupingMode);
     const clubs = {};
 
     playerRows.forEach(row => {
@@ -778,9 +852,9 @@ export function buildClubOnlyPerformance(squadData, matchData = {}) {
         );
 }
 
-export function buildClubStats(clubName, squadData, matchData = {}) {
+export function buildClubStats(groupKey, squadData, matchData = {}, groupingMode = GROUPING_MODES.CLUB) {
     const rows = (squadData || []).filter(
-        item => String(item.CLUB || "").trim() === clubName
+        item => clubsMatchGroup(item.CLUB, groupKey, groupingMode)
     );
 
     const seasonStatsMap = buildPlayerSeasonStatsMap(
