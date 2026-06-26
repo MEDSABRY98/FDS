@@ -16,7 +16,8 @@ import {
     GitCompare,
     Tv,
     Award,
-    History
+    History,
+    Target
 } from "lucide-react";
 import Link from "next/link";
 
@@ -37,6 +38,7 @@ import AlAhlyEditor from "./Editor/alahly_db_editor";
 import AlAhlyChampions from "./Champions/alahly_db_champions";
 import AlAhlyReferees from "./Referees/alahly_db_referees";
 import AlAhlyH2H from "./HeadToHead/alahly_db_h2h";
+import AlAhlyPenalties from "./Penalties/alahly_db_penalties";
 import AlAhlyMediaTracker from "./MediaTracker/alahly_db_media_tracker";
 import AlAhlyOTD from "./OnThisDay/alahly_db_otd";
 import Loading_db from "../lib/Loading_db";
@@ -438,6 +440,7 @@ export default function AlAhlyDatabase() {
         { id: 'managers', label: 'Managers', icon: User },
         { id: 'referees', label: 'Referees', icon: Shield },
         { id: 'h2h', label: 'H2h', icon: GitCompare },
+        { id: 'penalties', label: 'Penalties', icon: Target },
         { id: 'media-tracker', label: 'Media Tracker', icon: Tv }
     ];
 
@@ -526,6 +529,13 @@ export default function AlAhlyDatabase() {
                         {activeTab === 'gks' && <AlAhlyGKs gkDetails={gkDetails} howPenMissed={howPenMissed} filteredMatches={filteredMatches} playerDetails={playerDetails} />}
                         {activeTab === 'managers' && <AlAhlyManagers matches={filteredMatches} playerDetails={playerDetails} lineupDetails={lineupDetails} />}
                         {activeTab === 'h2h' && <AlAhlyH2H matches={filteredMatches} />}
+                        {activeTab === 'penalties' && (
+                            <AlAhlyPenalties
+                                playerDetails={playerDetails}
+                                filteredMatches={filteredMatches}
+                                howPenMissed={howPenMissed}
+                            />
+                        )}
                         {activeTab === 'referees' && <AlAhlyReferees matches={filteredMatches} playerDetails={playerDetails} howPenMissed={howPenMissed} />}
                         {activeTab === 'media-tracker' && <AlAhlyMediaTracker matches={filteredMatches} mediaTrackerData={mediaTrackerData} onDataChange={fetchMatchData} />}
                         {activeTab === 'editor' && <AlAhlyEditor />}

@@ -20,6 +20,27 @@
 .modern-player-table { width: 100%; border-collapse: collapse; }
 .modern-player-table th { background: #0a0a0a; color: rgba(255,255,255,0.85); font-size: 15px; padding: 25px 15px; text-align: center; font-family: 'Space Mono', monospace; text-transform: uppercase; letter-spacing: 1.5px; }
 .modern-player-table td { padding: 20px 15px; border-bottom: 1px solid #f2f2f2; text-align: center; font-size: 18px; font-weight: 700; vertical-align: middle; }
+.gks-main-table {
+    table-layout: fixed;
+}
+
+.gks-main-table th {
+    font-size: 13px;
+    padding: 22px 8px;
+    letter-spacing: 1px;
+}
+
+.gks-main-table td {
+    padding: 20px 8px;
+    font-size: 16px;
+}
+
+.gks-main-table .p-name {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
 .p-name { color: #000; font-weight: 800 !important; font-size: 18px !important; text-align: center !important; }
 .total-row-premium { background: #f9f9f9; border-top: 2px solid #000; font-weight: 900; }
 .total-row-premium td { padding: 20px 15px; color: #000 !important; font-family: 'Space Mono', monospace !important; }

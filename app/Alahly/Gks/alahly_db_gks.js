@@ -8,6 +8,7 @@ import { AlAhlyExcelExport } from "../ExportExcel/alahly_export_excel";
 import NoData_db from "../../lib/NoData_db";
 import SearchBar_db from "../../lib/SearchBar_db";
 import DropDownList_db from "../../lib/DropDownList_db";
+import { collectGkPenaltySaves, collectGkPenaltyMisses, getGkPenaltySavePct } from "../Penalties/alahly_db_penalties_utils";
 
 export default function AlAhlyGKs({ gkDetails, howPenMissed, filteredMatches, playerDetails }) {
     const [searchTerm, setSearchTerm] = useState("");
@@ -62,7 +63,7 @@ export default function AlAhlyGKs({ gkDetails, howPenMissed, filteredMatches, pl
             if (opponentFilter !== "all" && teamVal !== opponentFilter) return;
 
             if (!stats[gkName]) {
-                stats[gkName] = { name: gkName, matches: 0, goalsConceded: 0, cleanSheets: 0, penaltiesSaved: 0, penaltiesReceived: 0 };
+                stats[gkName] = { name: gkName, matches: 0, goalsConceded: 0, cleanSheets: 0, penaltiesSaved: 0, penaltiesMissed: 0, penaltiesReceived: 0 };
             }
 
             stats[gkName].matches += 1;
@@ -100,18 +101,32 @@ export default function AlAhlyGKs({ gkDetails, howPenMissed, filteredMatches, pl
             stats[gkName].penaltiesReceived += penalties.length;
         });
 
-        // 2. Process Penalty Saves from HOW MISSED? table
-        (howPenMissed || []).forEach(row => {
-            const mId = String(row.MATCH_ID || "").trim();
-            if (!currentMatchIds.has(mId)) return;
+        const savesByGk = collectGkPenaltySaves({
+            playerDetails,
+            howPenMissed,
+            gkDetails,
+            matchIds: currentMatchIds,
+        });
 
-            const description = String(row["HOW MISSED?"] || "");
+        Object.entries(savesByGk).forEach(([gkName, saves]) => {
+            if (!stats[gkName]) return;
+            stats[gkName].penaltiesSaved += saves.length;
+        });
 
-            Object.keys(stats).forEach(gkName => {
-                if (description.includes(gkName)) {
-                    stats[gkName].penaltiesSaved += 1;
-                }
-            });
+        const missesByGk = collectGkPenaltyMisses({
+            playerDetails,
+            howPenMissed,
+            gkDetails,
+            matchIds: currentMatchIds,
+        });
+
+        Object.entries(missesByGk).forEach(([gkName, misses]) => {
+            if (!stats[gkName]) return;
+            stats[gkName].penaltiesMissed += misses.length;
+        });
+
+        Object.values(stats).forEach((gk) => {
+            gk.penaltiesFaced = gk.penaltiesReceived + gk.penaltiesSaved + gk.penaltiesMissed;
         });
 
         let list = Object.values(stats);
@@ -144,9 +159,13 @@ export default function AlAhlyGKs({ gkDetails, howPenMissed, filteredMatches, pl
             goalsConceded: acc.goalsConceded + curr.goalsConceded,
             cleanSheets: acc.cleanSheets + curr.cleanSheets,
             penaltiesReceived: acc.penaltiesReceived + curr.penaltiesReceived,
-            penaltiesSaved: acc.penaltiesSaved + curr.penaltiesSaved
-        }), { matches: 0, goalsConceded: 0, cleanSheets: 0, penaltiesReceived: 0, penaltiesSaved: 0 });
+            penaltiesSaved: acc.penaltiesSaved + curr.penaltiesSaved,
+            penaltiesMissed: acc.penaltiesMissed + curr.penaltiesMissed,
+            penaltiesFaced: acc.penaltiesFaced + curr.penaltiesFaced,
+        }), { matches: 0, goalsConceded: 0, cleanSheets: 0, penaltiesReceived: 0, penaltiesSaved: 0, penaltiesMissed: 0, penaltiesFaced: 0 });
     }, [gkStats]);
+
+    const totalSavePct = getGkPenaltySavePct(totals.penaltiesSaved, totals.penaltiesReceived);
 
     const [selectedGK, setSelectedGK] = useState(null);
 
@@ -165,8 +184,11 @@ export default function AlAhlyGKs({ gkDetails, howPenMissed, filteredMatches, pl
             "MATCHES": g.matches,
             "GOALS CONCEDED": g.goalsConceded,
             "CLEAN SHEETS": g.cleanSheets,
-            "PENALTIES RECEIVED": g.penaltiesReceived,
-            "PENALTIES SAVED": g.penaltiesSaved
+            "PEN(F)": g.penaltiesFaced,
+            "PEN(G)": g.penaltiesReceived,
+            "PEN(S)": g.penaltiesSaved,
+            "SV%": `${getGkPenaltySavePct(g.penaltiesSaved, g.penaltiesReceived)}%`,
+            "PEN(M)": g.penaltiesMissed,
         }));
         AlAhlyExcelExport.exportToExcel(exportData, "AlAhly_Goalkeepers_Main");
     };
@@ -224,16 +246,31 @@ export default function AlAhlyGKs({ gkDetails, howPenMissed, filteredMatches, pl
                         {gkStats.length === 0 ? (
                             <NoData_db message="No keeper data recorded for these matches." />
                         ) : (
-                            <table className="modern-player-table fade-in">
+                            <table className="modern-player-table fade-in gks-main-table">
+                                <colgroup>
+                                    <col style={{ width: "60px" }} />
+                                    <col style={{ width: "220px" }} />
+                                    <col style={{ width: "70px" }} />
+                                    <col style={{ width: "70px" }} />
+                                    <col style={{ width: "70px" }} />
+                                    <col style={{ width: "80px" }} />
+                                    <col style={{ width: "80px" }} />
+                                    <col style={{ width: "80px" }} />
+                                    <col style={{ width: "75px" }} />
+                                    <col style={{ width: "80px" }} />
+                                </colgroup>
                                 <thead>
                                     <tr>
                                         <th>#</th>
-                                        <th className="name-th">GOALKEEPER NAME</th>
-                                        <th>MATCHES</th>
-                                        <th>GOALS CONCEDED</th>
-                                        <th>CLEAN SHEETS</th>
-                                        <th>PENALTIES RECEIVED</th>
-                                        <th>PENALTIES SAVED</th>
+                                        <th className="name-th">GK</th>
+                                        <th>M</th>
+                                        <th>GC</th>
+                                        <th>CS</th>
+                                        <th>PEN(F)</th>
+                                        <th>PEN(G)</th>
+                                        <th>PEN(S)</th>
+                                        <th>SV%</th>
+                                        <th>PEN(M)</th>
                                     </tr>
                                 </thead>
                                 <tbody>
@@ -246,8 +283,13 @@ export default function AlAhlyGKs({ gkDetails, howPenMissed, filteredMatches, pl
                                                 <td style={{ color: 'var(--gold)', fontWeight: 800 }}>{g.matches}</td>
                                                 <td style={{ color: '#e74c3c' }}>{g.goalsConceded}</td>
                                                 <td style={{ color: '#2ecc71', fontWeight: 800 }}>{g.cleanSheets}</td>
+                                                <td style={{ fontWeight: 800 }}>{g.penaltiesFaced}</td>
                                                 <td style={{ color: '#9b59b6', fontWeight: 800 }}>{g.penaltiesReceived}</td>
                                                 <td style={{ color: '#3498db', fontWeight: 800 }}>{g.penaltiesSaved}</td>
+                                                <td style={{ color: 'var(--gold)', fontWeight: 800 }}>
+                                                    {getGkPenaltySavePct(g.penaltiesSaved, g.penaltiesReceived)}%
+                                                </td>
+                                                <td style={{ color: '#e74c3c', fontWeight: 800 }}>{g.penaltiesMissed}</td>
                                             </tr>
                                         );
                                     })}
@@ -258,8 +300,11 @@ export default function AlAhlyGKs({ gkDetails, howPenMissed, filteredMatches, pl
                                         <td style={{ color: 'var(--gold)' }}>{totals.matches}</td>
                                         <td style={{ color: '#e74c3c' }}>{totals.goalsConceded}</td>
                                         <td style={{ color: '#2ecc71' }}>{totals.cleanSheets}</td>
+                                        <td>{totals.penaltiesFaced}</td>
                                         <td style={{ color: '#9b59b6' }}>{totals.penaltiesReceived}</td>
                                         <td style={{ color: '#3498db' }}>{totals.penaltiesSaved}</td>
+                                        <td style={{ color: 'var(--gold)' }}>{totalSavePct}%</td>
+                                        <td style={{ color: '#e74c3c' }}>{totals.penaltiesMissed}</td>
                                     </tr>
                                 </tfoot>
                             </table>

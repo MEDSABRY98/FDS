@@ -17,6 +17,12 @@ import PlayerAssistImpactTable from "./alahly_db_player_details_assist_impact";
 import PlayerPresenceTable, { computeSquadImpactStats } from "./alahly_db_player_details_squad_influence";
 import PlayerTimingTable from "./alahly_db_player_details_timing";
 import { computePlayerGoalImpact, computePlayerAssistImpact } from "./alahly_player_impact_utils";
+import {
+    findHowPenMissedForEvent,
+    getPenaltyMissOutcome,
+    findGkForPenaltyMiss,
+    findDefendingGkForPenalty,
+} from "../Penalties/alahly_db_penalties_utils";
 import { AlAhlyService } from "../Service/alahly_db_service";
 import { AlAhlyExcelExport } from "../ExportExcel/alahly_export_excel";
 
@@ -238,15 +244,10 @@ export default function PlayerDetails({ playerName, playerData, playerDetails, l
             let pmCount = 0;
             let psCount = 0;
             mEvents.filter(e => String(e.TYPE).trim() === "PENMISSED").forEach(e => {
-                const detail = (howPenMissed || []).find(d => String(d.MATCH_ID) === String(mId) && String(d.EVENT_ID) === String(e.EVENT_ID));
-                if (detail) {
-                    const desc = String(detail["HOW MISSED?"] || "").trim();
-                    // If it's one of these, it's a miss by the player. Otherwise, it's a save by the GK.
-                    const isActualMiss = ["برا المرمى", "القائم", "العارضة", "؟"].includes(desc);
-                    if (isActualMiss) pmCount++; else psCount++;
-                } else {
-                    pmCount++; // Default to missed if no detail found
-                }
+                const detail = findHowPenMissedForEvent(howPenMissed, e);
+                if (getPenaltyMissOutcome(detail) === "missed") pmCount++;
+                else if (detail) psCount++;
+                else pmCount++;
             });
 
             let opponent = "—";
@@ -450,17 +451,16 @@ export default function PlayerDetails({ playerName, playerData, playerDetails, l
                         }
                     }
                 });
-                // Match penalty misses via EVENT_ID in howPenMissed
-                const matchPenMisses = (howPenMissed || []).filter(pm => String(pm.MATCH_ID) === String(mId) && String(pm["PLAYER NAME"]).trim() === playerName);
-                matchPenMisses.forEach(pm => {
-                    const eId = String(pm.EVENT_ID).trim();
-                    const gkMatch = matchGKs.find(gk => String(gk.EVENT_ID).trim() === eId);
-                    if (gkMatch) {
-                        const gkName = String(gkMatch["PLAYER NAME"]).trim();
-                        const desc = String(pm["HOW MISSED?"] || "").trim();
-                        const isActualMiss = ["برا المرمى", "القائم", "العارضة", "؟"].includes(desc);
-                        addStats(gkName, opponentTeam, 0, 0, isActualMiss ? 1 : 0, isActualMiss ? 0 : 1);
-                    }
+                mEvents.filter((e) => String(e.TYPE || "").trim().toUpperCase() === "PENMISSED").forEach((pen) => {
+                    const detail = findHowPenMissedForEvent(howPenMissed, pen);
+                    const outcome = getPenaltyMissOutcome(detail);
+                    const gk = outcome === "saved"
+                        ? findGkForPenaltyMiss({ penEvent: pen, howPenMissed, gkDetails })
+                        : findDefendingGkForPenalty({ penEvent: pen, howPenMissed, gkDetails });
+                    if (!gk) return;
+                    const gkName = String(gk["PLAYER NAME"] || "").trim();
+                    if (!matchGKs.some((mg) => String(mg["PLAYER NAME"] || "").trim() === gkName)) return;
+                    addStats(gkName, opponentTeam, 0, 0, outcome === "missed" ? 1 : 0, outcome === "saved" ? 1 : 0);
                 });
             }
 

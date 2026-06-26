@@ -1,12 +1,19 @@
 "use client";
 
-import { useState, useCallback, useEffect } from "react";
+import { useState, useCallback, useEffect, useMemo } from "react";
 import "./alahly_db_editor.css";
-import { supabase, AutocompleteInput, isEditorWrapColumn, getEditorColumnMinWidth, ShrinkToFitInput, fetchCatalogDisplayNames } from "../../Database";
+import { supabase, AutocompleteInput, isEditorWrapColumn, getEditorColumnMinWidth, ShrinkToFitInput, fetchCatalogDisplayNames, sortRowsByTableSortRules } from "../../Database";
 import Login_db from "../../lib/Login_db";
 import NoData_db from "../../lib/NoData_db";
 import SearchBar_db from "../../lib/SearchBar_db";
 import { useNotification } from "../../lib/Notification_db";
+import {
+    buildPenMissedEventOptions,
+    normalizeHowPenMissedRowForEditor,
+    sanitizeHowPenMissedRowForSave,
+    isEditorLinkedRowFilled,
+    PEN_MISSED_EVENT_OPTION_GET_VALUE,
+} from "../Penalties/alahly_db_penalties_utils";
 // â”€â”€ Helper â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 const EMPTY_MATCH = {
     "MATCH_ID": "", "CHAMPION SYSTEM": "", "DATE": "", "CHAMPION": "", "SEASON - NAME": "",
@@ -17,7 +24,10 @@ const EMPTY_MATCH = {
 const EMPTY_LINEUP = { "MATCH_ID": "", "MATCH MINUTE": "", "TEAM": "", "PLAYER NAME": "", "STATU": "", "PLAYER NAME OUT": "", "OUT MINUTE": "", "TOTAL MINUTE": "" };
 const EMPTY_PLAYER = { "MATCH_ID": "", "EVENT_ID": "", "PARENT_EVENT_ID": "", "PLAYER NAME": "", "TEAM": "", "TYPE": "", "TYPE_SUB": "", "MINUTE": "" };
 const EMPTY_GK = { "MATCH_ID": "", "EVENT_ID": "", "TEAM": "", "PLAYER NAME": "", "STATU": "", "OUT MINUTE": "", "GOALS CONCEDED": "" };
-const EMPTY_PEN = { "MATCH_ID": "", "PARENT_EVENT_ID": "", "HOW MISSED?": "", "TEAM": "", "MINUTE": "" };
+const EMPTY_PEN = { "MATCH_ID": "", "EVENT_ID": "", "HOW MISSED?": "", "TEAM": "", "MINUTE": "" };
+
+const sortByRowIdAsc = (rows) => sortRowsByTableSortRules(rows, ["ROW_ID"], [{ column: "ROW_ID", direction: "asc" }]);
+const sortByEventIdAsc = (rows) => sortRowsByTableSortRules(rows, ["EVENT_ID"], [{ column: "EVENT_ID", direction: "asc" }]);
 
 const isFinalRound = (round) => String(round || "").trim() === "النهائي";
 
@@ -77,7 +87,7 @@ function mergeTeamLineupUpdate(allRows, teamFilter, teamAction, applyLogic) {
 }
 
 // â”€â”€ Editable Table â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-function EditableTable({ title, color, rows, setRows, columns, matchId, emptyRow, tableName, onSave, onDelete, isSaving, autoFields = {}, columnOptions = {} }) {
+function EditableTable({ title, color, rows, setRows, columns, matchId, emptyRow, tableName, onSave, onDelete, isSaving, autoFields = {}, columnOptions = {}, columnOptionGetValue = {} }) {
 
     const handleAdd = () => {
         const computed = {};
@@ -151,7 +161,10 @@ function EditableTable({ title, color, rows, setRows, columns, matchId, emptyRow
                                         color: isAuto ? '#888' : '#000'
                                     };
                                     const fieldClass = `field-input${isFitCol ? ' field-input-fit' : ''}`;
-                                    const handleFieldChange = (val) => setRows(prev => prev.map((r, i) => i === ri ? { ...r, [col]: val, _isDirty: true } : r));
+                                    const handleFieldChange = (val) => {
+                                        const stored = columnOptionGetValue[col] ? columnOptionGetValue[col](val) : val;
+                                        setRows(prev => prev.map((r, i) => i === ri ? { ...r, [col]: stored, _isDirty: true } : r));
+                                    };
 
                                     return (
                                         <td key={col} style={{ padding: '6px 10px', textAlign: 'center' }}>
@@ -576,12 +589,15 @@ export default function AlAhlyEditor() {
                 const oppRows = oppTeam ? createInitialTeamLineup(id, oppTeam) : [];
                 setLineupRows(applyLineupLogic([...ahlyRows, ...oppRows], [...ahlyRows, ...oppRows]));
             } else {
-                setLineupRows(ld.map((r, i) => ({ ...r, _key: r._key ?? i })));
+                setLineupRows(sortByRowIdAsc(ld).map((r, i) => ({ ...r, _key: r._key ?? i })));
             }
             setActiveLinkedTab('lineup-ahly');
-            setPlayerRows((pd || []).map((r, i) => ({ ...r, _key: 1000 + i })));
-            setGkRows((gd || []).map((r, i) => ({ ...r, _key: 2000 + i })));
-            setPenRows((pen || []).map((r, i) => ({ ...r, _key: 3000 + i })));
+            setPlayerRows(sortByEventIdAsc(pd || []).map((r, i) => ({ ...r, _key: 1000 + i })));
+            setGkRows(sortByRowIdAsc(gd || []).map((r, i) => ({ ...r, _key: 2000 + i })));
+            setPenRows(sortByRowIdAsc(pen || []).map((r, i) => ({
+                ...normalizeHowPenMissedRowForEditor(r),
+                _key: 3000 + i,
+            })));
             setMode('edit');
         } catch (e) { addToast('Error: ' + e.message, 'error'); }
         setLoading(false);
@@ -601,18 +617,22 @@ export default function AlAhlyEditor() {
             delete cleanRow.ROW_ID;
         }
 
+        const payload = tableName === "alahly_HOWPENMISSED"
+            ? sanitizeHowPenMissedRowForSave(cleanRow)
+            : cleanRow;
+
         try {
             let result;
             if (_isNew) {
                 // New record insertion
-                result = await supabase.from(tableName).insert(cleanRow).select();
+                result = await supabase.from(tableName).insert(payload).select();
             } else {
                 // Update record by ROW_ID
-                if (cleanRow.ROW_ID) {
-                    result = await supabase.from(tableName).update(cleanRow).eq('ROW_ID', cleanRow.ROW_ID).select();
+                if (payload.ROW_ID) {
+                    result = await supabase.from(tableName).update(payload).eq('ROW_ID', payload.ROW_ID).select();
                 } else {
                     // Safety fallback if ROW_ID missing
-                    result = await supabase.from(tableName).upsert(cleanRow).select();
+                    result = await supabase.from(tableName).upsert(payload).select();
                 }
             }
 
@@ -709,8 +729,7 @@ export default function AlAhlyEditor() {
             // 2. Helper to save pending changes in linked tables
             const saveLinkedTable = async (tableName, rows, setter) => {
                 const pending = rows.filter(r => r._isNew || r._isDirty);
-                // Filter out ghost rows
-                const filled = pending.filter(r => r["PLAYER NAME"] && String(r["PLAYER NAME"]).trim() !== "");
+                const filled = pending.filter((r) => isEditorLinkedRowFilled(tableName, r));
                 if (filled.length === 0) return;
 
                 // Split into new (INSERT) and existing (UPSERT)
@@ -723,7 +742,9 @@ export default function AlAhlyEditor() {
                     if (isNew || !clean.ROW_ID || clean.ROW_ID === "" || clean.ROW_ID === null) {
                         delete clean.ROW_ID;
                     }
-                    return clean;
+                    return tableName === "alahly_HOWPENMISSED"
+                        ? sanitizeHowPenMissedRowForSave(clean)
+                        : clean;
                 };
 
                 let savedResults = [];
@@ -795,15 +816,15 @@ export default function AlAhlyEditor() {
 
             // 2. Helper to insert staged linked rows with error checking
             const saveStagedTable = async (tableName, rows) => {
-                // Filter out rows that have no player name (prevent ghost rows)
-                const filled = rows.filter(r => r["PLAYER NAME"] && String(r["PLAYER NAME"]).trim() !== "");
+                const filled = rows.filter((r) => isEditorLinkedRowFilled(tableName, r));
                 if (filled.length === 0) return;
 
                 const clean = filled.map(({ _isNew, _isDirty, _key, ...r }) => {
                     const row = { ...r, MATCH_ID: mid };
-                    // Safety check for empty ROW_ID
                     if (row.ROW_ID === "" || row.ROW_ID === null) delete row.ROW_ID;
-                    return row;
+                    return tableName === "alahly_HOWPENMISSED"
+                        ? sanitizeHowPenMissedRowForSave(row)
+                        : row;
                 });
 
                 const { error: insErr } = await supabase.from(tableName).insert(clean);
@@ -844,6 +865,8 @@ export default function AlAhlyEditor() {
     const playerCols = Object.keys(EMPTY_PLAYER).filter(col => col !== 'MATCH_ID');
     const gkCols = Object.keys(EMPTY_GK).filter(col => col !== 'MATCH_ID');
     const penCols = Object.keys(EMPTY_PEN).filter(col => col !== 'MATCH_ID');
+    const editPenEventOptions = useMemo(() => buildPenMissedEventOptions(playerRows), [playerRows]);
+    const newPenEventOptions = useMemo(() => buildPenMissedEventOptions(newPlayerRows), [newPlayerRows]);
 
     const renderLinkedTabBar = (formData) => {
         const ahlyTeam = resolveAhlyTeam(formData);
@@ -1060,9 +1083,11 @@ export default function AlAhlyEditor() {
                                     emptyRow={EMPTY_PEN} tableName="alahly_HOWPENMISSED"
                                     onSave={() => { }} onDelete={(row, ri, _, setter) => setter(prev => prev.filter((_, i) => i !== ri))} isSaving={false}
                                     columnOptions={{
+                                        EVENT_ID: newPenEventOptions,
                                         "TEAM": [newMatchData["AHLY TEAM"], newMatchData["OPPONENT TEAM"]].filter(Boolean),
                                         "HOW MISSED?": howMissedOptions
                                     }}
+                                    columnOptionGetValue={PEN_MISSED_EVENT_OPTION_GET_VALUE}
                                 />
                             )}
                             {activeLinkedTab === 'motm' && (
@@ -1178,9 +1203,11 @@ export default function AlAhlyEditor() {
                                     emptyRow={EMPTY_PEN} tableName="alahly_HOWPENMISSED"
                                     onSave={handleSaveRow} onDelete={handleDeleteRow} isSaving={isSaving}
                                     columnOptions={{
+                                        EVENT_ID: editPenEventOptions,
                                         "TEAM": [matchData["AHLY TEAM"], matchData["OPPONENT TEAM"]].filter(Boolean),
                                         "HOW MISSED?": howMissedOptions
                                     }}
+                                    columnOptionGetValue={PEN_MISSED_EVENT_OPTION_GET_VALUE}
                                 />
                             )}
                             {activeLinkedTab === 'motm' && (

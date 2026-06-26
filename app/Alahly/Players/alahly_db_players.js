@@ -10,7 +10,6 @@ import { AlAhlyService } from "../Service/alahly_db_service";
 import { AlAhlyExcelExport } from "../ExportExcel/alahly_export_excel";
 
 import AlAhlyPlayersStats from "./alahly_db_players_stats";
-import AlAhlyPlayersPenalties from "./alahly_db_players_penalties";
 import AlAhlyPlayersMultiples from "./alahly_db_players_multiples";
 import AlAhlyPlayersImpact from "./alahly_db_players_impact";
 import AlAhlyPlayersGoalsTiming from "./alahly_db_players_goals_timing";
@@ -71,7 +70,6 @@ export default function AlAhlyPlayers({ playerDetails, lineupDetails, filteredMa
             if (!stats[name]) {
                 stats[name] = {
                     name, caps: 0, mins: 0, goals: 0, assists: 0, ga: 0, penalties: 0,
-                    total: 0, goal: 0, miss: 0, wonGoal: 0, wonMiss: 0, makeGoal: 0, makeMiss: 0,
                     braceG: 0, hatG: 0, superG: 0, braceA: 0, hatA: 0, superA: 0,
                     goalWinImpact: 0, goalDrawImpact: 0, assistWinImpact: 0, assistDrawImpact: 0,
                     goalsTiming: initTiming(),
@@ -100,7 +98,6 @@ export default function AlAhlyPlayers({ playerDetails, lineupDetails, filteredMa
             if (!stats[name]) {
                 stats[name] = {
                     name, caps: 0, mins: 0, goals: 0, assists: 0, ga: 0, penalties: 0,
-                    total: 0, goal: 0, miss: 0, wonGoal: 0, wonMiss: 0, makeGoal: 0, makeMiss: 0,
                     braceG: 0, hatG: 0, superG: 0, braceA: 0, hatA: 0, superA: 0,
                     goalWinImpact: 0, goalDrawImpact: 0, assistWinImpact: 0, assistDrawImpact: 0,
                     goalsTiming: initTiming(),
@@ -141,7 +138,6 @@ export default function AlAhlyPlayers({ playerDetails, lineupDetails, filteredMa
                 rowToUpdate.goals += 1;
                 rowToUpdate.ga += 1;
                 if (sub === "PENGOAL") {
-                    rowToUpdate.goal += 1;
                     rowToUpdate.penalties += 1;
                 }
                 const period = getPeriod(min);
@@ -155,14 +151,6 @@ export default function AlAhlyPlayers({ playerDetails, lineupDetails, filteredMa
                 if (period) rowToUpdate.assistsTiming[period]++;
             }
 
-            // Penalty specifics
-            const isPenaltyAttempt = sub === "PENGOAL" || type === "PENMISSED";
-            if (isPenaltyAttempt) { rowToUpdate.total += 1; }
-            if (type === "PENMISSED") { rowToUpdate.miss += 1; }
-            if (type === "PENASSISTGOAL") { rowToUpdate.wonGoal += 1; }
-            if (type === "PENASSISTMISSED") { rowToUpdate.wonMiss += 1; }
-            if (type === "PENMAKEGOAL") { rowToUpdate.makeGoal += 1; }
-            if (type === "PENMAKEMISSED") { rowToUpdate.makeMiss += 1; }
         });
 
         // Impact Calculation (using the identical logic to Player Details)
@@ -239,11 +227,11 @@ export default function AlAhlyPlayers({ playerDetails, lineupDetails, filteredMa
             if (key === "totalImpact") {
                 aVal = a.goalWinImpact + a.goalDrawImpact + a.assistWinImpact + a.assistDrawImpact;
                 bVal = b.goalWinImpact + b.goalDrawImpact + b.assistWinImpact + b.assistDrawImpact;
-            } else if (activeSubTab === 5 || activeSubTab === 6) {
-                const timA = activeSubTab === 5 ? a.goalsTiming : a.assistsTiming;
-                const timB = activeSubTab === 5 ? b.goalsTiming : b.assistsTiming;
+            } else if (activeSubTab === 4 || activeSubTab === 5) {
+                const timA = activeSubTab === 4 ? a.goalsTiming : a.assistsTiming;
+                const timB = activeSubTab === 4 ? b.goalsTiming : b.assistsTiming;
                 if (["1-15", "16-30", "31-45", "45+", "46-60", "61-75", "76-90", "90+", "?"].includes(key)) { aVal = timA[key] || 0; bVal = timB[key] || 0; }
-                else if (key === 'total') { aVal = activeSubTab === 5 ? a.goals : a.assists; bVal = activeSubTab === 5 ? b.goals : b.assists; }
+                else if (key === 'total') { aVal = activeSubTab === 4 ? a.goals : a.assists; bVal = activeSubTab === 4 ? b.goals : b.assists; }
                 else { aVal = a[key]; bVal = b[key]; }
             } else {
                 aVal = a[key] || 0; bVal = b[key] || 0;
@@ -271,16 +259,15 @@ export default function AlAhlyPlayers({ playerDetails, lineupDetails, filteredMa
     const handleExport = () => {
         const exportData = filteredRows.map((r, i) => {
             if (activeSubTab === 1) return { "#": i + 1, "PLAYER NAME": r.name, "MATCHES": r.caps, "MINUTES": r.mins, "G+A": r.ga, "GOALS": r.goals, "ASSISTS": r.assists, "PENALTIES": r.penalties };
-            if (activeSubTab === 2) return { "#": i + 1, "PLAYER NAME": r.name, "TOTAL SHOT": r.total, "SCORE": r.goal, "MISS": r.miss, "WON(G)": r.wonGoal, "WON(M)": r.wonMiss, "MAKE(G)": r.makeGoal, "MAKE(M)": r.makeMiss };
-            if (activeSubTab === 3) return { "#": i + 1, "PLAYER NAME": r.name, "G-BRACE": r.braceG, "G-HATRICK": r.hatG, "G-SUPER": r.superG, "A-BRACE": r.braceA, "A-HATRICK": r.hatA, "A-SUPER": r.superA };
-            if (activeSubTab === 4) return { "#": i + 1, "PLAYER NAME": r.name, "G-WIN": r.goalWinImpact, "G-DRAW": r.goalDrawImpact, "A-WIN": r.assistWinImpact, "A-DRAW": r.assistDrawImpact, "TOTAL": (r.goalWinImpact + r.goalDrawImpact + r.assistWinImpact + r.assistDrawImpact) };
-            if (activeSubTab === 5 || activeSubTab === 6) {
-                const tim = activeSubTab === 5 ? r.goalsTiming : r.assistsTiming;
-                return { "#": i + 1, "PLAYER NAME": r.name, "TOTAL": activeSubTab === 5 ? r.goals : r.assists, "1-15": tim["1-15"], "16-30": tim["16-30"], "31-45": tim["31-45"], "45+": tim["45+"], "46-60": tim["46-60"], "61-75": tim["61-75"], "76-90": tim["76-90"], "90+": tim["90+"], "?": tim["?"] };
+            if (activeSubTab === 2) return { "#": i + 1, "PLAYER NAME": r.name, "G-BRACE": r.braceG, "G-HATRICK": r.hatG, "G-SUPER": r.superG, "A-BRACE": r.braceA, "A-HATRICK": r.hatA, "A-SUPER": r.superA };
+            if (activeSubTab === 3) return { "#": i + 1, "PLAYER NAME": r.name, "G-WIN": r.goalWinImpact, "G-DRAW": r.goalDrawImpact, "A-WIN": r.assistWinImpact, "A-DRAW": r.assistDrawImpact, "TOTAL": (r.goalWinImpact + r.goalDrawImpact + r.assistWinImpact + r.assistDrawImpact) };
+            if (activeSubTab === 4 || activeSubTab === 5) {
+                const tim = activeSubTab === 4 ? r.goalsTiming : r.assistsTiming;
+                return { "#": i + 1, "PLAYER NAME": r.name, "TOTAL": activeSubTab === 4 ? r.goals : r.assists, "1-15": tim["1-15"], "16-30": tim["16-30"], "31-45": tim["31-45"], "45+": tim["45+"], "46-60": tim["46-60"], "61-75": tim["61-75"], "76-90": tim["76-90"], "90+": tim["90+"], "?": tim["?"] };
             }
             return r;
         });
-        const tabNames = ["Stats", "Penalties", "Multiples", "Impact", "Goals_Timing", "Assists_Timing"];
+        const tabNames = ["Stats", "Multiples", "Impact", "Goals_Timing", "Assists_Timing"];
         AlAhlyExcelExport.exportToExcel(exportData, `AlAhly_Players_${tabNames[activeSubTab - 1]}`);
     };
 
@@ -302,10 +289,10 @@ export default function AlAhlyPlayers({ playerDetails, lineupDetails, filteredMa
                         <div style={{ display: 'flex', alignItems: 'center', gap: '30px' }}>
                             <div className="section-title">AL AHLY <span className="accent">PLAYERS</span></div>
                             <div className="sub-tabs-selection">
-                                {["Stats", "Penalties", "Multiples", "Impact", "Goals Timing", "Assists Timing"].map((label, index) => {
+                                {["Stats", "Multiples", "Impact", "Goals Timing", "Assists Timing"].map((label, index) => {
                                     const num = index + 1;
                                     return (
-                                        <div key={num} className={`sub-tab-box ${activeSubTab === num ? 'active' : ''}`} onClick={() => { setActiveSubTab(num); setCurrentPage(1); if (num === 4) setSortConfig({ key: 'totalImpact', direction: 'desc' }); }}>{label}</div>
+                                        <div key={num} className={`sub-tab-box ${activeSubTab === num ? 'active' : ''}`} onClick={() => { setActiveSubTab(num); setCurrentPage(1); if (num === 3) setSortConfig({ key: 'totalImpact', direction: 'desc' }); }}>{label}</div>
                                     );
                                 })}
                             </div>
@@ -330,17 +317,6 @@ export default function AlAhlyPlayers({ playerDetails, lineupDetails, filteredMa
                             />
                         )}
                         {activeSubTab === 2 && (
-                            <AlAhlyPlayersPenalties 
-                                paginatedRows={paginatedRows} 
-                                currentPage={currentPage} 
-                                pageSize={pageSize} 
-                                handleSort={handleSort} 
-                                renderSortIcon={renderSortIcon} 
-                                setSelectedPlayer={setSelectedPlayer} 
-                                sortConfig={sortConfig}
-                            />
-                        )}
-                        {activeSubTab === 3 && (
                             <AlAhlyPlayersMultiples 
                                 paginatedRows={paginatedRows} 
                                 currentPage={currentPage} 
@@ -351,7 +327,7 @@ export default function AlAhlyPlayers({ playerDetails, lineupDetails, filteredMa
                                 sortConfig={sortConfig}
                             />
                         )}
-                        {activeSubTab === 4 && (
+                        {activeSubTab === 3 && (
                             <AlAhlyPlayersImpact 
                                 paginatedRows={paginatedRows} 
                                 currentPage={currentPage} 
@@ -362,7 +338,7 @@ export default function AlAhlyPlayers({ playerDetails, lineupDetails, filteredMa
                                 sortConfig={sortConfig}
                             />
                         )}
-                        {activeSubTab === 5 && (
+                        {activeSubTab === 4 && (
                             <AlAhlyPlayersGoalsTiming 
                                 paginatedRows={paginatedRows} 
                                 currentPage={currentPage} 
@@ -373,7 +349,7 @@ export default function AlAhlyPlayers({ playerDetails, lineupDetails, filteredMa
                                 sortConfig={sortConfig}
                             />
                         )}
-                        {activeSubTab === 6 && (
+                        {activeSubTab === 5 && (
                             <AlAhlyPlayersAssistsTiming 
                                 paginatedRows={paginatedRows} 
                                 currentPage={currentPage} 

@@ -12,6 +12,12 @@ import GK_Vs_Players_Module from "./alahly_db_gk_details_vs_players";
 import GK_Championships_Module from "./alahly_db_gk_details_championships";
 import { AlAhlyService } from "../Service/alahly_db_service";
 import { AlAhlyExcelExport } from "../ExportExcel/alahly_export_excel";
+import {
+    findGkForPenaltyMiss,
+    findDefendingGkForPenalty,
+    findHowPenMissedForEvent,
+    getPenaltyMissOutcome,
+} from "../Penalties/alahly_db_penalties_utils";
 
 export default function GK_Details_Hub({ gkName, gkDetails, howPenMissed, masterMatches, playerDetails, onBack }) {
     const [activeTab, setActiveTab] = useState('overview');
@@ -63,12 +69,6 @@ export default function GK_Details_Hub({ gkName, gkDetails, howPenMissed, master
                 gf: parseInt(m.GF || 0),
                 ga: parseInt(m.GA || 0)
             };
-        });
-
-        const eventLookup = {};
-        (playerDetails || []).forEach(p => {
-            const key = `${p.MATCH_ID}_${p.EVENT_ID}`;
-            eventLookup[key] = p;
         });
 
         const compSet = new Set();
@@ -132,17 +132,24 @@ export default function GK_Details_Hub({ gkName, gkDetails, howPenMissed, master
             });
             summary.penaltiesReceived += matchPens.length;
 
-            const matchSaves = (howPenMissed || []).filter(row => {
-                if (String(row.MATCH_ID) !== mId) return false;
-                return String(row["HOW MISSED?"] || "").includes(gkName);
+            const matchPenMissedEvents = (playerDetails || []).filter((p) => {
+                if (String(p.MATCH_ID) !== mId) return false;
+                return String(p.TYPE || "").trim().toUpperCase() === "PENMISSED";
             });
-            const matchMisses = (howPenMissed || []).filter(row => {
-                if (String(row.MATCH_ID) !== mId) return false;
-                const isOpponent = String(row.TEAM).trim() !== tv;
-                const wasSaved = String(row["HOW MISSED?"] || "").includes(gkName);
-                return isOpponent && !wasSaved;
+
+            const matchSaves = matchPenMissedEvents.filter((pen) => {
+                const gk = findGkForPenaltyMiss({ penEvent: pen, howPenMissed, gkDetails });
+                return gk && String(gk["PLAYER NAME"] || "").trim() === gkName;
             });
-            summary.penaltiesSaved += matchSaves.length + matchMisses.length;
+
+            const matchMisses = matchPenMissedEvents.filter((pen) => {
+                const detail = findHowPenMissedForEvent(howPenMissed, pen);
+                if (getPenaltyMissOutcome(detail) !== "missed") return false;
+                const gk = findDefendingGkForPenalty({ penEvent: pen, howPenMissed, gkDetails });
+                return gk && String(gk["PLAYER NAME"] || "").trim() === gkName;
+            });
+
+            summary.penaltiesSaved += matchSaves.length;
 
             [sy, champion, oppName].forEach((key, i) => {
                 const target = [summary.seasonalStats, summary.compStats, summary.statsByOpponent][i];
@@ -201,13 +208,13 @@ export default function GK_Details_Hub({ gkName, gkDetails, howPenMissed, master
                 summary.statsByScorer[sName].teams.add(sTeam);
             });
 
-            // Individual Penalty Saves - Correct linking via EVENT_ID
-            matchSaves.forEach(row => {
-                const lookupKey = `${row.MATCH_ID}_${row.EVENT_ID}`;
-                const eventRow = eventLookup[lookupKey];
-                const sName = eventRow ? String(eventRow["PLAYER NAME"]).trim() : (String(row["PLAYER NAME"] || "Unknown").trim());
-                const sTeam = eventRow ? String(eventRow.TEAM).trim() : (String(row.TEAM || "Unknown").trim());
-                if (!summary.statsByScorer[sName]) summary.statsByScorer[sName] = { goals: 0, pens_scored: 0, pens_saved: 0, teams: new Set() };
+            // Individual penalty saves — link GK to taker via EVENT_ID
+            matchSaves.forEach((pen) => {
+                const sName = String(pen["PLAYER NAME"] || "Unknown").trim();
+                const sTeam = String(pen.TEAM || "Unknown").trim();
+                if (!summary.statsByScorer[sName]) {
+                    summary.statsByScorer[sName] = { goals: 0, pens_scored: 0, pens_saved: 0, teams: new Set() };
+                }
                 summary.statsByScorer[sName].pens_saved += 1;
                 summary.statsByScorer[sName].teams.add(sTeam);
             });
