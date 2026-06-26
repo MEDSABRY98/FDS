@@ -78,10 +78,6 @@ export default function PlayerTimingTable({ stats }) {
     return (
         <div className="timing-analysis-container fade-in">
             <div className="timing-header-section">
-                <h2 className="timing-title">
-                    {viewType === 'goals' ? 'SCORING' : 'PLAYMAKING'} <span className="gold-text">TIMING ANALYSIS</span>
-                </h2>
-                
                 <div className="timing-sub-tabs">
                     <button 
                         className={`sub-tab-btn ${viewType === 'goals' ? 'active' : ''}`}
@@ -144,19 +140,11 @@ export default function PlayerTimingTable({ stats }) {
                 }
                 .timing-header-section {
                     text-align: center;
-                    margin-bottom: 50px;
+                    margin-bottom: 40px;
                     display: flex;
                     flex-direction: column;
                     align-items: center;
-                    gap: 20px;
                 }
-                .timing-title {
-                    font-family: 'Bebas Neue', sans-serif;
-                    font-size: 36px;
-                    letter-spacing: 2px;
-                    margin: 0;
-                }
-                .gold-text { color: var(--player-gold); }
 
                 .timing-sub-tabs {
                     display: flex;

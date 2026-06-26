@@ -256,7 +256,17 @@ export default function AlAhlyPlayers({ playerDetails, lineupDetails, filteredMa
     }, [allStats, searchTerm, sortConfig, activeSubTab]);
 
     const paginatedRows = filteredRows.slice((currentPage - 1) * pageSize, currentPage * pageSize);
-    const totalPages = Math.ceil(filteredRows.length / pageSize);
+    const totalPages = Math.max(1, Math.ceil(filteredRows.length / pageSize));
+
+    useEffect(() => {
+        setCurrentPage(1);
+    }, [searchTerm, teamFilter, opponentFilter]);
+
+    useEffect(() => {
+        if (currentPage > totalPages) {
+            setCurrentPage(totalPages);
+        }
+    }, [currentPage, totalPages]);
 
     const handleExport = () => {
         const exportData = filteredRows.map((r, i) => {
@@ -375,6 +385,36 @@ export default function AlAhlyPlayers({ playerDetails, lineupDetails, filteredMa
                             />
                         )}
                     </div>
+
+                    {filteredRows.length > 0 && (
+                        <div className="pagination-premium">
+                            <button
+                                type="button"
+                                className="page-btn prev-btn"
+                                onClick={() => {
+                                    setCurrentPage((p) => Math.max(1, p - 1));
+                                    window.scrollTo({ top: 0, behavior: "smooth" });
+                                }}
+                                disabled={currentPage === 1}
+                            >
+                                ← PREVIOUS
+                            </button>
+                            <div className="page-info">
+                                PAGE <span className="p-num">{currentPage}</span> OF <span className="p-num">{totalPages}</span>
+                            </div>
+                            <button
+                                type="button"
+                                className="page-btn next-btn"
+                                onClick={() => {
+                                    setCurrentPage((p) => Math.min(totalPages, p + 1));
+                                    window.scrollTo({ top: 0, behavior: "smooth" });
+                                }}
+                                disabled={currentPage === totalPages}
+                            >
+                                NEXT →
+                            </button>
+                        </div>
+                    )}
                 </div>
             )}
             <style jsx>{`
