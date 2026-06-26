@@ -2,10 +2,16 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { Database, Shield, Target, Trophy, Swords, Flag, Globe, Sparkles } from "lucide-react";
+import { Database, Shield, Target, Trophy, Swords, Flag, Globe, Sparkles, Download } from "lucide-react";
 import "./home_db_selection.css";
 
 const MODULES = [
+    {
+        id: "backup",
+        label: "BACKUP",
+        tag: "EXPORT",
+        links: [{ href: "/Backup", label: "DATABASE BACKUP", icon: Download }],
+    },
     {
         id: "db_management",
         label: "DB MANAGEMENT",

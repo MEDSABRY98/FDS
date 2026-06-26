@@ -245,3 +245,132 @@
 .h2h-ages-table .total-row .age-cell {
     color: #0a0a0a;
 }
+
+/* Matches Tab */
+.h2h-matches-wrap {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
+.h2h-matches-controls {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 15px;
+    flex-wrap: wrap;
+    margin-bottom: 5px;
+}
+
+.h2h-matches-age-filter {
+    min-width: 200px;
+    width: 220px;
+}
+
+.h2h-matches-search {
+    min-width: 250px;
+    width: 320px;
+}
+
+.h2h-matches-count {
+    font-family: 'Space Mono', monospace;
+    font-size: 12px;
+    color: #999;
+    font-weight: 700;
+    letter-spacing: 1px;
+}
+
+.h2h-matches-table-container {
+    background: #fff;
+    border: 1px solid #eee;
+    overflow-x: auto;
+}
+
+.h2h-matches-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-family: 'Inter', sans-serif;
+    table-layout: auto;
+}
+
+.h2h-matches-table th {
+    background: #0a0a0a;
+    padding: 15px 12px;
+    text-align: center;
+    font-family: 'Space Mono', monospace;
+    font-size: 11px;
+    color: #fff;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    border-bottom: none;
+    white-space: nowrap;
+    position: sticky;
+    top: 0;
+    z-index: 10;
+}
+
+.h2h-matches-table td {
+    padding: 14px 12px;
+    text-align: center;
+    font-size: 14px;
+    color: #0a0a0a;
+    border-bottom: 1px solid #f5f5f5;
+    font-weight: 500;
+    vertical-align: middle;
+}
+
+.h2h-matches-table tbody tr:hover td {
+    background: #fafafa;
+}
+
+.h2h-matches-id {
+    font-family: 'Space Mono', monospace;
+    font-size: 12px;
+    font-weight: 700;
+    color: #666;
+}
+
+.h2h-matches-result {
+    font-weight: 700;
+    white-space: nowrap;
+}
+
+.h2h-matches-winner {
+    display: inline-block;
+    padding: 4px 10px;
+    border-radius: 20px;
+    font-size: 12px;
+    font-weight: 700;
+    max-width: 180px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.h2h-matches-winner.winner-egypt {
+    background: rgba(200, 16, 46, 0.08);
+    color: #C8102E;
+}
+
+.h2h-matches-winner.winner-opp {
+    background: rgba(0, 0, 0, 0.06);
+    color: #0a0a0a;
+}
+
+.h2h-matches-winner.winner-draw {
+    background: rgba(245, 158, 11, 0.1);
+    color: #b45309;
+}
+
+@media (max-width: 768px) {
+    .h2h-matches-age-filter,
+    .h2h-matches-search {
+        width: 100%;
+        min-width: 0;
+    }
+
+    .h2h-matches-count {
+        width: 100%;
+        text-align: center;
+    }
+}

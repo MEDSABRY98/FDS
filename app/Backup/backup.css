@@ -1,0 +1,102 @@
+.backup-content-viewport {
+    width: 100%;
+    min-height: 100%;
+    display: flex;
+    justify-content: center;
+}
+
+.backup-pickup {
+    width: 100%;
+    max-width: 720px;
+    margin: 0 auto;
+    padding: 48px 24px 80px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+}
+
+.backup-pickup-header {
+    margin-bottom: 40px;
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+.backup-pickup-title {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 42px;
+    font-weight: 400;
+    letter-spacing: 2px;
+    line-height: 1;
+    color: var(--black, #0a0a0a);
+    margin: 0 0 16px;
+}
+
+.backup-pickup-title .accent {
+    color: var(--gold, #c9a84c);
+}
+
+.backup-pickup-gold-line {
+    width: 64px;
+    height: 3px;
+    background: linear-gradient(90deg, transparent, var(--gold, #c9a84c), transparent);
+    margin: 0 auto 20px;
+}
+
+.backup-pickup-subtitle {
+    margin: 0 auto;
+    color: #666;
+    font-size: 0.95rem;
+    line-height: 1.6;
+    max-width: 560px;
+}
+
+.backup-pickup-card {
+    width: 100%;
+    max-width: 560px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    background: #fafafa;
+    border: 1px solid rgba(201, 168, 76, 0.25);
+    border-radius: 12px;
+    padding: 40px 32px;
+}
+
+.backup-pickup-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    padding: 16px 32px;
+    font-size: 0.9rem;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    color: #000;
+    background: linear-gradient(135deg, #c9a84c 0%, #e8d5a3 50%, #c9a84c 100%);
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: opacity 0.2s, transform 0.15s;
+}
+
+.backup-pickup-btn:hover:not(:disabled) {
+    transform: translateY(-1px);
+    opacity: 0.95;
+}
+
+.backup-pickup-btn:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
+.backup-pickup-progress {
+    margin: 24px 0 0;
+    color: #c9a84c;
+    font-size: 0.85rem;
+    letter-spacing: 0.04em;
+    word-break: break-all;
+    text-align: center;
+}
