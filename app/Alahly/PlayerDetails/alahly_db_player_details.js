@@ -552,13 +552,14 @@ export default function PlayerDetails({ playerName, playerData, playerDetails, l
             computeSquadImpactStats({
                 playerName,
                 lineupDetails,
+                playerDetails,
                 masterMatches,
                 selectedTeams,
                 selectedComps,
                 selectedSYs,
                 selectedOpps,
             }),
-        [playerName, lineupDetails, masterMatches, selectedTeams, selectedComps, selectedSYs, selectedOpps]
+        [playerName, lineupDetails, playerDetails, masterMatches, selectedTeams, selectedComps, selectedSYs, selectedOpps]
     );
 
     useEffect(() => {
@@ -998,6 +999,7 @@ export default function PlayerDetails({ playerName, playerData, playerDetails, l
                     impactStats={squadImpactStats}
                     masterMatches={masterMatches}
                     lineupDetails={lineupDetails}
+                    playerDetails={playerDetails}
                     playerName={playerName}
                     selectedTeams={selectedTeams}
                     selectedComps={selectedComps}

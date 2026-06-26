@@ -11,6 +11,8 @@ const EMPTY_IMPACT = {
     ga: 0,
     cleanSheets: 0,
     failedToScore: 0,
+    playerGoals: 0,
+    playerAssists: 0,
 };
 
 function createEmptyImpactStats() {
@@ -36,12 +38,29 @@ function addTeamResult(bucket, gf, ga) {
     else bucket.draws += 1;
 }
 
+function countPlayerGoalsAssists(events) {
+    const goals = (events || []).filter((e) => {
+        const type = String(e.TYPE || "").trim();
+        const sub = String(e.TYPE_SUB || "").trim();
+        return type === "GOAL" || type === "هدف" || sub === "PENGOAL" || sub === "هدف جزاء";
+    }).length;
+
+    const assists = (events || []).filter((e) => {
+        const type = String(e.TYPE || "").trim();
+        return type === "ASSIST" || type === "اسيست" || type === "صنع";
+    }).length;
+
+    return { goals, assists };
+}
+
 /**
- * Squad influence uses alahly_LINEUPDETAILS only — not player event rows.
+ * Squad influence uses alahly_LINEUPDETAILS for presence/absence;
+ * player goals/assists come from player event rows per match.
  */
 export function computeSquadImpactStats({
     playerName,
     lineupDetails = [],
+    playerDetails = [],
     masterMatches = [],
     selectedTeams = [],
     selectedComps = [],
@@ -94,7 +113,8 @@ export function computeSquadImpactStats({
     const lineupMatchIds = new Set(lineupAppearances.map((row) => String(row.MATCH_ID)));
 
     lineupAppearances.forEach((row) => {
-        const ctx = matchContextMap[String(row.MATCH_ID)];
+        const mId = String(row.MATCH_ID);
+        const ctx = matchContextMap[mId];
         if (!ctx) return;
 
         const playerTeam = lineupTeam(row);
@@ -103,6 +123,15 @@ export function computeSquadImpactStats({
         const sideGA = onHomeSide ? ctx.ga : ctx.gf;
 
         addTeamResult(summary.presence, sideGF, sideGA);
+
+        const matchEvents = (playerDetails || []).filter(
+            (event) =>
+                String(event.MATCH_ID) === mId &&
+                String(event["PLAYER NAME"] || "").trim() === playerName
+        );
+        const { goals, assists } = countPlayerGoalsAssists(matchEvents);
+        summary.presence.playerGoals += goals;
+        summary.presence.playerAssists += assists;
     });
 
     const careerDates = lineupAppearances
@@ -149,6 +178,7 @@ export default function PlayerPresenceTable({
     impactStats,
     playerName,
     lineupDetails,
+    playerDetails,
     masterMatches,
     selectedTeams = [],
     selectedComps = [],
@@ -162,13 +192,14 @@ export default function PlayerPresenceTable({
             computeSquadImpactStats({
                 playerName,
                 lineupDetails,
+                playerDetails,
                 masterMatches,
                 selectedTeams,
                 selectedComps,
                 selectedSYs,
                 selectedOpps,
             }),
-        [playerName, lineupDetails, masterMatches, selectedTeams, selectedComps, selectedSYs, selectedOpps]
+        [playerName, lineupDetails, playerDetails, masterMatches, selectedTeams, selectedComps, selectedSYs, selectedOpps]
     );
 
     const stats = impactStats || computedStats;
@@ -178,6 +209,12 @@ export default function PlayerPresenceTable({
 
     const winRate =
         data.matches > 0 ? ((data.wins / data.matches) * 100).toFixed(1) : 0;
+
+    const playerGoals = data.playerGoals ?? 0;
+    const playerAssists = data.playerAssists ?? 0;
+    const playerGoalsPct = data.gf > 0
+        ? ((playerGoals / data.gf) * 100).toFixed(1)
+        : "0.0";
 
     const statsConfig = [
         {
@@ -193,10 +230,9 @@ export default function PlayerPresenceTable({
         { label: "Win Rate %", value: `${winRate}%`, color: "#2ecc71", sub: "Success percentage" },
         { label: "Team Draws", value: data.draws, color: "#f39c12", sub: "Tied matches" },
         { label: "Team Losses", value: data.losses, color: "#e74c3c", sub: "Defeats sustained" },
-        { label: "Goals For", value: data.gf, color: "#27ae60", sub: "Total team goals scored" },
-        { label: "Goals Against", value: data.ga, color: "#e74c3c", sub: "Total team goals conceded" },
-        { label: "Clean Sheets", value: data.cleanSheets, color: "#2980b9", sub: "Shutouts achieved" },
-        { label: "Opponent CS", value: data.failedToScore, color: "#95a5a6", sub: "Failed to score matches" },
+        { label: "Team Goals", value: data.gf, color: "#27ae60", sub: "Total team goals scored" },
+        { label: "Player Goals", value: playerGoals, color: "#2ecc71", sub: `${playerGoalsPct}% of team goals` },
+        { label: "Player Assists", value: playerAssists, color: "#3498db", sub: "Total player assists" },
     ];
 
     return (

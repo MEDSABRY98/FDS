@@ -25,10 +25,9 @@ export default function PlayerPresenceTable({ impactStats }) {
         { label: "Win Rate %", value: `${winRate}%`, color: '#2ecc71', sub: "Success percentage" },
         { label: "Team Draws", value: data.draws, color: '#f39c12', sub: "Tied matches" },
         { label: "Team Losses", value: data.losses, color: '#e74c3c', sub: "Defeats sustained" },
-        { label: "اهداف الفريق", value: data.gf, color: '#27ae60', sub: "إجمالي أهداف الفريق" },
-        { label: "اهداف اللاعب", value: playerGoals, color: '#2ecc71', sub: `${playerGoalsPct}% من اهداف الفريق` },
-        { label: "اسيستات اللاعب", value: playerAssists, color: '#3498db', sub: "إجمالي اسيستات اللاعب" },
-        { label: "Opponent CS", value: data.failedToScore, color: '#95a5a6', sub: "Failed to score matches" }
+        { label: "Team Goals", value: data.gf, color: '#27ae60', sub: "Total team goals scored" },
+        { label: "Player Goals", value: playerGoals, color: '#2ecc71', sub: `${playerGoalsPct}% of team goals` },
+        { label: "Player Assists", value: playerAssists, color: '#3498db', sub: "Total player assists" },
     ];
 
     return (
