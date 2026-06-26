@@ -528,7 +528,7 @@ export default function EgyptClubDatabase() {
                             {activeTab === 'matches' && <EgyptClubMatches matches={filteredMatches} />}
                             {activeTab === 'clubs' && <EgyptClubClubs matches={filteredMatches} />}
                             {activeTab === 'opponents' && <EgyptClubOpponents matches={filteredMatches} />}
-                            {activeTab === 'h2h' && <EgyptClubH2H matches={filteredMatches} />}
+                            {activeTab === 'h2h' && <EgyptClubH2H matches={filteredMatches} countries={countries} />}
                             {activeTab === 'championships' && <EgyptClubChampionships matches={filteredMatches} />}
                             {activeTab === 'seasons' && <EgyptClubSeasons matches={filteredMatches} />}
                             {activeTab === 'years' && <EgyptClubYears matches={filteredMatches} />}

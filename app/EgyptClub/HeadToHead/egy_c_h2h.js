@@ -5,46 +5,87 @@ import DropDownList_db from "../../lib/DropDownList_db";
 import NoData_db from "../../lib/NoData_db";
 import { GitCompare, ShieldAlert, Award } from "lucide-react";
 import { exportMatchesToExcel, exportSummaryToExcel } from "../ExcelExport/egy_c_excel_export";
+import {
+    getCountryOptionsFromMatches,
+    matchOpponentCountry,
+} from "../Service/egy_c_service";
 import "./egy_c_h2h.css";
 
-export default function EgyptClubH2H({ matches }) {
+export default function EgyptClubH2H({ matches, countries = [] }) {
     const [selectedEgy, setSelectedEgy] = useState("");
     const [selectedOpp, setSelectedOpp] = useState("");
-    const [h2hTab, setH2hTab] = useState("dashboard"); // dashboard, matches, competitions, seasons
+    const [comparisonMode, setComparisonMode] = useState("club"); // club | country | egypt
+    const [h2hTab, setH2hTab] = useState("dashboard"); // dashboard, matches, competitions, seasons, opponent_clubs
     const [dashboardContext, setDashboardContext] = useState("overall"); // overall, home, away, neutral
     const [currentPage, setCurrentPage] = useState(1);
 
-    // Reset settings when selected teams change
+    // Reset settings when selected teams / mode change
     useEffect(() => {
         setCurrentPage(1);
         setH2hTab("dashboard");
         setDashboardContext("overall");
     }, [selectedEgy, selectedOpp]);
 
-    // Get unique Egypt Teams and Opponent Teams (cross-filtered when one is selected)
+    useEffect(() => {
+        setSelectedOpp("");
+        if (comparisonMode === "egypt") {
+            setSelectedEgy("");
+        }
+        setCurrentPage(1);
+        setH2hTab("dashboard");
+        setDashboardContext("overall");
+    }, [comparisonMode]);
+
+    const isCountryMode = comparisonMode === "country";
+    const isEgyptMode = comparisonMode === "egypt";
+    const readyToCompare = isEgyptMode ? !!selectedOpp : !!(selectedEgy && selectedOpp);
+
+    // Egyptian club options (cross-filtered)
     const egyptOptions = useMemo(() => {
-        const filteredMatches = selectedOpp
-            ? matches.filter(m => m["OPPONENT TEAM"] === selectedOpp)
-            : matches;
-        const unique = [...new Set(filteredMatches.map(m => m["EGYPT TEAM"]).filter(Boolean))].sort();
-        return unique.map(name => ({ value: name, label: name }));
-    }, [matches, selectedOpp]);
+        let filteredMatches = matches;
+        if (selectedOpp) {
+            filteredMatches = isCountryMode
+                ? matches.filter((m) => matchOpponentCountry(m["OPPONENT TEAM"], selectedOpp, countries))
+                : matches.filter((m) => m["OPPONENT TEAM"] === selectedOpp);
+        }
+        const unique = [...new Set(filteredMatches.map((m) => m["EGYPT TEAM"]).filter(Boolean))].sort();
+        return unique.map((name) => ({ value: name, label: name }));
+    }, [matches, selectedOpp, isCountryMode, countries]);
 
     const oppOptions = useMemo(() => {
+        const filteredMatches =
+            isEgyptMode || !selectedEgy
+                ? matches
+                : matches.filter((m) => m["EGYPT TEAM"] === selectedEgy);
+        const unique = [...new Set(filteredMatches.map((m) => m["OPPONENT TEAM"]).filter(Boolean))].sort();
+        return unique.map((name) => ({ value: name, label: name }));
+    }, [matches, selectedEgy, isEgyptMode]);
+
+    const countryOptions = useMemo(() => {
         const filteredMatches = selectedEgy
-            ? matches.filter(m => m["EGYPT TEAM"] === selectedEgy)
+            ? matches.filter((m) => m["EGYPT TEAM"] === selectedEgy)
             : matches;
-        const unique = [...new Set(filteredMatches.map(m => m["OPPONENT TEAM"]).filter(Boolean))].sort();
-        return unique.map(name => ({ value: name, label: name }));
-    }, [matches, selectedEgy]);
+        return getCountryOptionsFromMatches(filteredMatches, countries);
+    }, [matches, selectedEgy, countries]);
 
     // Filter matches for the selected pair
     const overallMatches = useMemo(() => {
-        if (!selectedEgy || !selectedOpp) return [];
-        return matches.filter(m =>
-            m["EGYPT TEAM"] === selectedEgy && m["OPPONENT TEAM"] === selectedOpp
+        if (!selectedOpp) return [];
+        if (isEgyptMode) {
+            return matches.filter((m) => m["OPPONENT TEAM"] === selectedOpp);
+        }
+        if (!selectedEgy) return [];
+        if (isCountryMode) {
+            return matches.filter(
+                (m) =>
+                    m["EGYPT TEAM"] === selectedEgy &&
+                    matchOpponentCountry(m["OPPONENT TEAM"], selectedOpp, countries)
+            );
+        }
+        return matches.filter(
+            (m) => m["EGYPT TEAM"] === selectedEgy && m["OPPONENT TEAM"] === selectedOpp
         );
-    }, [selectedEgy, selectedOpp, matches]);
+    }, [selectedEgy, selectedOpp, matches, isCountryMode, isEgyptMode, countries]);
 
     const homeMatches = useMemo(() => overallMatches.filter(m => m["H-A-N"] === "H"), [overallMatches]);
     const awayMatches = useMemo(() => overallMatches.filter(m => m["H-A-N"] === "A"), [overallMatches]);
@@ -63,6 +104,13 @@ export default function EgyptClubH2H({ matches }) {
         const egyCS = filteredMatches.filter(m => m["CLEAN SHEET"] === "F" || m["CLEAN SHEET"] === "BOTH").length;
         const oppCS = filteredMatches.filter(m => m["CLEAN SHEET"] === "A" || m["CLEAN SHEET"] === "BOTH").length;
 
+        const opponentClubsCount = new Set(
+            filteredMatches.map((m) => m["OPPONENT TEAM"]).filter(Boolean)
+        ).size;
+        const egyptianClubsCount = new Set(
+            filteredMatches.map((m) => m["EGYPT TEAM"]).filter(Boolean)
+        ).size;
+
         return {
             total,
             egyWins,
@@ -71,7 +119,9 @@ export default function EgyptClubH2H({ matches }) {
             egyGoals,
             oppGoals,
             egyCS,
-            oppCS
+            oppCS,
+            opponentClubsCount,
+            egyptianClubsCount,
         };
     };
 
@@ -124,6 +174,74 @@ export default function EgyptClubH2H({ matches }) {
         return Object.values(seasons).sort((a, b) => b.name.localeCompare(a.name));
     }, [overallMatches]);
 
+    const opponentClubsData = useMemo(() => {
+        if (!isCountryMode || !overallMatches.length) return [];
+        const clubs = {};
+        overallMatches.forEach((m) => {
+            const name = m["OPPONENT TEAM"] || "Other";
+            if (!clubs[name]) {
+                clubs[name] = { name, played: 0, wins: 0, draws: 0, losses: 0, gf: 0, ga: 0, csf: 0, csa: 0 };
+            }
+            const c = clubs[name];
+            c.played++;
+            if (m["W-D-L"] === "W") c.wins++;
+            else if (m["W-D-L"] === "L") c.losses++;
+            else if (m["W-D-L"] && m["W-D-L"].startsWith("D")) c.draws++;
+            c.gf += Number(m.GF) || 0;
+            c.ga += Number(m.GA) || 0;
+            if (m["CLEAN SHEET"] === "F" || m["CLEAN SHEET"] === "BOTH") c.csf++;
+            if (m["CLEAN SHEET"] === "A" || m["CLEAN SHEET"] === "BOTH") c.csa++;
+        });
+        return Object.values(clubs).sort((a, b) => b.played - a.played || a.name.localeCompare(b.name, "ar"));
+    }, [overallMatches, isCountryMode]);
+
+    const opponentClubsTotals = useMemo(() => {
+        const t = { played: 0, wins: 0, draws: 0, losses: 0, gf: 0, ga: 0 };
+        opponentClubsData.forEach((club) => {
+            t.played += club.played;
+            t.wins += club.wins;
+            t.draws += club.draws;
+            t.losses += club.losses;
+            t.gf += club.gf;
+            t.ga += club.ga;
+        });
+        return t;
+    }, [opponentClubsData]);
+
+    const egyptianClubsData = useMemo(() => {
+        if (!isEgyptMode || !overallMatches.length) return [];
+        const clubs = {};
+        overallMatches.forEach((m) => {
+            const name = m["EGYPT TEAM"] || "Other";
+            if (!clubs[name]) {
+                clubs[name] = { name, played: 0, wins: 0, draws: 0, losses: 0, gf: 0, ga: 0, csf: 0, csa: 0 };
+            }
+            const c = clubs[name];
+            c.played++;
+            if (m["W-D-L"] === "W") c.wins++;
+            else if (m["W-D-L"] === "L") c.losses++;
+            else if (m["W-D-L"] && m["W-D-L"].startsWith("D")) c.draws++;
+            c.gf += Number(m.GF) || 0;
+            c.ga += Number(m.GA) || 0;
+            if (m["CLEAN SHEET"] === "F" || m["CLEAN SHEET"] === "BOTH") c.csf++;
+            if (m["CLEAN SHEET"] === "A" || m["CLEAN SHEET"] === "BOTH") c.csa++;
+        });
+        return Object.values(clubs).sort((a, b) => b.played - a.played || a.name.localeCompare(b.name, "ar"));
+    }, [overallMatches, isEgyptMode]);
+
+    const egyptianClubsTotals = useMemo(() => {
+        const t = { played: 0, wins: 0, draws: 0, losses: 0, gf: 0, ga: 0 };
+        egyptianClubsData.forEach((club) => {
+            t.played += club.played;
+            t.wins += club.wins;
+            t.draws += club.draws;
+            t.losses += club.losses;
+            t.gf += club.gf;
+            t.ga += club.ga;
+        });
+        return t;
+    }, [egyptianClubsData]);
+
     const competitionsTotals = useMemo(() => {
         const t = { played: 0, wins: 0, draws: 0, losses: 0, gf: 0, ga: 0 };
         competitionsData.forEach(comp => {
@@ -153,24 +271,33 @@ export default function EgyptClubH2H({ matches }) {
     // Contextual Excel Export
     useEffect(() => {
         const handleGlobalExport = () => {
-            if (!selectedEgy || !selectedOpp || overallMatches.length === 0) return;
+            if (!readyToCompare || overallMatches.length === 0) return;
+            const pairSlug = isEgyptMode
+                ? `Egypt_AllClubs_vs_${selectedOpp}`
+                : isCountryMode
+                    ? `${selectedEgy}_vs_${selectedOpp}_Country`
+                    : `${selectedEgy}_vs_${selectedOpp}`;
             if (h2hTab === 'dashboard') {
                 let targetMatches = overallMatches;
                 if (dashboardContext === 'home') targetMatches = homeMatches;
                 else if (dashboardContext === 'away') targetMatches = awayMatches;
                 else if (dashboardContext === 'neutral') targetMatches = neutralMatches;
-                exportMatchesToExcel(targetMatches, `H2H_${selectedEgy}_vs_${selectedOpp}_${dashboardContext.toUpperCase()}`);
+                exportMatchesToExcel(targetMatches, `H2H_${pairSlug}_${dashboardContext.toUpperCase()}`);
             } else if (h2hTab === 'matches') {
-                exportMatchesToExcel(overallMatches, `H2H_${selectedEgy}_vs_${selectedOpp}_Matches`);
+                exportMatchesToExcel(overallMatches, `H2H_${pairSlug}_Matches`);
             } else if (h2hTab === 'competitions') {
-                exportSummaryToExcel(competitionsData, `H2H_${selectedEgy}_vs_${selectedOpp}_Competitions`, "name", "COMPETITION");
+                exportSummaryToExcel(competitionsData, `H2H_${pairSlug}_Competitions`, "name", "COMPETITION");
             } else if (h2hTab === 'seasons') {
-                exportSummaryToExcel(seasonsData, `H2H_${selectedEgy}_vs_${selectedOpp}_Seasons`, "name", "SEASON");
+                exportSummaryToExcel(seasonsData, `H2H_${pairSlug}_Seasons`, "name", "SEASON");
+            } else if (h2hTab === 'opponent_clubs') {
+                exportSummaryToExcel(opponentClubsData, `H2H_${pairSlug}_OpponentClubs`, "name", "OPPONENT CLUB");
+            } else if (h2hTab === 'egyptian_clubs') {
+                exportSummaryToExcel(egyptianClubsData, `H2H_${pairSlug}_EgyptianClubs`, "name", "EGYPT TEAM");
             }
         };
         window.addEventListener('egypt-club-export-excel', handleGlobalExport);
         return () => window.removeEventListener('egypt-club-export-excel', handleGlobalExport);
-    }, [overallMatches, selectedEgy, selectedOpp, h2hTab, dashboardContext, homeMatches, awayMatches, neutralMatches, competitionsData, seasonsData]);
+    }, [overallMatches, selectedEgy, selectedOpp, h2hTab, dashboardContext, homeMatches, awayMatches, neutralMatches, competitionsData, seasonsData, isCountryMode, isEgyptMode, readyToCompare, opponentClubsData, egyptianClubsData]);
 
     const formatDate = (dateStr) => {
         if (!dateStr) return "N/A";
@@ -187,41 +314,78 @@ export default function EgyptClubH2H({ matches }) {
                 </div>
                 <div className="gold-line" style={{ margin: '15px 0 30px' }}></div>
 
+                <div className="h2h-mode-toggle">
+                    <button
+                        type="button"
+                        className={`h2h-mode-btn ${comparisonMode === "club" ? "active" : ""}`}
+                        onClick={() => setComparisonMode("club")}
+                    >
+                        CLUB vs CLUB
+                    </button>
+                    <button
+                        type="button"
+                        className={`h2h-mode-btn ${comparisonMode === "country" ? "active" : ""}`}
+                        onClick={() => setComparisonMode("country")}
+                    >
+                        CLUB vs COUNTRY
+                    </button>
+                    <button
+                        type="button"
+                        className={`h2h-mode-btn ${comparisonMode === "egypt" ? "active" : ""}`}
+                        onClick={() => setComparisonMode("egypt")}
+                    >
+                        EGYPT vs OPPONENT CLUB
+                    </button>
+                </div>
+
                 {/* SELECTORS ROW */}
                 <div className="h2h-selectors-row">
                     <div>
-                        <div className="h2h-selector-title">SELECT EGYPTIAN CLUB</div>
-                        <DropDownList_db
-                            options={egyptOptions}
-                            value={selectedEgy}
-                            onChange={setSelectedEgy}
-                            placeholder="Select Egypt Club..."
-                            searchable={true}
-                        />
+                        {isEgyptMode ? (
+                            <>
+                                <div className="h2h-selector-title">EGYPT</div>
+                                <div className="h2h-egypt-static-value">🇪🇬 EGYPT (ALL CLUBS)</div>
+                            </>
+                        ) : (
+                            <>
+                                <div className="h2h-selector-title">SELECT EGYPTIAN CLUB</div>
+                                <DropDownList_db
+                                    options={egyptOptions}
+                                    value={selectedEgy}
+                                    onChange={setSelectedEgy}
+                                    placeholder="Select Egypt Club..."
+                                    searchable={true}
+                                />
+                            </>
+                        )}
                     </div>
 
                     <div className="h2h-vs-divider">VS</div>
 
                     <div>
-                        <div className="h2h-selector-title">SELECT OPPONENT CLUB</div>
+                        <div className="h2h-selector-title">
+                            {isCountryMode ? "SELECT OPPONENT COUNTRY" : "SELECT OPPONENT CLUB"}
+                        </div>
                         <DropDownList_db
-                            options={oppOptions}
+                            options={isCountryMode ? countryOptions : oppOptions}
                             value={selectedOpp}
                             onChange={setSelectedOpp}
-                            placeholder="Select Opponent..."
+                            placeholder={isCountryMode ? "Select Country..." : "Select Opponent..."}
                             searchable={true}
                         />
                     </div>
                 </div>
 
                 {/* SUB-TABS NAVIGATION */}
-                {selectedEgy && selectedOpp && overallMatches.length > 0 && (
+                {readyToCompare && overallMatches.length > 0 && (
                     <div className="h2h-subtabs-nav">
                         {[
                             { id: 'dashboard', label: 'DASHBOARD' },
                             { id: 'matches', label: 'MATCHES' },
                             { id: 'competitions', label: 'COMPETITIONS' },
-                            { id: 'seasons', label: 'SEASONS' }
+                            { id: 'seasons', label: 'SEASONS' },
+                            ...(isCountryMode ? [{ id: 'opponent_clubs', label: 'OPPONENT CLUBS' }] : []),
+                            ...(isEgyptMode ? [{ id: 'egyptian_clubs', label: 'EGYPTIAN CLUBS' }] : []),
                         ].map(tab => (
                             <button
                                 key={tab.id}
@@ -235,14 +399,24 @@ export default function EgyptClubH2H({ matches }) {
                 )}
 
                 {/* COMPARISON RESULTS */}
-                {!selectedEgy || !selectedOpp ? (
+                {!readyToCompare ? (
                     <div className="h2h-empty-state">
                         <GitCompare size={40} style={{ color: 'var(--gold, #c9a84c)', opacity: 0.5, marginBottom: '15px' }} />
                         <h3>SELECT TEAMS TO COMPARE</h3>
-                        <p>Please choose an Egyptian club and an opponent from the dropdowns above.</p>
+                        <p>
+                            {isEgyptMode
+                                ? "Please choose an opponent club from the dropdown above."
+                                : isCountryMode
+                                    ? "Please choose an Egyptian club and an opponent country from the dropdowns above."
+                                    : "Please choose an Egyptian club and an opponent from the dropdowns above."}
+                        </p>
                     </div>
                 ) : overallMatches.length === 0 ? (
-                    <NoData_db message={`No historical matches found between "${selectedEgy}" and "${selectedOpp}" in this database.`} />
+                    <NoData_db message={
+                        isEgyptMode
+                            ? `No historical matches found between Egyptian clubs and "${selectedOpp}" in this database.`
+                            : `No historical matches found between "${selectedEgy}" and "${selectedOpp}"${isCountryMode ? " (country)" : ""} in this database.`
+                    } />
                 ) : (
                     <div className="fade-in">
                         {/* TAB CONTENT: DASHBOARD */}
@@ -276,13 +450,29 @@ export default function EgyptClubH2H({ matches }) {
                                     return (
                                         <div className="h2h-stats-board">
                                             <div className="h2h-board-title">
-                                                {dashboardContext.toUpperCase()} HEAD-TO-HEAD <span className="accent">BOARD</span>
+                                                <span>
+                                                    {dashboardContext.toUpperCase()} HEAD-TO-HEAD <span className="accent">BOARD</span>
+                                                </span>
+                                                {isCountryMode && (
+                                                    <span className="h2h-board-clubs-badge">
+                                                        <span className="clubs-count-num">{currentStats.opponentClubsCount}</span>
+                                                        <span className="clubs-count-text">CLUBS FACED</span>
+                                                    </span>
+                                                )}
+                                                {isEgyptMode && (
+                                                    <span className="h2h-board-clubs-badge">
+                                                        <span className="clubs-count-num">{currentStats.egyptianClubsCount}</span>
+                                                        <span className="clubs-count-text">EGYPTIAN CLUBS</span>
+                                                    </span>
+                                                )}
                                             </div>
 
                                             <div className="h2h-stats-grid">
                                                 {/* Egypt Club Wins */}
                                                 <div className="h2h-stats-column">
-                                                    <div className="team-name">{selectedEgy}</div>
+                                                    <div className="team-name">
+                                                        {isEgyptMode ? "🇪🇬 EGYPT" : selectedEgy}
+                                                    </div>
                                                     
                                                     <div className="h2h-team-main-stat">
                                                         <div className="win-count egypt">{currentStats.egyWins}</div>
@@ -317,7 +507,9 @@ export default function EgyptClubH2H({ matches }) {
 
                                                 {/* Opponent Wins */}
                                                 <div className="h2h-stats-column">
-                                                    <div className="team-name">{selectedOpp}</div>
+                                                    <div className="team-name">
+                                                        {isCountryMode ? `🌍 ${selectedOpp}` : selectedOpp}
+                                                    </div>
                                                     
                                                     <div className="h2h-team-main-stat">
                                                         <div className="win-count opponent">{currentStats.oppWins}</div>
@@ -351,6 +543,7 @@ export default function EgyptClubH2H({ matches }) {
                                     <GitCompare size={18} style={{ color: 'var(--gold, #c9a84c)' }} /> Match History ({overallMatches.length} Matches)
                                 </div>
                                 {(() => {
+                                    const showExtraClubCol = isCountryMode || isEgyptMode;
                                     const pageSize = 50;
                                     const paginatedMatches = overallMatches.slice((currentPage - 1) * pageSize, currentPage * pageSize);
                                     const totalPages = Math.ceil(overallMatches.length / pageSize);
@@ -359,8 +552,14 @@ export default function EgyptClubH2H({ matches }) {
                                             <table className="h2h-table">
                                                 <thead>
                                                     <tr>
-                                                        <th style={{ width: '12%' }}>DATE</th>
-                                                        <th style={{ width: '34%' }}>SEASON</th>
+                                                        <th style={{ width: showExtraClubCol ? '10%' : '12%' }}>DATE</th>
+                                                        {isCountryMode && (
+                                                            <th style={{ width: '18%' }}>OPPONENT CLUB</th>
+                                                        )}
+                                                        {isEgyptMode && (
+                                                            <th style={{ width: '18%' }}>EGYPT CLUB</th>
+                                                        )}
+                                                        <th style={{ width: showExtraClubCol ? '26%' : '34%' }}>SEASON</th>
                                                         <th style={{ width: '10%' }}>ROUND</th>
                                                         <th style={{ width: '12%' }}>SCORE</th>
                                                         <th style={{ width: '10%' }}>H-A-N</th>
@@ -372,6 +571,12 @@ export default function EgyptClubH2H({ matches }) {
                                                     {paginatedMatches.map((m, i) => (
                                                         <tr key={i}>
                                                             <td style={{ color: '#666', fontFamily: 'Space Mono, monospace' }}>{formatDate(m.DATE)}</td>
+                                                            {isCountryMode && (
+                                                                <td style={{ fontWeight: '600', fontSize: '12px' }}>{m["OPPONENT TEAM"]}</td>
+                                                            )}
+                                                            {isEgyptMode && (
+                                                                <td style={{ fontWeight: '600', fontSize: '12px' }}>{m["EGYPT TEAM"]}</td>
+                                                            )}
                                                             <td style={{ fontWeight: '600' }}>{m.SEASON}</td>
                                                             <td style={{ color: '#666' }}>{m.ROUND}</td>
                                                             <td style={{ fontFamily: 'Space Mono, monospace', fontWeight: 'bold' }}>
@@ -503,6 +708,108 @@ export default function EgyptClubH2H({ matches }) {
                                                 <td style={{ color: '#ff4d4d', fontFamily: 'Space Mono, monospace' }}>{seasonsTotals.losses}</td>
                                                 <td style={{ fontFamily: 'Space Mono, monospace' }}>{seasonsTotals.gf}</td>
                                                 <td style={{ fontFamily: 'Space Mono, monospace' }}>{seasonsTotals.ga}</td>
+                                            </tr>
+                                        )}
+                                    </tbody>
+                                </table>
+                            </div>
+                        )}
+
+                        {/* TAB CONTENT: OPPONENT CLUBS (country mode) */}
+                        {h2hTab === "opponent_clubs" && isCountryMode && (
+                            <div className="h2h-history-log">
+                                <div className="history-title">
+                                    <ShieldAlert size={18} style={{ color: 'var(--gold, #c9a84c)' }} /> Opponent Clubs in {selectedOpp}
+                                </div>
+                                <table className="h2h-table">
+                                    <thead>
+                                        <tr>
+                                            <th>OPPONENT CLUB</th>
+                                            <th>PLAYED</th>
+                                            <th style={{ color: '#00c853' }}>EGY WON</th>
+                                            <th style={{ color: 'var(--gold, #c9a84c)' }}>DRAW</th>
+                                            <th style={{ color: '#ff4d4d' }}>OPP WON</th>
+                                            <th>GF</th>
+                                            <th>GA</th>
+                                            <th>CSF</th>
+                                            <th>CSA</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {opponentClubsData.map((club, i) => (
+                                            <tr key={i}>
+                                                <td style={{ fontWeight: '600' }}>🚩 {club.name}</td>
+                                                <td style={{ fontFamily: 'Space Mono, monospace' }}>{club.played}</td>
+                                                <td style={{ color: '#00c853', fontWeight: '600', fontFamily: 'Space Mono, monospace' }}>{club.wins}</td>
+                                                <td style={{ color: 'var(--gold, #c9a84c)', fontFamily: 'Space Mono, monospace' }}>{club.draws}</td>
+                                                <td style={{ color: '#ff4d4d', fontWeight: '600', fontFamily: 'Space Mono, monospace' }}>{club.losses}</td>
+                                                <td style={{ fontFamily: 'Space Mono, monospace' }}>{club.gf}</td>
+                                                <td style={{ fontFamily: 'Space Mono, monospace' }}>{club.ga}</td>
+                                                <td style={{ fontFamily: 'Space Mono, monospace' }}>{club.csf}</td>
+                                                <td style={{ fontFamily: 'Space Mono, monospace' }}>{club.csa}</td>
+                                            </tr>
+                                        ))}
+                                        {opponentClubsData.length > 0 && (
+                                            <tr style={{ background: '#f9f9f9', borderTop: '2px solid #ddd', borderBottom: '2px solid #ddd', fontWeight: 'bold' }}>
+                                                <td style={{ fontWeight: 'bold' }}>GRAND TOTAL</td>
+                                                <td style={{ fontFamily: 'Space Mono, monospace' }}>{opponentClubsTotals.played}</td>
+                                                <td style={{ color: '#00c853', fontFamily: 'Space Mono, monospace' }}>{opponentClubsTotals.wins}</td>
+                                                <td style={{ color: 'var(--gold, #c9a84c)', fontFamily: 'Space Mono, monospace' }}>{opponentClubsTotals.draws}</td>
+                                                <td style={{ color: '#ff4d4d', fontFamily: 'Space Mono, monospace' }}>{opponentClubsTotals.losses}</td>
+                                                <td style={{ fontFamily: 'Space Mono, monospace' }}>{opponentClubsTotals.gf}</td>
+                                                <td style={{ fontFamily: 'Space Mono, monospace' }}>{opponentClubsTotals.ga}</td>
+                                                <td colSpan={2}></td>
+                                            </tr>
+                                        )}
+                                    </tbody>
+                                </table>
+                            </div>
+                        )}
+
+                        {/* TAB CONTENT: EGYPTIAN CLUBS (egypt mode) */}
+                        {h2hTab === "egyptian_clubs" && isEgyptMode && (
+                            <div className="h2h-history-log">
+                                <div className="history-title">
+                                    <ShieldAlert size={18} style={{ color: 'var(--gold, #c9a84c)' }} /> Egyptian Clubs vs {selectedOpp}
+                                </div>
+                                <table className="h2h-table">
+                                    <thead>
+                                        <tr>
+                                            <th>EGYPT CLUB</th>
+                                            <th>PLAYED</th>
+                                            <th style={{ color: '#00c853' }}>EGY WON</th>
+                                            <th style={{ color: 'var(--gold, #c9a84c)' }}>DRAW</th>
+                                            <th style={{ color: '#ff4d4d' }}>OPP WON</th>
+                                            <th>GF</th>
+                                            <th>GA</th>
+                                            <th>CSF</th>
+                                            <th>CSA</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {egyptianClubsData.map((club, i) => (
+                                            <tr key={i}>
+                                                <td style={{ fontWeight: '600' }}>🇪🇬 {club.name}</td>
+                                                <td style={{ fontFamily: 'Space Mono, monospace' }}>{club.played}</td>
+                                                <td style={{ color: '#00c853', fontWeight: '600', fontFamily: 'Space Mono, monospace' }}>{club.wins}</td>
+                                                <td style={{ color: 'var(--gold, #c9a84c)', fontFamily: 'Space Mono, monospace' }}>{club.draws}</td>
+                                                <td style={{ color: '#ff4d4d', fontWeight: '600', fontFamily: 'Space Mono, monospace' }}>{club.losses}</td>
+                                                <td style={{ fontFamily: 'Space Mono, monospace' }}>{club.gf}</td>
+                                                <td style={{ fontFamily: 'Space Mono, monospace' }}>{club.ga}</td>
+                                                <td style={{ fontFamily: 'Space Mono, monospace' }}>{club.csf}</td>
+                                                <td style={{ fontFamily: 'Space Mono, monospace' }}>{club.csa}</td>
+                                            </tr>
+                                        ))}
+                                        {egyptianClubsData.length > 0 && (
+                                            <tr style={{ background: '#f9f9f9', borderTop: '2px solid #ddd', borderBottom: '2px solid #ddd', fontWeight: 'bold' }}>
+                                                <td style={{ fontWeight: 'bold' }}>GRAND TOTAL</td>
+                                                <td style={{ fontFamily: 'Space Mono, monospace' }}>{egyptianClubsTotals.played}</td>
+                                                <td style={{ color: '#00c853', fontFamily: 'Space Mono, monospace' }}>{egyptianClubsTotals.wins}</td>
+                                                <td style={{ color: 'var(--gold, #c9a84c)', fontFamily: 'Space Mono, monospace' }}>{egyptianClubsTotals.draws}</td>
+                                                <td style={{ color: '#ff4d4d', fontFamily: 'Space Mono, monospace' }}>{egyptianClubsTotals.losses}</td>
+                                                <td style={{ fontFamily: 'Space Mono, monospace' }}>{egyptianClubsTotals.gf}</td>
+                                                <td style={{ fontFamily: 'Space Mono, monospace' }}>{egyptianClubsTotals.ga}</td>
+                                                <td colSpan={2}></td>
                                             </tr>
                                         )}
                                     </tbody>

@@ -31,6 +31,29 @@
     height: 48px;
 }
 
+.seasons-table th.sortable-header {
+    cursor: pointer;
+    user-select: none;
+    transition: background 0.2s ease, color 0.2s ease;
+}
+
+.seasons-table th.sortable-header:hover {
+    background: rgba(201, 168, 76, 0.08);
+    color: #000;
+}
+
+.sort-icon {
+    font-size: 10px;
+    margin-left: 4px;
+    opacity: 0.45;
+}
+
+.sort-icon.active {
+    opacity: 1;
+    color: var(--gold, #c9a84c);
+    font-weight: bold;
+}
+
 .seasons-table td {
     text-align: center;
     font-size: 16px;

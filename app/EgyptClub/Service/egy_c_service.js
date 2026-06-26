@@ -246,3 +246,74 @@ export const EgyptClubService = {
         };
     }
 };
+
+export function getMatchCountryToken(opponentTeam) {
+    if (!opponentTeam) return null;
+    const parts = String(opponentTeam).split(" - ");
+    const token = parts[parts.length - 1].trim().toLowerCase();
+    return token || null;
+}
+
+export function resolveCountryRow(countryName, countriesList = []) {
+    if (!countryName) return null;
+    const target = String(countryName).trim().toLowerCase();
+    return (
+        countriesList.find(
+            (c) =>
+                c.COUNTRY_NAME?.toLowerCase() === target ||
+                c.COUNTRY_NAME_EN?.toLowerCase() === target
+        ) || null
+    );
+}
+
+export function matchOpponentCountry(opponentTeam, selectedCountry, countriesList = []) {
+    const token = getMatchCountryToken(opponentTeam);
+    if (!token || !selectedCountry) return false;
+
+    const row = resolveCountryRow(selectedCountry, countriesList);
+    if (row) {
+        return (
+            token === row.COUNTRY_NAME?.toLowerCase() ||
+            token === row.COUNTRY_NAME_EN?.toLowerCase()
+        );
+    }
+
+    return token === String(selectedCountry).trim().toLowerCase();
+}
+
+export function getCountryOptionsFromMatches(matches, countriesList = []) {
+    const tokens = new Set();
+    (matches || []).forEach((m) => {
+        const token = getMatchCountryToken(m["OPPONENT TEAM"]);
+        if (token) tokens.add(token);
+    });
+
+    const options = [];
+    const seen = new Set();
+
+    (countriesList || []).forEach((c) => {
+        const ar = c.COUNTRY_NAME?.toLowerCase();
+        const en = c.COUNTRY_NAME_EN?.toLowerCase();
+        if ((ar && tokens.has(ar)) || (en && tokens.has(en))) {
+            const label = c.COUNTRY_NAME;
+            if (label && !seen.has(label)) {
+                seen.add(label);
+                options.push({ value: label, label });
+            }
+        }
+    });
+
+    tokens.forEach((token) => {
+        const inCatalog = (countriesList || []).some(
+            (c) =>
+                c.COUNTRY_NAME?.toLowerCase() === token ||
+                c.COUNTRY_NAME_EN?.toLowerCase() === token
+        );
+        if (!inCatalog && !seen.has(token)) {
+            seen.add(token);
+            options.push({ value: token, label: token });
+        }
+    });
+
+    return options.sort((a, b) => a.label.localeCompare(b.label, "ar"));
+}

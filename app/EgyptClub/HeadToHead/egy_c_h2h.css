@@ -6,6 +6,54 @@
     margin: 0 auto;
 }
 
+.h2h-mode-toggle {
+    display: flex;
+    justify-content: center;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-bottom: 24px;
+}
+
+.h2h-mode-btn {
+    padding: 10px 22px;
+    border-radius: 4px;
+    border: 1px solid #ddd;
+    background: #f5f5f5;
+    color: #666;
+    font-family: 'Space Mono', monospace;
+    font-size: 11px;
+    font-weight: 800;
+    letter-spacing: 1px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.h2h-mode-btn:hover:not(.active) {
+    border-color: var(--gold, #c9a84c);
+    color: #333;
+}
+
+.h2h-mode-btn.active {
+    background: #0d0d0d;
+    border-color: var(--gold, #c9a84c);
+    color: var(--gold, #c9a84c);
+    box-shadow: 0 4px 14px rgba(201, 168, 76, 0.15);
+}
+
+.h2h-egypt-static-value {
+    display: flex;
+    align-items: center;
+    min-height: 42px;
+    padding: 10px 14px;
+    background: #1a1a1a;
+    border: 1px solid var(--gold, #c9a84c);
+    border-radius: 4px;
+    color: var(--gold, #c9a84c);
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 22px;
+    letter-spacing: 1.5px;
+}
+
 .h2h-selectors-row {
     display: grid;
     grid-template-columns: 1fr 80px 1fr;
@@ -146,11 +194,43 @@
 }
 
 .h2h-board-title {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-wrap: wrap;
+    gap: 14px;
     text-align: center;
     margin-bottom: 25px;
     font-family: 'Bebas Neue', sans-serif;
     font-size: 24px;
     letter-spacing: 1px;
+}
+
+.h2h-board-clubs-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    padding: 8px 20px;
+    border-radius: 999px;
+    background: rgba(201, 168, 76, 0.1);
+    border: 1px solid rgba(201, 168, 76, 0.28);
+    color: var(--gold, #c9a84c);
+}
+
+.h2h-board-clubs-badge .clubs-count-num {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 32px;
+    line-height: 1;
+    font-weight: 700;
+    color: var(--gold, #c9a84c);
+}
+
+.h2h-board-clubs-badge .clubs-count-text {
+    font-family: 'Space Mono', monospace;
+    font-size: 12px;
+    font-weight: 800;
+    letter-spacing: 1px;
+    color: #666;
 }
 
 .h2h-board-title .accent {

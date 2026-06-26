@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useMemo, useState } from "react";
+import { isAhlyTeam } from "./alahly_player_impact_utils";
 
 const EMPTY_IMPACT = {
     matches: 0,
@@ -66,7 +67,7 @@ export function computeSquadImpactStats({
     selectedComps = [],
     selectedSYs = [],
     selectedOpps = [],
-    isHomeSide = (team) => String(team || "").trim() === "الأهلي",
+    isHomeSide = isAhlyTeam,
     homeTeamKey = "ahlyT",
     awayTeamKey = "oppT",
 }) {
@@ -111,9 +112,13 @@ export function computeSquadImpactStats({
     });
 
     const lineupMatchIds = new Set(lineupAppearances.map((row) => String(row.MATCH_ID)));
+    const processedPresenceMatchIds = new Set();
 
     lineupAppearances.forEach((row) => {
         const mId = String(row.MATCH_ID);
+        if (processedPresenceMatchIds.has(mId)) return;
+        processedPresenceMatchIds.add(mId);
+
         const ctx = matchContextMap[mId];
         if (!ctx) return;
 

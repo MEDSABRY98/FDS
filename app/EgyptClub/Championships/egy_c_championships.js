@@ -52,8 +52,57 @@ export default function EgyptClubChampionships({ matches }) {
             if (m["CLEAN SHEET"] === "A" || m["CLEAN SHEET"] === "BOTH") row.csa++;
         });
 
-        return Object.values(stats).sort((a, b) => a.name.localeCompare(b.name, "ar"));
+        return Object.values(stats);
     }, [matches]);
+
+    const [sortConfig, setSortConfig] = useState({ key: "name", direction: "asc" });
+
+    useEffect(() => {
+        setCurrentPageOverview(1);
+    }, [sortConfig]);
+
+    const sortedChampionships = useMemo(() => {
+        const list = [...championshipsData];
+        const { key, direction } = sortConfig;
+
+        return list.sort((a, b) => {
+            let aVal;
+            let bVal;
+
+            if (key === "name") {
+                const cmp = a.name.localeCompare(b.name, "ar");
+                return direction === "asc" ? cmp : -cmp;
+            }
+
+            if (key === "winRate") {
+                aVal = a.played > 0 ? a.wins / a.played : 0;
+                bVal = b.played > 0 ? b.wins / b.played : 0;
+            } else {
+                aVal = a[key] ?? 0;
+                bVal = b[key] ?? 0;
+            }
+
+            if (aVal < bVal) return direction === "asc" ? -1 : 1;
+            if (aVal > bVal) return direction === "asc" ? 1 : -1;
+            return a.name.localeCompare(b.name, "ar");
+        });
+    }, [championshipsData, sortConfig]);
+
+    const handleSort = (key) => {
+        setSortConfig((prev) => ({
+            key,
+            direction: prev.key === key && prev.direction === "asc" ? "desc" : "asc",
+        }));
+    };
+
+    const renderSortIcon = (key) => {
+        if (sortConfig.key !== key) return <span className="sort-icon">↕</span>;
+        return sortConfig.direction === "asc" ? (
+            <span className="sort-icon active">↑</span>
+        ) : (
+            <span className="sort-icon active">↓</span>
+        );
+    };
 
     const championshipProfile = useMemo(() => {
         if (!selectedChampionship) return null;
@@ -68,12 +117,12 @@ export default function EgyptClubChampionships({ matches }) {
                     `Championship_${selectedChampionship.replace(/[/\\?%*:|"<>]/g, "-")}_Matches`
                 );
             } else {
-                exportSummaryToExcel(championshipsData, "EgyptClubs_Championships_Summary", "name", "CHAMPIONSHIP");
+                exportSummaryToExcel(sortedChampionships, "EgyptClubs_Championships_Summary", "name", "CHAMPIONSHIP");
             }
         };
         window.addEventListener("egypt-club-export-excel", handleGlobalExport);
         return () => window.removeEventListener("egypt-club-export-excel", handleGlobalExport);
-    }, [championshipsData, selectedChampionship, championshipProfile]);
+    }, [sortedChampionships, selectedChampionship, championshipProfile]);
 
     const formatDate = (dateStr) => {
         if (!dateStr) return "N/A";
@@ -204,14 +253,14 @@ export default function EgyptClubChampionships({ matches }) {
                 ) : (
                     (() => {
                         const pageSize = 50;
-                        const paginatedChampionships = championshipsData.slice(
+                        const paginatedChampionships = sortedChampionships.slice(
                             (currentPageOverview - 1) * pageSize,
                             currentPageOverview * pageSize
                         );
-                        const totalPages = Math.ceil(championshipsData.length / pageSize);
+                        const totalPages = Math.ceil(sortedChampionships.length / pageSize);
 
                         const totals = { played: 0, wins: 0, draws: 0, losses: 0, gf: 0, ga: 0, csf: 0, csa: 0 };
-                        championshipsData.forEach((c) => {
+                        sortedChampionships.forEach((c) => {
                             totals.played += c.played;
                             totals.wins += c.wins;
                             totals.draws += c.draws;
@@ -228,16 +277,36 @@ export default function EgyptClubChampionships({ matches }) {
                                 <table className="seasons-table">
                                     <thead>
                                         <tr>
-                                            <th style={{ width: "25%" }}>CHAMPIONSHIP</th>
-                                            <th style={{ width: "7.5%" }}>PLAYED</th>
-                                            <th style={{ color: "#00c853", width: "7.5%" }}>WON</th>
-                                            <th style={{ color: "var(--gold, #c9a84c)", width: "8%" }}>WIN %</th>
-                                            <th style={{ color: "var(--gold, #c9a84c)", width: "7.5%" }}>DRAW</th>
-                                            <th style={{ color: "#ff4d4d", width: "7.5%" }}>LOSE</th>
-                                            <th style={{ width: "7.5%" }}>GF</th>
-                                            <th style={{ width: "7.5%" }}>GA</th>
-                                            <th style={{ width: "7.5%" }}>CSF</th>
-                                            <th style={{ width: "7.5%" }}>CSA</th>
+                                            <th className="sortable-header" style={{ width: "25%" }} onClick={() => handleSort("name")}>
+                                                CHAMPIONSHIP {renderSortIcon("name")}
+                                            </th>
+                                            <th className="sortable-header" style={{ width: "7.5%" }} onClick={() => handleSort("played")}>
+                                                PLAYED {renderSortIcon("played")}
+                                            </th>
+                                            <th className="sortable-header" style={{ color: "#00c853", width: "7.5%" }} onClick={() => handleSort("wins")}>
+                                                WON {renderSortIcon("wins")}
+                                            </th>
+                                            <th className="sortable-header" style={{ color: "var(--gold, #c9a84c)", width: "8%" }} onClick={() => handleSort("winRate")}>
+                                                WIN % {renderSortIcon("winRate")}
+                                            </th>
+                                            <th className="sortable-header" style={{ color: "var(--gold, #c9a84c)", width: "7.5%" }} onClick={() => handleSort("draws")}>
+                                                DRAW {renderSortIcon("draws")}
+                                            </th>
+                                            <th className="sortable-header" style={{ color: "#ff4d4d", width: "7.5%" }} onClick={() => handleSort("losses")}>
+                                                LOSE {renderSortIcon("losses")}
+                                            </th>
+                                            <th className="sortable-header" style={{ width: "7.5%" }} onClick={() => handleSort("gf")}>
+                                                GF {renderSortIcon("gf")}
+                                            </th>
+                                            <th className="sortable-header" style={{ width: "7.5%" }} onClick={() => handleSort("ga")}>
+                                                GA {renderSortIcon("ga")}
+                                            </th>
+                                            <th className="sortable-header" style={{ width: "7.5%" }} onClick={() => handleSort("csf")}>
+                                                CSF {renderSortIcon("csf")}
+                                            </th>
+                                            <th className="sortable-header" style={{ width: "7.5%" }} onClick={() => handleSort("csa")}>
+                                                CSA {renderSortIcon("csa")}
+                                            </th>
                                             <th style={{ width: "7%" }}></th>
                                         </tr>
                                     </thead>
@@ -272,7 +341,7 @@ export default function EgyptClubChampionships({ matches }) {
                                         })}
 
                                         <tr className="season-totals-row">
-                                            <td className="totals-label">TOTAL ({championshipsData.length} Championships)</td>
+                                            <td className="totals-label">TOTAL ({sortedChampionships.length} Championships)</td>
                                             <td style={{ fontFamily: "Space Mono, monospace" }}>{totals.played}</td>
                                             <td style={{ color: "#00c853", fontFamily: "Space Mono, monospace" }}>{totals.wins}</td>
                                             <td style={{ color: "var(--gold, #c9a84c)" }}>{totalsWinRate}%</td>
