@@ -250,9 +250,47 @@ export function buildPlayerClubStats(playerDetails, filteredMatches) {
         );
 }
 
-export function buildScoringClubDetailStats(clubName, playerDetails, filteredMatches) {
+function buildSquadPlayerSeasonClubLookup(squadData) {
+    const lookup = {};
+    (squadData || []).forEach(item => {
+        const playerName = String(item.PLAYERNAME || "").trim();
+        const club = String(item.CLUB || "").trim();
+        const season = String(item.SEASON || "").trim();
+        if (!playerName || !club || !season) return;
+        const key = `${playerName}|${season}`;
+        if (!lookup[key]) lookup[key] = new Set();
+        lookup[key].add(club);
+    });
+    return lookup;
+}
+
+function isPlayerInSquadClubForSeason(squadLookup, playerName, season, clubName) {
+    const key = `${String(playerName || "").trim()}|${String(season || "").trim()}`;
+    const clubs = squadLookup[key];
+    return clubs ? clubs.has(clubName) : false;
+}
+
+/** Goals: event CLUB when set, else squad club. Assists: event CLUB or squad club. */
+function isScoringEventAttributedToClub(row, playerName, ctx, clubName, squadLookup, isGoal, isAssistEvent) {
+    const eventClub = String(row.CLUB || "").trim();
+    const season = ctx.season || "Unknown";
+    const inSquad = isPlayerInSquadClubForSeason(squadLookup, playerName, season, clubName);
+
+    if (isGoal) {
+        if (eventClub) return eventClub === clubName;
+        return inSquad;
+    }
+    if (isAssistEvent) {
+        if (eventClub === clubName) return true;
+        return inSquad;
+    }
+    return false;
+}
+
+export function buildScoringClubDetailStats(clubName, playerDetails, filteredMatches, squadData = []) {
     const matchContextMap = buildMatchContextMap(filteredMatches);
     const normalizedClub = String(clubName || "").trim();
+    const squadLookup = buildSquadPlayerSeasonClubLookup(squadData);
 
     const playerMap = {};
     const matchMap = {};
@@ -274,9 +312,6 @@ export function buildScoringClubDetailStats(clubName, playerDetails, filteredMat
 
         if (!isEgyptScorerEvent(row, ctx)) return;
 
-        const club = String(row.CLUB || "").trim();
-        if (!club || club !== normalizedClub) return;
-
         const playerName = String(row["PLAYER NAME"] || "").trim();
         if (!playerName || playerName.toLowerCase() === "unknown") return;
 
@@ -286,6 +321,10 @@ export function buildScoringClubDetailStats(clubName, playerDetails, filteredMat
         const isAssistEvent = isAssist(type);
 
         if (!isGoal && !isAssistEvent) return;
+
+        if (!isScoringEventAttributedToClub(row, playerName, ctx, normalizedClub, squadLookup, isGoal, isAssistEvent)) {
+            return;
+        }
 
         if (isGoal) {
             goals += 1;

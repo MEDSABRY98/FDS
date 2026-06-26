@@ -43,8 +43,8 @@ export default function EgyptNTClubDetails({
 
     // 2. Build scoring stats for this club
     const scoringClubStats = useMemo(
-        () => buildScoringClubDetailStats(clubName, playerDetails, matches),
-        [clubName, playerDetails, matches]
+        () => buildScoringClubDetailStats(clubName, playerDetails, matches, squadData),
+        [clubName, playerDetails, matches, squadData]
     );
 
     useEffect(() => {
