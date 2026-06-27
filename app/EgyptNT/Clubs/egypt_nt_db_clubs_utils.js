@@ -257,23 +257,59 @@ function processScoringEvents(playerDetails, matchContextMap, groupingMode = GRO
     return { clubs, playerClubs };
 }
 
-export function buildScoringClubStats(playerDetails, filteredMatches, groupingMode = GROUPING_MODES.CLUB) {
+export function buildScoringClubStats(
+    playerDetails,
+    filteredMatches,
+    groupingMode = GROUPING_MODES.CLUB,
+    squadData = [],
+    { lineupDetails = [], gkDetails = [] } = {}
+) {
     const matchContextMap = buildMatchContextMap(filteredMatches);
     const { clubs } = processScoringEvents(playerDetails, matchContextMap, groupingMode);
 
+    const matchData = {
+        matches: filteredMatches,
+        lineupDetails,
+        playerDetails,
+        gkDetails
+    };
+
+    const perfByClub = {};
+    buildClubOnlyPerformance(squadData, matchData, groupingMode).forEach(row => {
+        perfByClub[row.club] = row.ntStats;
+    });
+
+    const seasonCountByClub = {};
+    (squadData || []).forEach(item => {
+        const clubRaw = String(item.CLUB || "").trim();
+        if (!clubRaw) return;
+
+        const groupKey = getGroupKey(clubRaw, groupingMode);
+        if (!groupKey) return;
+
+        if (!seasonCountByClub[groupKey]) seasonCountByClub[groupKey] = new Set();
+
+        const season = String(item.SEASON || "").trim();
+        if (season) seasonCountByClub[groupKey].add(season);
+    });
+
     return Object.values(clubs)
-        .map(entry => ({
-            club: entry.club,
-            scorersCount: entry.scorers.size,
-            contributorsCount: entry.contributors.size,
-            goals: entry.goals,
-            assists: entry.assists,
-            penGoals: entry.penGoals,
-            ga: entry.goals + entry.assists,
-            firstDate: entry.firstDate,
-            lastDate: entry.lastDate,
-            championshipCount: entry.championships.size
-        }))
+        .map(entry => {
+            const perf = perfByClub[entry.club];
+            return {
+                club: entry.club,
+                scorersCount: entry.scorers.size,
+                contributorsCount: entry.contributors.size,
+                goals: entry.goals,
+                assists: entry.assists,
+                penGoals: entry.penGoals,
+                ga: entry.goals + entry.assists,
+                championshipCount: entry.championships.size,
+                seasonCount: seasonCountByClub[entry.club]?.size || 0,
+                matchCount: perf?.mp || 0,
+                minutes: perf?.mins || 0
+            };
+        })
         .sort((a, b) =>
             b.goals - a.goals ||
             b.assists - a.assists ||

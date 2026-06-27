@@ -43,17 +43,20 @@
 .h2h-main-table th {
     background: #0a0a0a;
     color: #fff;
-    padding: 15px 10px;
-    font-size: 11px;
+    padding: 18px 12px;
+    font-family: 'Space Mono', monospace;
+    font-size: 12px;
     text-transform: uppercase;
-    letter-spacing: 1px;
+    letter-spacing: 0.8px;
     border: 1px solid rgba(255, 255, 255, 0.1);
     font-weight: 700;
 }
 
 .group-header {
-    font-size: 16px !important;
-    letter-spacing: 2px !important;
+    font-size: 14px !important;
+    letter-spacing: 1px !important;
+    font-weight: 700 !important;
+    padding: 16px 12px !important;
 }
 
 .shootout-group { background: #1a1a1a !important; color: var(--gold) !important; }
@@ -63,9 +66,15 @@
 .sub-th {
     background: #fcfcfc !important;
     color: #666 !important;
-    font-size: 14px !important;
+    font-family: 'Space Mono', monospace !important;
+    font-size: 12px !important;
     border: 1px solid #eee !important;
-    font-weight: 800 !important;
+    font-weight: 700 !important;
+    padding: 14px 10px !important;
+}
+
+.h2h-main-table th.sticky-col {
+    font-size: 12px !important;
 }
 
 .h2h-row {
@@ -79,34 +88,35 @@
 }
 
 .h2h-row td {
-    padding: 18px 10px;
+    padding: 15px 10px;
     text-align: center;
     font-size: 16px;
-    font-weight: 700;
-    color: #333;
+    font-weight: 500;
+    color: #444;
 }
 
-.team-name {
+.h2h-main-table td.team-name.sticky-col {
     text-align: center !important;
-    padding: 18px 25px !important;
-    font-family: 'Outfit', sans-serif;
-    font-size: 18px !important;
-    font-weight: 800 !important;
+    padding: 15px 20px !important;
+    font-family: 'DM Sans', sans-serif !important;
+    font-size: 17px !important;
+    font-weight: 700 !important;
     color: #000 !important;
     min-width: 250px;
+    line-height: 1.35;
 }
 
 .stat-num {
-    font-family: 'Bebas Neue', sans-serif;
-    font-size: 28px !important;
-    letter-spacing: 1px;
-    font-weight: 400 !important;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 17px !important;
+    letter-spacing: 0;
+    font-weight: 600 !important;
 }
 
 .played { color: #555; background: #fdfdfd; }
 .win { color: #2e7d32; background: rgba(46, 125, 50, 0.05); }
 .loss { color: #c62828; background: rgba(198, 40, 40, 0.05); }
-.rate { color: var(--gold); font-weight: 400 !important; }
+.rate { color: var(--gold); font-weight: 600 !important; }
 
 .stat-val.goals { color: #2e7d32; }
 .stat-val.misses { color: #c62828; }
@@ -117,13 +127,17 @@
 }
 
 .total-h2h-row td {
-    padding: 22px 10px;
-    font-family: 'Bebas Neue', sans-serif;
-    font-size: 28px !important;
-    font-weight: 400 !important;
+    padding: 18px 10px;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 17px !important;
+    font-weight: 700 !important;
     color: var(--gold) !important;
     border-top: 3px solid var(--gold);
     text-align: center;
+}
+
+.total-h2h-row td.team-name.sticky-col {
+    font-size: 17px !important;
 }
 
 .empty-row {
@@ -179,5 +193,5 @@
 
 @media (max-width: 1000px) {
     .h2h-main-table { font-size: 12px; }
-    .team-name { min-width: 150px; padding-left: 15px !important; }
+    .h2h-main-table td.team-name.sticky-col { min-width: 150px; padding-left: 15px !important; }
 }

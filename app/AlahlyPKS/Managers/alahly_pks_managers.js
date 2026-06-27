@@ -110,7 +110,7 @@ export default function AlAhlyPKsManagers({ pksData }) {
     ];
 
     return (
-        <div className="pks-h2h-container fade-in">
+        <div className="pks-managers-container pks-h2h-container fade-in">
             <div className="h2h-header-row">
                 <h1 className="h2h-title">AL AHLY <span className="gold-text">PKs MANAGERS</span></h1>
                 
@@ -149,8 +149,8 @@ export default function AlAhlyPKsManagers({ pksData }) {
                         <tr>
                             <th className="sub-th">P</th>
                             <th className="sub-th">W</th>
-                            <th className="sub-th">L</th>
                             <th className="sub-th">WIN %</th>
+                            <th className="sub-th">L</th>
                             
                             <th className="sub-th">S</th>
                             <th className="sub-th">G</th>
@@ -170,8 +170,8 @@ export default function AlAhlyPKsManagers({ pksData }) {
                                 
                                 <td className="stat-num played">{st.played}</td>
                                 <td className="stat-num win">{st.won}</td>
-                                <td className="stat-num loss">{st.lost}</td>
                                 <td className="stat-num rate">{st.winRate}%</td>
+                                <td className="stat-num loss">{st.lost}</td>
                                 
                                 <td className="stat-num">{st.shotsFor}</td>
                                 <td className="stat-num goals">{st.goalsFor}</td>
@@ -186,8 +186,8 @@ export default function AlAhlyPKsManagers({ pksData }) {
                             <td className="team-name sticky-col">TOTAL</td>
                             <td className="stat-num">{filteredStats.reduce((a, b) => a + b.played, 0)}</td>
                             <td className="stat-num">{filteredStats.reduce((a, b) => a + b.won, 0)}</td>
-                            <td className="stat-num">{filteredStats.reduce((a, b) => a + b.lost, 0)}</td>
                             <td className="stat-num">—</td>
+                            <td className="stat-num">{filteredStats.reduce((a, b) => a + b.lost, 0)}</td>
                             <td className="stat-num">{filteredStats.reduce((a, b) => a + b.shotsFor, 0)}</td>
                             <td className="stat-num">{filteredStats.reduce((a, b) => a + b.goalsFor, 0)}</td>
                             <td className="stat-num">{filteredStats.reduce((a, b) => a + b.missesFor, 0)}</td>

@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { Info, X, Save } from "lucide-react";
 import Login_db from "../../lib/Login_db";
+import NoData_db from "../../lib/NoData_db";
 import { useNotification } from "../../lib/Notification_db";
 import { AutocompleteInput, fetchCatalogDisplayNames, supabase } from "../../Database";
 import { EgyptNTService } from "../Service/egypt_nt_db_service";
@@ -614,11 +615,16 @@ export default function EgyptNTClubBackfill({ matches = [], playerDetails = [], 
                         </thead>
                         <tbody>
                             {pageRows.length === 0 ? (
-                                <tr>
-                                    <td colSpan={7} style={{ padding: 40, color: "#888" }}>
-                                        No manual backfill rows remaining.
-                                    </td>
-                                </tr>
+                                <NoData_db
+                                    isTable
+                                    colSpan={7}
+                                    message={
+                                        rows.length === 0
+                                            ? "No manual backfill rows remaining."
+                                            : "No rows match your search."
+                                    }
+                                    height="200px"
+                                />
                             ) : (
                                 pageRows.map((row) => (
                                     <tr key={row.rowId}>

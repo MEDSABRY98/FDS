@@ -26,8 +26,8 @@ export default function ReplaceRecordModal({ selectedTable, columns, saving, set
             alert("Please select a column.");
             return;
         }
-        if (!oldValue) {
-            alert("Please enter the old text to find.");
+        if (!oldValue.trim() && !newValue.trim()) {
+            alert("Enter a new value to fill empty cells.");
             return;
         }
         handleExecuteReplace(selectedColumn, oldValue, newValue);
@@ -130,7 +130,7 @@ export default function ReplaceRecordModal({ selectedTable, columns, saving, set
                         <label>OLD TEXT (FIND)</label>
                         <input
                             type="text"
-                            placeholder="Enter the text to replace..."
+                            placeholder="Leave empty to fill blank cells only..."
                             value={oldValue}
                             onChange={(e) => setOldValue(e.target.value)}
                         />

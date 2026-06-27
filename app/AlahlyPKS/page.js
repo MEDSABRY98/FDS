@@ -214,7 +214,7 @@ export default function AlAhlyPKsDatabase() {
                 }
             ]}
         >
-            <main className="alahly-content-viewport" style={{ padding: '0', maxWidth: (activeTab === 'alahly_pks_h2h' || activeTab === 'alahly_pks_champions' || activeTab === 'alahly_pks_managers' || activeTab === 'alahly_pks_editor') ? '100%' : '1200px', margin: '0 auto', width: '100%' }}>
+            <main className="alahly-content-viewport" style={{ padding: '0', maxWidth: (activeTab === 'alahly_pks_h2h' || activeTab === 'alahly_pks_champions' || activeTab === 'alahly_pks_managers' || activeTab === 'alahly_pks_editor') ? '100%' : (activeTab === 'alahly_pks_matches' ? '1380px' : '1200px'), margin: '0 auto', width: '100%' }}>
                 {loading ? (
                     <Loading_db subtitle="PKs DATABASE" message="SYNCING DATA" inline={true} />
                 ) : (

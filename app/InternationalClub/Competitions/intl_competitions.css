@@ -48,8 +48,9 @@
     background: #fafafa;
 }
 
-.intl-competitions-table td.game {
-    text-align: left;
+.intl-competitions-table-wrap .intl-competitions-table th:first-child,
+.intl-competitions-table-wrap .intl-competitions-table td.game {
+    text-align: center;
     font-weight: 700;
 }
 

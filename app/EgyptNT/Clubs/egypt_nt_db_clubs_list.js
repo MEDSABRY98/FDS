@@ -13,9 +13,9 @@ const SORT_COLUMNS_SCORING = [
     { key: "goals", label: "G" },
     { key: "assists", label: "A" },
     { key: "penGoals", label: "PEN G" },
-    { key: "championshipCount", label: "TOURNAMENTS" },
-    { key: "firstDate", label: "FIRST" },
-    { key: "lastDate", label: "LAST" }
+    { key: "seasonCount", label: "SEAS" },
+    { key: "matchCount", label: "MP" },
+    { key: "minutes", label: "MINS" }
 ];
 
 const PAGE_SIZE = 50;
@@ -24,9 +24,6 @@ function getSortValue(row, key) {
     switch (key) {
         case "club":
             return String(row.club || "").toLowerCase();
-        case "firstDate":
-        case "lastDate":
-            return String(row[key] || "");
         default:
             return row[key] ?? 0;
     }
@@ -332,8 +329,14 @@ export default function EgyptNTClubsList({
 
     // Process scoring club stats
     const scoringClubStats = useMemo(() => {
-        return buildScoringClubStats(playerDetails, filteredMatches, groupingMode);
-    }, [playerDetails, filteredMatches, groupingMode]);
+        return buildScoringClubStats(
+            playerDetails,
+            filteredMatches,
+            groupingMode,
+            filteredSquadData,
+            { lineupDetails, gkDetails }
+        );
+    }, [playerDetails, filteredMatches, groupingMode, filteredSquadData, lineupDetails, gkDetails]);
 
     // Search and sort call-up clubs
     const filteredCallupClubs = useMemo(() => {
@@ -379,9 +382,11 @@ export default function EgyptNTClubsList({
                 acc.goals += club.goals;
                 acc.assists += club.assists;
                 acc.penGoals += club.penGoals;
+                acc.matchCount += club.matchCount;
+                acc.minutes += club.minutes;
                 return acc;
             },
-            { ga: 0, goals: 0, assists: 0, penGoals: 0 }
+            { ga: 0, goals: 0, assists: 0, penGoals: 0, matchCount: 0, minutes: 0 }
         );
     }, [filteredScoringClubs]);
 
@@ -520,9 +525,9 @@ export default function EgyptNTClubsList({
                             <col style={{ width: "7%" }} />
                             <col style={{ width: "7%" }} />
                             <col style={{ width: "7%" }} />
-                            <col style={{ width: "9%" }} />
-                            <col style={{ width: "10%" }} />
-                            <col style={{ width: "10%" }} />
+                            <col style={{ width: "8%" }} />
+                            <col style={{ width: "8%" }} />
+                            <col style={{ width: "8%" }} />
                         </colgroup>
                         <thead>
                             <tr>
@@ -566,9 +571,9 @@ export default function EgyptNTClubsList({
                                         <td className="club-stat-cell g-val">{club.goals}</td>
                                         <td className="club-stat-cell a-val">{club.assists}</td>
                                         <td className="club-stat-cell">{club.penGoals}</td>
-                                        <td className="club-stat-cell">{club.championshipCount}</td>
-                                        <td className="club-stat-cell date-cell">{club.firstDate || "—"}</td>
-                                        <td className="club-stat-cell date-cell">{club.lastDate || "—"}</td>
+                                        <td className="club-stat-cell">{club.seasonCount}</td>
+                                        <td className="club-stat-cell">{club.matchCount}</td>
+                                        <td className="club-stat-cell">{club.minutes}</td>
                                     </tr>
                                 ))
                             )}
@@ -582,8 +587,8 @@ export default function EgyptNTClubsList({
                                     <td className="club-stat-cell a-val">{scoringTotals.assists}</td>
                                     <td className="club-stat-cell">{scoringTotals.penGoals}</td>
                                     <td>—</td>
-                                    <td>—</td>
-                                    <td>—</td>
+                                    <td className="club-stat-cell">{scoringTotals.matchCount}</td>
+                                    <td className="club-stat-cell">{scoringTotals.minutes}</td>
                                 </tr>
                             )}
                         </tbody>

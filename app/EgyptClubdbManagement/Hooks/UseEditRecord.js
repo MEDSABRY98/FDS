@@ -122,22 +122,53 @@ export function useEditRecord(selectedTable, columns, fetchTableData, addNotific
     const [isReplacing, setIsReplacing] = useState(false);
 
     const handleExecuteReplace = async (column, oldValue, newValue) => {
-        if (!column || !oldValue) {
-            if (addNotification) addNotification("Please specify both a column and the old value.", "warn");
+        if (!column) {
+            if (addNotification) addNotification("Please select a column.", "warn");
+            return;
+        }
+        const trimmedOld = String(oldValue ?? "").trim();
+        const trimmedNew = String(newValue ?? "").trim();
+        if (trimmedOld === "" && trimmedNew === "") {
+            if (addNotification) addNotification("Enter a new value to fill empty cells.", "warn");
             return;
         }
         setSaving(true);
         try {
-            const { error, count } = await supabase
-                .from(selectedTable)
-                .update({ [column]: newValue === "" ? null : newValue })
-                .eq(column, oldValue);
+            const payload = { [column]: trimmedNew === "" ? null : newValue };
+            const updateOpts = { count: "exact" };
+            let count = 0;
 
-            if (error) throw error;
+            if (trimmedOld === "") {
+                const { error: nullError, count: nullCount } = await supabase
+                    .from(selectedTable)
+                    .update(payload, updateOpts)
+                    .is(column, null);
+                if (nullError) throw nullError;
+
+                const { error: emptyError, count: emptyCount } = await supabase
+                    .from(selectedTable)
+                    .update(payload, updateOpts)
+                    .eq(column, "");
+                if (emptyError) throw emptyError;
+
+                count = (nullCount ?? 0) + (emptyCount ?? 0);
+            } else {
+                const { error, count: matchCount } = await supabase
+                    .from(selectedTable)
+                    .update(payload, updateOpts)
+                    .eq(column, oldValue);
+                if (error) throw error;
+                count = matchCount ?? 0;
+            }
+
             if (fetchTableData) await fetchTableData();
             setIsReplacing(false);
             if (addNotification) {
-                addNotification(`Successfully replaced "${oldValue}" with "${newValue}" in ${count ?? 'matching'} rows.`, "success");
+                if (trimmedOld === "") {
+                    addNotification(`Filled empty cells in ${column} with "${newValue}" (${count} rows).`, "success");
+                } else {
+                    addNotification(`Successfully replaced "${oldValue}" with "${newValue}" in ${count} rows.`, "success");
+                }
             }
         } catch (error) {
             console.error("Replacement error:", error);
