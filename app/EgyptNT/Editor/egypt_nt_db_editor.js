@@ -1,8 +1,8 @@
 "use client";
 
-import { useState, useCallback, useEffect, useMemo } from "react";
+import { useState, useCallback, useEffect, useMemo, useRef } from "react";
 import "./egypt_nt_db_editor.css";
-import { supabase, getChangedFormFields, resolveCatalogFieldsInForm, AutocompleteInput, isEditorWrapColumn, getEditorColumnMinWidth, ShrinkToFitInput, fetchCatalogDisplayNames } from "../../Database";
+import { supabase, getChangedFormFields, resolveCatalogFieldsInForm, AutocompleteInput, fetchCatalogDisplayNames } from "../../Database";
 import Login_db from "../../lib/Login_db";
 import NoData_db from "../../lib/NoData_db";
 import SearchBar_db from "../../lib/SearchBar_db";
@@ -129,6 +129,123 @@ const splitLineupRowsByTeam = (rows = [], matchInfo = {}) => {
 
     return { egy, opp };
 };
+
+function findRowIndexInList(list, row, fallbackIndex) {
+    if (row?._key != null) {
+        const byKey = list.findIndex((r) => r._key === row._key);
+        if (byKey >= 0) return byKey;
+    }
+    if (row?.ROW_ID) {
+        const byRowId = list.findIndex((r) => r.ROW_ID === row.ROW_ID);
+        if (byRowId >= 0) return byRowId;
+    }
+    return fallbackIndex;
+}
+
+function isLineupPlayerRowFilled(row) {
+    return String(row?.["PLAYER NAME"] || "").trim() !== "";
+}
+
+function createEmptyStarterSlot(matchId, teamName, index, matchMinute = "90", baseKey = Date.now()) {
+    return {
+        ...EMPTY_LINEUP,
+        "MATCH MINUTE": matchMinute,
+        TEAM: teamName,
+        STATU: "اساسي",
+        "TOTAL MINUTE": matchMinute,
+        MATCH_ID: matchId || "",
+        _isNew: true,
+        _key: `lineup-slot-${baseKey}-${teamName}-s-${index}`,
+    };
+}
+
+function normalizeSavedTeamLineup(teamRows, matchId, teamName) {
+    const baseKey = Date.now();
+    const matchMinute = String(teamRows.find((r) => r["MATCH MINUTE"])?.["MATCH MINUTE"] || "90").trim() || "90";
+
+    const sorted = [...teamRows].sort((a, b) => {
+        const rowIdA = String(a?.ROW_ID || "");
+        const rowIdB = String(b?.ROW_ID || "");
+        if (!rowIdA && !rowIdB) return 0;
+        if (!rowIdA) return 1;
+        if (!rowIdB) return -1;
+        return rowIdA.localeCompare(rowIdB, undefined, { numeric: true });
+    });
+
+    const starters = sorted.filter((r) => String(r.STATU || "").trim() === "اساسي");
+    const bench = sorted.filter((r) => String(r.STATU || "").trim() === "احتياطي");
+    const other = sorted.filter((r) => {
+        const status = String(r.STATU || "").trim();
+        return status !== "اساسي" && status !== "احتياطي";
+    });
+
+    other.forEach((row) => {
+        if (!isLineupPlayerRowFilled(row)) return;
+        if (starters.length < 11) {
+            starters.push({ ...row, STATU: "اساسي" });
+        } else {
+            bench.push({ ...row, STATU: "احتياطي" });
+        }
+    });
+
+    while (starters.length > 11) {
+        const extra = starters.pop();
+        if (isLineupPlayerRowFilled(extra)) {
+            bench.unshift({ ...extra, STATU: "احتياطي" });
+        }
+    }
+
+    while (starters.length < 11) {
+        starters.push(createEmptyStarterSlot(matchId, teamName, starters.length, matchMinute, baseKey));
+    }
+
+    const filledBench = bench.filter(isLineupPlayerRowFilled);
+
+    return [...starters, ...filledBench].map((row, index) => ({
+        ...row,
+        TEAM: teamName,
+        MATCH_ID: matchId || row.MATCH_ID || "",
+        _key: row._key ?? `lineup-loaded-${baseKey}-${teamName}-${index}`,
+    }));
+}
+
+function applyLineupLogic(prev, action) {
+    const next = typeof action === "function" ? action(prev) : action;
+    const changedRow = next.find((r, i) => r["MATCH MINUTE"] !== prev[i]?.["MATCH MINUTE"]);
+    const matchMinuteRef = changedRow ? changedRow["MATCH MINUTE"] : (next[0]?.["MATCH MINUTE"] || "90");
+
+    return next.map((row) => {
+        const outMin = parseInt(row["OUT MINUTE"], 10);
+        const matchMin = parseInt(matchMinuteRef, 10) || 90;
+        let total = "";
+
+        if (row.STATU === "اساسي") {
+            const playerName = String(row["PLAYER NAME"] || "").trim();
+            const subOutRow = playerName
+                ? next.find((r) => String(r["PLAYER NAME OUT"] || "").trim() === playerName)
+                : null;
+
+            if (subOutRow) {
+                const actualOutMin = parseInt(subOutRow["OUT MINUTE"], 10);
+                total = !Number.isNaN(actualOutMin) ? actualOutMin : matchMin;
+            } else {
+                total = matchMin;
+            }
+        } else if (row.STATU === "احتياطي") {
+            if (!Number.isNaN(outMin) && outMin > 0) {
+                total = Math.max(0, matchMin - outMin);
+            }
+        } else {
+            total = row["TOTAL MINUTE"] || "";
+        }
+
+        return {
+            ...row,
+            "MATCH MINUTE": matchMinuteRef,
+            "TOTAL MINUTE": total.toString(),
+        };
+    });
+}
 
 const isPlayerEventRowSaveable = (row) => (
     String(row?.["PLAYER NAME"] || "").trim() !== "" ||
@@ -1018,149 +1135,312 @@ function PenaltyMissesPanel({
     );
 }
 
-// â”€â”€ Editable Table â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-function EditableTable({ title, color, rows, setRows, columns, matchId, emptyRow, tableName, onSave, onDelete, isSaving, autoFields = {}, columnOptions = {}, onAddRow }) {
-    const [addingRow, setAddingRow] = useState(false);
-
-    const handleAdd = async () => {
-        if (addingRow) return;
-
-        if (onAddRow) {
-            setAddingRow(true);
-            try {
-                await onAddRow(setRows, rows, matchId);
-            } finally {
-                setAddingRow(false);
-            }
-            return;
-        }
-
-        const computed = {};
-        Object.entries(autoFields).forEach(([field, fn]) => {
-            computed[field] = fn(matchId, rows);
-        });
-        const row = { ...emptyRow, ...computed, MATCH_ID: matchId, _isNew: true, _key: Date.now() };
-        setRows([...rows, row]);
-    };
+function LineupPlayerCard({
+    row,
+    slotLabel,
+    variant,
+    color,
+    allPlayersList,
+    allTeamsList,
+    starterNames,
+    onFieldChange,
+    onBlur,
+    onDelete,
+    isSaving,
+}) {
+    const isStarter = String(row.STATU || "").trim() === "اساسي";
+    const isDirty = row._isNew || row._isDirty;
+    const totalMin = String(row["TOTAL MINUTE"] || "").trim();
+    const playerName = String(row["PLAYER NAME"] || "").trim();
 
     return (
-        <div style={{ marginBottom: 40 }}>
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-                    <div style={{ width: 4, height: 24, background: color, borderRadius: 4 }} />
-                    <h3 style={{ margin: 0, fontFamily: "'Bebas Neue', sans-serif", fontSize: 20, letterSpacing: 2, color: '#0a0a0a' }}>
-                        {title} <span style={{ fontFamily: "'Space Mono', monospace", fontSize: 11, color: '#999', fontWeight: 400 }}>({rows.length} rows)</span>
-                    </h3>
-                </div>
+        <div
+            className={`lineup-player-card lineup-player-card--${variant}${isDirty ? " lineup-player-card--dirty" : ""}`}
+            style={{ "--panel-accent": color }}
+            onBlur={(e) => {
+                if (!e.currentTarget.contains(e.relatedTarget)) {
+                    onBlur(row);
+                }
+            }}
+        >
+            <div className="lineup-player-card-head">
+                <span className="lineup-player-slot">{slotLabel}</span>
+                {totalMin ? (
+                    <span className="lineup-player-total">{totalMin}&apos;</span>
+                ) : (
+                    <span className="lineup-player-total lineup-player-total--empty">—</span>
+                )}
                 <button
-                    onClick={handleAdd}
-                    disabled={addingRow}
-                    style={{
-                        background: '#0a0a0a',
-                        color: '#C8102E',
-                        border: 'none', borderRadius: 10, padding: '7px 18px',
-                        cursor: 'pointer', fontWeight: 800, fontSize: 12,
-                        fontFamily: "'Outfit', sans-serif", display: 'flex', alignItems: 'center', gap: 6,
-                        transition: 'all 0.2s', letterSpacing: 0.5
-                    }}>
-                    <span style={{ fontSize: 16, lineHeight: 1 }}>+</span>
-                    {addingRow ? "ADDING..." : "ADD ROW"}
+                    type="button"
+                    className="player-event-action-btn player-event-action-delete"
+                    title="Remove"
+                    disabled={isSaving}
+                    onClick={onDelete}
+                >
+                    ✕
                 </button>
             </div>
 
-            {rows.length === 0 ? (
-                <NoData_db
-                    message={`NO ${title.toUpperCase()} RECORDS FOUND`}
-                    height="240px"
-                />
-            ) : (
-            <div className="table-wrap">
-                <table className="data-table">
-                    <thead>
-                        <tr>
-                            {columns.map(col => (
-                                <th key={col}>{col}</th>
-                            ))}
-                            <th>ACT</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {rows.map((row, ri) => (
-                            <tr key={row._key ?? ri} className={row._isNew ? "table-row-new" : ""} style={{ borderBottom: '1px solid #f5f5f5', transition: 'background 0.2s' }}>
-                                {columns.map(col => {
-                                    const isAuto = col in autoFields;
-                                    const isFitCol = isEditorWrapColumn(col);
-                                    const isDirty = row._isDirty || row._isNew;
-                                    const fieldStyle = {
-                                        border: isAuto
-                                            ? '1.5px solid rgba(200, 16, 46, 0.4)'
-                                            : (isDirty ? '1.5px solid ' + color : '1px solid #f0f0f0'),
-                                        background: isAuto ? 'rgba(200, 16, 46, 0.05)' : '#fff',
-                                        height: '34px',
-                                        fontSize: '12px',
-                                        minWidth: getEditorColumnMinWidth(col),
-                                        textAlign: 'center',
-                                        color: isAuto ? '#888' : '#000'
-                                    };
-                                    const fieldClass = `field-input${isFitCol ? ' field-input-fit' : ''}`;
-                                    const handleFieldChange = (val) => setRows(prev => prev.map((r, i) => i === ri ? { ...r, [col]: val, _isDirty: true } : r));
+            <div className="lineup-player-card-body">
+                <div className="lineup-player-field lineup-player-field--wide">
+                    <div className="field-label">PLAYER NAME</div>
+                    <AutocompleteInput
+                        value={row["PLAYER NAME"] ?? ""}
+                        options={allPlayersList}
+                        placeholder="Player name"
+                        onChange={(val) => onFieldChange("PLAYER NAME", val)}
+                        className="field-input"
+                        accentColor={color}
+                        style={{ width: "100%", height: "38px", fontSize: "13px", background: "#fff" }}
+                    />
+                </div>
 
-                                    return (
-                                        <td key={col} style={{ padding: '6px 10px', textAlign: 'center' }}>
-                                            {columnOptions[col] ? (
-                                                <AutocompleteInput
-                                                    value={row[col] ?? ''}
-                                                    options={columnOptions[col]}
-                                                    placeholder={col}
-                                                    disabled={isAuto}
-                                                    onChange={handleFieldChange}
-                                                    className={fieldClass}
-                                                    style={fieldStyle}
-                                                    shrinkToFit={isFitCol}
-                                                    accentColor="#C8102E"
-                                                />
-                                            ) : isFitCol ? (
-                                                <ShrinkToFitInput
-                                                    value={row[col] ?? ''}
-                                                    disabled={isAuto}
-                                                    onChange={e => handleFieldChange(e.target.value)}
-                                                    className={fieldClass}
-                                                    style={fieldStyle}
-                                                />
-                                            ) : (
-                                                <input
-                                                    value={row[col] ?? ''}
-                                                    disabled={isAuto}
-                                                    onChange={e => handleFieldChange(e.target.value)}
-                                                    className={fieldClass}
-                                                    style={fieldStyle}
-                                                />
-                                            )}
-                                        </td>
-                                    );
-                                })}
-                                <td style={{ padding: '6px 10px', verticalAlign: 'middle', textAlign: 'center' }}>
-                                    <div style={{ display: 'flex', gap: 6, alignItems: 'center', justifyContent: 'center' }}>
-                                        {(row._isDirty || row._isNew) && (
-                                            <button onClick={() => onSave(row, ri, tableName, setRows)} disabled={isSaving}
-                                                className="row-action-btn"
-                                                style={{ background: '#22c55e', color: '#fff' }}>
-                                                {isSaving ? '...' : '💾'}
-                                            </button>
-                                        )}
-                                        <button onClick={() => onDelete(row, ri, tableName, setRows)}
-                                            className="row-action-btn"
-                                            style={{ background: '#fee2e2', color: '#ef4444', padding: '5px 10px' }}>
-                                            ✕
-                                        </button>
-                                    </div>
-                                </td>
-                            </tr>
-                        ))}
-                    </tbody>
-                </table>
+                <div className="lineup-player-field lineup-player-field--wide">
+                    <div className="field-label">CLUB</div>
+                    <AutocompleteInput
+                        value={row.CLUB ?? ""}
+                        options={allTeamsList}
+                        placeholder="Club"
+                        onChange={(val) => onFieldChange("CLUB", val)}
+                        className="field-input"
+                        accentColor={color}
+                        style={{ width: "100%", height: "38px", fontSize: "13px", background: "#fff" }}
+                    />
+                </div>
+
+                <div className="lineup-player-field-row">
+                    <div className="lineup-player-field">
+                        <div className="field-label">STATU</div>
+                        <AutocompleteInput
+                            value={row.STATU ?? ""}
+                            options={["اساسي", "احتياطي"]}
+                            placeholder="Status"
+                            onChange={(val) => onFieldChange("STATU", val)}
+                            className="field-input"
+                            accentColor={color}
+                            style={{ width: "100%", height: "38px", fontSize: "13px", background: "#fff" }}
+                        />
+                    </div>
+                    {!isStarter && (
+                        <div className="lineup-player-field">
+                            <div className="field-label">OUT MINUTE</div>
+                            <input
+                                value={row["OUT MINUTE"] ?? ""}
+                                onChange={(e) => onFieldChange("OUT MINUTE", e.target.value)}
+                                className="field-input"
+                                placeholder="In min"
+                                style={{ width: "100%", height: "38px", fontSize: "13px" }}
+                            />
+                        </div>
+                    )}
+                </div>
+
+                {!isStarter && (
+                    <div className="lineup-player-field lineup-player-field--wide">
+                        <div className="field-label">PLAYER NAME OUT</div>
+                        <AutocompleteInput
+                            value={row["PLAYER NAME OUT"] ?? ""}
+                            options={starterNames}
+                            placeholder="Subbed for"
+                            onChange={(val) => onFieldChange("PLAYER NAME OUT", val)}
+                            className="field-input"
+                            accentColor={color}
+                            style={{ width: "100%", height: "38px", fontSize: "13px", background: "#fff" }}
+                        />
+                    </div>
+                )}
+
+                {isStarter && playerName && (
+                    <div className="lineup-player-starter-badge">Starter</div>
+                )}
             </div>
+        </div>
+    );
+}
+
+function LineupPanel({
+    title,
+    color,
+    rows,
+    setRows,
+    matchId,
+    teamName,
+    allPlayersList,
+    allTeamsList,
+    persistToDb,
+    onSaveRow,
+    onDeleteRow,
+    isSaving,
+}) {
+    const savingRef = useRef(new Set());
+    const rowsRef = useRef(rows);
+    rowsRef.current = rows;
+    const matchMinute = String(rows[0]?.["MATCH MINUTE"] || "90").trim() || "90";
+
+    const starterNames = useMemo(
+        () =>
+            rows
+                .filter((r) => String(r.STATU || "").trim() === "اساسي" && String(r["PLAYER NAME"] || "").trim())
+                .map((r) => String(r["PLAYER NAME"]).trim())
+                .sort((a, b) => a.localeCompare(b, "ar")),
+        [rows]
+    );
+
+    const starters = useMemo(
+        () => rows.filter((r) => String(r.STATU || "").trim() === "اساسي"),
+        [rows]
+    );
+
+    const bench = useMemo(
+        () => rows.filter((r) => String(r.STATU || "").trim() !== "اساسي"),
+        [rows]
+    );
+
+    const updateField = (rowKey, field, value) => {
+        setRows((prev) =>
+            prev.map((r) => (r._key === rowKey ? { ...r, [field]: value, _isDirty: true } : r))
+        );
+    };
+
+    const updateMatchMinute = (value) => {
+        setRows((prev) => prev.map((r) => ({ ...r, "MATCH MINUTE": value, _isDirty: true })));
+    };
+
+    const handleCardBlur = (row) => {
+        if (!persistToDb || !onSaveRow || isSaving) return;
+
+        window.setTimeout(async () => {
+            const latestRows = rowsRef.current;
+            const currentRow = latestRows.find((r) => r._key === row._key);
+            if (!currentRow) return;
+            if (!isLinkedRowSaveable("egy_NT_LINEUPDETAILS", currentRow)) return;
+            if (!currentRow._isDirty && !currentRow._isNew) return;
+
+            const rowKey = currentRow._key;
+            if (savingRef.current.has(rowKey)) return;
+
+            const idx = latestRows.findIndex((r) => r._key === rowKey);
+            if (idx < 0) return;
+
+            savingRef.current.add(rowKey);
+            try {
+                await onSaveRow(currentRow, idx, "egy_NT_LINEUPDETAILS", setRows);
+            } finally {
+                savingRef.current.delete(rowKey);
+            }
+        }, 0);
+    };
+
+    const handleAddSub = () => {
+        setRows((prev) => [
+            ...prev,
+            {
+                ...EMPTY_LINEUP,
+                "MATCH MINUTE": matchMinute,
+                TEAM: teamName,
+                STATU: "احتياطي",
+                MATCH_ID: matchId,
+                _isNew: true,
+                _key: `lineup-add-${Date.now()}`,
+            },
+        ]);
+    };
+
+    const handleDelete = (row, variant) => {
+        const idx = rows.findIndex((r) => r._key === row._key);
+        if (idx < 0) return;
+
+        if (persistToDb && variant === "starter") {
+            setRows((prev) =>
+                prev.map((r) => {
+                    if (r._key !== row._key) return r;
+                    return {
+                        ...createEmptyStarterSlot(matchId, teamName, 0, matchMinute),
+                        _key: r._key,
+                        ROW_ID: r.ROW_ID,
+                        _isNew: !r.ROW_ID,
+                        _isDirty: true,
+                    };
+                })
+            );
+            return;
+        }
+
+        if (onDeleteRow) {
+            onDeleteRow(row, idx, "egy_NT_LINEUPDETAILS", setRows);
+        } else {
+            setRows((prev) => prev.filter((_, i) => i !== idx));
+        }
+    };
+
+    const renderCard = (row, slotLabel, variant) => (
+        <LineupPlayerCard
+            key={row._key ?? `${variant}-${slotLabel}`}
+            row={row}
+            slotLabel={slotLabel}
+            variant={variant}
+            color={color}
+            allPlayersList={allPlayersList}
+            allTeamsList={allTeamsList}
+            starterNames={starterNames}
+            onFieldChange={(field, value) => updateField(row._key, field, value)}
+            onBlur={handleCardBlur}
+            onDelete={() => handleDelete(row, variant)}
+            isSaving={isSaving}
+        />
+    );
+
+    return (
+        <div className="lineup-panel player-events-panel" style={{ "--panel-accent": color }}>
+            <div className="player-events-header">
+                <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+                    <div style={{ width: 4, height: 24, background: color, borderRadius: 4 }} />
+                    <h3 className="player-events-title">
+                        {title}
+                        <span className="player-events-count">({rows.length} slots)</span>
+                    </h3>
+                </div>
+            </div>
+
+            <div className="lineup-settings-card">
+                <div className="lineup-settings-main">
+                    <div className="lineup-settings-label">MATCH MINUTE</div>
+                    <input
+                        type="text"
+                        className="field-input lineup-minute-input"
+                        value={matchMinute}
+                        onChange={(e) => updateMatchMinute(e.target.value)}
+                        placeholder="90"
+                    />
+                </div>
+                <p className="lineup-settings-hint">
+                    Total minutes for all players are calculated from this value.
+                    {persistToDb ? " Changes auto-save when you leave each player card." : ""}
+                </p>
+            </div>
+
+            <h4 className="lineup-section-title">STARTING XI</h4>
+            <div className="player-events-grid lineup-grid">
+                {starters.map((row, i) => renderCard(row, `#${i + 1}`, "starter"))}
+            </div>
+
+            {bench.length > 0 && (
+                <>
+                    <h4 className="lineup-section-title">BENCH</h4>
+                    <div className="player-events-grid lineup-grid">
+                        {bench.map((row, i) => renderCard(row, `SUB ${i + 1}`, "bench"))}
+                    </div>
+                </>
             )}
+
+            <button
+                type="button"
+                className="lineup-add-sub-btn"
+                onClick={handleAddSub}
+                disabled={isSaving}
+            >
+                + ADD SUB
+            </button>
         </div>
     );
 }
@@ -1281,32 +1561,16 @@ export default function EgyptNTEditor() {
                 if (!md) { addToast(`Match ID "${id}" not found`, 'error'); setLoading(false); return; }
                 setMatchData({ ...md });
                 if (!ld || ld.length === 0) {
-                    const initialEgyLineup = Array.from({ length: 16 }, (_, i) => ({
-                        ...EMPTY_LINEUP,
-                        "MATCH MINUTE": "90",
-                        "TEAM": getDefaultEgyptTeamLabel(md),
-                        "STATU": i < 11 ? "اساسي" : "احتياطي",
-                        "TOTAL MINUTE": i < 11 ? "90" : "",
-                        MATCH_ID: id,
-                        _isNew: true,
-                        _key: Date.now() + i
-                    }));
-                    const initialOppLineup = Array.from({ length: 16 }, (_, i) => ({
-                        ...EMPTY_LINEUP,
-                        "MATCH MINUTE": "90",
-                        "TEAM": md?.["OPPONENT TEAM"] || "OPPONENT",
-                        "STATU": i < 11 ? "اساسي" : "احتياطي",
-                        "TOTAL MINUTE": i < 11 ? "90" : "",
-                        MATCH_ID: id,
-                        _isNew: true,
-                        _key: Date.now() + 100 + i
-                    }));
-                    setEgyLineupRows(applyLineupLogic(initialEgyLineup, initialEgyLineup));
-                    setOppLineupRows(applyLineupLogic(initialOppLineup, initialOppLineup));
+                    const egyNorm = normalizeSavedTeamLineup([], id, getDefaultEgyptTeamLabel(md));
+                    const oppNorm = normalizeSavedTeamLineup([], id, md?.["OPPONENT TEAM"] || "OPPONENT");
+                    setEgyLineupRows(applyLineupLogic(egyNorm, egyNorm));
+                    setOppLineupRows(applyLineupLogic(oppNorm, oppNorm));
                 } else {
                     const { egy, opp } = splitLineupRowsByTeam(ld, md);
-                    setEgyLineupRows(sortRowsByRowId(egy.map((r, i) => attachEditorRowMeta(r, i))));
-                    setOppLineupRows(sortRowsByRowId(opp.map((r, i) => attachEditorRowMeta(r, 100 + i))));
+                    const egyNorm = normalizeSavedTeamLineup(egy, id, getDefaultEgyptTeamLabel(md));
+                    const oppNorm = normalizeSavedTeamLineup(opp, id, md?.["OPPONENT TEAM"] || "OPPONENT");
+                    setEgyLineupRows(applyLineupLogic(egyNorm, egyNorm));
+                    setOppLineupRows(applyLineupLogic(oppNorm, oppNorm));
                 }
                 setPlayerRows(sortRowsByEventId((pd || []).map((r, i) => attachEditorRowMeta(r, 1000 + i))));
                 setGkRows(sortRowsByEventId((gd || []).map((r, i) => attachEditorRowMeta(r, 2000 + i))));
@@ -1364,42 +1628,6 @@ export default function EgyptNTEditor() {
         const opp = newMatchData['OPPONENT TEAM'] || '';
         setNewMatchData(prev => ({ ...prev, MATCH_ID: opp ? `${opp}${nextMatchNum}` : '' }));
     }, [newMatchData['OPPONENT TEAM'], nextMatchNum]);
-
-    const applyLineupLogic = (prev, action) => {
-        const next = typeof action === 'function' ? action(prev) : action;
-        const changedRow = next.find((r, i) => r["MATCH MINUTE"] !== prev[i]?.["MATCH MINUTE"]);
-        const matchMinuteRef = changedRow ? changedRow["MATCH MINUTE"] : (next[0]?.["MATCH MINUTE"] || '90');
-
-        return next.map((row) => {
-            let outMin = parseInt(row["OUT MINUTE"]);
-            let matchMin = parseInt(matchMinuteRef) || 90;
-            let total = "";
-
-            if (row.STATU === 'اساسي') {
-                const playerName = String(row["PLAYER NAME"] || "").trim();
-                const subOutRow = playerName ? next.find(r => String(r["PLAYER NAME OUT"] || "").trim() === playerName) : null;
-
-                if (subOutRow) {
-                    const actualOutMin = parseInt(subOutRow["OUT MINUTE"]);
-                    total = !isNaN(actualOutMin) ? actualOutMin : matchMin;
-                } else {
-                    total = matchMin;
-                }
-            } else if (row.STATU === 'احتياطي') {
-                if (!isNaN(outMin) && outMin > 0) {
-                    total = Math.max(0, matchMin - outMin);
-                }
-            } else {
-                total = row["TOTAL MINUTE"] || "";
-            }
-
-            return {
-                ...row,
-                "MATCH MINUTE": matchMinuteRef,
-                "TOTAL MINUTE": total.toString()
-            };
-        });
-    };
 
     const handleNewEgyLineupRows = useCallback((action) => setNewEgyLineupRows(p => applyLineupLogic(p, action)), []);
     const handleNewOppLineupRows = useCallback((action) => setNewOppLineupRows(p => applyLineupLogic(p, action)), []);
@@ -1490,6 +1718,13 @@ export default function EgyptNTEditor() {
         return getNextPlayerEventId(normalizedMatchId, combined);
     }, []);
 
+    const handleStagedDelete = useCallback((row, ri, _tableName, setterFn) => {
+        setterFn?.((prev) => {
+            const idx = findRowIndexInList(prev, row, ri);
+            return prev.filter((_, i) => i !== idx);
+        });
+    }, []);
+
     // â”€â”€ Search â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
     const handleSearch = async () => {
         const id = searchId.trim();
@@ -1506,32 +1741,16 @@ export default function EgyptNTEditor() {
             if (!md) { addToast(`Match ID "${id}" not found`, 'error'); setLoading(false); return; }
             setMatchData({ ...md });
             if (!ld || ld.length === 0) {
-                const initialEgyLineup = Array.from({ length: 16 }, (_, i) => ({
-                    ...EMPTY_LINEUP,
-                    "MATCH MINUTE": "90",
-                    "TEAM": getDefaultEgyptTeamLabel(md),
-                    "STATU": i < 11 ? "اساسي" : "احتياطي",
-                    "TOTAL MINUTE": i < 11 ? "90" : "",
-                    MATCH_ID: id,
-                    _isNew: true,
-                    _key: Date.now() + i
-                }));
-                const initialOppLineup = Array.from({ length: 16 }, (_, i) => ({
-                    ...EMPTY_LINEUP,
-                    "MATCH MINUTE": "90",
-                    "TEAM": md?.["OPPONENT TEAM"] || "OPPONENT",
-                    "STATU": i < 11 ? "اساسي" : "احتياطي",
-                    "TOTAL MINUTE": i < 11 ? "90" : "",
-                    MATCH_ID: id,
-                    _isNew: true,
-                    _key: Date.now() + 100 + i
-                }));
-                setEgyLineupRows(applyLineupLogic(initialEgyLineup, initialEgyLineup));
-                setOppLineupRows(applyLineupLogic(initialOppLineup, initialOppLineup));
+                const egyNorm = normalizeSavedTeamLineup([], id, getDefaultEgyptTeamLabel(md));
+                const oppNorm = normalizeSavedTeamLineup([], id, md?.["OPPONENT TEAM"] || "OPPONENT");
+                setEgyLineupRows(applyLineupLogic(egyNorm, egyNorm));
+                setOppLineupRows(applyLineupLogic(oppNorm, oppNorm));
             } else {
                 const { egy, opp } = splitLineupRowsByTeam(ld, md);
-                setEgyLineupRows(sortRowsByRowId(egy.map((r, i) => attachEditorRowMeta(r, i))));
-                setOppLineupRows(sortRowsByRowId(opp.map((r, i) => attachEditorRowMeta(r, 100 + i))));
+                const egyNorm = normalizeSavedTeamLineup(egy, id, getDefaultEgyptTeamLabel(md));
+                const oppNorm = normalizeSavedTeamLineup(opp, id, md?.["OPPONENT TEAM"] || "OPPONENT");
+                setEgyLineupRows(applyLineupLogic(egyNorm, egyNorm));
+                setOppLineupRows(applyLineupLogic(oppNorm, oppNorm));
             }
             setPlayerRows(sortRowsByEventId((pd || []).map((r, i) => attachEditorRowMeta(r, 1000 + i))));
             setGkRows(sortRowsByEventId((gd || []).map((r, i) => attachEditorRowMeta(r, 2000 + i))));
@@ -1599,8 +1818,9 @@ export default function EgyptNTEditor() {
             addToast(treatAsInsert ? 'Row inserted ✓' : 'Row updated ✓');
 
             setterFn?.(prev => {
+                const idx = findRowIndexInList(prev, row, ri);
                 const updated = prev.map((r, i) => {
-                    if (i !== ri) return r;
+                    if (i !== idx) return r;
                     return mergeSavedEditorRow(r, savedRow);
                 });
                 return sortRowsForTable(tableName, updated);
@@ -1631,11 +1851,17 @@ export default function EgyptNTEditor() {
                     const { error: delErr } = await supabase.from(tableName).delete().eq('MATCH_ID', matchData.MATCH_ID);
                     if (delErr) throw delErr;
                 }
-                setterFn?.(prev => prev.filter((_, i) => i !== ri));
+                setterFn?.((prev) => {
+                    const idx = findRowIndexInList(prev, row, ri);
+                    return prev.filter((_, i) => i !== idx);
+                });
                 addToast('Row deleted ✓', 'warn');
             } catch (e) { addToast('Delete failed: ' + e.message, 'error'); }
         } else {
-            setterFn?.(prev => prev.filter((_, i) => i !== ri));
+            setterFn?.((prev) => {
+                const idx = findRowIndexInList(prev, row, ri);
+                return prev.filter((_, i) => i !== idx);
+            });
         }
     };
 
@@ -1867,10 +2093,28 @@ export default function EgyptNTEditor() {
     };
 
     const matchInfoFields = Object.keys(EMPTY_MATCH).filter(field => field !== 'MOTM');
-    const lineupCols = Object.keys(EMPTY_LINEUP);
-    const lineupColsNoTeam = lineupCols.filter((col) => col !== 'TEAM' && col !== 'MATCH_ID');
     const newEgyTeamLabel = getDefaultEgyptTeamLabel(newMatchData);
     const editEgyTeamLabel = getDefaultEgyptTeamLabel(matchData || {});
+
+    const renderLineupPanel = ({ title, color, rows, setRows, formData, isNew, teamName }) => {
+        const matchId = isNew ? (formData.MATCH_ID || "---") : formData.MATCH_ID;
+        return (
+            <LineupPanel
+                title={title}
+                color={color}
+                rows={rows}
+                setRows={setRows}
+                matchId={matchId}
+                teamName={teamName}
+                allPlayersList={allPlayersList}
+                allTeamsList={allTeamsList}
+                persistToDb={!isNew}
+                onSaveRow={handleSaveRow}
+                onDeleteRow={isNew ? handleStagedDelete : handleDeleteRow}
+                isSaving={isNew ? false : isSaving}
+            />
+        );
+    };
 
     return (
         <Login_db title="EDITOR ACCESS" subtitle="AUTHORIZATION REQUIRED">
@@ -1977,38 +2221,24 @@ export default function EgyptNTEditor() {
                                 <button onClick={() => setActiveLinkedTab('pens')} className="tab-btn" style={{ background: activeLinkedTab === 'pens' ? '#ef4444' : '#f8f8f8', color: activeLinkedTab === 'pens' ? '#fff' : '#888' }}>PENALTY MISSES</button>
                             </div>
 
-                            {activeLinkedTab === 'lineup_egy' && (
-                                <EditableTable
-                                    title="EGYPT LINEUP" color="#C8102E"
-                                    rows={newEgyLineupRows} setRows={handleNewEgyLineupRows}
-                                    columns={lineupColsNoTeam} matchId={newMatchData.MATCH_ID || '---'}
-                                    emptyRow={EMPTY_LINEUP} tableName="egy_NT_LINEUPDETAILS"
-                                    onSave={() => { }} onDelete={(row, ri, _, setter) => setter(prev => prev.filter((_, i) => i !== ri))} isSaving={false}
-                                    autoFields={{ TEAM: () => newEgyTeamLabel }}
-                                    columnOptions={{
-                                        "PLAYER NAME": allPlayersList,
-                                        "CLUB": allTeamsList,
-                                        "PLAYER NAME OUT": newEgyLineupRows.filter(r => String(r.STATU || '').trim() === 'اساسي' && String(r["PLAYER NAME"] || '').trim()).map(r => r["PLAYER NAME"]).sort((a, b) => a.localeCompare(b, 'ar')),
-                                        STATU: ["اساسي", "احتياطي"],
-                                    }}
-                                />
-                            )}
-                            {activeLinkedTab === 'lineup_opp' && (
-                                <EditableTable
-                                    title="OPPONENT LINEUP" color="#3b82f6"
-                                    rows={newOppLineupRows} setRows={handleNewOppLineupRows}
-                                    columns={lineupColsNoTeam} matchId={newMatchData.MATCH_ID || '---'}
-                                    emptyRow={EMPTY_LINEUP} tableName="egy_NT_LINEUPDETAILS"
-                                    onSave={() => { }} onDelete={(row, ri, _, setter) => setter(prev => prev.filter((_, i) => i !== ri))} isSaving={false}
-                                    autoFields={{ TEAM: () => newMatchData["OPPONENT TEAM"] || 'OPPONENT' }}
-                                    columnOptions={{
-                                        "PLAYER NAME": allPlayersList,
-                                        "CLUB": allTeamsList,
-                                        "PLAYER NAME OUT": newOppLineupRows.filter(r => String(r.STATU || '').trim() === 'اساسي' && String(r["PLAYER NAME"] || '').trim()).map(r => r["PLAYER NAME"]).sort((a, b) => a.localeCompare(b, 'ar')),
-                                        STATU: ["اساسي", "احتياطي"],
-                                    }}
-                                />
-                            )}
+                            {activeLinkedTab === 'lineup_egy' && renderLineupPanel({
+                                title: "EGYPT LINEUP",
+                                color: "#C8102E",
+                                rows: newEgyLineupRows,
+                                setRows: handleNewEgyLineupRows,
+                                formData: newMatchData,
+                                isNew: true,
+                                teamName: newEgyTeamLabel,
+                            })}
+                            {activeLinkedTab === 'lineup_opp' && renderLineupPanel({
+                                title: "OPPONENT LINEUP",
+                                color: "#3b82f6",
+                                rows: newOppLineupRows,
+                                setRows: handleNewOppLineupRows,
+                                formData: newMatchData,
+                                isNew: true,
+                                teamName: newMatchData["OPPONENT TEAM"] || "OPPONENT",
+                            })}
                             {activeLinkedTab === 'events' && (
                                 <PlayerEventsPanel
                                     title="PLAYER EVENTS"
@@ -2135,38 +2365,24 @@ export default function EgyptNTEditor() {
                                 <button onClick={() => setActiveLinkedTab('pens')} className="tab-btn" style={{ background: activeLinkedTab === 'pens' ? '#ef4444' : '#f8f8f8', color: activeLinkedTab === 'pens' ? '#fff' : '#888' }}>PENALTY MISSES</button>
                             </div>
 
-                            {activeLinkedTab === 'lineup_egy' && (
-                                <EditableTable
-                                    title="EGYPT LINEUP" color="#C8102E"
-                                    rows={egyLineupRows} setRows={handleEditEgyLineupRows}
-                                    columns={lineupColsNoTeam} matchId={matchData.MATCH_ID}
-                                    emptyRow={EMPTY_LINEUP} tableName="egy_NT_LINEUPDETAILS"
-                                    onSave={handleSaveRow} onDelete={handleDeleteRow} isSaving={isSaving}
-                                    autoFields={{ TEAM: () => editEgyTeamLabel }}
-                                    columnOptions={{
-                                        "PLAYER NAME": allPlayersList,
-                                        "CLUB": allTeamsList,
-                                        "PLAYER NAME OUT": egyLineupRows.filter(r => String(r.STATU || '').trim() === 'اساسي' && String(r["PLAYER NAME"] || '').trim()).map(r => r["PLAYER NAME"]).sort((a, b) => a.localeCompare(b, 'ar')),
-                                        STATU: ["اساسي", "احتياطي"],
-                                    }}
-                                />
-                            )}
-                            {activeLinkedTab === 'lineup_opp' && (
-                                <EditableTable
-                                    title="OPPONENT LINEUP" color="#3b82f6"
-                                    rows={oppLineupRows} setRows={handleEditOppLineupRows}
-                                    columns={lineupColsNoTeam} matchId={matchData.MATCH_ID}
-                                    emptyRow={EMPTY_LINEUP} tableName="egy_NT_LINEUPDETAILS"
-                                    onSave={handleSaveRow} onDelete={handleDeleteRow} isSaving={isSaving}
-                                    autoFields={{ TEAM: () => matchData["OPPONENT TEAM"] || 'OPPONENT' }}
-                                    columnOptions={{
-                                        "PLAYER NAME": allPlayersList,
-                                        "CLUB": allTeamsList,
-                                        "PLAYER NAME OUT": oppLineupRows.filter(r => String(r.STATU || '').trim() === 'اساسي' && String(r["PLAYER NAME"] || '').trim()).map(r => r["PLAYER NAME"]).sort((a, b) => a.localeCompare(b, 'ar')),
-                                        STATU: ["اساسي", "احتياطي"],
-                                    }}
-                                />
-                            )}
+                            {activeLinkedTab === 'lineup_egy' && renderLineupPanel({
+                                title: "EGYPT LINEUP",
+                                color: "#C8102E",
+                                rows: egyLineupRows,
+                                setRows: handleEditEgyLineupRows,
+                                formData: matchData,
+                                isNew: false,
+                                teamName: editEgyTeamLabel,
+                            })}
+                            {activeLinkedTab === 'lineup_opp' && renderLineupPanel({
+                                title: "OPPONENT LINEUP",
+                                color: "#3b82f6",
+                                rows: oppLineupRows,
+                                setRows: handleEditOppLineupRows,
+                                formData: matchData,
+                                isNew: false,
+                                teamName: matchData["OPPONENT TEAM"] || "OPPONENT",
+                            })}
                             {activeLinkedTab === 'events' && (
                                 <PlayerEventsPanel
                                     title="PLAYER EVENTS"
