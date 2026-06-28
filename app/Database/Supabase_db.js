@@ -832,18 +832,35 @@ function parseTrailingIdNumber(value) {
 
 const PKS_TABLES = new Set(["alahly_PKS", "egy_NT_PKS"]);
 
-const ROW_ID_AUTO_TABLE_PATTERN = /_(LINEUPDETAILS|PLAYERDETAILS|GKSDETAILS|HOWPENMISSED|SQUAD)$/i;
+const ROW_ID_AUTO_TABLE_PATTERN = /_(LINEUPDETAILS|PLAYERDETAILS|GKSDETAILS|HOWPENMISSED|SQUAD|MATCHDETAILS)$/i;
+
+export function formatRowId(num) {
+    const n = Math.max(0, parseInt(num, 10) || 0);
+    return `R-${String(n).padStart(4, "0")}`;
+}
+
+export function normalizeRowIdValue(value) {
+    const raw = String(value ?? "").trim();
+    const match = raw.match(/^R-(\d+)$/i);
+    if (!match) return raw;
+    return formatRowId(parseInt(match[1], 10));
+}
+
+function rowIdSuffixNeedsPadding(rowId) {
+    const match = String(rowId ?? "").trim().match(/^R-(\d+)$/i);
+    return Boolean(match && match[1].length !== 4);
+}
 
 function shouldAutoAssignRowId(tableName) {
     if (CATALOG_TABLES.includes(tableName)) return false;
-    if (String(tableName || "").endsWith("_MATCHDETAILS")) return false;
     if (tableName === "alahly_PKS" || tableName === "egy_NT_PKS") return false;
     return ROW_ID_AUTO_TABLE_PATTERN.test(String(tableName || ""));
 }
 
 function rowNeedsAutoRowId(row) {
     const rowId = String(row?.ROW_ID ?? "").trim();
-    return rowId === "" || rowId === "null" || rowId === "undefined";
+    if (rowId === "" || rowId === "null" || rowId === "undefined") return true;
+    return rowIdSuffixNeedsPadding(rowId);
 }
 
 async function allocateRowIds(tableName, count = 1) {
@@ -869,7 +886,7 @@ async function allocateRowIds(tableName, count = 1) {
     }
 
     return Array.from({ length: total }, (_, index) =>
-        `R-${String(maxNum + 1 + index).padStart(4, "0")}`
+        formatRowId(maxNum + 1 + index)
     );
 }
 

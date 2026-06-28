@@ -13,8 +13,7 @@ import {
     parseGkEventIds,
     serializeGkEventIds,
     getPrimaryEventIdForSort,
-    collectMatchIds,
-    suggestNextMatchIdForOpponent,
+    buildOpponentDateMatchId,
     fetchMatchIdExists,
     normalizeMatchId,
 } from "../../Database";
@@ -40,6 +39,15 @@ const EMPTY_LINEUP = { "MATCH_ID": "", "MATCH MINUTE": "", "TEAM": "", "PLAYER N
 const EMPTY_PLAYER = { "MATCH_ID": "", "EVENT_ID": "", "PARENT_EVENT_ID": "", "PLAYER NAME": "", "TEAM": "", "TYPE": "", "TYPE_SUB": "", "MINUTE": "" };
 const EMPTY_GK = { "MATCH_ID": "", "EVENT_ID": "", "TEAM": "", "PLAYER NAME": "", "STATU": "", "OUT MINUTE": "", "GOALS CONCEDED": "" };
 const EMPTY_PEN = { "MATCH_ID": "", "EVENT_ID": "", "HOW MISSED?": "", "TEAM": "", "MINUTE": "" };
+
+const ALAHLY_MATCH_LINKED_TABLES = [
+    "alahly_LINEUPDETAILS",
+    "alahly_PLAYERDETAILS",
+    "alahly_GKSDETAILS",
+    "alahly_HOWPENMISSED",
+    "alahly_PKS",
+    "alahly_MEDIATRACKER",
+];
 
 const parseEventIdSuffix = (eventId) => {
     const id = String(eventId || "").trim();
@@ -1513,8 +1521,6 @@ export default function AlAhlyEditor() {
     const [newPlayerRows, setNewPlayerRows] = useState([]);
     const [newGkRows, setNewGkRows] = useState([]);
     const [newPenRows, setNewPenRows] = useState([]);
-    const existingMatchIdsRef = useRef(new Set());
-    const [matchIdsLoaded, setMatchIdsLoaded] = useState(false);
     const [matchFieldOptions, setMatchFieldOptions] = useState({}); // unique values per column
     const [allPlayersList, setAllPlayersList] = useState([]);
     const [eventTypes, setEventTypes] = useState([]);
@@ -1522,6 +1528,7 @@ export default function AlAhlyEditor() {
     const [wdlFinalOptions, setWdlFinalOptions] = useState([]);
     const [catalogLists, setCatalogLists] = useState({ managers: [], stadiums: [], referees: [] });
     const [confirmDelete, setConfirmDelete] = useState(null);
+    const [isDeleting, setIsDeleting] = useState(false);
 
     // Fields that use autocomplete (not date/number/auto)
     const AUTOCOMPLETE_FIELDS = [
@@ -1586,13 +1593,9 @@ export default function AlAhlyEditor() {
     // Fetch max number + unique column values when entering 'new' or 'edit' mode
     useEffect(() => {
         if (mode !== 'new' && mode !== 'edit') return;
-        if (mode === 'new') setMatchIdsLoaded(false);
         (async () => {
             const { data } = await supabase.from('alahly_MATCHDETAILS').select('*');
             if (!data) return;
-
-            existingMatchIdsRef.current = collectMatchIds(data);
-            setMatchIdsLoaded(true);
 
             // Use catalog lists loaded with the global display language setting
             const managerList = catalogLists.managers;
@@ -1616,13 +1619,15 @@ export default function AlAhlyEditor() {
         })();
     }, [mode, catalogLists]);
 
-    // Auto-build MATCH_ID when OPPONENT TEAM changes
+    // Auto-build MATCH_ID from OPPONENT TEAM + DATE (Excel serial suffix)
     useEffect(() => {
-        if (mode !== 'new' || !matchIdsLoaded) return;
-        const opp = newMatchData['OPPONENT TEAM'] || '';
-        const suggested = suggestNextMatchIdForOpponent(opp, existingMatchIdsRef.current);
+        if (mode !== 'new') return;
+        const suggested = buildOpponentDateMatchId(
+            newMatchData['OPPONENT TEAM'],
+            newMatchData.DATE,
+        );
         setNewMatchData(prev => (prev.MATCH_ID === suggested ? prev : { ...prev, MATCH_ID: suggested }));
-    }, [newMatchData['OPPONENT TEAM'], mode, matchIdsLoaded]);
+    }, [newMatchData['OPPONENT TEAM'], newMatchData.DATE, mode]);
 
     // Auto-suggest FINAL_ID for new final matches
     useEffect(() => {
@@ -1668,7 +1673,7 @@ export default function AlAhlyEditor() {
     const renderMatchField = (field, formData, setFormData, { matchIdAuto = false } = {}) => (
         <div key={field}>
             <div className="field-label" style={{ color: field === 'MATCH_ID' && matchIdAuto ? '#22c55e' : '#999' }}>
-                {field} {field === 'MATCH_ID' && matchIdAuto && <span style={{ color: '#aaa', fontWeight: 400, letterSpacing: 0 }}>(auto)</span>}
+                {field} {field === 'MATCH_ID' && matchIdAuto && <span style={{ color: '#aaa', fontWeight: 400, letterSpacing: 0 }}>(auto: Opponent + Date)</span>}
             </div>
             {AUTOCOMPLETE_FIELDS.includes(field) ? (
                 <AutocompleteInput
@@ -1989,6 +1994,38 @@ export default function AlAhlyEditor() {
             (setterFn || setterMap[tableName])?.(applyRemove);
         }
     }, [confirmDelete, matchData]);
+
+    const executeDeleteMatch = async () => {
+        const mid = normalizeMatchId(matchData?.MATCH_ID);
+        if (!mid || isDeleting) return;
+
+        setIsDeleting(true);
+
+        try {
+            for (const tableName of ALAHLY_MATCH_LINKED_TABLES) {
+                const { error } = await supabase.from(tableName).delete().eq("MATCH_ID", mid);
+                if (error) throw new Error(`${tableName}: ${error.message}`);
+            }
+
+            const { error: matchErr } = await supabase.from("alahly_MATCHDETAILS").delete().eq("MATCH_ID", mid);
+            if (matchErr) throw new Error(`alahly_MATCHDETAILS: ${matchErr.message}`);
+
+            setMatchData(null);
+            setLineupRows([]);
+            setPlayerRows([]);
+            setGkRows([]);
+            setPenRows([]);
+            setSearchId("");
+            setMode("search");
+            addToast(`Match "${mid}" deleted from all tables ✓`, "warn");
+        } catch (e) {
+            console.error("Delete Match Error:", e);
+            addNotification(`Failed to delete match.\n${e.message}`, "error");
+            addToast("Delete failed: " + e.message, "error");
+        } finally {
+            setIsDeleting(false);
+        }
+    };
 
     // â”€â”€ Save Match Details (Global Save) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
     const handleSaveMatch = async () => {
@@ -2358,8 +2395,15 @@ export default function AlAhlyEditor() {
                                         ←
                                     </button>
                                     <button
+                                        onClick={executeDeleteMatch}
+                                        disabled={isSaving || isDeleting}
+                                        title="Delete match and all linked records"
+                                        className="delete-match-btn">
+                                        {isDeleting ? '⏳' : '🗑️'}
+                                    </button>
+                                    <button
                                         onClick={handleSaveMatch}
-                                        disabled={isSaving}
+                                        disabled={isSaving || isDeleting}
                                         title="Save match"
                                         className="save-match-btn">
                                         {isSaving ? '⏳' : '💾'}
@@ -2443,6 +2487,7 @@ export default function AlAhlyEditor() {
                     </div>
                 </div>
             )}
+
         </Login_db>
     );
 }
