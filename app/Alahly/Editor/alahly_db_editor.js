@@ -143,22 +143,69 @@ const isFinalRound = (round) => String(round || "").trim() === "النهائي";
 const resolveAhlyTeam = (formData = {}) => String(formData["AHLY TEAM"] || "").trim() || "الأهلي";
 const resolveOpponentTeam = (formData = {}) => String(formData["OPPONENT TEAM"] || "").trim();
 
-function isLineupForAhly(row, ahlyTeam) {
-    const team = String(row?.TEAM || "").trim();
-    if (team === ahlyTeam) return true;
-    if (!formDataHasCustomAhlyTeam(ahlyTeam) && (team === "الأهلي" || team === "الأهلى")) return true;
-    return false;
+function isDefaultAhlyTeamName(name) {
+    const team = String(name || "").trim();
+    return team === "الأهلي" || team === "الأهلى";
 }
 
 function formDataHasCustomAhlyTeam(ahlyTeam) {
-    return ahlyTeam && ahlyTeam !== "الأهلي" && ahlyTeam !== "الأهلى";
+    return ahlyTeam && !isDefaultAhlyTeamName(ahlyTeam);
+}
+
+/** Use TEAM values already stored in lineup rows — not the live form field mid-typing. */
+function inferLineupTeamsFromRows(allRows, formData = {}) {
+    const formAhly = resolveAhlyTeam(formData);
+    const formOpp = resolveOpponentTeam(formData);
+
+    const distinctTeams = [...new Set(
+        allRows.map((row) => String(row?.TEAM || "").trim()).filter(Boolean)
+    )];
+
+    if (distinctTeams.length === 0) {
+        return { ahlyTeam: formAhly, oppTeam: formOpp };
+    }
+
+    let ahlyTeam = formAhly;
+    if (distinctTeams.includes(formAhly)) {
+        ahlyTeam = formAhly;
+    } else {
+        ahlyTeam =
+            distinctTeams.find(isDefaultAhlyTeamName) ||
+            distinctTeams.find((team) => !formOpp || team !== formOpp) ||
+            distinctTeams[0] ||
+            formAhly;
+    }
+
+    let oppTeam = formOpp;
+    if (formOpp && distinctTeams.includes(formOpp)) {
+        oppTeam = formOpp;
+    } else if (distinctTeams.length === 2) {
+        oppTeam = distinctTeams.find((team) => team !== ahlyTeam) || formOpp;
+    } else if (formOpp) {
+        oppTeam = distinctTeams.find((team) => team === formOpp) || formOpp;
+    }
+
+    return { ahlyTeam, oppTeam };
+}
+
+function isLineupForAhly(row, ahlyTeam, oppTeam = "") {
+    const team = String(row?.TEAM || "").trim();
+    if (!team) return true;
+
+    const opponent = String(oppTeam || "").trim();
+    if (opponent && team === opponent) return false;
+    if (team === ahlyTeam) return true;
+    if (isDefaultAhlyTeamName(team) && (isDefaultAhlyTeamName(ahlyTeam) || !formDataHasCustomAhlyTeam(ahlyTeam))) {
+        return true;
+    }
+    return false;
 }
 
 function isLineupForOpponent(row, opponentTeam, ahlyTeam) {
     const team = String(row?.TEAM || "").trim();
     if (!opponentTeam || !team) return false;
     if (team === opponentTeam) return true;
-    if (isLineupForAhly(row, ahlyTeam)) return false;
+    if (isLineupForAhly(row, ahlyTeam, opponentTeam)) return false;
     return false;
 }
 
@@ -244,10 +291,9 @@ function normalizeSavedTeamLineup(teamRows, matchId, teamName) {
 }
 
 function normalizeSavedMatchLineup(allRows, matchId, matchInfo = {}) {
-    const ahlyTeam = resolveAhlyTeam(matchInfo);
-    const oppTeam = resolveOpponentTeam(matchInfo);
+    const { ahlyTeam, oppTeam } = inferLineupTeamsFromRows(allRows, matchInfo);
 
-    const ahlySaved = allRows.filter((r) => isLineupForAhly(r, ahlyTeam));
+    const ahlySaved = allRows.filter((r) => isLineupForAhly(r, ahlyTeam, oppTeam));
     const oppSaved = oppTeam
         ? allRows.filter((r) => isLineupForOpponent(r, oppTeam, ahlyTeam))
         : [];
@@ -1583,29 +1629,35 @@ export default function AlAhlyEditor() {
     }, []);
 
     const makeNewAhlyLineupSetter = useCallback((formData) => {
-        const ahlyTeam = resolveAhlyTeam(formData);
-        const filter = (r) => isLineupForAhly(r, ahlyTeam);
-        return (action) => setNewLineupRows((prev) => mergeTeamLineupUpdate(prev, filter, action, applyLineupLogic));
+        return (action) => setNewLineupRows((prev) => {
+            const { ahlyTeam, oppTeam } = inferLineupTeamsFromRows(prev, formData);
+            const filter = (row) => isLineupForAhly(row, ahlyTeam, oppTeam);
+            return mergeTeamLineupUpdate(prev, filter, action, applyLineupLogic);
+        });
     }, []);
 
     const makeNewOpponentLineupSetter = useCallback((formData) => {
-        const ahlyTeam = resolveAhlyTeam(formData);
-        const oppTeam = resolveOpponentTeam(formData);
-        const filter = (r) => isLineupForOpponent(r, oppTeam, ahlyTeam);
-        return (action) => setNewLineupRows((prev) => mergeTeamLineupUpdate(prev, filter, action, applyLineupLogic));
+        return (action) => setNewLineupRows((prev) => {
+            const { ahlyTeam, oppTeam } = inferLineupTeamsFromRows(prev, formData);
+            const filter = (row) => isLineupForOpponent(row, oppTeam, ahlyTeam);
+            return mergeTeamLineupUpdate(prev, filter, action, applyLineupLogic);
+        });
     }, []);
 
     const makeEditAhlyLineupSetter = useCallback((formData) => {
-        const ahlyTeam = resolveAhlyTeam(formData);
-        const filter = (r) => isLineupForAhly(r, ahlyTeam);
-        return (action) => setLineupRows((prev) => mergeTeamLineupUpdate(prev, filter, action, applyLineupLogic));
+        return (action) => setLineupRows((prev) => {
+            const { ahlyTeam, oppTeam } = inferLineupTeamsFromRows(prev, formData);
+            const filter = (row) => isLineupForAhly(row, ahlyTeam, oppTeam);
+            return mergeTeamLineupUpdate(prev, filter, action, applyLineupLogic);
+        });
     }, []);
 
     const makeEditOpponentLineupSetter = useCallback((formData) => {
-        const ahlyTeam = resolveAhlyTeam(formData);
-        const oppTeam = resolveOpponentTeam(formData);
-        const filter = (r) => isLineupForOpponent(r, oppTeam, ahlyTeam);
-        return (action) => setLineupRows((prev) => mergeTeamLineupUpdate(prev, filter, action, applyLineupLogic));
+        return (action) => setLineupRows((prev) => {
+            const { ahlyTeam, oppTeam } = inferLineupTeamsFromRows(prev, formData);
+            const filter = (row) => isLineupForOpponent(row, oppTeam, ahlyTeam);
+            return mergeTeamLineupUpdate(prev, filter, action, applyLineupLogic);
+        });
     }, []);
 
     const handleEditLineupRows = useCallback((action) => {
@@ -1630,19 +1682,19 @@ export default function AlAhlyEditor() {
         if (!oppTeam) return;
 
         setNewLineupRows((prev) => {
-            const ahlyTeam = resolveAhlyTeam(newMatchData);
+            const { ahlyTeam, oppTeam: stableOpp } = inferLineupTeamsFromRows(prev, newMatchData);
             const matchId = newMatchData.MATCH_ID || '';
-            const nonAhlyRows = prev.filter((r) => !isLineupForAhly(r, ahlyTeam));
+            const nonAhlyRows = prev.filter((row) => !isLineupForAhly(row, ahlyTeam, stableOpp));
 
             if (nonAhlyRows.length === 0) {
                 return [...prev, ...createInitialTeamLineup(matchId, oppTeam)];
             }
 
-            return prev.map((r) => {
-                if (isLineupForAhly(r, ahlyTeam)) {
-                    return { ...r, MATCH_ID: matchId || r.MATCH_ID };
+            return prev.map((row) => {
+                if (isLineupForAhly(row, ahlyTeam, stableOpp)) {
+                    return { ...row, MATCH_ID: matchId || row.MATCH_ID };
                 }
-                return { ...r, TEAM: oppTeam, MATCH_ID: matchId || r.MATCH_ID };
+                return { ...row, TEAM: oppTeam, MATCH_ID: matchId || row.MATCH_ID };
             });
         });
     }, [newMatchData['OPPONENT TEAM'], newMatchData.MATCH_ID, mode]);
@@ -2100,14 +2152,13 @@ export default function AlAhlyEditor() {
     };
 
     const renderLineupTable = ({ formData, isNew, side }) => {
-        const ahlyTeam = resolveAhlyTeam(formData);
-        const oppTeam = resolveOpponentTeam(formData);
         const isAhly = side === 'ahly';
-        const teamName = isAhly ? ahlyTeam : oppTeam;
         const allRows = isNew ? newLineupRows : lineupRows;
+        const { ahlyTeam, oppTeam } = inferLineupTeamsFromRows(allRows, formData);
+        const teamName = isAhly ? ahlyTeam : oppTeam;
         const rows = isAhly
-            ? allRows.filter((r) => isLineupForAhly(r, ahlyTeam))
-            : allRows.filter((r) => isLineupForOpponent(r, oppTeam, ahlyTeam));
+            ? allRows.filter((row) => isLineupForAhly(row, ahlyTeam, oppTeam))
+            : allRows.filter((row) => isLineupForOpponent(row, oppTeam, ahlyTeam));
         const setRows = isNew
             ? (isAhly ? makeNewAhlyLineupSetter(formData) : makeNewOpponentLineupSetter(formData))
             : (isAhly ? makeEditAhlyLineupSetter(formData) : makeEditOpponentLineupSetter(formData));
