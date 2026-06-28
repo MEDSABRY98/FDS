@@ -1528,6 +1528,7 @@ export default function AlAhlyEditor() {
     const [wdlFinalOptions, setWdlFinalOptions] = useState([]);
     const [catalogLists, setCatalogLists] = useState({ managers: [], stadiums: [], referees: [] });
     const [confirmDelete, setConfirmDelete] = useState(null);
+    const [confirmDeleteMatch, setConfirmDeleteMatch] = useState(false);
     const [isDeleting, setIsDeleting] = useState(false);
 
     // Fields that use autocomplete (not date/number/auto)
@@ -1999,6 +2000,7 @@ export default function AlAhlyEditor() {
         const mid = normalizeMatchId(matchData?.MATCH_ID);
         if (!mid || isDeleting) return;
 
+        setConfirmDeleteMatch(false);
         setIsDeleting(true);
 
         try {
@@ -2395,7 +2397,7 @@ export default function AlAhlyEditor() {
                                         ←
                                     </button>
                                     <button
-                                        onClick={executeDeleteMatch}
+                                        onClick={() => setConfirmDeleteMatch(true)}
                                         disabled={isSaving || isDeleting}
                                         title="Delete match and all linked records"
                                         className="delete-match-btn">
@@ -2482,6 +2484,33 @@ export default function AlAhlyEditor() {
                                 onClick={executeDeleteRow}
                             >
                                 DELETE
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {confirmDeleteMatch && matchData && (
+                <div className="confirm-modal-overlay">
+                    <div className="confirm-modal-box">
+                        <div className="confirm-modal-icon">🗑️</div>
+                        <div className="confirm-modal-title">Delete Match?</div>
+                        <div className="confirm-modal-actions">
+                            <button
+                                type="button"
+                                className="confirm-modal-btn confirm-modal-btn-cancel"
+                                onClick={() => setConfirmDeleteMatch(false)}
+                                disabled={isDeleting}
+                            >
+                                CANCEL
+                            </button>
+                            <button
+                                type="button"
+                                className="confirm-modal-btn confirm-modal-btn-delete"
+                                onClick={executeDeleteMatch}
+                                disabled={isDeleting}
+                            >
+                                {isDeleting ? "DELETING..." : "DELETE"}
                             </button>
                         </div>
                     </div>
