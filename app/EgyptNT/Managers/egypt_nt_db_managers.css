@@ -121,3 +121,114 @@
     flex: 1 1 0;
     min-width: 0;
 }
+
+.mgr-stats-search-wrap {
+    width: 100%;
+    max-width: 450px;
+    margin: 0 auto 28px;
+}
+
+.mgr-stats-table th.mgr-sortable {
+    cursor: pointer;
+    user-select: none;
+    transition: color 0.2s ease;
+}
+
+.mgr-stats-table th.mgr-sortable:hover {
+    color: var(--gold);
+}
+
+.mgr-sort-indicator {
+    margin-left: 6px;
+    font-size: 11px;
+    display: inline-block;
+    vertical-align: middle;
+}
+
+.mgr-sort-indicator.idle {
+    opacity: 0.25;
+}
+
+.mgr-sort-indicator.active {
+    color: var(--gold);
+    opacity: 1;
+}
+
+.mgr-stats-total-row td {
+    background: rgba(201, 168, 76, 0.06);
+    border-top: 2px solid var(--gold);
+    font-weight: 900;
+}
+
+.mgr-stats-total-row .mgr-season-col {
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    color: var(--gold);
+}
+
+.mgr-stats-table td:not(.mgr-season-col):not(.mgr-rank-cell) {
+    font-size: 20px;
+    font-weight: 800;
+    font-family: 'Outfit', sans-serif;
+}
+
+.mgr-stats-total-row td:not(.mgr-season-col):not(.mgr-rank-cell) {
+    font-size: 22px;
+}
+
+.mgr-w-cell {
+    color: #27ae60;
+}
+
+.mgr-l-cell {
+    color: #e74c3c;
+}
+
+.mgr-cs-cell {
+    color: var(--gold);
+}
+
+.mgr-mp-cell {
+    color: var(--gold);
+    font-weight: 800;
+}
+
+.mgr-goals-cell {
+    color: #e74c3c;
+    font-weight: 800;
+}
+
+.mgr-ga-cell {
+    color: #2ecc71;
+    font-weight: 800;
+}
+
+.mgr-assists-cell {
+    color: #3498db;
+    font-weight: 800;
+}
+
+.mgr-rank-cell {
+    font-family: 'Space Mono', monospace;
+    font-size: 14px;
+    color: #999;
+}
+
+.mgr-overview-wrap {
+    padding: 0 0 20px;
+}
+
+.mgr-overview-section-title {
+    margin: 10px 0 18px;
+    font-family: 'Space Mono', monospace;
+    font-size: 12px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: #888;
+    text-align: center;
+}
+
+.mgr-overview-score-grid {
+    grid-template-columns: repeat(3, 1fr);
+    margin-bottom: 28px;
+}

@@ -74,7 +74,18 @@ export default function Manager_VsTeams_Module({ stats, managerStatus }) {
                         }
                     />
                 ) : (
-                    <table className="player-match-table vs-teams-table">
+                    <table className="player-match-table vs-teams-table" style={{ tableLayout: "fixed", width: "100%" }}>
+                        <colgroup>
+                            <col style={{ width: "28%" }} />
+                            <col style={{ width: "9%" }} />
+                            <col style={{ width: "9%" }} />
+                            <col style={{ width: "9%" }} />
+                            <col style={{ width: "9%" }} />
+                            <col style={{ width: "9%" }} />
+                            <col style={{ width: "9%" }} />
+                            <col style={{ width: "9%" }} />
+                            <col style={{ width: "9%" }} />
+                        </colgroup>
                     <thead>
                         <tr>
                             <th style={{ textAlign: 'center', fontFamily: 'Space Mono', fontSize: '13px', letterSpacing: '2px', color: '#999', padding: '15px 10px', textTransform: 'uppercase', fontWeight: '700' }}>

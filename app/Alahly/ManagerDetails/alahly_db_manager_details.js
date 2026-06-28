@@ -3,38 +3,38 @@
 import { useMemo, useState, useEffect } from "react";
 import "../PlayerDetails/alahly_db_player_details.css"; // Reuse styling base
 import Manager_Overview_Module from "./alahly_db_manager_details_overview";
-import Manager_Dashboard_Module from "./alahly_db_manager_details_dashboard";
 import Manager_Matches_Module from "./alahly_db_manager_details_matches";
 import Manager_SeasonName_Module from "./alahly_db_manager_details_season_name";
 import Manager_SeasonNumber_Module from "./alahly_db_manager_details_season_number";
 import Manager_VsTeams_Module from "./alahly_db_manager_details_vs_teams";
+import Manager_VsManagers_Module from "./alahly_db_manager_details_vs_managers";
 import Manager_Championships_Module from "./alahly_db_manager_details_championships";
 import Manager_PlayersUsed_Module from "./alahly_db_manager_details_players_used";
-import { AlAhlyService } from "../Service/alahly_db_service";
 import { AlAhlyExcelExport } from "../ExportExcel/alahly_export_excel";
+import { getMatchGoalScoreStates, applyScoreStateStats } from "./alahly_db_manager_details_utils";
 
 export default function Manager_Details_Hub({ managerName, managerStatus, masterMatches, onBack, playerDetails, lineupDetails }) {
     const [activeTab, setActiveTab] = useState('overview');
 
     useEffect(() => { window.scrollTo(0, 0); }, []);
 
-    // NEW STATES FOR DASHBOARD FILTERS
-    const [selectedComps, setSelectedComps] = useState([]);
-    const [isCompOpen, setIsCompOpen] = useState(false);
-    const [seasonLimit, setSeasonLimit] = useState("");
-
-    const managerColumn = managerStatus === "alahly" ? "AHLY MANAGER" : "OPPONENT MANAGER";
-    const teamColumn = managerStatus === "alahly" ? "AHLY TEAM" : "OPPONENT TEAM";
-
-    const { stats, mgrComps, mgrSYs, mgrOpps } = useMemo(() => {
+    const { stats } = useMemo(() => {
         const summary = {
             matches: 0, wins: 0, draws: 0, losses: 0,
             drawsPos: 0, drawsNeg: 0,
             gs: 0, ga: 0, csFor: 0, csAgainst: 0,
             matchHistory: [], seasonalStats: {}, compStats: {}, oppStats: {},
             statsByChampSeason: {}, statsBySY: {}, statsByOpponent: {},
-            statsAsOpponentMgr: {}, // Grouped by team he coached vs Ahly
-            playerUsedStats: {} // { pName: { name: pName, apps: 0, mins: 0, goals: 0, assists: 0 } }
+            statsAsOpponentMgr: {},
+            statsByOpponentManager: {},
+            statsAsFacingAhlyMgr: {},
+            playerUsedStats: {},
+            aheadWin: 0,
+            aheadDraw: 0,
+            aheadLoss: 0,
+            behindWin: 0,
+            behindDraw: 0,
+            behindLoss: 0,
         };
 
         const isAhlyTeam = (t) => {
@@ -43,32 +43,16 @@ export default function Manager_Details_Hub({ managerName, managerStatus, master
             return s.includes("الأهلي") || s.includes("Al Ahly") || s.includes("Al-Ahly");
         };
 
-        if (!managerName || !masterMatches) return { stats: summary, mgrComps: [], mgrSYs: [], mgrOpps: [] };
+        if (!managerName || !masterMatches) return { stats: summary };
 
         // 1. Matches as AHLY Manager
         const allAhlyMatches = masterMatches.filter(m => String(m["AHLY MANAGER"]).trim() === managerName);
         // 2. Matches as OPPONENT Manager
         const allOppMatches = masterMatches.filter(m => String(m["OPPONENT MANAGER"]).trim() === managerName);
 
-        // Define which side we primarily care about based on initial status, but we will aggregate both
         const allMgrMatches = [...allAhlyMatches, ...allOppMatches];
 
-        const compSet = new Set();
-        const sySet = new Set();
-        const oppSet = new Set();
-
         allMgrMatches.forEach(m => {
-            const champion = String(m.CHAMPION || "Unknown").trim();
-            const sy = String(m["SEASON - NUMBER"] || "Unknown").trim();
-            const opp = managerStatus === "alahly" ? m["OPPONENT TEAM"] : m["AHLY TEAM"];
-            compSet.add(champion);
-            sySet.add(sy);
-            if (opp && opp !== "—") oppSet.add(opp);
-        });
-
-        const filteredMatches = allMgrMatches;
-
-        filteredMatches.forEach(m => {
             summary.matches += 1;
             const gf = parseInt(m["GF"]) || 0;
             const ga = parseInt(m["GA"]) || 0;
@@ -79,6 +63,9 @@ export default function Manager_Details_Hub({ managerName, managerStatus, master
 
             const isAsAhly = String(m["AHLY MANAGER"]).trim() === managerName;
             const opp = isAsAhly ? (m["OPPONENT TEAM"] || "—") : "AL AHLY";
+            const oppManager = isAsAhly
+                ? String(m["OPPONENT MANAGER"] || "—").trim()
+                : String(m["AHLY MANAGER"] || "—").trim();
             const coachedTeam = isAsAhly ? "AL AHLY" : (m["OPPONENT TEAM"] || "—");
 
             summary.gs += isAsAhly ? gf : ga; // If mgr is opponent, Al Ahly's GA is his GS
@@ -112,6 +99,12 @@ export default function Manager_Details_Hub({ managerName, managerStatus, master
                 role: isAsAhly ? 'Ahly' : 'Opponent'
             });
 
+            const matchEventsForState = (playerDetails || []).filter((p) => String(p.MATCH_ID) === String(m.MATCH_ID));
+            applyScoreStateStats(
+                summary,
+                getMatchGoalScoreStates(m, matchEventsForState, managerName, result, isAhlyTeam)
+            );
+
             // Grouping logic for "Vs Teams"
             if (isAsAhly) {
                 if (!summary.statsByOpponent[opp]) summary.statsByOpponent[opp] = { matches: 0, wins: 0, draws: 0, losses: 0, gs: 0, ga: 0, csFor: 0, csAgainst: 0 };
@@ -120,16 +113,34 @@ export default function Manager_Details_Hub({ managerName, managerStatus, master
                 if (result === 'W') s.wins += 1; else if (result === 'L') s.losses += 1; else s.draws += 1;
                 if (ga === 0) s.csFor += 1;
                 if (gf === 0) s.csAgainst += 1;
+
+                if (!summary.statsByOpponentManager[oppManager]) {
+                    summary.statsByOpponentManager[oppManager] = { matches: 0, wins: 0, draws: 0, losses: 0, gs: 0, ga: 0, csFor: 0, csAgainst: 0 };
+                }
+                const mgrStats = summary.statsByOpponentManager[oppManager];
+                mgrStats.matches += 1; mgrStats.gs += gf; mgrStats.ga += ga;
+                if (result === 'W') mgrStats.wins += 1; else if (result === 'L') mgrStats.losses += 1; else mgrStats.draws += 1;
+                if (ga === 0) mgrStats.csFor += 1;
+                if (gf === 0) mgrStats.csAgainst += 1;
             } else {
-                // When he manages an opponent team vs Al Ahly, group by his team name
                 if (!summary.statsAsOpponentMgr[coachedTeam]) summary.statsAsOpponentMgr[coachedTeam] = { matches: 0, wins: 0, draws: 0, losses: 0, gs: 0, ga: 0, csFor: 0, csAgainst: 0 };
                 const s = summary.statsAsOpponentMgr[coachedTeam];
                 s.matches += 1;
-                s.gs += ga; // His team goals (Opponent GA in DB)
-                s.ga += gf; // Against Al Ahly (Opponent GF in DB)
+                s.gs += ga;
+                s.ga += gf;
                 if (result === 'W') s.wins += 1; else if (result === 'L') s.losses += 1; else s.draws += 1;
                 if (gf === 0) s.csFor += 1;
                 if (ga === 0) s.csAgainst += 1;
+
+                const ahlyMgr = String(m["AHLY MANAGER"] || "—").trim();
+                if (!summary.statsAsFacingAhlyMgr[ahlyMgr]) {
+                    summary.statsAsFacingAhlyMgr[ahlyMgr] = { matches: 0, wins: 0, draws: 0, losses: 0, gs: 0, ga: 0, csFor: 0, csAgainst: 0 };
+                }
+                const facingStats = summary.statsAsFacingAhlyMgr[ahlyMgr];
+                facingStats.matches += 1; facingStats.gs += ga; facingStats.ga += gf;
+                if (result === 'W') facingStats.wins += 1; else if (result === 'L') facingStats.losses += 1; else facingStats.draws += 1;
+                if (gf === 0) facingStats.csFor += 1;
+                if (ga === 0) facingStats.csAgainst += 1;
             }
 
             // General seasonal/comp stats (only if he's the primary status? or both? Let's do both but tag them?)
@@ -212,12 +223,7 @@ export default function Manager_Details_Hub({ managerName, managerStatus, master
             return db - da;
         });
 
-        return {
-            stats: summary,
-            mgrComps: Array.from(compSet).sort(),
-            mgrSYs: Array.from(sySet).sort((a, b) => b.localeCompare(a)),
-            mgrOpps: Array.from(oppSet).sort()
-        };
+        return { stats: summary };
     }, [managerName, managerStatus, masterMatches, playerDetails, lineupDetails]);
 
     useEffect(() => {
@@ -231,7 +237,20 @@ export default function Manager_Details_Hub({ managerName, managerStatus, master
         let filename = `AlAhly_Manager_${managerName}_${activeTab}`;
         switch (activeTab) {
             case 'overview':
-                exportData = [{ "METRIC": "Matches", "VALUE": stats.matches }, { "METRIC": "Wins", "VALUE": stats.wins }, { "METRIC": "Draws", "VALUE": stats.draws }, { "METRIC": "Losses", "VALUE": stats.losses }, { "METRIC": "GF", "VALUE": stats.gs }, { "METRIC": "GA", "VALUE": stats.ga }];
+                exportData = [
+                    { "METRIC": "Matches", "VALUE": stats.matches },
+                    { "METRIC": "Wins", "VALUE": stats.wins },
+                    { "METRIC": "Draws", "VALUE": stats.draws },
+                    { "METRIC": "Losses", "VALUE": stats.losses },
+                    { "METRIC": "GF", "VALUE": stats.gs },
+                    { "METRIC": "GA", "VALUE": stats.ga },
+                    { "METRIC": "Ahead & Won", "VALUE": stats.aheadWin },
+                    { "METRIC": "Ahead & Drew", "VALUE": stats.aheadDraw },
+                    { "METRIC": "Ahead & Lost", "VALUE": stats.aheadLoss },
+                    { "METRIC": "Behind & Won", "VALUE": stats.behindWin },
+                    { "METRIC": "Behind & Drew", "VALUE": stats.behindDraw },
+                    { "METRIC": "Behind & Lost", "VALUE": stats.behindLoss },
+                ];
                 break;
             case 'matches':
                 exportData = stats.matchHistory.map((m, i) => ({
@@ -271,6 +290,14 @@ export default function Manager_Details_Hub({ managerName, managerStatus, master
                     return { "#": i + 1, "TEAM": team, "MP": s.matches, "W": s.wins, "D": s.draws, "L": s.losses, "GF": s.gs, "GA": s.ga };
                 });
                 break;
+            case 'vs_managers': {
+                const mgrCombined = { ...stats.statsByOpponentManager, ...stats.statsAsFacingAhlyMgr };
+                exportData = Object.keys(mgrCombined).sort((a, b) => mgrCombined[b].matches - mgrCombined[a].matches).map((mgr, i) => {
+                    const s = mgrCombined[mgr];
+                    return { "#": i + 1, "MANAGER": mgr, "MP": s.matches, "W": s.wins, "D": s.draws, "L": s.losses, "GF": s.gs, "GA": s.ga, "CS-F": s.csFor };
+                });
+                break;
+            }
         }
         if (exportData.length > 0) AlAhlyExcelExport.exportToExcel(exportData, filename);
     };
@@ -304,12 +331,12 @@ export default function Manager_Details_Hub({ managerName, managerStatus, master
             <div className="player-details-tabs">
                 {[
                     { id: 'overview', label: 'Overview' },
-                    { id: 'dashboard', label: 'Dashboard' },
                     { id: 'matches', label: 'Matches' },
                     { id: 'championships', label: 'Championships' },
                     { id: 'season_name', label: 'Season Name' },
                     { id: 'season_number', label: 'Season Number' },
                     { id: 'vs_teams', label: 'Vs Teams' },
+                    { id: 'vs_managers', label: 'Vs Managers' },
                     { id: 'players_used', label: 'Players Used' }
                 ].map(t => (
                     <div key={t.id} className={`player-tab-item ${activeTab === t.id ? 'active' : ''}`} onClick={() => setActiveTab(t.id)}>
@@ -320,25 +347,13 @@ export default function Manager_Details_Hub({ managerName, managerStatus, master
 
             <div className="tab-content-area" style={{ padding: '0px 0' }}>
                 {activeTab === 'overview' && <Manager_Overview_Module stats={stats} />}
-                {activeTab === 'dashboard' && (
-                    <Manager_Dashboard_Module
-                        stats={stats}
-                        playerComps={mgrComps}
-                        selectedComps={selectedComps}
-                        setSelectedComps={setSelectedComps}
-                        isCompOpen={isCompOpen}
-                        setIsCompOpen={setIsCompOpen}
-                        seasonLimit={seasonLimit}
-                        setSeasonLimit={setSeasonLimit}
-                        sortedSeasons={mgrSYs}
-                    />
-                )}
                 {activeTab === 'matches' && <Manager_Matches_Module stats={stats} />}
                 {activeTab === 'championships' && <Manager_Championships_Module stats={stats} />}
                 {activeTab === 'players_used' && <Manager_PlayersUsed_Module stats={stats} />}
                 {activeTab === 'season_name' && <Manager_SeasonName_Module stats={stats} />}
                 {activeTab === 'season_number' && <Manager_SeasonNumber_Module stats={stats} />}
                 {activeTab === 'vs_teams' && <Manager_VsTeams_Module stats={stats} managerStatus={managerStatus} />}
+                {activeTab === 'vs_managers' && <Manager_VsManagers_Module stats={stats} managerStatus={managerStatus} />}
             </div>
         </div>
     );

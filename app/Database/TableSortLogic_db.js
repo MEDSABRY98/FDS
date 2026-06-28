@@ -211,15 +211,6 @@ export function getPresetSortRules(presetKey, columns = []) {
     return mergeSortRulesWithColumns(resolvedRules, columns);
 }
 
-async function getExistingSettingsBundle(tableName) {
-    const dbCols = await fetchTableColumnNames(tableName);
-    const raw = await FetchTableSortSetting(tableName);
-    const orderedColumns = await resolveTableColumnOrder(tableName, dbCols, raw);
-    const sortRules = parseTableSortSetting(raw, orderedColumns);
-    const dataSortPreset = detectDataSortPresetKey(raw, orderedColumns);
-    return { dbCols, orderedColumns, raw, sortRules, dataSortPreset };
-}
-
 export function getActiveTableSortRules(rules = []) {
     return (rules || []).filter((rule) => normalizeDirection(rule.direction) !== "off");
 }

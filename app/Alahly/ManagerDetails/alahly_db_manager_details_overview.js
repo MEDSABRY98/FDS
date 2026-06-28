@@ -5,7 +5,8 @@ export default function Manager_Overview_Module({ stats }) {
     const calculateAve = (val) => stats.matches > 0 ? (val / stats.matches).toFixed(2) : 0;
 
     return (
-        <div className="stats-grid-premium fade-in" style={{ padding: '20px' }}>
+        <div className="mgr-overview-wrap fade-in" style={{ padding: '20px' }}>
+            <div className="stats-grid-premium">
             <div className="stat-card-premium">
                 <span className="stat-label-modern">MATCHES</span>
                 <div className="stat-value-modern" style={{ color: 'var(--player-gold)' }}>{stats.matches}</div>
@@ -69,6 +70,39 @@ export default function Manager_Overview_Module({ stats }) {
             <div className="stat-card-premium">
                 <span className="stat-label-modern">CS AGAINST</span>
                 <div className="stat-value-modern" style={{ color: '#ff6b6b' }}>{stats.csAgainst}</div>
+            </div>
+            </div>
+
+            <div className="mgr-overview-section-title">When Ahead (Goal Events)</div>
+            <div className="stats-grid-premium mgr-overview-score-grid">
+                <div className="stat-card-premium">
+                    <span className="stat-label-modern">Ahead & Won</span>
+                    <div className="stat-value-modern" style={{ color: '#27ae60' }}>{stats.aheadWin}</div>
+                </div>
+                <div className="stat-card-premium">
+                    <span className="stat-label-modern">Ahead & Drew</span>
+                    <div className="stat-value-modern" style={{ color: '#f39c12' }}>{stats.aheadDraw}</div>
+                </div>
+                <div className="stat-card-premium">
+                    <span className="stat-label-modern">Ahead & Lost</span>
+                    <div className="stat-value-modern" style={{ color: '#e74c3c' }}>{stats.aheadLoss}</div>
+                </div>
+            </div>
+
+            <div className="mgr-overview-section-title">When Behind (Goal Events)</div>
+            <div className="stats-grid-premium mgr-overview-score-grid">
+                <div className="stat-card-premium">
+                    <span className="stat-label-modern">Behind & Won</span>
+                    <div className="stat-value-modern" style={{ color: '#27ae60' }}>{stats.behindWin}</div>
+                </div>
+                <div className="stat-card-premium">
+                    <span className="stat-label-modern">Behind & Drew</span>
+                    <div className="stat-value-modern" style={{ color: '#f39c12' }}>{stats.behindDraw}</div>
+                </div>
+                <div className="stat-card-premium">
+                    <span className="stat-label-modern">Behind & Lost</span>
+                    <div className="stat-value-modern" style={{ color: '#e74c3c' }}>{stats.behindLoss}</div>
+                </div>
             </div>
         </div>
     );

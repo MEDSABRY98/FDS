@@ -221,6 +221,15 @@ async function fetchTableColumnNames(tableName) {
     return (schemaCols || []).map((row) => row.column_name);
 }
 
+export async function getExistingSettingsBundle(tableName) {
+    const dbCols = await fetchTableColumnNames(tableName);
+    const raw = await FetchTableSortSetting(tableName);
+    const orderedColumns = await resolveTableColumnOrder(tableName, dbCols, raw);
+    const sortRules = parseTableSortSetting(raw, orderedColumns);
+    const dataSortPreset = detectDataSortPresetKey(raw, orderedColumns);
+    return { dbCols, orderedColumns, raw, sortRules, dataSortPreset };
+}
+
 async function loadOrderedColumnsForTable(tableName) {
     const dbCols = await fetchTableColumnNames(tableName);
     return resolveTableColumnOrder(tableName, dbCols);

@@ -93,9 +93,9 @@ function Referee_Matches_Module({ stats }) {
                         <th>DATE</th>
                         <th className="ref-season-col">SEASON</th>
                         <th>OPPONENT TEAM</th>
-                        <th>RESULT</th>
                         <th>GF</th>
                         <th>GA</th>
+                        <th>RESULT</th>
                         <th>PEN (F)</th>
                         <th>PEN (A)</th>
                     </tr>
@@ -108,13 +108,13 @@ function Referee_Matches_Module({ stats }) {
                             <td>{m.date}</td>
                             <td className="ref-season-col">{m.season}</td>
                             <td style={{ fontWeight: '800' }}>{m.opponent}</td>
+                            <td>{m.gf}</td>
+                            <td>{m.ga}</td>
                             <td>
                                 <span className={`m-role-pill ${m.wdl === 'W' ? 'role-starter' : m.wdl === 'L' ? 'role-sub' : ''}`} style={{ fontSize: '11px', fontWeight: '800' }}>
                                     {m.wdl}
                                 </span>
                             </td>
-                            <td>{m.gf}</td>
-                            <td>{m.ga}</td>
                             <td style={{ color: '#2980b9', fontWeight: '800' }}>{m.penFor}</td>
                             <td style={{ color: '#9b59b6', fontWeight: '800' }}>{m.penAgainst}</td>
                         </tr>
