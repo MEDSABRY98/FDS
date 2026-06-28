@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback, useEffect } from "react";
+import { useState, useCallback, useEffect, useMemo } from "react";
 import "./egypt_nt_db_editor.css";
 import { supabase, getChangedFormFields, resolveCatalogFieldsInForm, AutocompleteInput, isEditorWrapColumn, getEditorColumnMinWidth, ShrinkToFitInput, fetchCatalogDisplayNames } from "../../Database";
 import Login_db from "../../lib/Login_db";
@@ -15,10 +15,10 @@ const EMPTY_MATCH = {
     "H-A-N": "", "Egypt TEAM": "", "GF": "", "GA": "", "ET": "",
     "PEN": "", "OPPONENT TEAM": "", "NOTE": "", "MOTM": ""
 };
-const EMPTY_LINEUP = { "MATCH_ID": "", "MATCH MINUTE": "", "TEAM": "", "PLAYER NAME": "", "STATU": "", "PLAYER NAME OUT": "", "OUT MINUTE": "", "TOTAL MINUTE": "" };
+const EMPTY_LINEUP = { "MATCH_ID": "", "MATCH MINUTE": "", "TEAM": "", "PLAYER NAME": "", "CLUB": "", "STATU": "", "PLAYER NAME OUT": "", "OUT MINUTE": "", "TOTAL MINUTE": "" };
 const EMPTY_PLAYER = { "MATCH_ID": "", "EVENT_ID": "", "PARENT_EVENT_ID": "", "PLAYER NAME": "", "TEAM": "", "CLUB": "", "TYPE": "", "TYPE_SUB": "", "MINUTE": "" };
 const EMPTY_GK = { "MATCH_ID": "", "EVENT_ID": "", "TEAM": "", "PLAYER NAME": "", "STATU": "", "OUT MINUTE": "", "GOALS CONCEDED": "" };
-const EMPTY_PEN = { "MATCH_ID": "", "PARENT_EVENT_ID": "", "HOW MISSED?": "", "TEAM": "", "MINUTE": "" };
+const EMPTY_PEN = { "MATCH_ID": "", "EVENT_ID": "", "HOW MISSED?": "", "TEAM": "", "MINUTE": "" };
 
 const parseEventIdSuffix = (eventId) => {
     const id = String(eventId || "").trim();
@@ -67,6 +67,8 @@ const sortRowsByRowId = (rows = []) => {
 
 const sortRowsForTable = (tableName, rows = []) => {
     if (tableName === "egy_NT_PLAYERDETAILS") return sortRowsByEventId(rows);
+    if (tableName === "egy_NT_GKSDETAILS") return sortRowsByEventId(rows);
+    if (tableName === "egy_NT_HOWPENMISSED") return sortRowsByEventId(rows);
     if (tableName === "egy_NT_LINEUPDETAILS") return sortRowsByRowId(rows);
     return rows;
 };
@@ -135,11 +137,17 @@ const isPlayerEventRowSaveable = (row) => (
     String(row?.TYPE_SUB || "").trim() !== ""
 );
 
+const isGkRowSaveable = (row) => String(row?.["PLAYER NAME"] || "").trim() !== "";
+
+const isPenRowSaveable = (row) => (
+    String(row?.["HOW MISSED?"] || "").trim() !== "" ||
+    String(row?.MINUTE || "").trim() !== ""
+);
+
 const isLinkedRowSaveable = (tableName, row) => {
     if (tableName === "egy_NT_PLAYERDETAILS") return isPlayerEventRowSaveable(row);
-    if (tableName === "egy_NT_HOWPENMISSED") {
-        return String(row?.["HOW MISSED?"] || "").trim() !== "" || String(row?.MINUTE || "").trim() !== "";
-    }
+    if (tableName === "egy_NT_GKSDETAILS") return isGkRowSaveable(row);
+    if (tableName === "egy_NT_HOWPENMISSED") return isPenRowSaveable(row);
     return String(row?.["PLAYER NAME"] || "").trim() !== "";
 };
 
@@ -171,6 +179,844 @@ const mergeSavedEditorRow = (existingRow, savedRow) => {
     merged._snapshot = toEditorSnapshot(merged);
     return merged;
 };
+
+const UNNAMED_PLAYER_LABEL = "— Unnamed Player —";
+
+const listIndexedRowsByEventId = (rows = []) => (
+    rows
+        .map((row, index) => ({ row, index }))
+        .sort((a, b) => {
+            const suffixDiff = parseEventIdSuffix(a.row?.EVENT_ID) - parseEventIdSuffix(b.row?.EVENT_ID);
+            if (suffixDiff !== 0) return suffixDiff;
+            if (!a.row?.EVENT_ID && b.row?.EVENT_ID) return 1;
+            if (a.row?.EVENT_ID && !b.row?.EVENT_ID) return -1;
+            return String(a.row?.EVENT_ID || "").localeCompare(String(b.row?.EVENT_ID || ""));
+        })
+);
+
+function EditorEventCard({
+    row,
+    index,
+    isSaving,
+    savingModal,
+    onEdit,
+    onDelete,
+    tableName,
+    setRows,
+    title,
+    meta,
+    description,
+    extra,
+}) {
+    const isDirty = row._isNew || row._isDirty;
+
+    return (
+        <div className={`player-event-card player-event-card-single${isDirty ? " player-event-card-dirty" : ""}`}>
+            <div className="player-event-card-head player-event-card-head-row">
+                <span className="player-event-id">{row.EVENT_ID || "—"}</span>
+                <div className="player-event-item-actions">
+                    <button
+                        type="button"
+                        className="player-event-action-btn player-event-action-edit"
+                        title="Edit"
+                        disabled={isSaving || savingModal}
+                        onClick={() => onEdit(row, index)}
+                    >
+                        ✎
+                    </button>
+                    <button
+                        type="button"
+                        className="player-event-action-btn player-event-action-delete"
+                        title="Delete"
+                        disabled={isSaving || savingModal}
+                        onClick={() => onDelete(row, index, tableName, setRows)}
+                    >
+                        ✕
+                    </button>
+                </div>
+            </div>
+            {title && <div className="player-event-card-name">{title}</div>}
+            {meta && <div className="player-event-card-meta">{meta}</div>}
+            {description && <div className="player-event-card-desc">{description}</div>}
+            {extra}
+        </div>
+    );
+}
+
+const formatEventLine = (row) => {
+    const parts = [
+        String(row.TYPE || "").trim(),
+        String(row.TYPE_SUB || "").trim(),
+        String(row.MINUTE || "").trim() ? `${String(row.MINUTE).trim()}'` : "",
+    ].filter(Boolean);
+    return parts.join(" · ") || "—";
+};
+
+const formatGkLine = (row) => {
+    const parts = [
+        String(row.STATU || "").trim(),
+        String(row["OUT MINUTE"] || "").trim() ? `OUT ${String(row["OUT MINUTE"]).trim()}'` : "",
+        String(row["GOALS CONCEDED"] || "").trim() !== "" ? `GC ${String(row["GOALS CONCEDED"]).trim()}` : "",
+    ].filter(Boolean);
+    return parts.join(" · ") || "—";
+};
+
+const formatPenLine = (row) => {
+    const parts = [
+        String(row["HOW MISSED?"] || "").trim(),
+        String(row.MINUTE || "").trim() ? `${String(row.MINUTE).trim()}'` : "",
+    ].filter(Boolean);
+    return parts.join(" · ") || "—";
+};
+
+const buildPlayerEventIdOptions = (playerRows = []) => (
+    [...new Set(playerRows.map((row) => String(row?.EVENT_ID || "").trim()).filter(Boolean))]
+        .sort((a, b) => parseEventIdSuffix(a) - parseEventIdSuffix(b))
+);
+
+function PlayerEventsPanel({
+    title,
+    color,
+    rows,
+    setRows,
+    matchId,
+    teamOptions,
+    allPlayersList,
+    allTeamsList,
+    eventTypes,
+    eventSubTypes,
+    persistToDb,
+    onSaveRow,
+    onDeleteRow,
+    isSaving,
+    resolveNextEventId,
+}) {
+    const [modalOpen, setModalOpen] = useState(false);
+    const [editingIndex, setEditingIndex] = useState(null);
+    const [form, setForm] = useState({ ...EMPTY_PLAYER });
+    const [savingModal, setSavingModal] = useState(false);
+    const { addNotification } = useNotification();
+
+    const sortedEntries = useMemo(() => listIndexedRowsByEventId(rows), [rows]);
+
+    const parentEventOptions = useMemo(() => {
+        const ids = rows
+            .map((row) => String(row.EVENT_ID || "").trim())
+            .filter(Boolean);
+        return [...new Set(ids)].sort((a, b) => parseEventIdSuffix(a) - parseEventIdSuffix(b));
+    }, [rows]);
+
+    const openAddModal = (preset = {}) => {
+        setEditingIndex(null);
+        setForm({
+            ...EMPTY_PLAYER,
+            MATCH_ID: matchId,
+            ...preset,
+        });
+        setModalOpen(true);
+    };
+
+    const openEditModal = (row, index) => {
+        setEditingIndex(index);
+        setForm({
+            ...EMPTY_PLAYER,
+            ...row,
+            MATCH_ID: row.MATCH_ID || matchId,
+        });
+        setModalOpen(true);
+    };
+
+    const closeModal = (force = false) => {
+        if (!force && savingModal) return;
+        setModalOpen(false);
+        setEditingIndex(null);
+        setForm({ ...EMPTY_PLAYER });
+    };
+
+    const updateFormField = (field, value) => {
+        setForm((prev) => ({ ...prev, [field]: value }));
+    };
+
+    const handleModalSave = async () => {
+        const cleanForm = { ...form };
+        if (!isPlayerEventRowSaveable(cleanForm)) {
+            addNotification("Fill at least PLAYER NAME, TYPE, or MINUTE before saving.", "error");
+            return;
+        }
+
+        setSavingModal(true);
+        try {
+            if (editingIndex === null) {
+                let eventId = String(cleanForm.EVENT_ID || "").trim();
+                if (!eventId) {
+                    eventId = persistToDb
+                        ? await resolveNextEventId(matchId, rows)
+                        : getNextPlayerEventId(matchId, rows);
+                }
+
+                const newRow = {
+                    ...EMPTY_PLAYER,
+                    ...cleanForm,
+                    MATCH_ID: matchId,
+                    EVENT_ID: eventId,
+                    _isNew: true,
+                    _key: Date.now(),
+                };
+
+                const nextRows = sortRowsByEventId([...rows, newRow]);
+                const newIndex = nextRows.findIndex((row) => row._key === newRow._key);
+                setRows(nextRows);
+
+                if (persistToDb && onSaveRow) {
+                    await onSaveRow(newRow, newIndex, "egy_NT_PLAYERDETAILS", setRows);
+                }
+            } else {
+                const existingRow = rows[editingIndex];
+                const updatedRow = {
+                    ...existingRow,
+                    ...cleanForm,
+                    MATCH_ID: matchId,
+                    _isDirty: true,
+                };
+                const nextRows = sortRowsByEventId(
+                    rows.map((row, index) => (index === editingIndex ? updatedRow : row))
+                );
+                const newIndex = nextRows.findIndex((row) => row._key === updatedRow._key);
+                setRows(nextRows);
+
+                if (persistToDb && onSaveRow) {
+                    await onSaveRow(updatedRow, newIndex, "egy_NT_PLAYERDETAILS", setRows);
+                }
+            }
+
+            closeModal(true);
+        } catch (error) {
+            addNotification(`Failed to save event: ${error.message}`, "error");
+        } finally {
+            setSavingModal(false);
+        }
+    };
+
+    return (
+        <div className="player-events-panel" style={{ "--panel-accent": color }}>
+            <div className="player-events-header">
+                <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+                    <div style={{ width: 4, height: 24, background: color, borderRadius: 4 }} />
+                    <h3 className="player-events-title">
+                        {title}
+                        <span className="player-events-count">({rows.length} events)</span>
+                    </h3>
+                </div>
+                <button
+                    type="button"
+                    className="player-events-add-btn"
+                    onClick={() => openAddModal()}
+                    disabled={isSaving || savingModal}
+                >
+                    <span>+</span> ADD EVENT
+                </button>
+            </div>
+
+            {rows.length === 0 ? (
+                <NoData_db message="NO PLAYER EVENTS FOUND" height="240px" />
+            ) : (
+                <div className="player-events-grid">
+                    {sortedEntries.map(({ row, index }) => (
+                        <EditorEventCard
+                            key={row._key ?? `${row.EVENT_ID}-${index}`}
+                            row={row}
+                            index={index}
+                            isSaving={isSaving}
+                            savingModal={savingModal}
+                            onEdit={openEditModal}
+                            onDelete={onDeleteRow}
+                            tableName="egy_NT_PLAYERDETAILS"
+                            setRows={setRows}
+                            title={String(row["PLAYER NAME"] || "").trim() || UNNAMED_PLAYER_LABEL}
+                            meta={[row.CLUB, row.TEAM].map((v) => String(v || "").trim()).filter(Boolean).join(" · ") || null}
+                            description={formatEventLine(row)}
+                            extra={String(row.PARENT_EVENT_ID || "").trim() ? (
+                                <span className="player-event-parent">↳ {row.PARENT_EVENT_ID}</span>
+                            ) : null}
+                        />
+                    ))}
+                </div>
+            )}
+
+            {modalOpen && (
+                <div className="confirm-modal-overlay" onClick={closeModal}>
+                    <div className="player-event-modal" onClick={(e) => e.stopPropagation()}>
+                        <div className="player-event-modal-head">
+                            <h3>{editingIndex === null ? "ADD PLAYER EVENT" : "EDIT PLAYER EVENT"}</h3>
+                        </div>
+
+                        <div className="player-event-modal-grid">
+                            <div className="player-event-modal-field">
+                                <div className="field-label">PARENT EVENT ID</div>
+                                <AutocompleteInput
+                                    value={form.PARENT_EVENT_ID ?? ""}
+                                    options={parentEventOptions}
+                                    placeholder="Optional"
+                                    onChange={(val) => updateFormField("PARENT_EVENT_ID", val)}
+                                    className="field-input"
+                                    accentColor={color}
+                                    style={{ width: "100%", height: "42px", fontSize: "14px", background: "#fff" }}
+                                />
+                            </div>
+                            <div className="player-event-modal-field">
+                                <div className="field-label">PLAYER NAME</div>
+                                <AutocompleteInput
+                                    value={form["PLAYER NAME"] ?? ""}
+                                    options={allPlayersList}
+                                    placeholder="Player name"
+                                    onChange={(val) => updateFormField("PLAYER NAME", val)}
+                                    className="field-input"
+                                    accentColor={color}
+                                    style={{ width: "100%", height: "42px", fontSize: "14px", background: "#fff" }}
+                                />
+                            </div>
+                            <div className="player-event-modal-field">
+                                <div className="field-label">CLUB</div>
+                                <AutocompleteInput
+                                    value={form.CLUB ?? ""}
+                                    options={allTeamsList}
+                                    placeholder="Club"
+                                    onChange={(val) => updateFormField("CLUB", val)}
+                                    className="field-input"
+                                    accentColor={color}
+                                    style={{ width: "100%", height: "42px", fontSize: "14px", background: "#fff" }}
+                                />
+                            </div>
+                            <div className="player-event-modal-field">
+                                <div className="field-label">TEAM</div>
+                                <AutocompleteInput
+                                    value={form.TEAM ?? ""}
+                                    options={teamOptions}
+                                    placeholder="Team"
+                                    onChange={(val) => updateFormField("TEAM", val)}
+                                    className="field-input"
+                                    accentColor={color}
+                                    style={{ width: "100%", height: "42px", fontSize: "14px", background: "#fff" }}
+                                />
+                            </div>
+                            <div className="player-event-modal-field">
+                                <div className="field-label">TYPE</div>
+                                <AutocompleteInput
+                                    value={form.TYPE ?? ""}
+                                    options={eventTypes}
+                                    placeholder="Type"
+                                    onChange={(val) => updateFormField("TYPE", val)}
+                                    className="field-input field-input-fit"
+                                    shrinkToFit
+                                    accentColor={color}
+                                    style={{ width: "100%", height: "42px", fontSize: "14px", background: "#fff" }}
+                                />
+                            </div>
+                            <div className="player-event-modal-field">
+                                <div className="field-label">TYPE SUB</div>
+                                <AutocompleteInput
+                                    value={form.TYPE_SUB ?? ""}
+                                    options={eventSubTypes}
+                                    placeholder="Type sub"
+                                    onChange={(val) => updateFormField("TYPE_SUB", val)}
+                                    className="field-input field-input-fit"
+                                    shrinkToFit
+                                    accentColor={color}
+                                    style={{ width: "100%", height: "42px", fontSize: "14px", background: "#fff" }}
+                                />
+                            </div>
+                            <div className="player-event-modal-field">
+                                <div className="field-label">MINUTE</div>
+                                <input
+                                    value={form.MINUTE ?? ""}
+                                    onChange={(e) => updateFormField("MINUTE", e.target.value)}
+                                    className="field-input"
+                                    placeholder="Minute"
+                                    style={{ width: "100%", height: "42px", fontSize: "14px" }}
+                                />
+                            </div>
+                        </div>
+
+                        <div className="player-event-modal-actions">
+                            <button type="button" className="confirm-modal-btn confirm-modal-btn-cancel" onClick={closeModal} disabled={savingModal}>
+                                CANCEL
+                            </button>
+                            <button
+                                type="button"
+                                className="player-event-modal-save"
+                                onClick={handleModalSave}
+                                disabled={savingModal || isSaving}
+                                style={{ background: color }}
+                            >
+                                {savingModal ? "SAVING..." : "SAVE EVENT"}
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+        </div>
+    );
+}
+
+function GkDetailsPanel({
+    title,
+    color,
+    rows,
+    setRows,
+    matchId,
+    teamOptions,
+    allPlayersList,
+    playerEventRows,
+    persistToDb,
+    onSaveRow,
+    onDeleteRow,
+    isSaving,
+}) {
+    const [modalOpen, setModalOpen] = useState(false);
+    const [editingIndex, setEditingIndex] = useState(null);
+    const [form, setForm] = useState({ ...EMPTY_GK });
+    const [savingModal, setSavingModal] = useState(false);
+    const { addNotification } = useNotification();
+
+    const sortedEntries = useMemo(() => listIndexedRowsByEventId(rows), [rows]);
+    const eventIdOptions = useMemo(() => buildPlayerEventIdOptions(playerEventRows), [playerEventRows]);
+    const statuOptions = ["اساسي", "احتياطي"];
+
+    const openAddModal = (preset = {}) => {
+        setEditingIndex(null);
+        setForm({ ...EMPTY_GK, MATCH_ID: matchId, ...preset });
+        setModalOpen(true);
+    };
+
+    const openEditModal = (row, index) => {
+        setEditingIndex(index);
+        setForm({ ...EMPTY_GK, ...row, MATCH_ID: row.MATCH_ID || matchId });
+        setModalOpen(true);
+    };
+
+    const closeModal = (force = false) => {
+        if (!force && savingModal) return;
+        setModalOpen(false);
+        setEditingIndex(null);
+        setForm({ ...EMPTY_GK });
+    };
+
+    const updateFormField = (field, value) => {
+        setForm((prev) => ({ ...prev, [field]: value }));
+    };
+
+    const handleModalSave = async () => {
+        const cleanForm = { ...form };
+        if (!isGkRowSaveable(cleanForm)) {
+            addNotification("Fill PLAYER NAME before saving.", "error");
+            return;
+        }
+
+        setSavingModal(true);
+        try {
+            if (editingIndex === null) {
+                const newRow = {
+                    ...EMPTY_GK,
+                    ...cleanForm,
+                    MATCH_ID: matchId,
+                    EVENT_ID: String(cleanForm.EVENT_ID || "").trim(),
+                    _isNew: true,
+                    _key: Date.now(),
+                };
+
+                const nextRows = sortRowsByEventId([...rows, newRow]);
+                const newIndex = nextRows.findIndex((row) => row._key === newRow._key);
+                setRows(nextRows);
+
+                if (persistToDb && onSaveRow) {
+                    await onSaveRow(newRow, newIndex, "egy_NT_GKSDETAILS", setRows);
+                }
+            } else {
+                const existingRow = rows[editingIndex];
+                const updatedRow = {
+                    ...existingRow,
+                    ...cleanForm,
+                    MATCH_ID: matchId,
+                    _isDirty: true,
+                };
+                const nextRows = sortRowsByEventId(
+                    rows.map((row, index) => (index === editingIndex ? updatedRow : row))
+                );
+                const newIndex = nextRows.findIndex((row) => row._key === updatedRow._key);
+                setRows(nextRows);
+
+                if (persistToDb && onSaveRow) {
+                    await onSaveRow(updatedRow, newIndex, "egy_NT_GKSDETAILS", setRows);
+                }
+            }
+
+            closeModal(true);
+        } catch (error) {
+            addNotification(`Failed to save GK row: ${error.message}`, "error");
+        } finally {
+            setSavingModal(false);
+        }
+    };
+
+    return (
+        <div className="player-events-panel" style={{ "--panel-accent": color }}>
+            <div className="player-events-header">
+                <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+                    <div style={{ width: 4, height: 24, background: color, borderRadius: 4 }} />
+                    <h3 className="player-events-title">
+                        {title}
+                        <span className="player-events-count">({rows.length} records)</span>
+                    </h3>
+                </div>
+                <button
+                    type="button"
+                    className="player-events-add-btn"
+                    onClick={() => openAddModal()}
+                    disabled={isSaving || savingModal}
+                >
+                    <span>+</span> ADD GK
+                </button>
+            </div>
+
+            {rows.length === 0 ? (
+                <NoData_db message="NO GK DETAILS FOUND" height="240px" />
+            ) : (
+                <div className="player-events-grid">
+                    {sortedEntries.map(({ row, index }) => (
+                        <EditorEventCard
+                            key={row._key ?? `${row.EVENT_ID}-${index}`}
+                            row={row}
+                            index={index}
+                            isSaving={isSaving}
+                            savingModal={savingModal}
+                            onEdit={openEditModal}
+                            onDelete={onDeleteRow}
+                            tableName="egy_NT_GKSDETAILS"
+                            setRows={setRows}
+                            title={String(row["PLAYER NAME"] || "").trim() || UNNAMED_PLAYER_LABEL}
+                            meta={String(row.TEAM || "").trim() || null}
+                            description={formatGkLine(row)}
+                        />
+                    ))}
+                </div>
+            )}
+
+            {modalOpen && (
+                <div className="confirm-modal-overlay" onClick={closeModal}>
+                    <div className="player-event-modal" onClick={(e) => e.stopPropagation()}>
+                        <div className="player-event-modal-head">
+                            <h3>{editingIndex === null ? "ADD GK DETAIL" : "EDIT GK DETAIL"}</h3>
+                        </div>
+
+                        <div className="player-event-modal-grid">
+                            <div className="player-event-modal-field">
+                                <div className="field-label">EVENT ID</div>
+                                <AutocompleteInput
+                                    value={form.EVENT_ID ?? ""}
+                                    options={eventIdOptions}
+                                    placeholder="Link to player event"
+                                    onChange={(val) => updateFormField("EVENT_ID", val)}
+                                    className="field-input"
+                                    accentColor={color}
+                                    style={{ width: "100%", height: "42px", fontSize: "14px", background: "#fff" }}
+                                />
+                            </div>
+                            <div className="player-event-modal-field">
+                                <div className="field-label">PLAYER NAME</div>
+                                <AutocompleteInput
+                                    value={form["PLAYER NAME"] ?? ""}
+                                    options={allPlayersList}
+                                    placeholder="Keeper name"
+                                    onChange={(val) => updateFormField("PLAYER NAME", val)}
+                                    className="field-input"
+                                    accentColor={color}
+                                    style={{ width: "100%", height: "42px", fontSize: "14px", background: "#fff" }}
+                                />
+                            </div>
+                            <div className="player-event-modal-field">
+                                <div className="field-label">TEAM</div>
+                                <AutocompleteInput
+                                    value={form.TEAM ?? ""}
+                                    options={teamOptions}
+                                    placeholder="Team"
+                                    onChange={(val) => updateFormField("TEAM", val)}
+                                    className="field-input"
+                                    accentColor={color}
+                                    style={{ width: "100%", height: "42px", fontSize: "14px", background: "#fff" }}
+                                />
+                            </div>
+                            <div className="player-event-modal-field">
+                                <div className="field-label">STATU</div>
+                                <AutocompleteInput
+                                    value={form.STATU ?? ""}
+                                    options={statuOptions}
+                                    placeholder="Status"
+                                    onChange={(val) => updateFormField("STATU", val)}
+                                    className="field-input"
+                                    accentColor={color}
+                                    style={{ width: "100%", height: "42px", fontSize: "14px", background: "#fff" }}
+                                />
+                            </div>
+                            <div className="player-event-modal-field">
+                                <div className="field-label">OUT MINUTE</div>
+                                <input
+                                    value={form["OUT MINUTE"] ?? ""}
+                                    onChange={(e) => updateFormField("OUT MINUTE", e.target.value)}
+                                    className="field-input"
+                                    placeholder="Out minute"
+                                    style={{ width: "100%", height: "42px", fontSize: "14px" }}
+                                />
+                            </div>
+                            <div className="player-event-modal-field">
+                                <div className="field-label">GOALS CONCEDED</div>
+                                <input
+                                    value={form["GOALS CONCEDED"] ?? ""}
+                                    onChange={(e) => updateFormField("GOALS CONCEDED", e.target.value)}
+                                    className="field-input"
+                                    placeholder="Goals conceded"
+                                    style={{ width: "100%", height: "42px", fontSize: "14px" }}
+                                />
+                            </div>
+                        </div>
+
+                        <div className="player-event-modal-actions">
+                            <button type="button" className="confirm-modal-btn confirm-modal-btn-cancel" onClick={closeModal} disabled={savingModal}>
+                                CANCEL
+                            </button>
+                            <button
+                                type="button"
+                                className="player-event-modal-save"
+                                onClick={handleModalSave}
+                                disabled={savingModal || isSaving}
+                                style={{ background: color }}
+                            >
+                                {savingModal ? "SAVING..." : "SAVE GK"}
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+        </div>
+    );
+}
+
+function PenaltyMissesPanel({
+    title,
+    color,
+    rows,
+    setRows,
+    matchId,
+    teamOptions,
+    howMissedOptions,
+    playerEventRows,
+    persistToDb,
+    onSaveRow,
+    onDeleteRow,
+    isSaving,
+}) {
+    const [modalOpen, setModalOpen] = useState(false);
+    const [editingIndex, setEditingIndex] = useState(null);
+    const [form, setForm] = useState({ ...EMPTY_PEN });
+    const [savingModal, setSavingModal] = useState(false);
+    const { addNotification } = useNotification();
+
+    const sortedEntries = useMemo(() => listIndexedRowsByEventId(rows), [rows]);
+    const eventIdOptions = useMemo(() => buildPlayerEventIdOptions(playerEventRows), [playerEventRows]);
+
+    const openAddModal = (preset = {}) => {
+        setEditingIndex(null);
+        setForm({ ...EMPTY_PEN, MATCH_ID: matchId, ...preset });
+        setModalOpen(true);
+    };
+
+    const openEditModal = (row, index) => {
+        setEditingIndex(index);
+        setForm({ ...EMPTY_PEN, ...row, MATCH_ID: row.MATCH_ID || matchId });
+        setModalOpen(true);
+    };
+
+    const closeModal = (force = false) => {
+        if (!force && savingModal) return;
+        setModalOpen(false);
+        setEditingIndex(null);
+        setForm({ ...EMPTY_PEN });
+    };
+
+    const updateFormField = (field, value) => {
+        setForm((prev) => ({ ...prev, [field]: value }));
+    };
+
+    const handleModalSave = async () => {
+        const cleanForm = { ...form };
+        if (!isPenRowSaveable(cleanForm)) {
+            addNotification("Fill HOW MISSED or MINUTE before saving.", "error");
+            return;
+        }
+
+        setSavingModal(true);
+        try {
+            if (editingIndex === null) {
+                const newRow = {
+                    ...EMPTY_PEN,
+                    ...cleanForm,
+                    MATCH_ID: matchId,
+                    EVENT_ID: String(cleanForm.EVENT_ID || "").trim(),
+                    _isNew: true,
+                    _key: Date.now(),
+                };
+
+                const nextRows = sortRowsByEventId([...rows, newRow]);
+                const newIndex = nextRows.findIndex((row) => row._key === newRow._key);
+                setRows(nextRows);
+
+                if (persistToDb && onSaveRow) {
+                    await onSaveRow(newRow, newIndex, "egy_NT_HOWPENMISSED", setRows);
+                }
+            } else {
+                const existingRow = rows[editingIndex];
+                const updatedRow = {
+                    ...existingRow,
+                    ...cleanForm,
+                    MATCH_ID: matchId,
+                    _isDirty: true,
+                };
+                const nextRows = sortRowsByEventId(
+                    rows.map((row, index) => (index === editingIndex ? updatedRow : row))
+                );
+                const newIndex = nextRows.findIndex((row) => row._key === updatedRow._key);
+                setRows(nextRows);
+
+                if (persistToDb && onSaveRow) {
+                    await onSaveRow(updatedRow, newIndex, "egy_NT_HOWPENMISSED", setRows);
+                }
+            }
+
+            closeModal(true);
+        } catch (error) {
+            addNotification(`Failed to save penalty miss: ${error.message}`, "error");
+        } finally {
+            setSavingModal(false);
+        }
+    };
+
+    return (
+        <div className="player-events-panel" style={{ "--panel-accent": color }}>
+            <div className="player-events-header">
+                <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+                    <div style={{ width: 4, height: 24, background: color, borderRadius: 4 }} />
+                    <h3 className="player-events-title">
+                        {title}
+                        <span className="player-events-count">({rows.length} misses)</span>
+                    </h3>
+                </div>
+                <button
+                    type="button"
+                    className="player-events-add-btn"
+                    onClick={() => openAddModal()}
+                    disabled={isSaving || savingModal}
+                >
+                    <span>+</span> ADD PEN MISS
+                </button>
+            </div>
+
+            {rows.length === 0 ? (
+                <NoData_db message="NO PENALTY MISSES FOUND" height="240px" />
+            ) : (
+                <div className="player-events-grid">
+                    {sortedEntries.map(({ row, index }) => (
+                        <EditorEventCard
+                            key={row._key ?? `${row.EVENT_ID}-${index}`}
+                            row={row}
+                            index={index}
+                            isSaving={isSaving}
+                            savingModal={savingModal}
+                            onEdit={openEditModal}
+                            onDelete={onDeleteRow}
+                            tableName="egy_NT_HOWPENMISSED"
+                            setRows={setRows}
+                            title={String(row.TEAM || "").trim() || "—"}
+                            description={formatPenLine(row)}
+                        />
+                    ))}
+                </div>
+            )}
+
+            {modalOpen && (
+                <div className="confirm-modal-overlay" onClick={closeModal}>
+                    <div className="player-event-modal" onClick={(e) => e.stopPropagation()}>
+                        <div className="player-event-modal-head">
+                            <h3>{editingIndex === null ? "ADD PENALTY MISS" : "EDIT PENALTY MISS"}</h3>
+                        </div>
+
+                        <div className="player-event-modal-grid">
+                            <div className="player-event-modal-field">
+                                <div className="field-label">EVENT ID</div>
+                                <AutocompleteInput
+                                    value={form.EVENT_ID ?? ""}
+                                    options={eventIdOptions}
+                                    placeholder="Select player event ID"
+                                    onChange={(val) => updateFormField("EVENT_ID", val)}
+                                    className="field-input"
+                                    accentColor={color}
+                                    style={{ width: "100%", height: "42px", fontSize: "14px", background: "#fff" }}
+                                />
+                            </div>
+                            <div className="player-event-modal-field">
+                                <div className="field-label">TEAM</div>
+                                <AutocompleteInput
+                                    value={form.TEAM ?? ""}
+                                    options={teamOptions}
+                                    placeholder="Team"
+                                    onChange={(val) => updateFormField("TEAM", val)}
+                                    className="field-input"
+                                    accentColor={color}
+                                    style={{ width: "100%", height: "42px", fontSize: "14px", background: "#fff" }}
+                                />
+                            </div>
+                            <div className="player-event-modal-field">
+                                <div className="field-label">HOW MISSED?</div>
+                                <AutocompleteInput
+                                    value={form["HOW MISSED?"] ?? ""}
+                                    options={howMissedOptions}
+                                    placeholder="How missed"
+                                    onChange={(val) => updateFormField("HOW MISSED?", val)}
+                                    className="field-input"
+                                    accentColor={color}
+                                    style={{ width: "100%", height: "42px", fontSize: "14px", background: "#fff" }}
+                                />
+                            </div>
+                            <div className="player-event-modal-field">
+                                <div className="field-label">MINUTE</div>
+                                <input
+                                    value={form.MINUTE ?? ""}
+                                    onChange={(e) => updateFormField("MINUTE", e.target.value)}
+                                    className="field-input"
+                                    placeholder="Minute"
+                                    style={{ width: "100%", height: "42px", fontSize: "14px" }}
+                                />
+                            </div>
+                        </div>
+
+                        <div className="player-event-modal-actions">
+                            <button type="button" className="confirm-modal-btn confirm-modal-btn-cancel" onClick={closeModal} disabled={savingModal}>
+                                CANCEL
+                            </button>
+                            <button
+                                type="button"
+                                className="player-event-modal-save"
+                                onClick={handleModalSave}
+                                disabled={savingModal || isSaving}
+                                style={{ background: color }}
+                            >
+                                {savingModal ? "SAVING..." : "SAVE PEN MISS"}
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+        </div>
+    );
+}
 
 // â”€â”€ Editable Table â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 function EditableTable({ title, color, rows, setRows, columns, matchId, emptyRow, tableName, onSave, onDelete, isSaving, autoFields = {}, columnOptions = {}, onAddRow }) {
@@ -463,8 +1309,8 @@ export default function EgyptNTEditor() {
                     setOppLineupRows(sortRowsByRowId(opp.map((r, i) => attachEditorRowMeta(r, 100 + i))));
                 }
                 setPlayerRows(sortRowsByEventId((pd || []).map((r, i) => attachEditorRowMeta(r, 1000 + i))));
-                setGkRows((gd || []).map((r, i) => attachEditorRowMeta(r, 2000 + i)));
-                setPenRows((pen || []).map((r, i) => attachEditorRowMeta(r, 3000 + i)));
+                setGkRows(sortRowsByEventId((gd || []).map((r, i) => attachEditorRowMeta(r, 2000 + i))));
+                setPenRows(sortRowsByEventId((pen || []).map((r, i) => attachEditorRowMeta(r, 3000 + i))));
                 setMode('edit');
             } catch (e) { addToast('Error: ' + e.message, 'error'); }
             setLoading(false);
@@ -644,33 +1490,6 @@ export default function EgyptNTEditor() {
         return getNextPlayerEventId(normalizedMatchId, combined);
     }, []);
 
-    const handleAddPlayerEventRow = useCallback(async (setter, currentRows, matchId) => {
-        try {
-            const eventId = await resolveNextPlayerEventId(matchId, currentRows);
-            const row = {
-                ...EMPTY_PLAYER,
-                MATCH_ID: matchId,
-                EVENT_ID: eventId,
-                _isNew: true,
-                _key: Date.now()
-            };
-            setter(sortRowsByEventId([...currentRows, row]));
-        } catch (error) {
-            addToast(`Failed to add player event row: ${error.message}`, "error");
-        }
-    }, [resolveNextPlayerEventId]);
-
-    const handleAddNewPlayerEventRow = useCallback((setter, currentRows, matchId) => {
-        const row = {
-            ...EMPTY_PLAYER,
-            MATCH_ID: matchId,
-            EVENT_ID: getNextPlayerEventId(matchId, currentRows),
-            _isNew: true,
-            _key: Date.now()
-        };
-        setter(sortRowsByEventId([...currentRows, row]));
-    }, []);
-
     // â”€â”€ Search â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
     const handleSearch = async () => {
         const id = searchId.trim();
@@ -715,8 +1534,8 @@ export default function EgyptNTEditor() {
                 setOppLineupRows(sortRowsByRowId(opp.map((r, i) => attachEditorRowMeta(r, 100 + i))));
             }
             setPlayerRows(sortRowsByEventId((pd || []).map((r, i) => attachEditorRowMeta(r, 1000 + i))));
-            setGkRows((gd || []).map((r, i) => attachEditorRowMeta(r, 2000 + i)));
-            setPenRows((pen || []).map((r, i) => attachEditorRowMeta(r, 3000 + i)));
+            setGkRows(sortRowsByEventId((gd || []).map((r, i) => attachEditorRowMeta(r, 2000 + i))));
+            setPenRows(sortRowsByEventId((pen || []).map((r, i) => attachEditorRowMeta(r, 3000 + i))));
             setMode('edit');
         } catch (e) { addToast('Error: ' + e.message, 'error'); }
         setLoading(false);
@@ -1050,9 +1869,6 @@ export default function EgyptNTEditor() {
     const matchInfoFields = Object.keys(EMPTY_MATCH).filter(field => field !== 'MOTM');
     const lineupCols = Object.keys(EMPTY_LINEUP);
     const lineupColsNoTeam = lineupCols.filter((col) => col !== 'TEAM' && col !== 'MATCH_ID');
-    const playerCols = Object.keys(EMPTY_PLAYER).filter(col => col !== 'MATCH_ID');
-    const gkCols = Object.keys(EMPTY_GK).filter(col => col !== 'MATCH_ID');
-    const penCols = Object.keys(EMPTY_PEN).filter(col => col !== 'MATCH_ID');
     const newEgyTeamLabel = getDefaultEgyptTeamLabel(newMatchData);
     const editEgyTeamLabel = getDefaultEgyptTeamLabel(matchData || {});
 
@@ -1171,6 +1987,7 @@ export default function EgyptNTEditor() {
                                     autoFields={{ TEAM: () => newEgyTeamLabel }}
                                     columnOptions={{
                                         "PLAYER NAME": allPlayersList,
+                                        "CLUB": allTeamsList,
                                         "PLAYER NAME OUT": newEgyLineupRows.filter(r => String(r.STATU || '').trim() === 'اساسي' && String(r["PLAYER NAME"] || '').trim()).map(r => r["PLAYER NAME"]).sort((a, b) => a.localeCompare(b, 'ar')),
                                         STATU: ["اساسي", "احتياطي"],
                                     }}
@@ -1186,53 +2003,58 @@ export default function EgyptNTEditor() {
                                     autoFields={{ TEAM: () => newMatchData["OPPONENT TEAM"] || 'OPPONENT' }}
                                     columnOptions={{
                                         "PLAYER NAME": allPlayersList,
+                                        "CLUB": allTeamsList,
                                         "PLAYER NAME OUT": newOppLineupRows.filter(r => String(r.STATU || '').trim() === 'اساسي' && String(r["PLAYER NAME"] || '').trim()).map(r => r["PLAYER NAME"]).sort((a, b) => a.localeCompare(b, 'ar')),
                                         STATU: ["اساسي", "احتياطي"],
                                     }}
                                 />
                             )}
                             {activeLinkedTab === 'events' && (
-                                <EditableTable
-                                    title="PLAYER EVENTS" color="#8b5cf6"
-                                    rows={newPlayerRows} setRows={setNewPlayerRows}
-                                    columns={playerCols} matchId={newMatchData.MATCH_ID || '---'}
-                                    emptyRow={EMPTY_PLAYER} tableName="egy_NT_PLAYERDETAILS"
-                                    onSave={() => { }} onDelete={(row, ri, _, setter) => setter(prev => prev.filter((_, i) => i !== ri))} isSaving={false}
-                                    onAddRow={(setter, currentRows, mid) => handleAddNewPlayerEventRow(setter, currentRows, mid)}
-                                    columnOptions={{
-                                        "PLAYER NAME": allPlayersList,
-                                        "TEAM": [newEgyTeamLabel, newMatchData["OPPONENT TEAM"]].filter(Boolean),
-                                        "CLUB": allTeamsList,
-                                        "TYPE": eventTypes,
-                                        "TYPE_SUB": eventSubTypes
-                                    }}
+                                <PlayerEventsPanel
+                                    title="PLAYER EVENTS"
+                                    color="#8b5cf6"
+                                    rows={newPlayerRows}
+                                    setRows={setNewPlayerRows}
+                                    matchId={newMatchData.MATCH_ID || '---'}
+                                    teamOptions={[newEgyTeamLabel, newMatchData["OPPONENT TEAM"]].filter(Boolean)}
+                                    allPlayersList={allPlayersList}
+                                    allTeamsList={allTeamsList}
+                                    eventTypes={eventTypes}
+                                    eventSubTypes={eventSubTypes}
+                                    persistToDb={false}
+                                    onDeleteRow={(row, ri, _, setter) => setter(prev => prev.filter((_, i) => i !== ri))}
+                                    isSaving={false}
+                                    resolveNextEventId={async (mid, currentRows) => getNextPlayerEventId(mid, currentRows)}
                                 />
                             )}
                             {activeLinkedTab === 'gks' && (
-                                <EditableTable
-                                    title="GK DETAILS" color="#f59e0b"
-                                    rows={newGkRows} setRows={setNewGkRows}
-                                    columns={gkCols} matchId={newMatchData.MATCH_ID || '---'}
-                                    emptyRow={EMPTY_GK} tableName="egy_NT_GKSDETAILS"
-                                    onSave={() => { }} onDelete={(row, ri, _, setter) => setter(prev => prev.filter((_, i) => i !== ri))} isSaving={false}
-                                    columnOptions={{
-                                        "PLAYER NAME": allPlayersList,
-                                        "TEAM": [newEgyTeamLabel, newMatchData["OPPONENT TEAM"]].filter(Boolean),
-                                        "STATU": ["اساسي", "احتياطي"]
-                                    }}
+                                <GkDetailsPanel
+                                    title="GK DETAILS"
+                                    color="#f59e0b"
+                                    rows={newGkRows}
+                                    setRows={setNewGkRows}
+                                    matchId={newMatchData.MATCH_ID || '---'}
+                                    teamOptions={[newEgyTeamLabel, newMatchData["OPPONENT TEAM"]].filter(Boolean)}
+                                    allPlayersList={allPlayersList}
+                                    playerEventRows={newPlayerRows}
+                                    persistToDb={false}
+                                    onDeleteRow={(row, ri, _, setter) => setter(prev => prev.filter((_, i) => i !== ri))}
+                                    isSaving={false}
                                 />
                             )}
                             {activeLinkedTab === 'pens' && (
-                                <EditableTable
-                                    title="PENALTY MISSES" color="#ef4444"
-                                    rows={newPenRows} setRows={setNewPenRows}
-                                    columns={penCols} matchId={newMatchData.MATCH_ID || '---'}
-                                    emptyRow={EMPTY_PEN} tableName="egy_NT_HOWPENMISSED"
-                                    onSave={() => { }} onDelete={(row, ri, _, setter) => setter(prev => prev.filter((_, i) => i !== ri))} isSaving={false}
-                                    columnOptions={{
-                                        "TEAM": [newEgyTeamLabel, newMatchData["OPPONENT TEAM"]].filter(Boolean),
-                                        "HOW MISSED?": howMissedOptions
-                                    }}
+                                <PenaltyMissesPanel
+                                    title="PENALTY MISSES"
+                                    color="#ef4444"
+                                    rows={newPenRows}
+                                    setRows={setNewPenRows}
+                                    matchId={newMatchData.MATCH_ID || '---'}
+                                    teamOptions={[newEgyTeamLabel, newMatchData["OPPONENT TEAM"]].filter(Boolean)}
+                                    howMissedOptions={howMissedOptions}
+                                    playerEventRows={newPlayerRows}
+                                    persistToDb={false}
+                                    onDeleteRow={(row, ri, _, setter) => setter(prev => prev.filter((_, i) => i !== ri))}
+                                    isSaving={false}
                                 />
                             )}
                             {activeLinkedTab === 'motm' && (
@@ -1323,6 +2145,7 @@ export default function EgyptNTEditor() {
                                     autoFields={{ TEAM: () => editEgyTeamLabel }}
                                     columnOptions={{
                                         "PLAYER NAME": allPlayersList,
+                                        "CLUB": allTeamsList,
                                         "PLAYER NAME OUT": egyLineupRows.filter(r => String(r.STATU || '').trim() === 'اساسي' && String(r["PLAYER NAME"] || '').trim()).map(r => r["PLAYER NAME"]).sort((a, b) => a.localeCompare(b, 'ar')),
                                         STATU: ["اساسي", "احتياطي"],
                                     }}
@@ -1338,53 +2161,61 @@ export default function EgyptNTEditor() {
                                     autoFields={{ TEAM: () => matchData["OPPONENT TEAM"] || 'OPPONENT' }}
                                     columnOptions={{
                                         "PLAYER NAME": allPlayersList,
+                                        "CLUB": allTeamsList,
                                         "PLAYER NAME OUT": oppLineupRows.filter(r => String(r.STATU || '').trim() === 'اساسي' && String(r["PLAYER NAME"] || '').trim()).map(r => r["PLAYER NAME"]).sort((a, b) => a.localeCompare(b, 'ar')),
                                         STATU: ["اساسي", "احتياطي"],
                                     }}
                                 />
                             )}
                             {activeLinkedTab === 'events' && (
-                                <EditableTable
-                                    title="PLAYER EVENTS" color="#8b5cf6"
-                                    rows={playerRows} setRows={setPlayerRows}
-                                    columns={playerCols} matchId={matchData.MATCH_ID}
-                                    emptyRow={EMPTY_PLAYER} tableName="egy_NT_PLAYERDETAILS"
-                                    onSave={handleSaveRow} onDelete={handleDeleteRow} isSaving={isSaving}
-                                    onAddRow={handleAddPlayerEventRow}
-                                    columnOptions={{
-                                        "PLAYER NAME": allPlayersList,
-                                        "TEAM": [editEgyTeamLabel, matchData["OPPONENT TEAM"]].filter(Boolean),
-                                        "CLUB": allTeamsList,
-                                        "TYPE": eventTypes,
-                                        "TYPE_SUB": eventSubTypes
-                                    }}
+                                <PlayerEventsPanel
+                                    title="PLAYER EVENTS"
+                                    color="#8b5cf6"
+                                    rows={playerRows}
+                                    setRows={setPlayerRows}
+                                    matchId={matchData.MATCH_ID}
+                                    teamOptions={[editEgyTeamLabel, matchData["OPPONENT TEAM"]].filter(Boolean)}
+                                    allPlayersList={allPlayersList}
+                                    allTeamsList={allTeamsList}
+                                    eventTypes={eventTypes}
+                                    eventSubTypes={eventSubTypes}
+                                    persistToDb
+                                    onSaveRow={handleSaveRow}
+                                    onDeleteRow={handleDeleteRow}
+                                    isSaving={isSaving}
+                                    resolveNextEventId={resolveNextPlayerEventId}
                                 />
                             )}
                             {activeLinkedTab === 'gks' && (
-                                <EditableTable
-                                    title="GK DETAILS" color="#f59e0b"
-                                    rows={gkRows} setRows={setGkRows}
-                                    columns={gkCols} matchId={matchData.MATCH_ID}
-                                    emptyRow={EMPTY_GK} tableName="egy_NT_GKSDETAILS"
-                                    onSave={handleSaveRow} onDelete={handleDeleteRow} isSaving={isSaving}
-                                    columnOptions={{
-                                        "PLAYER NAME": allPlayersList,
-                                        "TEAM": [editEgyTeamLabel, matchData["OPPONENT TEAM"]].filter(Boolean),
-                                        "STATU": ["اساسي", "احتياطي"]
-                                    }}
+                                <GkDetailsPanel
+                                    title="GK DETAILS"
+                                    color="#f59e0b"
+                                    rows={gkRows}
+                                    setRows={setGkRows}
+                                    matchId={matchData.MATCH_ID}
+                                    teamOptions={[editEgyTeamLabel, matchData["OPPONENT TEAM"]].filter(Boolean)}
+                                    allPlayersList={allPlayersList}
+                                    playerEventRows={playerRows}
+                                    persistToDb
+                                    onSaveRow={handleSaveRow}
+                                    onDeleteRow={handleDeleteRow}
+                                    isSaving={isSaving}
                                 />
                             )}
                             {activeLinkedTab === 'pens' && (
-                                <EditableTable
-                                    title="PENALTY MISSES" color="#ef4444"
-                                    rows={penRows} setRows={setPenRows}
-                                    columns={penCols} matchId={matchData.MATCH_ID}
-                                    emptyRow={EMPTY_PEN} tableName="egy_NT_HOWPENMISSED"
-                                    onSave={handleSaveRow} onDelete={handleDeleteRow} isSaving={isSaving}
-                                    columnOptions={{
-                                        "TEAM": [editEgyTeamLabel, matchData["OPPONENT TEAM"]].filter(Boolean),
-                                        "HOW MISSED?": howMissedOptions
-                                    }}
+                                <PenaltyMissesPanel
+                                    title="PENALTY MISSES"
+                                    color="#ef4444"
+                                    rows={penRows}
+                                    setRows={setPenRows}
+                                    matchId={matchData.MATCH_ID}
+                                    teamOptions={[editEgyTeamLabel, matchData["OPPONENT TEAM"]].filter(Boolean)}
+                                    howMissedOptions={howMissedOptions}
+                                    playerEventRows={playerRows}
+                                    persistToDb
+                                    onSaveRow={handleSaveRow}
+                                    onDeleteRow={handleDeleteRow}
+                                    isSaving={isSaving}
                                 />
                             )}
                             {activeLinkedTab === 'motm' && (

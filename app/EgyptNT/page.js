@@ -17,7 +17,8 @@ import {
     ArrowLeft,
     Award,
     Edit,
-    Building2
+    Building2,
+    Ban
 } from "lucide-react";
 import Link from "next/link";
 
@@ -34,6 +35,7 @@ import EgyptNTFilters from "./Filters/egypt_nt_db_filters";
 import EgyptNTClubs from "./Clubs/egypt_nt_db_clubs";
 import EgyptNTEditor from "./Editor/egypt_nt_db_editor";
 import EgyptNTClubBackfill from "./ClubBackfill/egypt_nt_club_backfill";
+import EgyptNTCancelled from "./Cancelled/egypt_nt_db_cancelled";
 import { buildMatchContextMap, isEgyptScorerEvent } from "./Clubs/egypt_nt_db_clubs_utils";
 
 import EgyptNTMatchDetails from "./MatchDetails/egypt_nt_db_match_details";
@@ -591,6 +593,7 @@ export default function EgyptNTDatabase() {
     const tabs = [
         { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
         { id: 'matches', label: 'Matches', icon: Trophy },
+        { id: 'cancelled', label: 'Cancelled', icon: Ban },
         { id: 'editor', label: 'Editor', icon: Edit },
         { id: 'club_backfill', label: 'Club Backfill', icon: Building2 },
         { id: 'champions', label: 'Champions', icon: Award },
@@ -802,6 +805,7 @@ export default function EgyptNTDatabase() {
                             {activeTab === 'referees' && <EgyptNTReferees matches={filteredMatches} playerDetails={playerDetails} howPenMissed={howPenMissed} />}
                             {activeTab === 'champions' && <EgyptNTChampions matchesData={filteredMatches} />}
                             {activeTab === 'editor' && <EgyptNTEditor />}
+                            {activeTab === 'cancelled' && <EgyptNTCancelled />}
                             {activeTab === 'club_backfill' && (
                                 <EgyptNTClubBackfill
                                     matches={matches}

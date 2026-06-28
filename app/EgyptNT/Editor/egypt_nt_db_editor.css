@@ -512,3 +512,354 @@
     70% { transform: scale(0.9); }
     100% { transform: scale(1); opacity: 1; }
 }
+
+/* ── Player Events Cards ── */
+.player-events-panel {
+    --panel-accent: #8b5cf6;
+    margin-bottom: 40px;
+}
+
+.player-events-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 16px;
+    gap: 12px;
+}
+
+.player-events-title {
+    margin: 0;
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 20px;
+    letter-spacing: 2px;
+    color: #0a0a0a;
+}
+
+.player-events-count {
+    font-family: 'Space Mono', monospace;
+    font-size: 11px;
+    color: #999;
+    font-weight: 400;
+    margin-left: 8px;
+    letter-spacing: 0;
+}
+
+.player-events-add-btn {
+    background: #0a0a0a;
+    color: var(--panel-accent);
+    border: none;
+    border-radius: 10px;
+    padding: 7px 18px;
+    cursor: pointer;
+    font-weight: 800;
+    font-size: 12px;
+    font-family: 'Outfit', sans-serif;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    transition: all 0.2s;
+    letter-spacing: 0.5px;
+    white-space: nowrap;
+}
+
+.player-events-add-btn:hover:not(:disabled) {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12);
+}
+
+.player-events-add-btn:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
+.player-events-grid {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 16px;
+}
+
+@media (max-width: 1280px) {
+    .player-events-grid {
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+}
+
+@media (max-width: 960px) {
+    .player-events-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+}
+
+@media (max-width: 640px) {
+    .player-events-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+.player-event-card {
+    background: #fff;
+    border: 1px solid #eee;
+    border-radius: 16px;
+    padding: 14px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    min-height: 180px;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.04);
+    transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.player-event-card-single {
+    min-height: 0;
+}
+
+.player-event-card-dirty {
+    border-color: color-mix(in srgb, var(--panel-accent) 35%, transparent);
+    background: color-mix(in srgb, var(--panel-accent) 3%, #fff);
+}
+
+.player-event-card:hover {
+    border-color: color-mix(in srgb, var(--panel-accent) 35%, transparent);
+    box-shadow: 0 8px 24px color-mix(in srgb, var(--panel-accent) 8%, transparent);
+}
+
+.player-event-card-head {
+    border-bottom: 1px solid #f3f3f3;
+    padding-bottom: 10px;
+}
+
+.player-event-card-head-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    border-bottom: none;
+    padding-bottom: 0;
+}
+
+.player-event-card-name {
+    font-family: 'Outfit', sans-serif;
+    font-size: 15px;
+    font-weight: 800;
+    color: #111;
+    line-height: 1.3;
+    word-break: break-word;
+}
+
+.player-event-card-meta {
+    margin-top: 4px;
+    font-size: 11px;
+    color: #888;
+    line-height: 1.3;
+}
+
+.player-event-card-list {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    flex: 1;
+}
+
+.player-event-item {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 8px;
+    padding: 8px 10px;
+    border-radius: 10px;
+    background: #fafafa;
+    border: 1px solid #f0f0f0;
+}
+
+.player-event-item-dirty {
+    border-color: color-mix(in srgb, var(--panel-accent) 35%, transparent);
+    background: color-mix(in srgb, var(--panel-accent) 4%, transparent);
+}
+
+.player-event-item-main {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    min-width: 0;
+}
+
+.player-event-id {
+    font-family: 'Space Mono', monospace;
+    font-size: 10px;
+    font-weight: 700;
+    color: var(--panel-accent);
+    letter-spacing: 0.3px;
+}
+
+.player-event-desc {
+    font-size: 12px;
+    color: #333;
+    line-height: 1.35;
+    word-break: break-word;
+}
+
+.player-event-card-desc {
+    font-size: 12px;
+    color: #333;
+    line-height: 1.35;
+    word-break: break-word;
+}
+
+.player-event-parent {
+    font-size: 10px;
+    color: #999;
+}
+
+.player-event-item-actions {
+    display: flex;
+    gap: 4px;
+    flex-shrink: 0;
+}
+
+.player-event-action-btn {
+    width: 28px;
+    height: 28px;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.15s;
+}
+
+.player-event-action-btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.player-event-action-edit {
+    background: #ede9fe;
+    color: #7c3aed;
+}
+
+.player-event-action-edit:hover:not(:disabled) {
+    background: #ddd6fe;
+}
+
+.player-event-action-delete {
+    background: #fee2e2;
+    color: #ef4444;
+}
+
+.player-event-action-delete:hover:not(:disabled) {
+    background: #fecaca;
+}
+
+.player-event-card-add {
+    margin-top: auto;
+    border: 1px dashed #ddd;
+    background: transparent;
+    color: #888;
+    border-radius: 10px;
+    padding: 7px 10px;
+    font-size: 11px;
+    font-weight: 700;
+    font-family: 'Outfit', sans-serif;
+    cursor: pointer;
+    transition: all 0.15s;
+}
+
+.player-event-card-add:hover:not(:disabled) {
+    border-color: var(--panel-accent);
+    color: var(--panel-accent);
+    background: color-mix(in srgb, var(--panel-accent) 4%, transparent);
+}
+
+.player-event-card-add:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.player-event-modal {
+    background: #fff;
+    border-radius: 20px;
+    padding: 28px 32px;
+    width: min(720px, calc(100vw - 32px));
+    max-height: calc(100vh - 48px);
+    overflow-y: auto;
+    box-shadow: 0 24px 64px rgba(0, 0, 0, 0.18);
+    animation: scaleIn 0.2s ease-out;
+}
+
+.player-event-modal-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    margin-bottom: 22px;
+}
+
+.player-event-modal-head h3 {
+    margin: 0;
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 22px;
+    letter-spacing: 2px;
+    color: #111;
+}
+
+.player-event-modal-id {
+    font-family: 'Space Mono', monospace;
+    font-size: 11px;
+    color: var(--panel-accent);
+    background: color-mix(in srgb, var(--panel-accent) 8%, transparent);
+    padding: 6px 10px;
+    border-radius: 8px;
+    font-weight: 700;
+}
+
+.player-event-modal-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 14px;
+}
+
+.player-event-modal-field-wide {
+    grid-column: 1 / -1;
+}
+
+.player-event-modal-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+    margin-top: 24px;
+}
+
+.player-event-modal-save {
+    border: none;
+    border-radius: 10px;
+    padding: 10px 22px;
+    color: #fff;
+    font-weight: 800;
+    font-size: 12px;
+    font-family: 'Outfit', sans-serif;
+    cursor: pointer;
+    letter-spacing: 0.5px;
+    transition: all 0.15s;
+}
+
+.player-event-modal-save:hover:not(:disabled) {
+    filter: brightness(0.95);
+    transform: translateY(-1px);
+}
+
+.player-event-modal-save:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
+@media (max-width: 640px) {
+    .player-event-modal-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .player-event-modal-field-wide {
+        grid-column: auto;
+    }
+}

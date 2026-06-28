@@ -19,6 +19,7 @@ export function isEditorWrapColumn(col) {
 
 export function getEditorColumnMinWidth(col) {
     if (col === "PLAYER NAME" || col === "PLAYER NAME OUT") return 140;
+    if (col === "CLUB") return 120;
     return 80;
 }
 

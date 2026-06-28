@@ -8,11 +8,9 @@ import NoData_db from "../../lib/NoData_db";
 import SearchBar_db from "../../lib/SearchBar_db";
 import { useNotification } from "../../lib/Notification_db";
 import {
-    buildPenMissedEventOptions,
     normalizeHowPenMissedRowForEditor,
     sanitizeHowPenMissedRowForSave,
     isEditorLinkedRowFilled,
-    PEN_MISSED_EVENT_OPTION_GET_VALUE,
 } from "../Penalties/alahly_db_penalties_utils";
 // â”€â”€ Helper â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 const EMPTY_MATCH = {
@@ -26,8 +24,98 @@ const EMPTY_PLAYER = { "MATCH_ID": "", "EVENT_ID": "", "PARENT_EVENT_ID": "", "P
 const EMPTY_GK = { "MATCH_ID": "", "EVENT_ID": "", "TEAM": "", "PLAYER NAME": "", "STATU": "", "OUT MINUTE": "", "GOALS CONCEDED": "" };
 const EMPTY_PEN = { "MATCH_ID": "", "EVENT_ID": "", "HOW MISSED?": "", "TEAM": "", "MINUTE": "" };
 
+const parseEventIdSuffix = (eventId) => {
+    const id = String(eventId || "").trim();
+    if (!id) return 0;
+    const trailing = id.match(/(\d+)(?!.*\d)/);
+    return trailing ? parseInt(trailing[1], 10) : 0;
+};
+
+const getNextPlayerEventId = (matchId, rows = []) => {
+    const normalizedMatchId = String(matchId || "").trim();
+    if (!normalizedMatchId) return "";
+
+    let maxSuffix = 0;
+    rows.forEach((row) => {
+        maxSuffix = Math.max(maxSuffix, parseEventIdSuffix(row?.EVENT_ID));
+    });
+
+    return `${normalizedMatchId}-${maxSuffix + 1}`;
+};
+
+const sortRowsByEventId = (rows = []) => (
+    [...rows].sort((a, b) => {
+        const idA = String(a?.EVENT_ID || "").trim();
+        const idB = String(b?.EVENT_ID || "").trim();
+        if (!idA && !idB) return 0;
+        if (!idA) return 1;
+        if (!idB) return -1;
+        const suffixDiff = parseEventIdSuffix(idA) - parseEventIdSuffix(idB);
+        if (suffixDiff !== 0) return suffixDiff;
+        return idA.localeCompare(idB);
+    })
+);
+
+const listIndexedRowsByEventId = (rows = []) => (
+    rows
+        .map((row, index) => ({ row, index }))
+        .sort((a, b) => {
+            const suffixDiff = parseEventIdSuffix(a.row?.EVENT_ID) - parseEventIdSuffix(b.row?.EVENT_ID);
+            if (suffixDiff !== 0) return suffixDiff;
+            if (!a.row?.EVENT_ID && b.row?.EVENT_ID) return 1;
+            if (a.row?.EVENT_ID && !b.row?.EVENT_ID) return -1;
+            return String(a.row?.EVENT_ID || "").localeCompare(String(b.row?.EVENT_ID || ""));
+        })
+);
+
+const buildPlayerEventIdOptions = (playerRows = []) => (
+    [...new Set(playerRows.map((row) => String(row?.EVENT_ID || "").trim()).filter(Boolean))]
+        .sort((a, b) => parseEventIdSuffix(a) - parseEventIdSuffix(b))
+);
+
+const isPlayerEventRowSaveable = (row) => (
+    String(row?.["PLAYER NAME"] || "").trim() !== "" ||
+    String(row?.TYPE || "").trim() !== "" ||
+    String(row?.MINUTE || "").trim() !== "" ||
+    String(row?.TYPE_SUB || "").trim() !== ""
+);
+
+const isGkRowSaveable = (row) => String(row?.["PLAYER NAME"] || "").trim() !== "";
+
+const isPenRowSaveable = (row) => (
+    String(row?.["HOW MISSED?"] || "").trim() !== "" ||
+    String(row?.MINUTE || "").trim() !== ""
+);
+
+const UNNAMED_PLAYER_LABEL = "— Unnamed Player —";
+
+const formatEventLine = (row) => {
+    const parts = [
+        String(row.TYPE || "").trim(),
+        String(row.TYPE_SUB || "").trim(),
+        String(row.MINUTE || "").trim() ? `${String(row.MINUTE).trim()}'` : "",
+    ].filter(Boolean);
+    return parts.join(" · ") || "—";
+};
+
+const formatGkLine = (row) => {
+    const parts = [
+        String(row.STATU || "").trim(),
+        String(row["OUT MINUTE"] || "").trim() ? `OUT ${String(row["OUT MINUTE"]).trim()}'` : "",
+        String(row["GOALS CONCEDED"] || "").trim() !== "" ? `GC ${String(row["GOALS CONCEDED"]).trim()}` : "",
+    ].filter(Boolean);
+    return parts.join(" · ") || "—";
+};
+
+const formatPenLine = (row) => {
+    const parts = [
+        String(row["HOW MISSED?"] || "").trim(),
+        String(row.MINUTE || "").trim() ? `${String(row.MINUTE).trim()}'` : "",
+    ].filter(Boolean);
+    return parts.join(" · ") || "—";
+};
+
 const sortByRowIdAsc = (rows) => sortRowsByTableSortRules(rows, ["ROW_ID"], [{ column: "ROW_ID", direction: "asc" }]);
-const sortByEventIdAsc = (rows) => sortRowsByTableSortRules(rows, ["EVENT_ID"], [{ column: "EVENT_ID", direction: "asc" }]);
 
 const isFinalRound = (round) => String(round || "").trim() === "النهائي";
 
@@ -84,6 +172,778 @@ function mergeTeamLineupUpdate(allRows, teamFilter, teamAction, applyLogic) {
     const teamPrev = allRows.filter(teamFilter);
     const teamNext = typeof teamAction === "function" ? teamAction(teamPrev) : teamAction;
     return applyLogic([...others, ...teamNext], teamNext);
+}
+
+function EditorEventCard({
+    row,
+    index,
+    isSaving,
+    savingModal,
+    onEdit,
+    onDelete,
+    tableName,
+    setRows,
+    title,
+    meta,
+    description,
+    extra,
+}) {
+    const isDirty = row._isNew || row._isDirty;
+
+    return (
+        <div className={`player-event-card player-event-card-single${isDirty ? " player-event-card-dirty" : ""}`}>
+            <div className="player-event-card-head player-event-card-head-row">
+                <span className="player-event-id">{row.EVENT_ID || "—"}</span>
+                <div className="player-event-item-actions">
+                    <button
+                        type="button"
+                        className="player-event-action-btn player-event-action-edit"
+                        title="Edit"
+                        disabled={isSaving || savingModal}
+                        onClick={() => onEdit(row, index)}
+                    >
+                        ✎
+                    </button>
+                    <button
+                        type="button"
+                        className="player-event-action-btn player-event-action-delete"
+                        title="Delete"
+                        disabled={isSaving || savingModal}
+                        onClick={() => onDelete(row, index, tableName, setRows)}
+                    >
+                        ✕
+                    </button>
+                </div>
+            </div>
+            {title && <div className="player-event-card-name">{title}</div>}
+            {meta && <div className="player-event-card-meta">{meta}</div>}
+            {description && <div className="player-event-card-desc">{description}</div>}
+            {extra}
+        </div>
+    );
+}
+
+function PlayerEventsPanel({
+    title,
+    color,
+    rows,
+    setRows,
+    matchId,
+    teamOptions,
+    allPlayersList,
+    eventTypes,
+    eventSubTypes,
+    persistToDb,
+    onSaveRow,
+    onDeleteRow,
+    isSaving,
+    resolveNextEventId,
+}) {
+    const [modalOpen, setModalOpen] = useState(false);
+    const [editingIndex, setEditingIndex] = useState(null);
+    const [form, setForm] = useState({ ...EMPTY_PLAYER });
+    const [savingModal, setSavingModal] = useState(false);
+    const { addNotification } = useNotification();
+
+    const sortedEntries = useMemo(() => listIndexedRowsByEventId(rows), [rows]);
+
+    const parentEventOptions = useMemo(() => {
+        const ids = rows
+            .map((row) => String(row.EVENT_ID || "").trim())
+            .filter(Boolean);
+        return [...new Set(ids)].sort((a, b) => parseEventIdSuffix(a) - parseEventIdSuffix(b));
+    }, [rows]);
+
+    const openAddModal = (preset = {}) => {
+        setEditingIndex(null);
+        setForm({ ...EMPTY_PLAYER, MATCH_ID: matchId, ...preset });
+        setModalOpen(true);
+    };
+
+    const openEditModal = (row, index) => {
+        setEditingIndex(index);
+        setForm({ ...EMPTY_PLAYER, ...row, MATCH_ID: row.MATCH_ID || matchId });
+        setModalOpen(true);
+    };
+
+    const closeModal = (force = false) => {
+        if (!force && savingModal) return;
+        setModalOpen(false);
+        setEditingIndex(null);
+        setForm({ ...EMPTY_PLAYER });
+    };
+
+    const updateFormField = (field, value) => {
+        setForm((prev) => ({ ...prev, [field]: value }));
+    };
+
+    const handleModalSave = async () => {
+        const cleanForm = { ...form };
+        if (!isPlayerEventRowSaveable(cleanForm)) {
+            addNotification("Fill at least PLAYER NAME, TYPE, or MINUTE before saving.", "error");
+            return;
+        }
+
+        setSavingModal(true);
+        try {
+            if (editingIndex === null) {
+                let eventId = String(cleanForm.EVENT_ID || "").trim();
+                if (!eventId) {
+                    eventId = persistToDb
+                        ? await resolveNextEventId(matchId, rows)
+                        : getNextPlayerEventId(matchId, rows);
+                }
+
+                const newRow = {
+                    ...EMPTY_PLAYER,
+                    ...cleanForm,
+                    MATCH_ID: matchId,
+                    EVENT_ID: eventId,
+                    _isNew: true,
+                    _key: Date.now(),
+                };
+
+                const nextRows = sortRowsByEventId([...rows, newRow]);
+                const newIndex = nextRows.findIndex((row) => row._key === newRow._key);
+                setRows(nextRows);
+
+                if (persistToDb && onSaveRow) {
+                    await onSaveRow(newRow, newIndex, "alahly_PLAYERDETAILS", setRows);
+                }
+            } else {
+                const existingRow = rows[editingIndex];
+                const updatedRow = {
+                    ...existingRow,
+                    ...cleanForm,
+                    MATCH_ID: matchId,
+                    _isDirty: true,
+                };
+                const nextRows = sortRowsByEventId(
+                    rows.map((row, index) => (index === editingIndex ? updatedRow : row))
+                );
+                const newIndex = nextRows.findIndex((row) => row._key === updatedRow._key);
+                setRows(nextRows);
+
+                if (persistToDb && onSaveRow) {
+                    await onSaveRow(updatedRow, newIndex, "alahly_PLAYERDETAILS", setRows);
+                }
+            }
+
+            closeModal(true);
+        } catch (error) {
+            addNotification(`Failed to save event: ${error.message}`, "error");
+        } finally {
+            setSavingModal(false);
+        }
+    };
+
+    return (
+        <div className="player-events-panel" style={{ "--panel-accent": color }}>
+            <div className="player-events-header">
+                <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+                    <div style={{ width: 4, height: 24, background: color, borderRadius: 4 }} />
+                    <h3 className="player-events-title">
+                        {title}
+                        <span className="player-events-count">({rows.length} events)</span>
+                    </h3>
+                </div>
+                <button
+                    type="button"
+                    className="player-events-add-btn"
+                    onClick={() => openAddModal()}
+                    disabled={isSaving || savingModal}
+                >
+                    <span>+</span> ADD EVENT
+                </button>
+            </div>
+
+            {rows.length === 0 ? (
+                <NoData_db message="NO PLAYER EVENTS FOUND" height="240px" />
+            ) : (
+                <div className="player-events-grid">
+                    {sortedEntries.map(({ row, index }) => (
+                        <EditorEventCard
+                            key={row._key ?? `${row.EVENT_ID}-${index}`}
+                            row={row}
+                            index={index}
+                            isSaving={isSaving}
+                            savingModal={savingModal}
+                            onEdit={openEditModal}
+                            onDelete={onDeleteRow}
+                            tableName="alahly_PLAYERDETAILS"
+                            setRows={setRows}
+                            title={String(row["PLAYER NAME"] || "").trim() || UNNAMED_PLAYER_LABEL}
+                            meta={String(row.TEAM || "").trim() || null}
+                            description={formatEventLine(row)}
+                            extra={String(row.PARENT_EVENT_ID || "").trim() ? (
+                                <span className="player-event-parent">↳ {row.PARENT_EVENT_ID}</span>
+                            ) : null}
+                        />
+                    ))}
+                </div>
+            )}
+
+            {modalOpen && (
+                <div className="confirm-modal-overlay" onClick={closeModal}>
+                    <div className="player-event-modal" onClick={(e) => e.stopPropagation()}>
+                        <div className="player-event-modal-head">
+                            <h3>{editingIndex === null ? "ADD PLAYER EVENT" : "EDIT PLAYER EVENT"}</h3>
+                        </div>
+
+                        <div className="player-event-modal-grid">
+                            <div className="player-event-modal-field">
+                                <div className="field-label">PARENT EVENT ID</div>
+                                <AutocompleteInput
+                                    value={form.PARENT_EVENT_ID ?? ""}
+                                    options={parentEventOptions}
+                                    placeholder="Optional"
+                                    onChange={(val) => updateFormField("PARENT_EVENT_ID", val)}
+                                    className="field-input"
+                                    accentColor={color}
+                                    style={{ width: "100%", height: "42px", fontSize: "14px", background: "#fff" }}
+                                />
+                            </div>
+                            <div className="player-event-modal-field">
+                                <div className="field-label">PLAYER NAME</div>
+                                <AutocompleteInput
+                                    value={form["PLAYER NAME"] ?? ""}
+                                    options={allPlayersList}
+                                    placeholder="Player name"
+                                    onChange={(val) => updateFormField("PLAYER NAME", val)}
+                                    className="field-input"
+                                    accentColor={color}
+                                    style={{ width: "100%", height: "42px", fontSize: "14px", background: "#fff" }}
+                                />
+                            </div>
+                            <div className="player-event-modal-field">
+                                <div className="field-label">TEAM</div>
+                                <AutocompleteInput
+                                    value={form.TEAM ?? ""}
+                                    options={teamOptions}
+                                    placeholder="Team"
+                                    onChange={(val) => updateFormField("TEAM", val)}
+                                    className="field-input"
+                                    accentColor={color}
+                                    style={{ width: "100%", height: "42px", fontSize: "14px", background: "#fff" }}
+                                />
+                            </div>
+                            <div className="player-event-modal-field">
+                                <div className="field-label">TYPE</div>
+                                <AutocompleteInput
+                                    value={form.TYPE ?? ""}
+                                    options={eventTypes}
+                                    placeholder="Type"
+                                    onChange={(val) => updateFormField("TYPE", val)}
+                                    className="field-input field-input-fit"
+                                    shrinkToFit
+                                    accentColor={color}
+                                    style={{ width: "100%", height: "42px", fontSize: "14px", background: "#fff" }}
+                                />
+                            </div>
+                            <div className="player-event-modal-field">
+                                <div className="field-label">TYPE SUB</div>
+                                <AutocompleteInput
+                                    value={form.TYPE_SUB ?? ""}
+                                    options={eventSubTypes}
+                                    placeholder="Type sub"
+                                    onChange={(val) => updateFormField("TYPE_SUB", val)}
+                                    className="field-input field-input-fit"
+                                    shrinkToFit
+                                    accentColor={color}
+                                    style={{ width: "100%", height: "42px", fontSize: "14px", background: "#fff" }}
+                                />
+                            </div>
+                            <div className="player-event-modal-field">
+                                <div className="field-label">MINUTE</div>
+                                <input
+                                    value={form.MINUTE ?? ""}
+                                    onChange={(e) => updateFormField("MINUTE", e.target.value)}
+                                    className="field-input"
+                                    placeholder="Minute"
+                                    style={{ width: "100%", height: "42px", fontSize: "14px" }}
+                                />
+                            </div>
+                        </div>
+
+                        <div className="player-event-modal-actions">
+                            <button type="button" className="confirm-modal-btn confirm-modal-btn-cancel" onClick={closeModal} disabled={savingModal}>
+                                CANCEL
+                            </button>
+                            <button
+                                type="button"
+                                className="player-event-modal-save"
+                                onClick={handleModalSave}
+                                disabled={savingModal || isSaving}
+                                style={{ background: color }}
+                            >
+                                {savingModal ? "SAVING..." : "SAVE EVENT"}
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+        </div>
+    );
+}
+
+function GkDetailsPanel({
+    title,
+    color,
+    rows,
+    setRows,
+    matchId,
+    teamOptions,
+    allPlayersList,
+    playerEventRows,
+    persistToDb,
+    onSaveRow,
+    onDeleteRow,
+    isSaving,
+}) {
+    const [modalOpen, setModalOpen] = useState(false);
+    const [editingIndex, setEditingIndex] = useState(null);
+    const [form, setForm] = useState({ ...EMPTY_GK });
+    const [savingModal, setSavingModal] = useState(false);
+    const { addNotification } = useNotification();
+
+    const sortedEntries = useMemo(() => listIndexedRowsByEventId(rows), [rows]);
+    const eventIdOptions = useMemo(() => buildPlayerEventIdOptions(playerEventRows), [playerEventRows]);
+    const statuOptions = ["اساسي", "احتياطي"];
+
+    const openAddModal = (preset = {}) => {
+        setEditingIndex(null);
+        setForm({ ...EMPTY_GK, MATCH_ID: matchId, ...preset });
+        setModalOpen(true);
+    };
+
+    const openEditModal = (row, index) => {
+        setEditingIndex(index);
+        setForm({ ...EMPTY_GK, ...row, MATCH_ID: row.MATCH_ID || matchId });
+        setModalOpen(true);
+    };
+
+    const closeModal = (force = false) => {
+        if (!force && savingModal) return;
+        setModalOpen(false);
+        setEditingIndex(null);
+        setForm({ ...EMPTY_GK });
+    };
+
+    const updateFormField = (field, value) => {
+        setForm((prev) => ({ ...prev, [field]: value }));
+    };
+
+    const handleModalSave = async () => {
+        const cleanForm = { ...form };
+        if (!isGkRowSaveable(cleanForm)) {
+            addNotification("Fill PLAYER NAME before saving.", "error");
+            return;
+        }
+
+        setSavingModal(true);
+        try {
+            if (editingIndex === null) {
+                const newRow = {
+                    ...EMPTY_GK,
+                    ...cleanForm,
+                    MATCH_ID: matchId,
+                    EVENT_ID: String(cleanForm.EVENT_ID || "").trim(),
+                    _isNew: true,
+                    _key: Date.now(),
+                };
+
+                const nextRows = sortRowsByEventId([...rows, newRow]);
+                const newIndex = nextRows.findIndex((row) => row._key === newRow._key);
+                setRows(nextRows);
+
+                if (persistToDb && onSaveRow) {
+                    await onSaveRow(newRow, newIndex, "alahly_GKSDETAILS", setRows);
+                }
+            } else {
+                const existingRow = rows[editingIndex];
+                const updatedRow = {
+                    ...existingRow,
+                    ...cleanForm,
+                    MATCH_ID: matchId,
+                    _isDirty: true,
+                };
+                const nextRows = sortRowsByEventId(
+                    rows.map((row, index) => (index === editingIndex ? updatedRow : row))
+                );
+                const newIndex = nextRows.findIndex((row) => row._key === updatedRow._key);
+                setRows(nextRows);
+
+                if (persistToDb && onSaveRow) {
+                    await onSaveRow(updatedRow, newIndex, "alahly_GKSDETAILS", setRows);
+                }
+            }
+
+            closeModal(true);
+        } catch (error) {
+            addNotification(`Failed to save GK row: ${error.message}`, "error");
+        } finally {
+            setSavingModal(false);
+        }
+    };
+
+    return (
+        <div className="player-events-panel" style={{ "--panel-accent": color }}>
+            <div className="player-events-header">
+                <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+                    <div style={{ width: 4, height: 24, background: color, borderRadius: 4 }} />
+                    <h3 className="player-events-title">
+                        {title}
+                        <span className="player-events-count">({rows.length} records)</span>
+                    </h3>
+                </div>
+                <button
+                    type="button"
+                    className="player-events-add-btn"
+                    onClick={() => openAddModal()}
+                    disabled={isSaving || savingModal}
+                >
+                    <span>+</span> ADD GK
+                </button>
+            </div>
+
+            {rows.length === 0 ? (
+                <NoData_db message="NO GK DETAILS FOUND" height="240px" />
+            ) : (
+                <div className="player-events-grid">
+                    {sortedEntries.map(({ row, index }) => (
+                        <EditorEventCard
+                            key={row._key ?? `${row.EVENT_ID}-${index}`}
+                            row={row}
+                            index={index}
+                            isSaving={isSaving}
+                            savingModal={savingModal}
+                            onEdit={openEditModal}
+                            onDelete={onDeleteRow}
+                            tableName="alahly_GKSDETAILS"
+                            setRows={setRows}
+                            title={String(row["PLAYER NAME"] || "").trim() || UNNAMED_PLAYER_LABEL}
+                            meta={String(row.TEAM || "").trim() || null}
+                            description={formatGkLine(row)}
+                        />
+                    ))}
+                </div>
+            )}
+
+            {modalOpen && (
+                <div className="confirm-modal-overlay" onClick={closeModal}>
+                    <div className="player-event-modal" onClick={(e) => e.stopPropagation()}>
+                        <div className="player-event-modal-head">
+                            <h3>{editingIndex === null ? "ADD GK DETAIL" : "EDIT GK DETAIL"}</h3>
+                        </div>
+
+                        <div className="player-event-modal-grid">
+                            <div className="player-event-modal-field">
+                                <div className="field-label">EVENT ID</div>
+                                <AutocompleteInput
+                                    value={form.EVENT_ID ?? ""}
+                                    options={eventIdOptions}
+                                    placeholder="Link to player event"
+                                    onChange={(val) => updateFormField("EVENT_ID", val)}
+                                    className="field-input"
+                                    accentColor={color}
+                                    style={{ width: "100%", height: "42px", fontSize: "14px", background: "#fff" }}
+                                />
+                            </div>
+                            <div className="player-event-modal-field">
+                                <div className="field-label">PLAYER NAME</div>
+                                <AutocompleteInput
+                                    value={form["PLAYER NAME"] ?? ""}
+                                    options={allPlayersList}
+                                    placeholder="Keeper name"
+                                    onChange={(val) => updateFormField("PLAYER NAME", val)}
+                                    className="field-input"
+                                    accentColor={color}
+                                    style={{ width: "100%", height: "42px", fontSize: "14px", background: "#fff" }}
+                                />
+                            </div>
+                            <div className="player-event-modal-field">
+                                <div className="field-label">TEAM</div>
+                                <AutocompleteInput
+                                    value={form.TEAM ?? ""}
+                                    options={teamOptions}
+                                    placeholder="Team"
+                                    onChange={(val) => updateFormField("TEAM", val)}
+                                    className="field-input"
+                                    accentColor={color}
+                                    style={{ width: "100%", height: "42px", fontSize: "14px", background: "#fff" }}
+                                />
+                            </div>
+                            <div className="player-event-modal-field">
+                                <div className="field-label">STATU</div>
+                                <AutocompleteInput
+                                    value={form.STATU ?? ""}
+                                    options={statuOptions}
+                                    placeholder="Status"
+                                    onChange={(val) => updateFormField("STATU", val)}
+                                    className="field-input"
+                                    accentColor={color}
+                                    style={{ width: "100%", height: "42px", fontSize: "14px", background: "#fff" }}
+                                />
+                            </div>
+                            <div className="player-event-modal-field">
+                                <div className="field-label">OUT MINUTE</div>
+                                <input
+                                    value={form["OUT MINUTE"] ?? ""}
+                                    onChange={(e) => updateFormField("OUT MINUTE", e.target.value)}
+                                    className="field-input"
+                                    placeholder="Out minute"
+                                    style={{ width: "100%", height: "42px", fontSize: "14px" }}
+                                />
+                            </div>
+                            <div className="player-event-modal-field">
+                                <div className="field-label">GOALS CONCEDED</div>
+                                <input
+                                    value={form["GOALS CONCEDED"] ?? ""}
+                                    onChange={(e) => updateFormField("GOALS CONCEDED", e.target.value)}
+                                    className="field-input"
+                                    placeholder="Goals conceded"
+                                    style={{ width: "100%", height: "42px", fontSize: "14px" }}
+                                />
+                            </div>
+                        </div>
+
+                        <div className="player-event-modal-actions">
+                            <button type="button" className="confirm-modal-btn confirm-modal-btn-cancel" onClick={closeModal} disabled={savingModal}>
+                                CANCEL
+                            </button>
+                            <button
+                                type="button"
+                                className="player-event-modal-save"
+                                onClick={handleModalSave}
+                                disabled={savingModal || isSaving}
+                                style={{ background: color }}
+                            >
+                                {savingModal ? "SAVING..." : "SAVE GK"}
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+        </div>
+    );
+}
+
+function PenaltyMissesPanel({
+    title,
+    color,
+    rows,
+    setRows,
+    matchId,
+    teamOptions,
+    howMissedOptions,
+    playerEventRows,
+    persistToDb,
+    onSaveRow,
+    onDeleteRow,
+    isSaving,
+}) {
+    const [modalOpen, setModalOpen] = useState(false);
+    const [editingIndex, setEditingIndex] = useState(null);
+    const [form, setForm] = useState({ ...EMPTY_PEN });
+    const [savingModal, setSavingModal] = useState(false);
+    const { addNotification } = useNotification();
+
+    const sortedEntries = useMemo(() => listIndexedRowsByEventId(rows), [rows]);
+    const eventIdOptions = useMemo(() => buildPlayerEventIdOptions(playerEventRows), [playerEventRows]);
+
+    const openAddModal = (preset = {}) => {
+        setEditingIndex(null);
+        setForm({ ...EMPTY_PEN, MATCH_ID: matchId, ...preset });
+        setModalOpen(true);
+    };
+
+    const openEditModal = (row, index) => {
+        setEditingIndex(index);
+        setForm({ ...EMPTY_PEN, ...row, MATCH_ID: row.MATCH_ID || matchId });
+        setModalOpen(true);
+    };
+
+    const closeModal = (force = false) => {
+        if (!force && savingModal) return;
+        setModalOpen(false);
+        setEditingIndex(null);
+        setForm({ ...EMPTY_PEN });
+    };
+
+    const updateFormField = (field, value) => {
+        setForm((prev) => ({ ...prev, [field]: value }));
+    };
+
+    const handleModalSave = async () => {
+        const cleanForm = { ...form };
+        if (!isPenRowSaveable(cleanForm)) {
+            addNotification("Fill HOW MISSED or MINUTE before saving.", "error");
+            return;
+        }
+
+        setSavingModal(true);
+        try {
+            if (editingIndex === null) {
+                const newRow = {
+                    ...EMPTY_PEN,
+                    ...cleanForm,
+                    MATCH_ID: matchId,
+                    EVENT_ID: String(cleanForm.EVENT_ID || "").trim(),
+                    _isNew: true,
+                    _key: Date.now(),
+                };
+
+                const nextRows = sortRowsByEventId([...rows, newRow]);
+                const newIndex = nextRows.findIndex((row) => row._key === newRow._key);
+                setRows(nextRows);
+
+                if (persistToDb && onSaveRow) {
+                    await onSaveRow(newRow, newIndex, "alahly_HOWPENMISSED", setRows);
+                }
+            } else {
+                const existingRow = rows[editingIndex];
+                const updatedRow = {
+                    ...existingRow,
+                    ...cleanForm,
+                    MATCH_ID: matchId,
+                    _isDirty: true,
+                };
+                const nextRows = sortRowsByEventId(
+                    rows.map((row, index) => (index === editingIndex ? updatedRow : row))
+                );
+                const newIndex = nextRows.findIndex((row) => row._key === updatedRow._key);
+                setRows(nextRows);
+
+                if (persistToDb && onSaveRow) {
+                    await onSaveRow(updatedRow, newIndex, "alahly_HOWPENMISSED", setRows);
+                }
+            }
+
+            closeModal(true);
+        } catch (error) {
+            addNotification(`Failed to save penalty miss: ${error.message}`, "error");
+        } finally {
+            setSavingModal(false);
+        }
+    };
+
+    return (
+        <div className="player-events-panel" style={{ "--panel-accent": color }}>
+            <div className="player-events-header">
+                <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+                    <div style={{ width: 4, height: 24, background: color, borderRadius: 4 }} />
+                    <h3 className="player-events-title">
+                        {title}
+                        <span className="player-events-count">({rows.length} misses)</span>
+                    </h3>
+                </div>
+                <button
+                    type="button"
+                    className="player-events-add-btn"
+                    onClick={() => openAddModal()}
+                    disabled={isSaving || savingModal}
+                >
+                    <span>+</span> ADD PEN MISS
+                </button>
+            </div>
+
+            {rows.length === 0 ? (
+                <NoData_db message="NO PENALTY MISSES FOUND" height="240px" />
+            ) : (
+                <div className="player-events-grid">
+                    {sortedEntries.map(({ row, index }) => (
+                        <EditorEventCard
+                            key={row._key ?? `${row.EVENT_ID}-${index}`}
+                            row={row}
+                            index={index}
+                            isSaving={isSaving}
+                            savingModal={savingModal}
+                            onEdit={openEditModal}
+                            onDelete={onDeleteRow}
+                            tableName="alahly_HOWPENMISSED"
+                            setRows={setRows}
+                            title={String(row.TEAM || "").trim() || "—"}
+                            description={formatPenLine(row)}
+                        />
+                    ))}
+                </div>
+            )}
+
+            {modalOpen && (
+                <div className="confirm-modal-overlay" onClick={closeModal}>
+                    <div className="player-event-modal" onClick={(e) => e.stopPropagation()}>
+                        <div className="player-event-modal-head">
+                            <h3>{editingIndex === null ? "ADD PENALTY MISS" : "EDIT PENALTY MISS"}</h3>
+                        </div>
+
+                        <div className="player-event-modal-grid">
+                            <div className="player-event-modal-field">
+                                <div className="field-label">EVENT ID</div>
+                                <AutocompleteInput
+                                    value={form.EVENT_ID ?? ""}
+                                    options={eventIdOptions}
+                                    placeholder="Select player event ID"
+                                    onChange={(val) => updateFormField("EVENT_ID", val)}
+                                    className="field-input"
+                                    accentColor={color}
+                                    style={{ width: "100%", height: "42px", fontSize: "14px", background: "#fff" }}
+                                />
+                            </div>
+                            <div className="player-event-modal-field">
+                                <div className="field-label">TEAM</div>
+                                <AutocompleteInput
+                                    value={form.TEAM ?? ""}
+                                    options={teamOptions}
+                                    placeholder="Team"
+                                    onChange={(val) => updateFormField("TEAM", val)}
+                                    className="field-input"
+                                    accentColor={color}
+                                    style={{ width: "100%", height: "42px", fontSize: "14px", background: "#fff" }}
+                                />
+                            </div>
+                            <div className="player-event-modal-field">
+                                <div className="field-label">HOW MISSED?</div>
+                                <AutocompleteInput
+                                    value={form["HOW MISSED?"] ?? ""}
+                                    options={howMissedOptions}
+                                    placeholder="How missed"
+                                    onChange={(val) => updateFormField("HOW MISSED?", val)}
+                                    className="field-input"
+                                    accentColor={color}
+                                    style={{ width: "100%", height: "42px", fontSize: "14px", background: "#fff" }}
+                                />
+                            </div>
+                            <div className="player-event-modal-field">
+                                <div className="field-label">MINUTE</div>
+                                <input
+                                    value={form.MINUTE ?? ""}
+                                    onChange={(e) => updateFormField("MINUTE", e.target.value)}
+                                    className="field-input"
+                                    placeholder="Minute"
+                                    style={{ width: "100%", height: "42px", fontSize: "14px" }}
+                                />
+                            </div>
+                        </div>
+
+                        <div className="player-event-modal-actions">
+                            <button type="button" className="confirm-modal-btn confirm-modal-btn-cancel" onClick={closeModal} disabled={savingModal}>
+                                CANCEL
+                            </button>
+                            <button
+                                type="button"
+                                className="player-event-modal-save"
+                                onClick={handleModalSave}
+                                disabled={savingModal || isSaving}
+                                style={{ background: color }}
+                            >
+                                {savingModal ? "SAVING..." : "SAVE PEN MISS"}
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+        </div>
+    );
 }
 
 // â”€â”€ Editable Table â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
@@ -567,6 +1427,33 @@ export default function AlAhlyEditor() {
         addNotification(msg, type);
     };
 
+    const resolveNextPlayerEventId = useCallback(async (matchId, currentRows = [], excludeKey = null) => {
+        const normalizedMatchId = String(matchId || "").trim();
+        if (!normalizedMatchId) return "";
+
+        const localRows = currentRows.filter((row) => row._key !== excludeKey);
+        let combined = [...localRows];
+
+        const { data: dbEvents, error } = await supabase
+            .from("alahly_PLAYERDETAILS")
+            .select("EVENT_ID")
+            .eq("MATCH_ID", normalizedMatchId);
+
+        if (error) throw error;
+        if (dbEvents?.length) {
+            combined = [...combined, ...dbEvents.map((event) => ({ EVENT_ID: event.EVENT_ID }))];
+        }
+
+        return getNextPlayerEventId(normalizedMatchId, combined);
+    }, []);
+
+    const handleStagedDelete = useCallback((row, ri, _tableName, setterFn) => {
+        setterFn?.((prev) => {
+            const idx = findRowIndexInList(prev, row, ri);
+            return prev.filter((_, i) => i !== idx);
+        });
+    }, []);
+
     // â”€â”€ Search â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
     const handleSearch = async () => {
         const id = searchId.trim();
@@ -592,52 +1479,48 @@ export default function AlAhlyEditor() {
                 setLineupRows(sortByRowIdAsc(ld).map((r, i) => ({ ...r, _key: r._key ?? i })));
             }
             setActiveLinkedTab('lineup-ahly');
-            setPlayerRows(sortByEventIdAsc(pd || []).map((r, i) => ({ ...r, _key: 1000 + i })));
-            setGkRows(sortByRowIdAsc(gd || []).map((r, i) => ({ ...r, _key: 2000 + i })));
-            setPenRows(sortByRowIdAsc(pen || []).map((r, i) => ({
+            setPlayerRows(sortRowsByEventId((pd || []).map((r, i) => ({ ...r, _key: r._key ?? 1000 + i }))));
+            setGkRows(sortRowsByEventId((gd || []).map((r, i) => ({ ...r, _key: r._key ?? 2000 + i }))));
+            setPenRows(sortRowsByEventId((pen || []).map((r, i) => ({
                 ...normalizeHowPenMissedRowForEditor(r),
-                _key: 3000 + i,
-            })));
+                _key: r._key ?? 3000 + i,
+            }))));
             setMode('edit');
         } catch (e) { addToast('Error: ' + e.message, 'error'); }
         setLoading(false);
     };
 
     // â”€â”€ Save a single row â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-    const handleSaveRow = useCallback(async (row, ri, tableName) => {
-        if (isSaving) return; // Prevent overlapping saves
+    const handleSaveRow = useCallback(async (row, ri, tableName, setterFn) => {
+        if (isSaving) return;
         setIsSaving(true);
         const { _isNew, _isDirty, _key, ...cleanRow } = row;
 
-
         if (!cleanRow.MATCH_ID && matchData) cleanRow.MATCH_ID = matchData.MATCH_ID;
 
-        // Ensure we don't send an empty string for ROW_ID
         if (cleanRow.ROW_ID === "" || cleanRow.ROW_ID === null || cleanRow.ROW_ID === undefined) {
             delete cleanRow.ROW_ID;
         }
 
-        const payload = tableName === "alahly_HOWPENMISSED"
-            ? sanitizeHowPenMissedRowForSave(cleanRow)
-            : cleanRow;
-
         try {
+            if (tableName === "alahly_PLAYERDETAILS" && _isNew && !String(cleanRow.EVENT_ID || "").trim() && cleanRow.MATCH_ID) {
+                cleanRow.EVENT_ID = await resolveNextPlayerEventId(cleanRow.MATCH_ID, playerRows, row._key);
+            }
+
+            const payload = tableName === "alahly_HOWPENMISSED"
+                ? sanitizeHowPenMissedRowForSave(cleanRow)
+                : cleanRow;
+
             let result;
             if (_isNew) {
-                // New record insertion
                 result = await supabase.from(tableName).insert(payload).select();
+            } else if (payload.ROW_ID) {
+                result = await supabase.from(tableName).update(payload).eq('ROW_ID', payload.ROW_ID).select();
             } else {
-                // Update record by ROW_ID
-                if (payload.ROW_ID) {
-                    result = await supabase.from(tableName).update(payload).eq('ROW_ID', payload.ROW_ID).select();
-                } else {
-                    // Safety fallback if ROW_ID missing
-                    result = await supabase.from(tableName).upsert(payload).select();
-                }
+                result = await supabase.from(tableName).upsert(payload).select();
             }
 
             if (result.error) {
-                // Show detailed error in alert for debugging
                 addNotification(`Supabase Error (${tableName}):\n${result.error.message}\n${result.error.hint || ''}`, "error");
                 throw result.error;
             }
@@ -654,20 +1537,31 @@ export default function AlAhlyEditor() {
                 'alahly_HOWPENMISSED': setPenRows,
             };
 
-            setterMap[tableName]?.(prev => {
+            const applyUpdate = (prev) => {
                 const idx = findRowIndexInList(prev, row, ri);
-                return prev.map((r, i) =>
-                    i === idx ? { ...r, ...savedRow, _isNew: false, _isDirty: false } : r
-                );
-            });
+                let merged = { ...prev[idx], ...savedRow, _isNew: false, _isDirty: false };
+                if (tableName === "alahly_HOWPENMISSED") {
+                    merged = normalizeHowPenMissedRowForEditor(merged);
+                }
+                const updated = prev.map((r, i) => (i === idx ? merged : r));
+                if (
+                    tableName === "alahly_PLAYERDETAILS" ||
+                    tableName === "alahly_GKSDETAILS" ||
+                    tableName === "alahly_HOWPENMISSED"
+                ) {
+                    return sortRowsByEventId(updated);
+                }
+                return updated;
+            };
 
+            (setterFn || setterMap[tableName])?.(applyUpdate);
         } catch (e) {
             console.error("Save Error:", e);
             addToast('Save FAILED: ' + (e.message || "Unknown error"), 'error');
         } finally {
             setIsSaving(false);
         }
-    }, [matchData, setLineupRows, setPlayerRows, setGkRows, setPenRows]);
+    }, [matchData, playerRows, resolveNextPlayerEventId, isSaving]);
 
 
 
@@ -862,11 +1756,73 @@ export default function AlAhlyEditor() {
     const matchInfoFields = Object.keys(EMPTY_MATCH);
     const lineupCols = Object.keys(EMPTY_LINEUP);
     const lineupColsNoTeam = lineupCols.filter((col) => col !== 'TEAM' && col !== 'MATCH_ID');
-    const playerCols = Object.keys(EMPTY_PLAYER).filter(col => col !== 'MATCH_ID');
-    const gkCols = Object.keys(EMPTY_GK).filter(col => col !== 'MATCH_ID');
-    const penCols = Object.keys(EMPTY_PEN).filter(col => col !== 'MATCH_ID');
-    const editPenEventOptions = useMemo(() => buildPenMissedEventOptions(playerRows), [playerRows]);
-    const newPenEventOptions = useMemo(() => buildPenMissedEventOptions(newPlayerRows), [newPlayerRows]);
+
+    const renderPlayerEventsPanel = ({ formData, isNew }) => {
+        const matchId = isNew ? (formData.MATCH_ID || '---') : formData.MATCH_ID;
+        const teamOptions = [formData["AHLY TEAM"], formData["OPPONENT TEAM"]].filter(Boolean);
+        return (
+            <PlayerEventsPanel
+                title="PLAYER EVENTS"
+                color="#8b5cf6"
+                rows={isNew ? newPlayerRows : playerRows}
+                setRows={isNew ? setNewPlayerRows : setPlayerRows}
+                matchId={matchId}
+                teamOptions={teamOptions}
+                allPlayersList={allPlayersList}
+                eventTypes={eventTypes}
+                eventSubTypes={eventSubTypes}
+                persistToDb={!isNew}
+                onSaveRow={handleSaveRow}
+                onDeleteRow={isNew ? handleStagedDelete : handleDeleteRow}
+                isSaving={isNew ? false : isSaving}
+                resolveNextEventId={resolveNextPlayerEventId}
+            />
+        );
+    };
+
+    const renderGkDetailsPanel = ({ formData, isNew }) => {
+        const matchId = isNew ? (formData.MATCH_ID || '---') : formData.MATCH_ID;
+        const teamOptions = [formData["AHLY TEAM"], formData["OPPONENT TEAM"]].filter(Boolean);
+        const playerEventRows = isNew ? newPlayerRows : playerRows;
+        return (
+            <GkDetailsPanel
+                title="GK DETAILS"
+                color="#f59e0b"
+                rows={isNew ? newGkRows : gkRows}
+                setRows={isNew ? setNewGkRows : setGkRows}
+                matchId={matchId}
+                teamOptions={teamOptions}
+                allPlayersList={allPlayersList}
+                playerEventRows={playerEventRows}
+                persistToDb={!isNew}
+                onSaveRow={handleSaveRow}
+                onDeleteRow={isNew ? handleStagedDelete : handleDeleteRow}
+                isSaving={isNew ? false : isSaving}
+            />
+        );
+    };
+
+    const renderPenaltyMissesPanel = ({ formData, isNew }) => {
+        const matchId = isNew ? (formData.MATCH_ID || '---') : formData.MATCH_ID;
+        const teamOptions = [formData["AHLY TEAM"], formData["OPPONENT TEAM"]].filter(Boolean);
+        const playerEventRows = isNew ? newPlayerRows : playerRows;
+        return (
+            <PenaltyMissesPanel
+                title="PENALTY MISSES"
+                color="#ef4444"
+                rows={isNew ? newPenRows : penRows}
+                setRows={isNew ? setNewPenRows : setPenRows}
+                matchId={matchId}
+                teamOptions={teamOptions}
+                howMissedOptions={howMissedOptions}
+                playerEventRows={playerEventRows}
+                persistToDb={!isNew}
+                onSaveRow={handleSaveRow}
+                onDeleteRow={isNew ? handleStagedDelete : handleDeleteRow}
+                isSaving={isNew ? false : isSaving}
+            />
+        );
+    };
 
     const renderLinkedTabBar = (formData) => {
         const ahlyTeam = resolveAhlyTeam(formData);
@@ -1045,51 +2001,9 @@ export default function AlAhlyEditor() {
 
                             {activeLinkedTab === 'lineup-ahly' && renderLineupTable({ formData: newMatchData, isNew: true, side: 'ahly' })}
                             {activeLinkedTab === 'lineup-opponent' && renderLineupTable({ formData: newMatchData, isNew: true, side: 'opponent' })}
-                            {activeLinkedTab === 'events' && (
-                                <EditableTable
-                                    title="PLAYER EVENTS" color="#8b5cf6"
-                                    rows={newPlayerRows} setRows={setNewPlayerRows}
-                                    columns={playerCols} matchId={newMatchData.MATCH_ID || '---'}
-                                    emptyRow={EMPTY_PLAYER} tableName="alahly_PLAYERDETAILS"
-                                    onSave={() => { }} onDelete={(row, ri, _, setter) => setter(prev => prev.filter((_, i) => i !== ri))} isSaving={false}
-                                    autoFields={{ 'EVENT_ID': (mid, rows) => `${mid}-${rows.length + 1}` }}
-                                    columnOptions={{
-                                        "PLAYER NAME": allPlayersList,
-                                        "TEAM": [newMatchData["AHLY TEAM"], newMatchData["OPPONENT TEAM"]].filter(Boolean),
-                                        "TYPE": eventTypes,
-                                        "TYPE_SUB": eventSubTypes
-                                    }}
-                                />
-                            )}
-                            {activeLinkedTab === 'gks' && (
-                                <EditableTable
-                                    title="GK DETAILS" color="#f59e0b"
-                                    rows={newGkRows} setRows={setNewGkRows}
-                                    columns={gkCols} matchId={newMatchData.MATCH_ID || '---'}
-                                    emptyRow={EMPTY_GK} tableName="alahly_GKSDETAILS"
-                                    onSave={() => { }} onDelete={(row, ri, _, setter) => setter(prev => prev.filter((_, i) => i !== ri))} isSaving={false}
-                                    columnOptions={{
-                                        "PLAYER NAME": allPlayersList,
-                                        "TEAM": [newMatchData["AHLY TEAM"], newMatchData["OPPONENT TEAM"]].filter(Boolean),
-                                        "STATU": ["اساسي", "احتياطي"]
-                                    }}
-                                />
-                            )}
-                            {activeLinkedTab === 'pens' && (
-                                <EditableTable
-                                    title="PENALTY MISSES" color="#ef4444"
-                                    rows={newPenRows} setRows={setNewPenRows}
-                                    columns={penCols} matchId={newMatchData.MATCH_ID || '---'}
-                                    emptyRow={EMPTY_PEN} tableName="alahly_HOWPENMISSED"
-                                    onSave={() => { }} onDelete={(row, ri, _, setter) => setter(prev => prev.filter((_, i) => i !== ri))} isSaving={false}
-                                    columnOptions={{
-                                        EVENT_ID: newPenEventOptions,
-                                        "TEAM": [newMatchData["AHLY TEAM"], newMatchData["OPPONENT TEAM"]].filter(Boolean),
-                                        "HOW MISSED?": howMissedOptions
-                                    }}
-                                    columnOptionGetValue={PEN_MISSED_EVENT_OPTION_GET_VALUE}
-                                />
-                            )}
+                            {activeLinkedTab === 'events' && renderPlayerEventsPanel({ formData: newMatchData, isNew: true })}
+                            {activeLinkedTab === 'gks' && renderGkDetailsPanel({ formData: newMatchData, isNew: true })}
+                            {activeLinkedTab === 'pens' && renderPenaltyMissesPanel({ formData: newMatchData, isNew: true })}
                             {activeLinkedTab === 'motm' && (
                                 <div style={{ padding: '20px', background: '#fafafa', borderRadius: '20px', border: '1px solid #eee', maxWidth: '500px', margin: '0 auto' }}>
                                     <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 20 }}>
@@ -1165,51 +2079,9 @@ export default function AlAhlyEditor() {
 
                             {activeLinkedTab === 'lineup-ahly' && renderLineupTable({ formData: matchData, isNew: false, side: 'ahly' })}
                             {activeLinkedTab === 'lineup-opponent' && renderLineupTable({ formData: matchData, isNew: false, side: 'opponent' })}
-                            {activeLinkedTab === 'events' && (
-                                <EditableTable
-                                    title="PLAYER EVENTS" color="#8b5cf6"
-                                    rows={playerRows} setRows={setPlayerRows}
-                                    columns={playerCols} matchId={matchData.MATCH_ID}
-                                    emptyRow={EMPTY_PLAYER} tableName="alahly_PLAYERDETAILS"
-                                    onSave={handleSaveRow} onDelete={handleDeleteRow} isSaving={isSaving}
-                                    autoFields={{ 'EVENT_ID': (mid, rows) => `${mid}-${rows.length + 1}` }}
-                                    columnOptions={{
-                                        "PLAYER NAME": allPlayersList,
-                                        "TEAM": [matchData["AHLY TEAM"], matchData["OPPONENT TEAM"]].filter(Boolean),
-                                        "TYPE": eventTypes,
-                                        "TYPE_SUB": eventSubTypes
-                                    }}
-                                />
-                            )}
-                            {activeLinkedTab === 'gks' && (
-                                <EditableTable
-                                    title="GK DETAILS" color="#f59e0b"
-                                    rows={gkRows} setRows={setGkRows}
-                                    columns={gkCols} matchId={matchData.MATCH_ID}
-                                    emptyRow={EMPTY_GK} tableName="alahly_GKSDETAILS"
-                                    onSave={handleSaveRow} onDelete={handleDeleteRow} isSaving={isSaving}
-                                    columnOptions={{
-                                        "PLAYER NAME": allPlayersList,
-                                        "TEAM": [matchData["AHLY TEAM"], matchData["OPPONENT TEAM"]].filter(Boolean),
-                                        "STATU": ["اساسي", "احتياطي"]
-                                    }}
-                                />
-                            )}
-                            {activeLinkedTab === 'pens' && (
-                                <EditableTable
-                                    title="PENALTY MISSES" color="#ef4444"
-                                    rows={penRows} setRows={setPenRows}
-                                    columns={penCols} matchId={matchData.MATCH_ID}
-                                    emptyRow={EMPTY_PEN} tableName="alahly_HOWPENMISSED"
-                                    onSave={handleSaveRow} onDelete={handleDeleteRow} isSaving={isSaving}
-                                    columnOptions={{
-                                        EVENT_ID: editPenEventOptions,
-                                        "TEAM": [matchData["AHLY TEAM"], matchData["OPPONENT TEAM"]].filter(Boolean),
-                                        "HOW MISSED?": howMissedOptions
-                                    }}
-                                    columnOptionGetValue={PEN_MISSED_EVENT_OPTION_GET_VALUE}
-                                />
-                            )}
+                            {activeLinkedTab === 'events' && renderPlayerEventsPanel({ formData: matchData, isNew: false })}
+                            {activeLinkedTab === 'gks' && renderGkDetailsPanel({ formData: matchData, isNew: false })}
+                            {activeLinkedTab === 'pens' && renderPenaltyMissesPanel({ formData: matchData, isNew: false })}
                             {activeLinkedTab === 'motm' && (
                                 <div style={{ padding: '20px', background: '#fafafa', borderRadius: '20px', border: '1px solid #eee', maxWidth: '500px', margin: '0 auto' }}>
                                     <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 20 }}>

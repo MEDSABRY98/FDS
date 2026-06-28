@@ -1,4 +1,6 @@
-import { supabase } from "../../Database";
+import { supabase, resolveCatalogFieldsInForm } from "../../Database";
+
+const CANCELLED_TABLE = "egy_NT_MATCHDETAILS_CANCELLED";
 import { computePlayerGoalImpact } from "../PlayerDetails/egypt_nt_db_player_details_goal_impact";
 import { computePlayerAssistImpact } from "../PlayerDetails/egypt_nt_db_player_details_assist_impact";
 
@@ -345,6 +347,96 @@ export const EgyptNTService = {
         }
 
         return { updated };
+    },
+
+    async getCancelledMatches() {
+        try {
+            let allData = [];
+            let from = 0;
+            const step = 1000;
+            let finished = false;
+
+            while (!finished) {
+                const { data, error } = await supabase
+                    .from(CANCELLED_TABLE)
+                    .select("*")
+                    .order("DATE", { ascending: false })
+                    .order("ROW_ID", { ascending: true })
+                    .range(from, from + step - 1);
+
+                if (error) throw error;
+                if (data && data.length > 0) {
+                    allData = [...allData, ...data];
+                    from += step;
+                    if (data.length < step) finished = true;
+                } else {
+                    finished = true;
+                }
+            }
+
+            return allData;
+        } catch (error) {
+            console.error("Error in EgyptNTService.getCancelledMatches:", error?.message || error);
+            return [];
+        }
+    },
+
+    async getNextCancelledRowId() {
+        const { data, error } = await supabase.from(CANCELLED_TABLE).select("ROW_ID");
+        if (error) throw error;
+
+        let currentMaxNum = 0;
+        (data || []).forEach((item) => {
+            if (item.ROW_ID) {
+                const match = String(item.ROW_ID).match(/\d+/);
+                if (match) {
+                    const num = parseInt(match[0], 10);
+                    if (num > currentMaxNum) currentMaxNum = num;
+                }
+            }
+        });
+
+        return `R-${String(currentMaxNum + 1).padStart(4, "0")}`;
+    },
+
+    async insertCancelledMatch(payload = {}) {
+        const rowId = await this.getNextCancelledRowId();
+        const insertPayload = await resolveCatalogFieldsInForm(CANCELLED_TABLE, {
+            ...payload,
+            ROW_ID: rowId,
+        });
+
+        const { data, error } = await supabase
+            .from(CANCELLED_TABLE)
+            .insert(insertPayload)
+            .select()
+            .single();
+
+        if (error) throw error;
+        return data;
+    },
+
+    async updateCancelledMatch(rowId, payload = {}) {
+        const resolved = await resolveCatalogFieldsInForm(CANCELLED_TABLE, { ...payload });
+        const { data, error } = await supabase
+            .from(CANCELLED_TABLE)
+            .update(resolved)
+            .eq("ROW_ID", rowId)
+            .select()
+            .single();
+
+        if (error) throw error;
+        return data;
+    },
+
+    async deleteCancelledMatch(rowId) {
+        const { error } = await supabase
+            .from(CANCELLED_TABLE)
+            .delete()
+            .eq("ROW_ID", rowId);
+
+        if (error) throw error;
+        return true;
     },
 
 };

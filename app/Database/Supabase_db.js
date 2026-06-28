@@ -71,8 +71,9 @@ const teamColumnsMap = {
     'egy_CLUB_MATCHDETAILS': ['EGYPT TEAM', 'OPPONENT TEAM'],
     'egy_NT_GKSDETAILS': ['TEAM'],
     'egy_NT_HOWPENMISSED': ['TEAM'],
-    'egy_NT_LINEUPDETAILS': ['TEAM'],
+    'egy_NT_LINEUPDETAILS': ['TEAM', 'CLUB'],
     'egy_NT_MATCHDETAILS': ['Egypt TEAM', 'OPPONENT TEAM'],
+    'egy_NT_MATCHDETAILS_CANCELLED': ['Egypt TEAM', 'OPPONENT TEAM'],
     'egy_NT_PLAYERDETAILS': ['TEAM', 'CLUB'],
     'egy_NT_SQUAD': ['CLUB']
 };
