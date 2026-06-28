@@ -188,6 +188,97 @@ function inferLineupTeamsFromRows(allRows, formData = {}) {
     return { ahlyTeam, oppTeam };
 }
 
+/** On save, write AHLY TEAM / OPPONENT TEAM from match details into lineup TEAM column. */
+function applyMatchTeamsToLineupRows(allRows, formData = {}) {
+    const formAhly = resolveAhlyTeam(formData);
+    const formOpp = resolveOpponentTeam(formData);
+    const { ahlyTeam: rowAhly, oppTeam: rowOpp } = inferLineupTeamsFromRows(allRows, formData);
+
+    return allRows.map((row) => {
+        if (isLineupForAhly(row, rowAhly, rowOpp)) {
+            const needsSync = String(row.TEAM || "").trim() !== formAhly;
+            return {
+                ...row,
+                TEAM: formAhly,
+                _isDirty: Boolean(row._isDirty || row._isNew || needsSync),
+            };
+        }
+        if (formOpp && isLineupForOpponent(row, rowOpp, rowAhly)) {
+            const needsSync = String(row.TEAM || "").trim() !== formOpp;
+            return {
+                ...row,
+                TEAM: formOpp,
+                _isDirty: Boolean(row._isDirty || row._isNew || needsSync),
+            };
+        }
+        return row;
+    });
+}
+
+async function cleanLinkedRowForSave(tableName, row, matchId, isNew) {
+    const { _isNew, _isDirty, _key, ...clean } = { ...row, MATCH_ID: matchId };
+    if (isNew || !clean.ROW_ID || clean.ROW_ID === "" || clean.ROW_ID === null) {
+        delete clean.ROW_ID;
+    }
+    if (tableName === "alahly_HOWPENMISSED") {
+        return prepareHowPenMissedRowForSave(clean);
+    }
+    return clean;
+}
+
+async function persistLinkedTableRows(tableName, rows, matchId) {
+    const pending = rows.filter((row) => row._isNew || row._isDirty);
+    const filled = pending.filter((row) => isEditorLinkedRowFilled(tableName, row));
+    if (filled.length === 0) return rows;
+
+    const toInsert = filled.filter((row) => row._isNew);
+    const toUpdate = filled.filter((row) => !row._isNew);
+    const savedResults = [];
+
+    if (toInsert.length > 0) {
+        const insertPayload = await Promise.all(toInsert.map((row) => cleanLinkedRowForSave(tableName, row, matchId, true)));
+        const { data, error } = await supabase.from(tableName).insert(insertPayload).select();
+        if (error) throw new Error(`${tableName}: ${error.message}`);
+        if (data) savedResults.push(...data);
+    }
+
+    if (toUpdate.length > 0) {
+        const updatePayload = await Promise.all(toUpdate.map((row) => cleanLinkedRowForSave(tableName, row, matchId, false)));
+        const { data, error } = await supabase.from(tableName).upsert(updatePayload).select();
+        if (error) throw new Error(`${tableName}: ${error.message}`);
+        if (data) savedResults.push(...data);
+    }
+
+    if (savedResults.length === 0) return rows;
+
+    return rows.map((existingRow) => {
+        const saved = savedResults.find((candidate) =>
+            (existingRow.ROW_ID && candidate.ROW_ID === existingRow.ROW_ID) ||
+            (existingRow._isNew && !existingRow.ROW_ID &&
+                candidate["PLAYER NAME"] === existingRow["PLAYER NAME"] &&
+                candidate.TEAM === existingRow.TEAM)
+        );
+        return saved ? { ...existingRow, ...saved, _isNew: false, _isDirty: false } : existingRow;
+    });
+}
+
+async function insertStagedLinkedTableRows(tableName, rows, matchId) {
+    const filled = rows.filter((row) => isEditorLinkedRowFilled(tableName, row));
+    if (filled.length === 0) return;
+
+    const clean = await Promise.all(filled.map(async ({ _isNew, _isDirty, _key, ...row }) => {
+        const payload = { ...row, MATCH_ID: matchId };
+        if (payload.ROW_ID === "" || payload.ROW_ID === null) delete payload.ROW_ID;
+        if (tableName === "alahly_HOWPENMISSED") {
+            return prepareHowPenMissedRowForSave(payload);
+        }
+        return payload;
+    }));
+
+    const { error } = await supabase.from(tableName).insert(clean);
+    if (error) throw new Error(`${tableName}: ${error.message}`);
+}
+
 function isLineupForAhly(row, ahlyTeam, oppTeam = "") {
     const team = String(row?.TEAM || "").trim();
     if (!team) return true;
@@ -291,15 +382,17 @@ function normalizeSavedTeamLineup(teamRows, matchId, teamName) {
 }
 
 function normalizeSavedMatchLineup(allRows, matchId, matchInfo = {}) {
-    const { ahlyTeam, oppTeam } = inferLineupTeamsFromRows(allRows, matchInfo);
+    const formAhly = resolveAhlyTeam(matchInfo);
+    const formOpp = resolveOpponentTeam(matchInfo);
+    const { ahlyTeam: rowAhly, oppTeam: rowOpp } = inferLineupTeamsFromRows(allRows, matchInfo);
 
-    const ahlySaved = allRows.filter((r) => isLineupForAhly(r, ahlyTeam, oppTeam));
-    const oppSaved = oppTeam
-        ? allRows.filter((r) => isLineupForOpponent(r, oppTeam, ahlyTeam))
+    const ahlySaved = allRows.filter((row) => isLineupForAhly(row, rowAhly, rowOpp));
+    const oppSaved = formOpp
+        ? allRows.filter((row) => isLineupForOpponent(row, rowOpp, rowAhly))
         : [];
 
-    const ahlyNorm = normalizeSavedTeamLineup(ahlySaved, matchId, ahlyTeam);
-    const oppNorm = oppTeam ? normalizeSavedTeamLineup(oppSaved, matchId, oppTeam) : [];
+    const ahlyNorm = normalizeSavedTeamLineup(ahlySaved, matchId, formAhly);
+    const oppNorm = formOpp ? normalizeSavedTeamLineup(oppSaved, matchId, formOpp) : [];
 
     const combined = [...ahlyNorm, ...oppNorm];
     return applyLineupLogic(combined, combined);
@@ -1371,7 +1464,7 @@ function LineupPanel({
                 </div>
                 <p className="lineup-settings-hint">
                     Total minutes for all players are calculated from this value.
-                    {persistToDb ? " Changes auto-save when you leave each player card." : ""}
+                    Lineup rows save with the global SAVE MATCH button (TEAM syncs from AHLY / OPPONENT TEAM above).
                 </p>
             </div>
 
@@ -1899,84 +1992,34 @@ export default function AlAhlyEditor() {
 
     // â”€â”€ Save Match Details (Global Save) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
     const handleSaveMatch = async () => {
-        if (isSaving) return; // Prevent overlapping saves
+        if (isSaving) return;
         setIsSaving(true);
+
+        const { "W-D-L": _wdl, "CLEAN SHEET": _cs, ...cleanMatchData } = matchData;
+        const matchId = matchData.MATCH_ID;
+
+        const syncedLineup = applyMatchTeamsToLineupRows(lineupRows, matchData);
+        setLineupRows(syncedLineup);
+
         try {
+            const nextLineup = await persistLinkedTableRows("alahly_LINEUPDETAILS", syncedLineup, matchId);
+            const nextPlayers = await persistLinkedTableRows("alahly_PLAYERDETAILS", playerRows, matchId);
+            const nextGks = await persistLinkedTableRows("alahly_GKSDETAILS", gkRows, matchId);
+            const nextPens = await persistLinkedTableRows("alahly_HOWPENMISSED", penRows, matchId);
 
-            // 1. Save main match details (exclude W-D-L and CLEAN SHEET from database payload)
-            const { "W-D-L": wdl, "CLEAN SHEET": cs, ...cleanMatchData } = matchData;
-            const { error: matchErr } = await supabase.from('alahly_MATCHDETAILS').upsert(cleanMatchData);
-            if (matchErr) throw matchErr;
+            const { error: matchErr } = await supabase.from("alahly_MATCHDETAILS").upsert(cleanMatchData);
+            if (matchErr) throw new Error(`alahly_MATCHDETAILS: ${matchErr.message}`);
 
-            // 2. Helper to save pending changes in linked tables
-            const saveLinkedTable = async (tableName, rows, setter) => {
-                const pending = rows.filter(r => r._isNew || r._isDirty);
-                const filled = pending.filter((r) => isEditorLinkedRowFilled(tableName, r));
-                if (filled.length === 0) return;
+            setLineupRows(nextLineup);
+            setPlayerRows(nextPlayers);
+            setGkRows(nextGks);
+            setPenRows(nextPens);
 
-                // Split into new (INSERT) and existing (UPSERT)
-                const toInsert = filled.filter(r => r._isNew);
-                const toUpdate = filled.filter(r => !r._isNew);
-
-                const cleanObj = async (r, isNew) => {
-                    const { _isNew, _isDirty, _key, ...clean } = { ...r, MATCH_ID: matchData.MATCH_ID };
-                    if (isNew || !clean.ROW_ID || clean.ROW_ID === "" || clean.ROW_ID === null) {
-                        delete clean.ROW_ID;
-                    }
-                    if (tableName === "alahly_HOWPENMISSED") {
-                        return prepareHowPenMissedRowForSave(clean);
-                    }
-                    return clean;
-                };
-
-                let savedResults = [];
-
-                try {
-                    if (toInsert.length > 0) {
-                        const insertPayload = await Promise.all(toInsert.map((r) => cleanObj(r, true)));
-                        const { data, error: insErr } = await supabase.from(tableName).insert(insertPayload).select();
-                        if (insErr) throw insErr;
-                        if (data) savedResults.push(...data);
-                    }
-
-                    if (toUpdate.length > 0) {
-                        const updatePayload = await Promise.all(toUpdate.map((r) => cleanObj(r, false)));
-                        const { data, error: upErr } = await supabase.from(tableName).upsert(updatePayload).select();
-                        if (upErr) throw upErr;
-                        if (data) savedResults.push(...data);
-                    }
-                } catch (e) {
-                    console.error(`Error saving ${tableName}:`, e);
-                    throw new Error(`${tableName}: ${e.message}`);
-                }
-
-                // Reflect saved state back to UI
-                if (savedResults.length > 0) {
-                    setter(prev => prev.map(existingRow => {
-                        const saved = savedResults.find(s =>
-                            (existingRow.ROW_ID && s.ROW_ID === existingRow.ROW_ID) ||
-                            (existingRow._isNew && !existingRow.ROW_ID &&
-                                s["PLAYER NAME"] === existingRow["PLAYER NAME"] &&
-                                s.TEAM === existingRow.TEAM)
-                        );
-                        return saved ? { ...existingRow, ...saved, _isNew: false, _isDirty: false } : existingRow;
-                    }));
-                }
-            };
-
-            // Run saves for all tabs in parallel
-            await Promise.all([
-                saveLinkedTable('alahly_LINEUPDETAILS', lineupRows, setLineupRows),
-                saveLinkedTable('alahly_PLAYERDETAILS', playerRows, setPlayerRows),
-                saveLinkedTable('alahly_GKSDETAILS', gkRows, setGkRows),
-                saveLinkedTable('alahly_HOWPENMISSED', penRows, setPenRows),
-            ]);
-
-            addToast('Match and all pending records saved ✓');
+            addToast("Match and all pending records saved ✓");
         } catch (e) {
             console.error("Global Save Error:", e);
-            addNotification(`Global Save Failed:\n${e.message}`, "error");
-            addToast('Save Failed: ' + e.message, 'error');
+            addNotification(`Save failed — match details were not updated.\n${e.message}`, "error");
+            addToast("Save Failed: " + e.message, "error");
         } finally {
             setIsSaving(false);
         }
@@ -1989,6 +2032,8 @@ export default function AlAhlyEditor() {
         if (!mid) { addToast('MATCH_ID is required', 'error'); return; }
 
         setIsSaving(true);
+        let matchInserted = false;
+
         try {
             const exists = await fetchMatchIdExists(supabase, 'alahly_MATCHDETAILS', mid);
             if (exists) {
@@ -1997,54 +2042,33 @@ export default function AlAhlyEditor() {
                 return;
             }
 
-            // 1. Insert main match record (exclude W-D-L and CLEAN SHEET from database payload)
+            const syncedLineup = applyMatchTeamsToLineupRows(newLineupRows, newMatchData);
+            setNewLineupRows(syncedLineup);
+
             const { "W-D-L": wdl, "CLEAN SHEET": cs, ...cleanNewMatchData } = newMatchData;
             const { error: matchErr } = await supabase.from('alahly_MATCHDETAILS').insert({ ...cleanNewMatchData, MATCH_ID: mid });
             if (matchErr) {
-                console.error("Match Insert Error:", matchErr);
-                throw new Error(`Match Details: ${matchErr.message}`);
+                throw new Error(`alahly_MATCHDETAILS: ${matchErr.message}`);
             }
+            matchInserted = true;
 
-            // 2. Helper to insert staged linked rows with error checking
-            const saveStagedTable = async (tableName, rows) => {
-                const filled = rows.filter((r) => isEditorLinkedRowFilled(tableName, r));
-                if (filled.length === 0) return;
-
-                const clean = await Promise.all(filled.map(async ({ _isNew, _isDirty, _key, ...r }) => {
-                    const row = { ...r, MATCH_ID: mid };
-                    if (row.ROW_ID === "" || row.ROW_ID === null) delete row.ROW_ID;
-                    if (tableName === "alahly_HOWPENMISSED") {
-                        return prepareHowPenMissedRowForSave(row);
-                    }
-                    return row;
-                }));
-
-                const { error: insErr } = await supabase.from(tableName).insert(clean);
-                if (insErr) {
-                    console.error(`Error saving ${tableName}:`, insErr);
-                    throw new Error(`${tableName}: ${insErr.message}`);
-                }
-            };
-
-            // 3. Batch insert all linked data
-            await Promise.all([
-                saveStagedTable('alahly_LINEUPDETAILS', newLineupRows),
-                saveStagedTable('alahly_PLAYERDETAILS', newPlayerRows),
-                saveStagedTable('alahly_GKSDETAILS', newGkRows),
-                saveStagedTable('alahly_HOWPENMISSED', newPenRows),
-            ]);
+            await insertStagedLinkedTableRows('alahly_LINEUPDETAILS', syncedLineup, mid);
+            await insertStagedLinkedTableRows('alahly_PLAYERDETAILS', newPlayerRows, mid);
+            await insertStagedLinkedTableRows('alahly_GKSDETAILS', newGkRows, mid);
+            await insertStagedLinkedTableRows('alahly_HOWPENMISSED', newPenRows, mid);
 
             addToast('Match + all linked data created ✓');
             setSearchId(mid);
-            // Reset states
             setNewLineupRows([]); setNewPlayerRows([]); setNewGkRows([]); setNewPenRows([]);
             setMode('search');
-            // Auto-load the newly created match
             setTimeout(() => handleSearch(), 400);
 
         } catch (e) {
             console.error("Create Match Error:", e);
-            addNotification(`Failed to create match:\n${e.message}`, "error");
+            if (matchInserted) {
+                await supabase.from('alahly_MATCHDETAILS').delete().eq('MATCH_ID', mid);
+            }
+            addNotification(`Failed to create match — nothing was kept in the database.\n${e.message}`, "error");
             addToast('Error: ' + e.message, 'error');
         } finally {
             setIsSaving(false);
@@ -2155,7 +2179,7 @@ export default function AlAhlyEditor() {
         const isAhly = side === 'ahly';
         const allRows = isNew ? newLineupRows : lineupRows;
         const { ahlyTeam, oppTeam } = inferLineupTeamsFromRows(allRows, formData);
-        const teamName = isAhly ? ahlyTeam : oppTeam;
+        const teamName = isAhly ? resolveAhlyTeam(formData) : resolveOpponentTeam(formData);
         const rows = isAhly
             ? allRows.filter((row) => isLineupForAhly(row, ahlyTeam, oppTeam))
             : allRows.filter((row) => isLineupForOpponent(row, oppTeam, ahlyTeam));
@@ -2182,7 +2206,7 @@ export default function AlAhlyEditor() {
                 matchId={matchId}
                 teamName={teamName}
                 allPlayersList={allPlayersList}
-                persistToDb={!isNew}
+                persistToDb={false}
                 onSaveRow={handleSaveRow}
                 onDeleteRow={isNew ? handleStagedDelete : handleDeleteRow}
                 isSaving={isNew ? false : isSaving}

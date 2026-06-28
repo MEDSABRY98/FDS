@@ -100,9 +100,80 @@ const getDefaultEgyptTeamLabel = (matchInfo = {}) => (
     String(matchInfo["Egypt TEAM"] || matchInfo["EGYPT TEAM"] || "EGYPT").trim() || "EGYPT"
 );
 
-const buildLineupTeamResolver = (matchInfo = {}) => {
-    const egyptTeamName = getDefaultEgyptTeamLabel(matchInfo);
-    const opponentTeamName = String(matchInfo["OPPONENT TEAM"] || "").trim();
+const getOpponentTeamLabel = (matchInfo = {}) => (
+    String(matchInfo["OPPONENT TEAM"] || "").trim() || "OPPONENT"
+);
+
+const EGYPT_TEAM_ALIASES = new Set([
+    "egypt",
+    "مصر",
+    "منتخب مصر",
+    "المنتخب المصري",
+]);
+
+function isEgyptTeamAlias(teamValue) {
+    return EGYPT_TEAM_ALIASES.has(normalizeTeamName(teamValue));
+}
+
+/** Classify lineup rows using stored TEAM values, not mid-typing form fields. */
+function inferLineupTeamsFromRows(rows = [], matchInfo = {}) {
+    const formEgypt = getDefaultEgyptTeamLabel(matchInfo);
+    const formOpp = String(matchInfo["OPPONENT TEAM"] || "").trim();
+
+    const distinctTeams = [...new Set(
+        rows.map((row) => String(row?.TEAM || "").trim()).filter(Boolean)
+    )];
+
+    if (distinctTeams.length === 0) {
+        return { egyptTeam: formEgypt, oppTeam: formOpp };
+    }
+
+    let egyptTeam = distinctTeams.find((team) => normalizeTeamName(team) === normalizeTeamName(formEgypt))
+        || distinctTeams.find(isEgyptTeamAlias)
+        || formEgypt;
+
+    let oppTeam = formOpp && distinctTeams.find((team) => normalizeTeamName(team) === normalizeTeamName(formOpp))
+        ? formOpp
+        : "";
+
+    if (!oppTeam && distinctTeams.length === 2) {
+        oppTeam = distinctTeams.find((team) => normalizeTeamName(team) !== normalizeTeamName(egyptTeam)) || formOpp;
+    } else if (!oppTeam) {
+        oppTeam = formOpp;
+    }
+
+    return { egyptTeam, oppTeam };
+}
+
+function applyMatchTeamsToEgyptLineupRows(egyRows = [], oppRows = [], formData = {}) {
+    const egyptTeam = getDefaultEgyptTeamLabel(formData);
+    const opponentTeam = getOpponentTeamLabel(formData);
+
+    const syncedEgy = egyRows.map((row) => {
+        const needsSync = String(row.TEAM || "").trim() !== egyptTeam;
+        return {
+            ...row,
+            TEAM: egyptTeam,
+            _isDirty: Boolean(row._isDirty || row._isNew || needsSync),
+        };
+    });
+
+    const syncedOpp = oppRows.map((row) => {
+        const needsSync = String(row.TEAM || "").trim() !== opponentTeam;
+        return {
+            ...row,
+            TEAM: opponentTeam,
+            _isDirty: Boolean(row._isDirty || row._isNew || needsSync),
+        };
+    });
+
+    return { syncedEgy, syncedOpp };
+}
+
+const buildLineupTeamResolver = (matchInfo = {}, rows = []) => {
+    const inferred = inferLineupTeamsFromRows(rows, matchInfo);
+    const egyptTeamName = inferred.egyptTeam;
+    const opponentTeamName = inferred.oppTeam;
 
     const egyptIdentifiers = new Set([
         "egypt",
@@ -119,7 +190,8 @@ const buildLineupTeamResolver = (matchInfo = {}) => {
         const normalizedName = normalizeTeamName(name);
         if (opponentTeamName && normalizedName === normalizeTeamName(opponentTeamName)) return "opponent";
         if (normalizedName === "opponent" && opponentTeamName) return "opponent";
-        if (egyptIdentifiers.has(normalizedName)) return "egypt";
+        if (egyptIdentifiers.has(normalizedName) || isEgyptTeamAlias(name)) return "egypt";
+        if (opponentTeamName && normalizedName !== normalizeTeamName(opponentTeamName)) return "egypt";
         return null;
     };
 
@@ -133,7 +205,7 @@ const buildLineupTeamResolver = (matchInfo = {}) => {
 };
 
 const splitLineupRowsByTeam = (rows = [], matchInfo = {}) => {
-    const { resolveLineupTeamSide } = buildLineupTeamResolver(matchInfo);
+    const { resolveLineupTeamSide } = buildLineupTeamResolver(matchInfo, rows);
     const egy = [];
     const opp = [];
 
@@ -1412,7 +1484,7 @@ function LineupPanel({
                 </div>
                 <p className="lineup-settings-hint">
                     Total minutes for all players are calculated from this value.
-                    {persistToDb ? " Changes auto-save when you leave each player card." : ""}
+                    Lineup rows save with the global SAVE MATCH button (TEAM syncs from Egypt / Opponent TEAM above).
                 </p>
             </div>
 
@@ -1556,13 +1628,13 @@ export default function EgyptNTEditor() {
                 setMatchData({ ...md });
                 if (!ld || ld.length === 0) {
                     const egyNorm = normalizeSavedTeamLineup([], id, getDefaultEgyptTeamLabel(md));
-                    const oppNorm = normalizeSavedTeamLineup([], id, md?.["OPPONENT TEAM"] || "OPPONENT");
+                    const oppNorm = normalizeSavedTeamLineup([], id, getOpponentTeamLabel(md));
                     setEgyLineupRows(applyLineupLogic(egyNorm, egyNorm));
                     setOppLineupRows(applyLineupLogic(oppNorm, oppNorm));
                 } else {
                     const { egy, opp } = splitLineupRowsByTeam(ld, md);
                     const egyNorm = normalizeSavedTeamLineup(egy, id, getDefaultEgyptTeamLabel(md));
-                    const oppNorm = normalizeSavedTeamLineup(opp, id, md?.["OPPONENT TEAM"] || "OPPONENT");
+                    const oppNorm = normalizeSavedTeamLineup(opp, id, getOpponentTeamLabel(md));
                     setEgyLineupRows(applyLineupLogic(egyNorm, egyNorm));
                     setOppLineupRows(applyLineupLogic(oppNorm, oppNorm));
                 }
@@ -1646,7 +1718,7 @@ export default function EgyptNTEditor() {
             const initialOppLineup = Array.from({ length: 16 }, (_, i) => ({
                 ...EMPTY_LINEUP,
                 "MATCH MINUTE": "90",
-                "TEAM": newMatchData["OPPONENT TEAM"] || "OPPONENT",
+                "TEAM": getOpponentTeamLabel(newMatchData),
                 "STATU": i < 11 ? "اساسي" : "احتياطي",
                 "TOTAL MINUTE": i < 11 ? "90" : "",
                 MATCH_ID: newMatchData.MATCH_ID || '',
@@ -1664,32 +1736,6 @@ export default function EgyptNTEditor() {
             setNewOppLineupRows(prev => prev.map(r => ({ ...r, MATCH_ID: newMatchData.MATCH_ID || '' })));
         }
     }, [newMatchData.MATCH_ID, mode]);
-
-    useEffect(() => {
-        if (mode === 'new' && newMatchData["Egypt TEAM"]) {
-            const egyLabel = getDefaultEgyptTeamLabel(newMatchData);
-            setNewEgyLineupRows(prev => prev.map(r => r.TEAM !== egyLabel ? { ...r, TEAM: egyLabel } : r));
-        }
-    }, [newMatchData["Egypt TEAM"], mode]);
-
-    useEffect(() => {
-        if (mode === 'new' && newMatchData["OPPONENT TEAM"]) {
-            setNewOppLineupRows(prev => prev.map(r => r.TEAM !== newMatchData["OPPONENT TEAM"] ? { ...r, TEAM: newMatchData["OPPONENT TEAM"] } : r));
-        }
-    }, [newMatchData["OPPONENT TEAM"], mode]);
-
-    useEffect(() => {
-        if (mode === 'edit' && matchData?.["Egypt TEAM"]) {
-            const egyLabel = getDefaultEgyptTeamLabel(matchData);
-            setEgyLineupRows(prev => prev.map(r => r.TEAM !== egyLabel ? { ...r, TEAM: egyLabel, _isDirty: true } : r));
-        }
-    }, [matchData?.["Egypt TEAM"], mode]);
-
-    useEffect(() => {
-        if (mode === 'edit' && matchData && matchData["OPPONENT TEAM"]) {
-            setOppLineupRows(prev => prev.map(r => r.TEAM !== matchData["OPPONENT TEAM"] ? { ...r, TEAM: matchData["OPPONENT TEAM"], _isDirty: true } : r));
-        }
-    }, [matchData?.["OPPONENT TEAM"], mode]);
 
     const addToast = (msg, type = 'success') => {
         addNotification(msg, type);
@@ -1739,13 +1785,13 @@ export default function EgyptNTEditor() {
             setMatchData({ ...md });
             if (!ld || ld.length === 0) {
                 const egyNorm = normalizeSavedTeamLineup([], id, getDefaultEgyptTeamLabel(md));
-                const oppNorm = normalizeSavedTeamLineup([], id, md?.["OPPONENT TEAM"] || "OPPONENT");
+                const oppNorm = normalizeSavedTeamLineup([], id, getOpponentTeamLabel(md));
                 setEgyLineupRows(applyLineupLogic(egyNorm, egyNorm));
                 setOppLineupRows(applyLineupLogic(oppNorm, oppNorm));
             } else {
                 const { egy, opp } = splitLineupRowsByTeam(ld, md);
                 const egyNorm = normalizeSavedTeamLineup(egy, id, getDefaultEgyptTeamLabel(md));
-                const oppNorm = normalizeSavedTeamLineup(opp, id, md?.["OPPONENT TEAM"] || "OPPONENT");
+                const oppNorm = normalizeSavedTeamLineup(opp, id, getOpponentTeamLabel(md));
                 setEgyLineupRows(applyLineupLogic(egyNorm, egyNorm));
                 setOppLineupRows(applyLineupLogic(oppNorm, oppNorm));
             }
@@ -1870,11 +1916,13 @@ export default function EgyptNTEditor() {
     const handleSaveMatch = async () => {
         if (isSaving) return;
         setIsSaving(true);
-        try {
-            const { "W-D-L": wdl, "CLEAN SHEET": cs, ...cleanMatchData } = matchData;
-            const { error: matchErr } = await supabase.from('egy_NT_MATCHDETAILS').upsert(cleanMatchData);
-            if (matchErr) throw matchErr;
 
+        const { "W-D-L": _wdl, "CLEAN SHEET": _cs, ...cleanMatchData } = matchData;
+        const { syncedEgy, syncedOpp } = applyMatchTeamsToEgyptLineupRows(egyLineupRows, oppLineupRows, matchData);
+        setEgyLineupRows(syncedEgy);
+        setOppLineupRows(syncedOpp);
+
+        try {
             const saveLinkedTable = async (tableName, rows, setter) => {
                 const pending = rows.filter(r => r._isNew || r._isDirty);
                 const filled = pending.filter(r => isLinkedRowSaveable(tableName, r));
@@ -2028,17 +2076,18 @@ export default function EgyptNTEditor() {
                 }
             };
 
-            await Promise.all([
-                saveLinkedTable('egy_NT_LINEUPDETAILS', egyLineupRows, setEgyLineupRows),
-                saveLinkedTable('egy_NT_LINEUPDETAILS', oppLineupRows, setOppLineupRows),
-                saveLinkedTable('egy_NT_PLAYERDETAILS', playerRows, setPlayerRows),
-                saveLinkedTable('egy_NT_GKSDETAILS', gkRows, setGkRows),
-                saveLinkedTable('egy_NT_HOWPENMISSED', penRows, setPenRows),
-            ]);
+            await saveLinkedTable('egy_NT_LINEUPDETAILS', syncedEgy, setEgyLineupRows);
+            await saveLinkedTable('egy_NT_LINEUPDETAILS', syncedOpp, setOppLineupRows);
+            await saveLinkedTable('egy_NT_PLAYERDETAILS', playerRows, setPlayerRows);
+            await saveLinkedTable('egy_NT_GKSDETAILS', gkRows, setGkRows);
+            await saveLinkedTable('egy_NT_HOWPENMISSED', penRows, setPenRows);
+
+            const { error: matchErr } = await supabase.from('egy_NT_MATCHDETAILS').upsert(cleanMatchData);
+            if (matchErr) throw new Error(`egy_NT_MATCHDETAILS: ${matchErr.message}`);
 
             addToast('Match and all pending records saved ✓');
         } catch (e) {
-            addNotification(`Global Save Failed:\n${e.message}`, "error");
+            addNotification(`Save failed — match details were not updated.\n${e.message}`, "error");
             addToast('Save Failed: ' + e.message, 'error');
         } finally {
             setIsSaving(false);
@@ -2051,6 +2100,8 @@ export default function EgyptNTEditor() {
         if (!mid) { addToast('MATCH_ID is required', 'error'); return; }
 
         setIsSaving(true);
+        let matchInserted = false;
+
         try {
             const exists = await fetchMatchIdExists(supabase, 'egy_NT_MATCHDETAILS', mid);
             if (exists) {
@@ -2059,9 +2110,14 @@ export default function EgyptNTEditor() {
                 return;
             }
 
+            const { syncedEgy, syncedOpp } = applyMatchTeamsToEgyptLineupRows(newEgyLineupRows, newOppLineupRows, newMatchData);
+            setNewEgyLineupRows(syncedEgy);
+            setNewOppLineupRows(syncedOpp);
+
             const { "W-D-L": wdl, "CLEAN SHEET": cs, ...cleanNewMatchData } = newMatchData;
             const { error: matchErr } = await supabase.from('egy_NT_MATCHDETAILS').insert({ ...cleanNewMatchData, MATCH_ID: mid });
-            if (matchErr) throw new Error(`Match Details: ${matchErr.message}`);
+            if (matchErr) throw new Error(`egy_NT_MATCHDETAILS: ${matchErr.message}`);
+            matchInserted = true;
 
             const saveStagedTable = async (tableName, rows) => {
                 const filled = rows.filter(r => isLinkedRowSaveable(tableName, r));
@@ -2092,12 +2148,10 @@ export default function EgyptNTEditor() {
                 if (insErr) throw new Error(`${tableName}: ${insErr.message}`);
             };
 
-            await Promise.all([
-                saveStagedTable('egy_NT_LINEUPDETAILS', [...newEgyLineupRows, ...newOppLineupRows]),
-                saveStagedTable('egy_NT_PLAYERDETAILS', newPlayerRows),
-                saveStagedTable('egy_NT_GKSDETAILS', newGkRows),
-                saveStagedTable('egy_NT_HOWPENMISSED', newPenRows),
-            ]);
+            await saveStagedTable('egy_NT_LINEUPDETAILS', [...syncedEgy, ...syncedOpp]);
+            await saveStagedTable('egy_NT_PLAYERDETAILS', newPlayerRows);
+            await saveStagedTable('egy_NT_GKSDETAILS', newGkRows);
+            await saveStagedTable('egy_NT_HOWPENMISSED', newPenRows);
 
             addToast('Match + all linked data created ✓');
             setSearchId(mid);
@@ -2106,7 +2160,10 @@ export default function EgyptNTEditor() {
             setTimeout(() => handleSearch(), 400);
 
         } catch (e) {
-            addNotification(`Failed to create match:\n${e.message}`, "error");
+            if (matchInserted) {
+                await supabase.from('egy_NT_MATCHDETAILS').delete().eq('MATCH_ID', mid);
+            }
+            addNotification(`Failed to create match — nothing was kept in the database.\n${e.message}`, "error");
             addToast('Error: ' + e.message, 'error');
         } finally {
             setIsSaving(false);
@@ -2129,7 +2186,7 @@ export default function EgyptNTEditor() {
                 teamName={teamName}
                 allPlayersList={allPlayersList}
                 allTeamsList={allTeamsList}
-                persistToDb={!isNew}
+                persistToDb={false}
                 onSaveRow={handleSaveRow}
                 onDeleteRow={isNew ? handleStagedDelete : handleDeleteRow}
                 isSaving={isNew ? false : isSaving}
@@ -2258,7 +2315,7 @@ export default function EgyptNTEditor() {
                                 setRows: handleNewOppLineupRows,
                                 formData: newMatchData,
                                 isNew: true,
-                                teamName: newMatchData["OPPONENT TEAM"] || "OPPONENT",
+                                teamName: getOpponentTeamLabel(newMatchData),
                             })}
                             {activeLinkedTab === 'events' && (
                                 <PlayerEventsPanel
@@ -2402,7 +2459,7 @@ export default function EgyptNTEditor() {
                                 setRows: handleEditOppLineupRows,
                                 formData: matchData,
                                 isNew: false,
-                                teamName: matchData["OPPONENT TEAM"] || "OPPONENT",
+                                teamName: getOpponentTeamLabel(matchData),
                             })}
                             {activeLinkedTab === 'events' && (
                                 <PlayerEventsPanel
