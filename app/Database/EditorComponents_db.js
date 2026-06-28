@@ -357,4 +357,171 @@ export function applyLineupLogic(prev, action) {
     });
 }
 
+export const GK_EVENT_ID_SEP = " & ";
+
+const parseGkEventIdSuffix = (eventId) => {
+    const id = String(eventId || "").trim();
+    if (!id) return 0;
+    const trailing = id.match(/(\d+)(?!.*\d)/);
+    return trailing ? parseInt(trailing[1], 10) : 0;
+};
+
+export function normalizeGkEventToken(token) {
+    const raw = String(token || "").trim();
+    if (!raw) return "";
+    const match = raw.match(/(\d+-\d+)\s*$/);
+    return match ? match[1] : raw;
+}
+
+export function parseGkEventIds(value) {
+    const raw = String(value || "").trim();
+    if (!raw) return [];
+    return raw.split(GK_EVENT_ID_SEP).map((part) => part.trim()).filter(Boolean);
+}
+
+export function serializeGkEventIds(ids = []) {
+    const seen = new Set();
+    const ordered = [];
+    ids.forEach((id) => {
+        const token = String(id || "").trim();
+        if (!token || seen.has(token)) return;
+        seen.add(token);
+        ordered.push(token);
+    });
+    return ordered.join(GK_EVENT_ID_SEP);
+}
+
+export function formatGkEventIdToken(eventRow) {
+    const eventId = String(eventRow?.EVENT_ID || "").trim();
+    if (!eventId) return "";
+    const team = String(eventRow?.TEAM || "").trim();
+    return team ? `${team}${eventId}` : eventId;
+}
+
+export function gkRowLinksEventId(gkRow, eventId) {
+    const target = normalizeGkEventToken(eventId);
+    if (!target) return false;
+    return parseGkEventIds(gkRow?.EVENT_ID).some(
+        (token) => normalizeGkEventToken(token) === target
+    );
+}
+
+export function remapGkEventIdsField(value, oldToNew) {
+    const tokens = parseGkEventIds(value);
+    if (!tokens.length) return String(value || "").trim();
+
+    const remapped = tokens.map((token) => {
+        const normalized = normalizeGkEventToken(token);
+        const mapped = oldToNew.get(normalized) || oldToNew.get(token);
+        if (!mapped) return token;
+        const prefix = token.slice(0, Math.max(0, token.length - normalized.length));
+        return `${prefix}${mapped}`;
+    });
+
+    return serializeGkEventIds(remapped);
+}
+
+export function getPrimaryEventIdForSort(value) {
+    const tokens = parseGkEventIds(value);
+    if (!tokens.length) return "";
+    if (tokens.length === 1) return normalizeGkEventToken(tokens[0]);
+    return [...tokens]
+        .map(normalizeGkEventToken)
+        .sort((a, b) => parseGkEventIdSuffix(a) - parseGkEventIdSuffix(b))[0];
+}
+
+export function isGoalPlayerEventRow(row) {
+    const type = String(row?.TYPE || "").trim();
+    const sub = String(row?.TYPE_SUB || "").trim();
+    return type === "GOAL" || type === "هدف" || sub === "PENGOAL" || sub === "هدف جزاء";
+}
+
+function gkEventTokenSelected(selectedTokens, token) {
+    const normalized = normalizeGkEventToken(token);
+    return selectedTokens.some((selected) => normalizeGkEventToken(selected) === normalized);
+}
+
+function removeGkEventToken(selectedTokens, token) {
+    const normalized = normalizeGkEventToken(token);
+    return selectedTokens.filter((selected) => normalizeGkEventToken(selected) !== normalized);
+}
+
+export function GkGoalEventIdMultiSelect({
+    playerEventRows = [],
+    value,
+    onChange,
+    accentColor = "#c8102e",
+    className = "",
+    style,
+}) {
+    const selectedTokens = useMemo(() => parseGkEventIds(value), [value]);
+
+    const goalEvents = useMemo(() => (
+        [...(playerEventRows || [])]
+            .filter(isGoalPlayerEventRow)
+            .sort(
+                (a, b) => parseGkEventIdSuffix(a?.EVENT_ID) - parseGkEventIdSuffix(b?.EVENT_ID)
+            )
+    ), [playerEventRows]);
+
+    const toggleToken = (token) => {
+        const next = gkEventTokenSelected(selectedTokens, token)
+            ? removeGkEventToken(selectedTokens, token)
+            : [...selectedTokens, token];
+        onChange(serializeGkEventIds(next));
+    };
+
+    return (
+        <div
+            className={`gk-event-id-multi${className ? ` ${className}` : ""}`}
+            style={{
+                display: "flex",
+                flexDirection: "column",
+                gap: 6,
+                maxHeight: 180,
+                overflowY: "auto",
+                padding: "8px 10px",
+                border: "1px solid #e2e8f0",
+                borderRadius: 8,
+                background: "#fff",
+                ...style,
+            }}
+        >
+            {goalEvents.length === 0 ? (
+                <div style={{ fontSize: 13, color: "#94a3b8" }}>No goal events in this match</div>
+            ) : (
+                goalEvents.map((row) => {
+                    const token = formatGkEventIdToken(row);
+                    const minute = String(row.MINUTE || "").trim();
+                    const checked = gkEventTokenSelected(selectedTokens, token);
+                    return (
+                        <label
+                            key={token}
+                            style={{
+                                display: "flex",
+                                alignItems: "center",
+                                gap: 8,
+                                fontSize: 13,
+                                cursor: "pointer",
+                                userSelect: "none",
+                            }}
+                        >
+                            <input
+                                type="checkbox"
+                                checked={checked}
+                                onChange={() => toggleToken(token)}
+                                style={{ accentColor }}
+                            />
+                            <span>
+                                {token}
+                                {minute ? ` · ${minute}'` : ""}
+                            </span>
+                        </label>
+                    );
+                })
+            )}
+        </div>
+    );
+}
+
 export { AutocompleteInputDb as AutocompleteInput };

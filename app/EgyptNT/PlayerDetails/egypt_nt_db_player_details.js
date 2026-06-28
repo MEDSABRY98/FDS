@@ -21,6 +21,7 @@ import PlayerPresenceTable from "./egypt_nt_db_player_details_squad_influence";
 import PlayerTimingTable from "./egypt_nt_db_player_details_timing";
 import { computePlayerGoalImpact } from "./egypt_nt_db_player_details_goal_impact";
 import { computePlayerAssistImpact } from "./egypt_nt_db_player_details_assist_impact";
+import { gkRowLinksEventId } from "../../Database";
 
 export default function EgyptNTPlayerDetails({ playerName, playerDetails, lineupDetails, masterMatches, gkDetails, howPenMissed, onBack }) {
     const [activeTab, setActiveTab] = useState('overview');
@@ -440,7 +441,7 @@ export default function EgyptNTPlayerDetails({ playerName, playerDetails, lineup
                     const isGoalEvent = type === "GOAL" || type === "هدف" || sub === "PENGOAL" || sub === "هدف جزاء";
 
                     if (isGoalEvent) {
-                        const gkMatch = matchGKs.find(gk => String(gk.EVENT_ID).trim() === eId);
+                        const gkMatch = matchGKs.find((gk) => gkRowLinksEventId(gk, eId));
                         if (gkMatch) {
                             const gkName = String(gkMatch["PLAYER NAME"]).trim();
                             addStats(gkName, opponentTeam, 1, sub === "PENGOAL" ? 1 : 0, 0);
@@ -450,7 +451,7 @@ export default function EgyptNTPlayerDetails({ playerName, playerDetails, lineup
                 const matchPenMisses = (howPenMissed || []).filter(pm => String(pm.MATCH_ID) === String(mId) && String(pm["PLAYER NAME"]).trim() === playerName);
                 matchPenMisses.forEach(pm => {
                     const eId = String(pm.EVENT_ID).trim();
-                    const gkMatch = matchGKs.find(gk => String(gk.EVENT_ID).trim() === eId);
+                    const gkMatch = matchGKs.find((gk) => gkRowLinksEventId(gk, eId));
                     if (gkMatch) {
                         const gkName = String(gkMatch["PLAYER NAME"]).trim();
                         const desc = String(pm["HOW MISSED?"] || "").trim();

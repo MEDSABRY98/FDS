@@ -2,7 +2,18 @@
 
 import { useState, useCallback, useEffect, useMemo, useRef } from "react";
 import "./egypt_nt_db_editor.css";
-import { supabase, getChangedFormFields, resolveCatalogFieldsInForm, AutocompleteInput, fetchCatalogDisplayNames, applyLineupLogic } from "../../Database";
+import {
+    supabase,
+    getChangedFormFields,
+    resolveCatalogFieldsInForm,
+    AutocompleteInput,
+    fetchCatalogDisplayNames,
+    applyLineupLogic,
+    GkGoalEventIdMultiSelect,
+    parseGkEventIds,
+    serializeGkEventIds,
+    getPrimaryEventIdForSort,
+} from "../../Database";
 import Login_db from "../../lib/Login_db";
 import NoData_db from "../../lib/NoData_db";
 import SearchBar_db from "../../lib/SearchBar_db";
@@ -41,8 +52,8 @@ const getNextPlayerEventId = (matchId, rows = []) => {
 
 const sortRowsByEventId = (rows = []) => {
     return [...rows].sort((a, b) => {
-        const idA = String(a?.EVENT_ID || "").trim();
-        const idB = String(b?.EVENT_ID || "").trim();
+        const idA = getPrimaryEventIdForSort(a?.EVENT_ID);
+        const idB = getPrimaryEventIdForSort(b?.EVENT_ID);
         if (!idA && !idB) return 0;
         if (!idA) return 1;
         if (!idB) return -1;
@@ -265,11 +276,13 @@ const listIndexedRowsByEventId = (rows = []) => (
     rows
         .map((row, index) => ({ row, index }))
         .sort((a, b) => {
-            const suffixDiff = parseEventIdSuffix(a.row?.EVENT_ID) - parseEventIdSuffix(b.row?.EVENT_ID);
+            const idA = getPrimaryEventIdForSort(a.row?.EVENT_ID);
+            const idB = getPrimaryEventIdForSort(b.row?.EVENT_ID);
+            const suffixDiff = parseEventIdSuffix(idA) - parseEventIdSuffix(idB);
             if (suffixDiff !== 0) return suffixDiff;
-            if (!a.row?.EVENT_ID && b.row?.EVENT_ID) return 1;
-            if (a.row?.EVENT_ID && !b.row?.EVENT_ID) return -1;
-            return String(a.row?.EVENT_ID || "").localeCompare(String(b.row?.EVENT_ID || ""));
+            if (!idA && idB) return 1;
+            if (idA && !idB) return -1;
+            return idA.localeCompare(idB);
         })
 );
 
@@ -332,10 +345,12 @@ const formatEventLine = (row) => {
 };
 
 const formatGkLine = (row) => {
+    const linkedGoals = parseGkEventIds(row.EVENT_ID).length;
     const parts = [
         String(row.STATU || "").trim(),
         String(row["OUT MINUTE"] || "").trim() ? `OUT ${String(row["OUT MINUTE"]).trim()}'` : "",
         String(row["GOALS CONCEDED"] || "").trim() !== "" ? `GC ${String(row["GOALS CONCEDED"]).trim()}` : "",
+        linkedGoals ? `${linkedGoals} goal link${linkedGoals > 1 ? "s" : ""}` : "",
     ].filter(Boolean);
     return parts.join(" · ") || "—";
 };
@@ -658,7 +673,6 @@ function GkDetailsPanel({
     const { addNotification } = useNotification();
 
     const sortedEntries = useMemo(() => listIndexedRowsByEventId(rows), [rows]);
-    const eventIdOptions = useMemo(() => buildPlayerEventIdOptions(playerEventRows), [playerEventRows]);
     const statuOptions = ["اساسي", "احتياطي"];
 
     const openAddModal = (preset = {}) => {
@@ -691,6 +705,16 @@ function GkDetailsPanel({
             return;
         }
 
+        const serializedEventId = serializeGkEventIds(parseGkEventIds(cleanForm.EVENT_ID));
+        const goalsConceded = String(cleanForm["GOALS CONCEDED"] || "").trim();
+        const linkedCount = parseGkEventIds(serializedEventId).length;
+        if (goalsConceded && linkedCount && parseInt(goalsConceded, 10) !== linkedCount) {
+            addNotification(
+                `Linked goal events (${linkedCount}) do not match GOALS CONCEDED (${goalsConceded}).`,
+                "warn"
+            );
+        }
+
         setSavingModal(true);
         try {
             if (editingIndex === null) {
@@ -698,7 +722,7 @@ function GkDetailsPanel({
                     ...EMPTY_GK,
                     ...cleanForm,
                     MATCH_ID: matchId,
-                    EVENT_ID: String(cleanForm.EVENT_ID || "").trim(),
+                    EVENT_ID: serializedEventId,
                     _isNew: true,
                     _key: Date.now(),
                 };
@@ -716,6 +740,7 @@ function GkDetailsPanel({
                     ...existingRow,
                     ...cleanForm,
                     MATCH_ID: matchId,
+                    EVENT_ID: serializedEventId,
                     _isDirty: true,
                 };
                 const nextRows = sortRowsByEventId(
@@ -788,16 +813,14 @@ function GkDetailsPanel({
                         </div>
 
                         <div className="player-event-modal-grid">
-                            <div className="player-event-modal-field">
-                                <div className="field-label">EVENT ID</div>
-                                <AutocompleteInput
+                            <div className="player-event-modal-field" style={{ gridColumn: "1 / -1" }}>
+                                <div className="field-label">EVENT ID (GOALS CONCEDED)</div>
+                                <GkGoalEventIdMultiSelect
+                                    playerEventRows={playerEventRows}
                                     value={form.EVENT_ID ?? ""}
-                                    options={eventIdOptions}
-                                    placeholder="Link to player event"
                                     onChange={(val) => updateFormField("EVENT_ID", val)}
-                                    className="field-input"
                                     accentColor={color}
-                                    style={{ width: "100%", height: "42px", fontSize: "14px", background: "#fff" }}
+                                    style={{ width: "100%" }}
                                 />
                             </div>
                             <div className="player-event-modal-field">

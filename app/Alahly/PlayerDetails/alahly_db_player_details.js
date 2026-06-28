@@ -23,6 +23,7 @@ import {
     findGkForPenaltyMiss,
     findDefendingGkForPenalty,
 } from "../Penalties/alahly_db_penalties_utils";
+import { gkRowLinksEventId } from "../../Database";
 import { AlAhlyService } from "../Service/alahly_db_service";
 import { AlAhlyExcelExport } from "../ExportExcel/alahly_export_excel";
 
@@ -444,7 +445,7 @@ export default function PlayerDetails({ playerName, playerData, playerDetails, l
                     const isGoalEvent = type === "GOAL" || type === "هدف" || sub === "PENGOAL" || sub === "هدف جزاء";
 
                     if (isGoalEvent) {
-                        const gkMatch = matchGKs.find(gk => String(gk.EVENT_ID).trim() === eId);
+                        const gkMatch = matchGKs.find((gk) => gkRowLinksEventId(gk, eId));
                         if (gkMatch) {
                             const gkName = String(gkMatch["PLAYER NAME"]).trim();
                             addStats(gkName, opponentTeam, 1, sub === "PENGOAL" ? 1 : 0, 0);

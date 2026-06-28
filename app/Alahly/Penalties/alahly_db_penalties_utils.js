@@ -1,5 +1,6 @@
 import { isAhlyTeam } from "../PlayerDetails/alahly_player_impact_utils";
 import { sortRowsByTableSortRules } from "../../Database/TableSortLogic_db.js";
+import { gkRowLinksEventId } from "../../Database/EditorComponents_db.js";
 
 export const PENALTY_MISS_DESCRIPTIONS = ["برا المرمى", "القائم", "العارضة", "؟"];
 const MISS_DESCRIPTIONS = PENALTY_MISS_DESCRIPTIONS;
@@ -164,7 +165,7 @@ function resolveDefendingGk({ penEvent, gkDetails, howPenMissed, detail }) {
     );
 
     for (const linkId of linkIds) {
-        const viaLink = matchGks.find((gk) => String(gk.EVENT_ID || "").trim() === linkId);
+        const viaLink = matchGks.find((gk) => gkRowLinksEventId(gk, linkId));
         if (viaLink && gkWasOnFieldForPenalty(viaLink, penMin)) return viaLink;
     }
 

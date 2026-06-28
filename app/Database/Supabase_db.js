@@ -21,6 +21,7 @@ import {
     parseColumnOrderFromSetting,
     serializeTableSettings,
 } from "./TableSortLogic_db";
+import { remapGkEventIdsField } from "./EditorComponents_db";
 
 const supabaseUrl = 'https://wsygeerxfdaavdtvogvy.supabase.co'
 const supabaseAnonKey = 'sb_publishable_Y2kr-reraWveea23ykKViw_8Z3AbtOk'
@@ -1579,8 +1580,10 @@ export async function reorderMatchEvents(matchId, orderedItems = []) {
 
     for (const gkRow of gkRows || []) {
         const oldEventId = String(gkRow.EVENT_ID || "").trim();
-        const mappedId = oldToNew.get(oldEventId);
-        if (!mappedId || !gkRow.ROW_ID) continue;
+        if (!oldEventId || !gkRow.ROW_ID) continue;
+
+        const mappedId = remapGkEventIdsField(oldEventId, oldToNew);
+        if (mappedId === oldEventId) continue;
 
         const { error } = await rawSupabase
             .from("egy_NT_GKSDETAILS")
