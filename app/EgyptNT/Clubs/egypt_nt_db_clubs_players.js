@@ -123,8 +123,8 @@ export default function EgyptNTClubsPlayers({ squadData, playerDetails, filtered
 
     // 2. Process Scoring player statistics
     const scoringPlayerRows = useMemo(
-        () => buildPlayerClubStats(playerDetails, filteredMatches, groupingMode),
-        [playerDetails, filteredMatches, groupingMode]
+        () => buildPlayerClubStats(playerDetails, filteredMatches, groupingMode, squadData),
+        [playerDetails, filteredMatches, groupingMode, squadData]
     );
 
     const clubOptions = useMemo(() => {

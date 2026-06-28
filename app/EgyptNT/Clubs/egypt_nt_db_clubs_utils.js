@@ -179,9 +179,52 @@ export function compareSeasonStatsRows(a, b) {
     return a.name.localeCompare(b.name, undefined, { numeric: true });
 }
 
-function processScoringEvents(playerDetails, matchContextMap, groupingMode = GROUPING_MODES.CLUB) {
+/** Goals: event CLUB when set, else squad club for same season. Assists: event CLUB or squad club. */
+function getScoringEventTargetGroups(row, playerName, ctx, squadLookup, isGoal, isAssistEvent, groupingMode = GROUPING_MODES.CLUB) {
+    const targets = new Set();
+    const eventClub = String(row.CLUB || "").trim();
+    const season = ctx.season || "Unknown";
+    const squadClubs = squadLookup[`${playerName}|${season}`];
+
+    const addSquadGroups = () => {
+        if (!squadClubs) return;
+        for (const club of squadClubs) {
+            const groupKey = groupingMode === GROUPING_MODES.COUNTRY
+                ? getGroupKey(club, GROUPING_MODES.COUNTRY)
+                : String(club || "").trim();
+            if (groupKey) targets.add(groupKey);
+        }
+    };
+
+    if (groupingMode === GROUPING_MODES.COUNTRY) {
+        const eventGroup = eventClub ? getGroupKey(eventClub, GROUPING_MODES.COUNTRY) : "";
+        if (isGoal) {
+            if (eventClub && eventGroup) targets.add(eventGroup);
+            else addSquadGroups();
+        }
+        if (isAssistEvent) {
+            if (eventGroup) targets.add(eventGroup);
+            addSquadGroups();
+        }
+        return targets;
+    }
+
+    if (isGoal) {
+        if (eventClub) targets.add(eventClub);
+        else addSquadGroups();
+    }
+    if (isAssistEvent) {
+        if (eventClub) targets.add(eventClub);
+        addSquadGroups();
+    }
+
+    return targets;
+}
+
+function processScoringEvents(playerDetails, matchContextMap, groupingMode = GROUPING_MODES.CLUB, squadData = []) {
     const clubs = {};
     const playerClubs = {};
+    const squadLookup = buildSquadPlayerSeasonClubLookup(squadData);
 
     (playerDetails || []).forEach(row => {
         const matchId = String(row.MATCH_ID || "").trim();
@@ -189,12 +232,6 @@ function processScoringEvents(playerDetails, matchContextMap, groupingMode = GRO
         if (!ctx) return;
 
         if (!isEgyptScorerEvent(row, ctx)) return;
-
-        const clubRaw = String(row.CLUB || "").trim();
-        if (!clubRaw) return;
-
-        const groupKey = getGroupKey(clubRaw, groupingMode);
-        if (!groupKey) return;
 
         const playerName = String(row["PLAYER NAME"] || "").trim();
         if (!playerName || playerName.toLowerCase() === "unknown") return;
@@ -206,52 +243,59 @@ function processScoringEvents(playerDetails, matchContextMap, groupingMode = GRO
 
         if (!isGoal && !isAssistEvent) return;
 
-        if (!clubs[groupKey]) {
-            clubs[groupKey] = {
-                club: groupKey,
-                scorers: new Set(),
-                contributors: new Set(),
-                goals: 0,
-                assists: 0,
-                penGoals: 0,
-                firstDate: null,
-                lastDate: null,
-                championships: new Set()
-            };
-        }
+        const targetGroups = getScoringEventTargetGroups(
+            row, playerName, ctx, squadLookup, isGoal, isAssistEvent, groupingMode
+        );
+        if (targetGroups.size === 0) return;
 
-        const clubEntry = clubs[groupKey];
-        clubEntry.contributors.add(playerName);
-        if (isGoal) clubEntry.scorers.add(playerName);
-        if (isGoal) clubEntry.goals += 1;
-        if (isAssistEvent) clubEntry.assists += 1;
-        if (isGoal && isPenGoal(subType)) clubEntry.penGoals += 1;
-        if (ctx.champion) clubEntry.championships.add(ctx.champion);
-
-        if (ctx.date) {
-            if (!clubEntry.firstDate || compareDates(ctx.date, clubEntry.firstDate) < 0) {
-                clubEntry.firstDate = ctx.date;
+        targetGroups.forEach(groupKey => {
+            if (!clubs[groupKey]) {
+                clubs[groupKey] = {
+                    club: groupKey,
+                    scorers: new Set(),
+                    contributors: new Set(),
+                    goals: 0,
+                    assists: 0,
+                    penGoals: 0,
+                    firstDate: null,
+                    lastDate: null,
+                    championships: new Set()
+                };
             }
-            if (!clubEntry.lastDate || compareDates(ctx.date, clubEntry.lastDate) > 0) {
-                clubEntry.lastDate = ctx.date;
+
+            const clubEntry = clubs[groupKey];
+            clubEntry.contributors.add(playerName);
+            if (isGoal) clubEntry.scorers.add(playerName);
+            if (isGoal) clubEntry.goals += 1;
+            if (isAssistEvent) clubEntry.assists += 1;
+            if (isGoal && isPenGoal(subType)) clubEntry.penGoals += 1;
+            if (ctx.champion) clubEntry.championships.add(ctx.champion);
+
+            if (ctx.date) {
+                if (!clubEntry.firstDate || compareDates(ctx.date, clubEntry.firstDate) < 0) {
+                    clubEntry.firstDate = ctx.date;
+                }
+                if (!clubEntry.lastDate || compareDates(ctx.date, clubEntry.lastDate) > 0) {
+                    clubEntry.lastDate = ctx.date;
+                }
             }
-        }
 
-        const playerClubKey = `${playerName}|${groupKey}`;
-        if (!playerClubs[playerClubKey]) {
-            playerClubs[playerClubKey] = {
-                player: playerName,
-                club: groupKey,
-                goals: 0,
-                assists: 0,
-                penGoals: 0
-            };
-        }
+            const playerClubKey = `${playerName}|${groupKey}`;
+            if (!playerClubs[playerClubKey]) {
+                playerClubs[playerClubKey] = {
+                    player: playerName,
+                    club: groupKey,
+                    goals: 0,
+                    assists: 0,
+                    penGoals: 0
+                };
+            }
 
-        const playerEntry = playerClubs[playerClubKey];
-        if (isGoal) playerEntry.goals += 1;
-        if (isAssistEvent) playerEntry.assists += 1;
-        if (isGoal && isPenGoal(subType)) playerEntry.penGoals += 1;
+            const playerEntry = playerClubs[playerClubKey];
+            if (isGoal) playerEntry.goals += 1;
+            if (isAssistEvent) playerEntry.assists += 1;
+            if (isGoal && isPenGoal(subType)) playerEntry.penGoals += 1;
+        });
     });
 
     return { clubs, playerClubs };
@@ -265,7 +309,7 @@ export function buildScoringClubStats(
     { lineupDetails = [], gkDetails = [] } = {}
 ) {
     const matchContextMap = buildMatchContextMap(filteredMatches);
-    const { clubs } = processScoringEvents(playerDetails, matchContextMap, groupingMode);
+    const { clubs } = processScoringEvents(playerDetails, matchContextMap, groupingMode, squadData);
 
     const matchData = {
         matches: filteredMatches,
@@ -317,9 +361,9 @@ export function buildScoringClubStats(
         );
 }
 
-export function buildPlayerClubStats(playerDetails, filteredMatches, groupingMode = GROUPING_MODES.CLUB) {
+export function buildPlayerClubStats(playerDetails, filteredMatches, groupingMode = GROUPING_MODES.CLUB, squadData = []) {
     const matchContextMap = buildMatchContextMap(filteredMatches);
-    const { playerClubs } = processScoringEvents(playerDetails, matchContextMap, groupingMode);
+    const { playerClubs } = processScoringEvents(playerDetails, matchContextMap, groupingMode, squadData);
 
     return Object.values(playerClubs)
         .map(entry => ({
@@ -348,49 +392,10 @@ function buildSquadPlayerSeasonClubLookup(squadData) {
     return lookup;
 }
 
-function isPlayerInSquadGroupForSeason(squadLookup, playerName, season, groupKey, groupingMode = GROUPING_MODES.CLUB) {
-    const key = `${String(playerName || "").trim()}|${String(season || "").trim()}`;
-    const clubs = squadLookup[key];
-    if (!clubs) return false;
-
-    if (groupingMode === GROUPING_MODES.COUNTRY) {
-        for (const club of clubs) {
-            if (getGroupKey(club, GROUPING_MODES.COUNTRY) === groupKey) return true;
-        }
-        return false;
-    }
-
-    return clubs.has(groupKey);
-}
-
-/** Goals: event CLUB when set, else squad club. Assists: event CLUB or squad club. */
 function isScoringEventAttributedToGroup(row, playerName, ctx, groupKey, squadLookup, isGoal, isAssistEvent, groupingMode = GROUPING_MODES.CLUB) {
-    const eventClub = String(row.CLUB || "").trim();
-    const season = ctx.season || "Unknown";
-    const inSquad = isPlayerInSquadGroupForSeason(squadLookup, playerName, season, groupKey, groupingMode);
-
-    if (groupingMode === GROUPING_MODES.COUNTRY) {
-        const eventGroup = eventClub ? getGroupKey(eventClub, GROUPING_MODES.COUNTRY) : "";
-        if (isGoal) {
-            if (eventClub) return eventGroup === groupKey;
-            return inSquad;
-        }
-        if (isAssistEvent) {
-            if (eventGroup === groupKey) return true;
-            return inSquad;
-        }
-        return false;
-    }
-
-    if (isGoal) {
-        if (eventClub) return eventClub === groupKey;
-        return inSquad;
-    }
-    if (isAssistEvent) {
-        if (eventClub === groupKey) return true;
-        return inSquad;
-    }
-    return false;
+    return getScoringEventTargetGroups(
+        row, playerName, ctx, squadLookup, isGoal, isAssistEvent, groupingMode
+    ).has(groupKey);
 }
 
 export function buildScoringClubDetailStats(groupKey, playerDetails, filteredMatches, squadData = [], groupingMode = GROUPING_MODES.CLUB) {

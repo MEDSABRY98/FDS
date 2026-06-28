@@ -738,6 +738,23 @@ export const AlAhlyService = {
         }
     },
 
+    async getPKsByMatchId(matchId) {
+        if (!matchId) return [];
+        try {
+            const { data, error } = await supabase
+                .from('alahly_PKS')
+                .select('*')
+                .eq('MATCH_ID', String(matchId).trim())
+                .order('ROW_ID', { ascending: true });
+
+            if (error) throw error;
+            return data || [];
+        } catch (error) {
+            console.error("Error fetching PKs by MATCH_ID:", error.message);
+            throw error;
+        }
+    },
+
     /**
      * Fetch ALL penalty kick details from alahly_PKS.
      */
