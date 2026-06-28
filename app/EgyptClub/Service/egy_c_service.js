@@ -1,37 +1,9 @@
-﻿import { supabase, resolveCatalogFieldsInForm } from "../../Database";
+﻿import { supabase, resolveCatalogFieldsInForm, buildOpponentDateMatchId, dateToExcelSerial, parseMatchDate } from "../../Database";
+
+export { parseMatchDate, dateToExcelSerial, buildOpponentDateMatchId as buildEgyptClubMatchId };
 
 const TABLE_NAME = "egy_CLUB_MATCHDETAILS";
 const INSERT_CHUNK_SIZE = 100;
-
-export function parseMatchDate(dateInput) {
-    const raw = String(dateInput ?? "").trim();
-    if (!raw) return null;
-
-    if (/^\d{4}-\d{2}-\d{2}$/.test(raw)) {
-        const [y, m, d] = raw.split("-").map(Number);
-        return new Date(y, m - 1, d);
-    }
-
-    const parsed = new Date(raw);
-    return Number.isNaN(parsed.getTime()) ? null : parsed;
-}
-
-/** Excel serial: days since 1899-12-30 (UTC midnight). */
-export function dateToExcelSerial(dateInput) {
-    const date = parseMatchDate(dateInput);
-    if (!date) return "";
-
-    const utc = Date.UTC(date.getFullYear(), date.getMonth(), date.getDate());
-    const excelEpoch = Date.UTC(1899, 11, 30);
-    return String(Math.round((utc - excelEpoch) / 86400000));
-}
-
-export function buildEgyptClubMatchId(opponentTeam, date) {
-    const opponent = String(opponentTeam ?? "").trim();
-    const serial = dateToExcelSerial(date);
-    if (!opponent || !serial) return "";
-    return `${opponent}${serial}`;
-}
 
 export function deriveYearFromDate(dateInput) {
     const date = parseMatchDate(dateInput);
@@ -46,7 +18,7 @@ function normalizePayloadRow(row) {
         if (payload[key] === "") payload[key] = null;
     });
 
-    payload.MATCH_ID = buildEgyptClubMatchId(payload["OPPONENT TEAM"], payload.DATE);
+    payload.MATCH_ID = buildOpponentDateMatchId(payload["OPPONENT TEAM"], payload.DATE);
     if (!payload.YEAR && payload.DATE) {
         payload.YEAR = deriveYearFromDate(payload.DATE);
     }
@@ -172,7 +144,7 @@ export const EgyptClubService = {
                 return;
             }
 
-            const matchId = buildEgyptClubMatchId(opponent, date);
+            const matchId = buildOpponentDateMatchId(opponent, date);
             if (!matchId) {
                 errors.push(`Row ${rowNum}: Could not build MATCH_ID from opponent and date.`);
                 return;

@@ -13,6 +13,10 @@ import {
     parseGkEventIds,
     serializeGkEventIds,
     getPrimaryEventIdForSort,
+    collectMatchIds,
+    suggestNextMatchIdForOpponent,
+    fetchMatchIdExists,
+    normalizeMatchId,
 } from "../../Database";
 import Login_db from "../../lib/Login_db";
 import NoData_db from "../../lib/NoData_db";
@@ -1370,7 +1374,8 @@ export default function AlAhlyEditor() {
     const [newPlayerRows, setNewPlayerRows] = useState([]);
     const [newGkRows, setNewGkRows] = useState([]);
     const [newPenRows, setNewPenRows] = useState([]);
-    const [nextMatchNum, setNextMatchNum] = useState(null);
+    const existingMatchIdsRef = useRef(new Set());
+    const [matchIdsLoaded, setMatchIdsLoaded] = useState(false);
     const [matchFieldOptions, setMatchFieldOptions] = useState({}); // unique values per column
     const [allPlayersList, setAllPlayersList] = useState([]);
     const [eventTypes, setEventTypes] = useState([]);
@@ -1442,16 +1447,13 @@ export default function AlAhlyEditor() {
     // Fetch max number + unique column values when entering 'new' or 'edit' mode
     useEffect(() => {
         if (mode !== 'new' && mode !== 'edit') return;
+        if (mode === 'new') setMatchIdsLoaded(false);
         (async () => {
             const { data } = await supabase.from('alahly_MATCHDETAILS').select('*');
             if (!data) return;
 
-            // Max trailing number for next ID
-            const nums = data.map(r => {
-                const m = String(r.MATCH_ID).match(/(\d+)$/);
-                return m ? parseInt(m[1], 10) : 0;
-            });
-            setNextMatchNum(Math.max(0, ...nums) + 1);
+            existingMatchIdsRef.current = collectMatchIds(data);
+            setMatchIdsLoaded(true);
 
             // Use catalog lists loaded with the global display language setting
             const managerList = catalogLists.managers;
@@ -1475,12 +1477,13 @@ export default function AlAhlyEditor() {
         })();
     }, [mode, catalogLists]);
 
-    // Auto-build MATCH_ID when OPPONENT TEAM or nextMatchNum changes
+    // Auto-build MATCH_ID when OPPONENT TEAM changes
     useEffect(() => {
-        if (mode !== 'new' || nextMatchNum === null) return;
+        if (mode !== 'new' || !matchIdsLoaded) return;
         const opp = newMatchData['OPPONENT TEAM'] || '';
-        setNewMatchData(prev => ({ ...prev, MATCH_ID: opp ? `${opp}${nextMatchNum}` : '' }));
-    }, [newMatchData['OPPONENT TEAM'], nextMatchNum]);
+        const suggested = suggestNextMatchIdForOpponent(opp, existingMatchIdsRef.current);
+        setNewMatchData(prev => (prev.MATCH_ID === suggested ? prev : { ...prev, MATCH_ID: suggested }));
+    }, [newMatchData['OPPONENT TEAM'], mode, matchIdsLoaded]);
 
     // Auto-suggest FINAL_ID for new final matches
     useEffect(() => {
@@ -1930,13 +1933,21 @@ export default function AlAhlyEditor() {
 
     // â”€â”€ Create New Match â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
     const handleCreateMatch = async () => {
-        if (!newMatchData.MATCH_ID) { addToast('MATCH_ID is required', 'error'); return; }
+        const mid = normalizeMatchId(newMatchData.MATCH_ID);
+        if (!mid) { addToast('MATCH_ID is required', 'error'); return; }
+
         setIsSaving(true);
-        const mid = newMatchData.MATCH_ID;
         try {
+            const exists = await fetchMatchIdExists(supabase, 'alahly_MATCHDETAILS', mid);
+            if (exists) {
+                addNotification(`Cannot create match: MATCH_ID "${mid}" already exists in the database.`, "error");
+                addToast(`MATCH_ID "${mid}" already exists`, 'error');
+                return;
+            }
+
             // 1. Insert main match record (exclude W-D-L and CLEAN SHEET from database payload)
             const { "W-D-L": wdl, "CLEAN SHEET": cs, ...cleanNewMatchData } = newMatchData;
-            const { error: matchErr } = await supabase.from('alahly_MATCHDETAILS').insert(cleanNewMatchData);
+            const { error: matchErr } = await supabase.from('alahly_MATCHDETAILS').insert({ ...cleanNewMatchData, MATCH_ID: mid });
             if (matchErr) {
                 console.error("Match Insert Error:", matchErr);
                 throw new Error(`Match Details: ${matchErr.message}`);

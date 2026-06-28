@@ -14,6 +14,10 @@ import {
     parseGkEventIds,
     serializeGkEventIds,
     getPrimaryEventIdForSort,
+    collectMatchIds,
+    buildEgyptNtMatchId,
+    fetchMatchIdExists,
+    normalizeMatchId,
 } from "../../Database";
 import Login_db from "../../lib/Login_db";
 import NoData_db from "../../lib/NoData_db";
@@ -1465,7 +1469,8 @@ export default function EgyptNTEditor() {
     const [newGkRows, setNewGkRows] = useState([]);
     const [newPenRows, setNewPenRows] = useState([]);
     
-    const [nextMatchNum, setNextMatchNum] = useState(null);
+    const existingMatchIdsRef = useRef(new Set());
+    const [matchIdsLoaded, setMatchIdsLoaded] = useState(false);
     const [matchFieldOptions, setMatchFieldOptions] = useState({}); // unique values per column
     const [allPlayersList, setAllPlayersList] = useState([]);
     const [eventTypes, setEventTypes] = useState([]);
@@ -1572,6 +1577,7 @@ export default function EgyptNTEditor() {
 
     useEffect(() => {
         if (mode !== 'new') return;
+        setMatchIdsLoaded(false);
         (async () => {
             let allMatchData = [];
             let from = 0;
@@ -1586,11 +1592,8 @@ export default function EgyptNTEditor() {
 
             const data = allMatchData;
 
-            const nums = data.map(r => {
-                const m = String(r.MATCH_ID).match(/(\d+)$/);
-                return m ? parseInt(m[1], 10) : 0;
-            });
-            setNextMatchNum(Math.max(0, ...nums) + 1);
+            existingMatchIdsRef.current = collectMatchIds(data);
+            setMatchIdsLoaded(true);
 
             const managerList = catalogLists.managers;
             const stadiumList = catalogLists.stadiums;
@@ -1613,10 +1616,15 @@ export default function EgyptNTEditor() {
     }, [mode, catalogLists]);
 
     useEffect(() => {
-        if (mode !== 'new' || nextMatchNum === null) return;
-        const opp = newMatchData['OPPONENT TEAM'] || '';
-        setNewMatchData(prev => ({ ...prev, MATCH_ID: opp ? `${opp}${nextMatchNum}` : '' }));
-    }, [newMatchData['OPPONENT TEAM'], nextMatchNum]);
+        if (mode !== 'new' || !matchIdsLoaded) return;
+        const suggested = buildEgyptNtMatchId({
+            age: newMatchData.AGE,
+            egyptTeam: newMatchData["Egypt TEAM"],
+            opponent: newMatchData["OPPONENT TEAM"],
+            date: newMatchData.DATE,
+        });
+        setNewMatchData(prev => (prev.MATCH_ID === suggested ? prev : { ...prev, MATCH_ID: suggested }));
+    }, [newMatchData.AGE, newMatchData["Egypt TEAM"], newMatchData["OPPONENT TEAM"], newMatchData.DATE, mode, matchIdsLoaded]);
 
     const handleNewEgyLineupRows = useCallback((action) => setNewEgyLineupRows(p => applyLineupLogic(p, action)), []);
     const handleNewOppLineupRows = useCallback((action) => setNewOppLineupRows(p => applyLineupLogic(p, action)), []);
@@ -2039,12 +2047,20 @@ export default function EgyptNTEditor() {
 
     // â”€â”€ Create New Match â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
     const handleCreateMatch = async () => {
-        if (!newMatchData.MATCH_ID) { addToast('MATCH_ID is required', 'error'); return; }
+        const mid = normalizeMatchId(newMatchData.MATCH_ID);
+        if (!mid) { addToast('MATCH_ID is required', 'error'); return; }
+
         setIsSaving(true);
-        const mid = newMatchData.MATCH_ID;
         try {
+            const exists = await fetchMatchIdExists(supabase, 'egy_NT_MATCHDETAILS', mid);
+            if (exists) {
+                addNotification(`Cannot create match: MATCH_ID "${mid}" already exists in the database.`, "error");
+                addToast(`MATCH_ID "${mid}" already exists`, 'error');
+                return;
+            }
+
             const { "W-D-L": wdl, "CLEAN SHEET": cs, ...cleanNewMatchData } = newMatchData;
-            const { error: matchErr } = await supabase.from('egy_NT_MATCHDETAILS').insert(cleanNewMatchData);
+            const { error: matchErr } = await supabase.from('egy_NT_MATCHDETAILS').insert({ ...cleanNewMatchData, MATCH_ID: mid });
             if (matchErr) throw new Error(`Match Details: ${matchErr.message}`);
 
             const saveStagedTable = async (tableName, rows) => {
@@ -2175,7 +2191,7 @@ export default function EgyptNTEditor() {
                                 {matchInfoFields.map(field => (
                                     <div key={field}>
                                         <div className="field-label" style={{ color: field === 'MATCH_ID' ? '#22c55e' : '#999' }}>
-                                            {field} {field === 'MATCH_ID' && <span style={{ color: '#aaa', fontWeight: 400, letterSpacing: 0 }}>(auto)</span>}
+                                            {field} {field === 'MATCH_ID' && <span style={{ color: '#aaa', fontWeight: 400, letterSpacing: 0 }}>(auto: Age + Opponent + Date)</span>}
                                         </div>
                                         {AUTOCOMPLETE_FIELDS.includes(field) ? (
                                             <AutocompleteInput
