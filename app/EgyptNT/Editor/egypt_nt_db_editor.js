@@ -2,7 +2,7 @@
 
 import { useState, useCallback, useEffect, useMemo, useRef } from "react";
 import "./egypt_nt_db_editor.css";
-import { supabase, getChangedFormFields, resolveCatalogFieldsInForm, AutocompleteInput, fetchCatalogDisplayNames } from "../../Database";
+import { supabase, getChangedFormFields, resolveCatalogFieldsInForm, AutocompleteInput, fetchCatalogDisplayNames, applyLineupLogic } from "../../Database";
 import Login_db from "../../lib/Login_db";
 import NoData_db from "../../lib/NoData_db";
 import SearchBar_db from "../../lib/SearchBar_db";
@@ -207,44 +207,6 @@ function normalizeSavedTeamLineup(teamRows, matchId, teamName) {
         MATCH_ID: matchId || row.MATCH_ID || "",
         _key: row._key ?? `lineup-loaded-${baseKey}-${teamName}-${index}`,
     }));
-}
-
-function applyLineupLogic(prev, action) {
-    const next = typeof action === "function" ? action(prev) : action;
-    const changedRow = next.find((r, i) => r["MATCH MINUTE"] !== prev[i]?.["MATCH MINUTE"]);
-    const matchMinuteRef = changedRow ? changedRow["MATCH MINUTE"] : (next[0]?.["MATCH MINUTE"] || "90");
-
-    return next.map((row) => {
-        const outMin = parseInt(row["OUT MINUTE"], 10);
-        const matchMin = parseInt(matchMinuteRef, 10) || 90;
-        let total = "";
-
-        if (row.STATU === "اساسي") {
-            const playerName = String(row["PLAYER NAME"] || "").trim();
-            const subOutRow = playerName
-                ? next.find((r) => String(r["PLAYER NAME OUT"] || "").trim() === playerName)
-                : null;
-
-            if (subOutRow) {
-                const actualOutMin = parseInt(subOutRow["OUT MINUTE"], 10);
-                total = !Number.isNaN(actualOutMin) ? actualOutMin : matchMin;
-            } else {
-                total = matchMin;
-            }
-        } else if (row.STATU === "احتياطي") {
-            if (!Number.isNaN(outMin) && outMin > 0) {
-                total = Math.max(0, matchMin - outMin);
-            }
-        } else {
-            total = row["TOTAL MINUTE"] || "";
-        }
-
-        return {
-            ...row,
-            "MATCH MINUTE": matchMinuteRef,
-            "TOTAL MINUTE": total.toString(),
-        };
-    });
 }
 
 const isPlayerEventRowSaveable = (row) => (

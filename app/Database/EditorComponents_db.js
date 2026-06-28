@@ -276,4 +276,85 @@ export function AutocompleteInputDb({
     );
 }
 
+/** Match minute for lineup totals; stoppage after + is not counted (90+3 → 90). */
+export function parseLineupMinute(value) {
+    const raw = String(value ?? "").trim();
+    if (!raw) return NaN;
+    const injuryMatch = raw.match(/^(\d+)\+(\d+)$/);
+    if (injuryMatch) {
+        return parseInt(injuryMatch[1], 10);
+    }
+    const num = parseInt(raw, 10);
+    return Number.isNaN(num) ? NaN : num;
+}
+
+function isInjuryTimeMinute(value) {
+    return /^(\d+)\+(\d+)$/.test(String(value ?? "").trim());
+}
+
+function isInjuryTimeAtMatchBase(outMinuteValue, matchMinute) {
+    if (!isInjuryTimeMinute(outMinuteValue)) return false;
+    const base = parseLineupMinute(outMinuteValue);
+    const matchNum = parseInt(String(matchMinute ?? ""), 10);
+    return !Number.isNaN(matchNum) && !Number.isNaN(base) && base === matchNum;
+}
+
+function calcBenchLineupTotalMinutes(outMinuteValue, matchMinute) {
+    const matchMin = parseInt(String(matchMinute ?? ""), 10) || 90;
+    const outRaw = String(outMinuteValue ?? "").trim();
+    if (!outRaw) return "";
+
+    const entryMin = parseLineupMinute(outRaw);
+    if (Number.isNaN(entryMin) || entryMin <= 0) return "";
+
+    if (isInjuryTimeAtMatchBase(outRaw, matchMin)) {
+        return 1;
+    }
+
+    return Math.max(0, matchMin - entryMin);
+}
+
+function calcStarterLineupTotalMinutes(subOutMinuteValue, matchMinute) {
+    const matchMin = parseInt(String(matchMinute ?? ""), 10) || 90;
+    const outRaw = String(subOutMinuteValue ?? "").trim();
+    if (!outRaw) return matchMin;
+
+    const actualOutMin = parseLineupMinute(outRaw);
+    return !Number.isNaN(actualOutMin) ? actualOutMin : matchMin;
+}
+
+export function applyLineupLogic(prev, action) {
+    const next = typeof action === "function" ? action(prev) : action;
+    const changedRow = next.find((r, i) => r["MATCH MINUTE"] !== prev[i]?.["MATCH MINUTE"]);
+    const matchMinuteRef = changedRow ? changedRow["MATCH MINUTE"] : (next[0]?.["MATCH MINUTE"] || "90");
+
+    return next.map((row) => {
+        let total = "";
+
+        if (row.STATU === "اساسي") {
+            const playerName = String(row["PLAYER NAME"] || "").trim();
+            const subOutRow = playerName
+                ? next.find((r) => String(r["PLAYER NAME OUT"] || "").trim() === playerName)
+                : null;
+
+            if (subOutRow) {
+                total = calcStarterLineupTotalMinutes(subOutRow["OUT MINUTE"], matchMinuteRef);
+            } else {
+                total = parseInt(matchMinuteRef, 10) || 90;
+            }
+        } else if (row.STATU === "احتياطي") {
+            const benchTotal = calcBenchLineupTotalMinutes(row["OUT MINUTE"], matchMinuteRef);
+            if (benchTotal !== "") total = benchTotal;
+        } else {
+            total = row["TOTAL MINUTE"] || "";
+        }
+
+        return {
+            ...row,
+            "MATCH MINUTE": matchMinuteRef,
+            "TOTAL MINUTE": total.toString(),
+        };
+    });
+}
+
 export { AutocompleteInputDb as AutocompleteInput };
