@@ -8,6 +8,7 @@ import {
     fetchCatalogDisplayNames,
     sortRowsByTableSortRules,
     applyLineupLogic,
+    getLineupSubOutOptions,
     GkGoalEventIdMultiSelect,
     parseGkEventIds,
     serializeGkEventIds,
@@ -1058,7 +1059,7 @@ function LineupPlayerCard({
     variant,
     color,
     allPlayersList,
-    starterNames,
+    subOutOptions,
     onFieldChange,
     onBlur,
     onDelete,
@@ -1143,7 +1144,7 @@ function LineupPlayerCard({
                         <div className="field-label">PLAYER NAME OUT</div>
                         <AutocompleteInput
                             value={row["PLAYER NAME OUT"] ?? ""}
-                            options={starterNames}
+                            options={subOutOptions}
                             placeholder="Subbed for"
                             onChange={(val) => onFieldChange("PLAYER NAME OUT", val)}
                             className="field-input"
@@ -1179,14 +1180,7 @@ function LineupPanel({
     rowsRef.current = rows;
     const matchMinute = String(rows[0]?.["MATCH MINUTE"] || "90").trim() || "90";
 
-    const starterNames = useMemo(
-        () =>
-            rows
-                .filter((r) => String(r.STATU || "").trim() === "اساسي" && String(r["PLAYER NAME"] || "").trim())
-                .map((r) => String(r["PLAYER NAME"]).trim())
-                .sort((a, b) => a.localeCompare(b, "ar")),
-        [rows]
-    );
+    const subOutOptions = useMemo(() => getLineupSubOutOptions(rows), [rows]);
 
     const starters = useMemo(
         () => rows.filter((r) => String(r.STATU || "").trim() === "اساسي"),
@@ -1283,7 +1277,7 @@ function LineupPanel({
             variant={variant}
             color={color}
             allPlayersList={allPlayersList}
-            starterNames={starterNames}
+            subOutOptions={subOutOptions}
             onFieldChange={(field, value) => updateField(row._key, field, value)}
             onBlur={handleCardBlur}
             onDelete={() => handleDelete(row, variant)}

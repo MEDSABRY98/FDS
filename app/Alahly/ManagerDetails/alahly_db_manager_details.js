@@ -87,23 +87,25 @@ export default function Manager_Details_Hub({ managerName, managerStatus, master
                 if (ga === 0) summary.csAgainst += 1;
             }
 
+            const matchEventsForState = (playerDetails || []).filter((p) => String(p.MATCH_ID) === String(m.MATCH_ID));
+            const scoreState = getMatchGoalScoreStates(m, matchEventsForState, managerName, result, isAhlyTeam);
+
             summary.matchHistory.push({
                 idx: m.MATCH_ID,
                 date: m.DATE,
                 champion, season, sy,
                 opponent: opp,
+                opponentManager: oppManager,
                 managedTeam: coachedTeam,
                 gf: isAsAhly ? gf : ga,
                 ga: isAsAhly ? ga : gf,
                 wdl: result,
-                role: isAsAhly ? 'Ahly' : 'Opponent'
+                role: isAsAhly ? 'Ahly' : 'Opponent',
+                everAhead: scoreState.everAhead,
+                everBehind: scoreState.everBehind,
             });
 
-            const matchEventsForState = (playerDetails || []).filter((p) => String(p.MATCH_ID) === String(m.MATCH_ID));
-            applyScoreStateStats(
-                summary,
-                getMatchGoalScoreStates(m, matchEventsForState, managerName, result, isAhlyTeam)
-            );
+            applyScoreStateStats(summary, scoreState);
 
             // Grouping logic for "Vs Teams"
             if (isAsAhly) {

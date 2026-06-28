@@ -299,19 +299,26 @@ function isInjuryTimeAtMatchBase(outMinuteValue, matchMinute) {
     return !Number.isNaN(matchNum) && !Number.isNaN(base) && base === matchNum;
 }
 
-function calcBenchLineupTotalMinutes(outMinuteValue, matchMinute) {
+function calcBenchLineupTotalMinutes(entryMinuteValue, exitMinuteValue, matchMinute) {
     const matchMin = parseInt(String(matchMinute ?? ""), 10) || 90;
-    const outRaw = String(outMinuteValue ?? "").trim();
-    if (!outRaw) return "";
+    const entryRaw = String(entryMinuteValue ?? "").trim();
+    if (!entryRaw) return "";
 
-    const entryMin = parseLineupMinute(outRaw);
+    const entryMin = parseLineupMinute(entryRaw);
     if (Number.isNaN(entryMin) || entryMin <= 0) return "";
 
-    if (isInjuryTimeAtMatchBase(outRaw, matchMin)) {
-        return 1;
+    const exitRaw = String(exitMinuteValue ?? "").trim();
+    if (!exitRaw) {
+        if (isInjuryTimeAtMatchBase(entryRaw, matchMin)) {
+            return 1;
+        }
+        return Math.max(0, matchMin - entryMin);
     }
 
-    return Math.max(0, matchMin - entryMin);
+    const exitMin = parseLineupMinute(exitRaw);
+    if (Number.isNaN(exitMin)) return "";
+
+    return Math.max(0, exitMin - entryMin);
 }
 
 function calcStarterLineupTotalMinutes(subOutMinuteValue, matchMinute) {
@@ -323,6 +330,41 @@ function calcStarterLineupTotalMinutes(subOutMinuteValue, matchMinute) {
     return !Number.isNaN(actualOutMin) ? actualOutMin : matchMin;
 }
 
+function findLineupSubOutRow(rows, playerName, team) {
+    const normalizedName = String(playerName || "").trim();
+    const normalizedTeam = String(team || "").trim();
+    if (!normalizedName) return null;
+
+    return rows.find(
+        (r) =>
+            String(r["PLAYER NAME OUT"] || "").trim() === normalizedName &&
+            String(r.TEAM || "").trim() === normalizedTeam
+    ) || null;
+}
+
+export function getLineupSubOutOptions(rows = []) {
+    const subbedOut = new Set(
+        rows
+            .map((r) => String(r["PLAYER NAME OUT"] || "").trim())
+            .filter(Boolean)
+    );
+
+    const options = [];
+    rows.forEach((row) => {
+        const name = String(row["PLAYER NAME"] || "").trim();
+        if (!name || subbedOut.has(name)) return;
+
+        const statu = String(row.STATU || "").trim();
+        if (statu === "اساسي") {
+            options.push(name);
+        } else if (statu === "احتياطي" && String(row["OUT MINUTE"] || "").trim()) {
+            options.push(name);
+        }
+    });
+
+    return [...new Set(options)].sort((a, b) => a.localeCompare(b, "ar"));
+}
+
 export function applyLineupLogic(prev, action) {
     const next = typeof action === "function" ? action(prev) : action;
     const changedRow = next.find((r, i) => r["MATCH MINUTE"] !== prev[i]?.["MATCH MINUTE"]);
@@ -330,11 +372,12 @@ export function applyLineupLogic(prev, action) {
 
     return next.map((row) => {
         let total = "";
+        const team = String(row.TEAM || "").trim();
+        const playerName = String(row["PLAYER NAME"] || "").trim();
 
         if (row.STATU === "اساسي") {
-            const playerName = String(row["PLAYER NAME"] || "").trim();
             const subOutRow = playerName
-                ? next.find((r) => String(r["PLAYER NAME OUT"] || "").trim() === playerName)
+                ? findLineupSubOutRow(next, playerName, team)
                 : null;
 
             if (subOutRow) {
@@ -343,7 +386,14 @@ export function applyLineupLogic(prev, action) {
                 total = parseInt(matchMinuteRef, 10) || 90;
             }
         } else if (row.STATU === "احتياطي") {
-            const benchTotal = calcBenchLineupTotalMinutes(row["OUT MINUTE"], matchMinuteRef);
+            const subOutRow = playerName
+                ? findLineupSubOutRow(next, playerName, team)
+                : null;
+            const benchTotal = calcBenchLineupTotalMinutes(
+                row["OUT MINUTE"],
+                subOutRow?.["OUT MINUTE"],
+                matchMinuteRef
+            );
             if (benchTotal !== "") total = benchTotal;
         } else {
             total = row["TOTAL MINUTE"] || "";

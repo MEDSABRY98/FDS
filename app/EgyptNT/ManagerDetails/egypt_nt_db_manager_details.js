@@ -83,6 +83,10 @@ export default function EgyptNTManagerDetails({ managerName, managerStatus, mast
                 if (ga === 0) summary.csAgainst += 1;
             }
 
+            const matchLineupsForState = (lineupDetails || []).filter((l) => String(l.MATCH_ID) === String(m.MATCH_ID));
+            const matchEventsForState = (playerDetails || []).filter((p) => String(p.MATCH_ID) === String(m.MATCH_ID));
+            const scoreState = getMatchGoalScoreStates(m, matchEventsForState, matchLineupsForState, managerName, result);
+
             summary.matchHistory.push({
                 idx: m.MATCH_ID,
                 date: m.DATE,
@@ -93,15 +97,12 @@ export default function EgyptNTManagerDetails({ managerName, managerStatus, mast
                 gf: isAsEgypt ? gf : ga,
                 ga: isAsEgypt ? ga : gf,
                 wdl: result,
-                role: isAsEgypt ? 'Egypt' : 'Opponent'
+                role: isAsEgypt ? 'Egypt' : 'Opponent',
+                everAhead: scoreState.everAhead,
+                everBehind: scoreState.everBehind,
             });
 
-            const matchLineupsForState = (lineupDetails || []).filter((l) => String(l.MATCH_ID) === String(m.MATCH_ID));
-            const matchEventsForState = (playerDetails || []).filter((p) => String(p.MATCH_ID) === String(m.MATCH_ID));
-            applyScoreStateStats(
-                summary,
-                getMatchGoalScoreStates(m, matchEventsForState, matchLineupsForState, managerName, result)
-            );
+            applyScoreStateStats(summary, scoreState);
 
             if (isAsEgypt) {
                 if (!summary.statsByOpponent[opp]) summary.statsByOpponent[opp] = { matches: 0, wins: 0, draws: 0, losses: 0, gs: 0, ga: 0, csFor: 0, csAgainst: 0 };
