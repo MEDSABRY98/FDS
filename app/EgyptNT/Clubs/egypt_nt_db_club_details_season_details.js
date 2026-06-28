@@ -10,6 +10,7 @@ const SORT_COLUMNS = [
     { key: "champion", label: "TOURNAMENT" },
     { key: "mp", label: "MP" },
     { key: "mins", label: "MINS" },
+    { key: "gPlusA", label: "G+A" },
     { key: "goals", label: "G" },
     { key: "assists", label: "A" },
     { key: "ga", label: "GA" },
@@ -38,6 +39,8 @@ function getSortValue(player, key) {
             return stats.mp ?? 0;
         case "mins":
             return stats.mins ?? 0;
+        case "gPlusA":
+            return (stats.goals ?? 0) + (stats.assists ?? 0);
         case "goals":
             return stats.goals ?? 0;
         case "assists":
@@ -93,15 +96,16 @@ function SeasonPlayersTable({ players }) {
             <table className="luxury-squad-table club-season-stats-table">
                 <colgroup>
                     <col style={{ width: "4%" }} />
-                    <col style={{ width: "18%" }} />
-                    <col style={{ width: "10%" }} />
-                    <col style={{ width: "14%" }} />
-                    <col style={{ width: "6%" }} />
-                    <col style={{ width: "8%" }} />
-                    <col style={{ width: "6%" }} />
+                    <col style={{ width: "16%" }} />
+                    <col style={{ width: "9%" }} />
+                    <col style={{ width: "12%" }} />
                     <col style={{ width: "6%" }} />
                     <col style={{ width: "7%" }} />
-                    <col style={{ width: "7%" }} />
+                    <col style={{ width: "6%" }} />
+                    <col style={{ width: "6%" }} />
+                    <col style={{ width: "6%" }} />
+                    <col style={{ width: "6%" }} />
+                    <col style={{ width: "6%" }} />
                 </colgroup>
                 <thead>
                     <tr>
@@ -120,6 +124,7 @@ function SeasonPlayersTable({ players }) {
                 <tbody>
                     {sortedPlayers.map((player, idx) => {
                         const stats = player.ntStats || {};
+                        const gPlusA = (stats.goals ?? 0) + (stats.assists ?? 0);
                         return (
                             <tr key={`${player.name}-${player.champion}-${player.position}-${idx}`}>
                                 <td className="row-num club-row-num">{idx + 1}</td>
@@ -128,6 +133,7 @@ function SeasonPlayersTable({ players }) {
                                 <td>{player.champion}</td>
                                 <StatCell value={stats.mp} />
                                 <StatCell value={stats.mins} />
+                                <td className="club-stat-cell highlight-gold">{gPlusA > 0 ? gPlusA : "—"}</td>
                                 <StatCell value={stats.goals} />
                                 <StatCell value={stats.assists} />
                                 <StatCell value={stats.ga} isGkOnly active={stats.isGk} />
