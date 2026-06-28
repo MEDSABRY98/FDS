@@ -11,6 +11,9 @@ import {
     normalizeNameDisplayLang,
     pickBilingualDisplayName,
     buildCatalogOptions,
+    buildCatalogAutocompleteOptions,
+    filterAutocompleteOptions,
+    normalizeAutocompleteOption,
     sortCatalogNames,
     sortCatalogRowsArThenEn,
 } from "./CatalogBilingual_db";
@@ -1430,7 +1433,7 @@ export async function fetchCatalogDisplayNames(tableName) {
         [nameColAr]: names?.ar ?? "",
         [nameColEn]: names?.en ?? "",
     }));
-    return buildCatalogOptions(rows, config, nameDisplayLang);
+    return buildCatalogAutocompleteOptions(rows, config, nameDisplayLang);
 }
 
 export { formatCatalogColumnLabel, NAME_DISPLAY_LANG_OPTIONS, NAME_DISPLAY_LANG_KEY, NAME_DISPLAY_LANGUAGE_HINT };

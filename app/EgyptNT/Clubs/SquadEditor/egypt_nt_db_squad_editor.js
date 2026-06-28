@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { createPortal } from "react-dom";
-import { supabase, fetchCatalogDisplayNames } from "../../../Database";
+import { supabase, fetchCatalogDisplayNames, filterAutocompleteOptions, getAutocompleteDisplayLabel, normalizeAutocompleteOption } from "../../../Database";
 import { useNotification } from "../../../lib/Notification_db";
 import { Save, Plus, Trash2, Download, RefreshCw } from "lucide-react";
 import "./egypt_nt_db_squad_editor.css";
@@ -23,13 +23,16 @@ function AutocompleteInput({ value, onChange, options = [], placeholder, classNa
 
     useEffect(() => { setQuery(value || ''); }, [value]);
 
-    const filtered = query
-        ? options.filter(o => String(o).toLowerCase().includes(String(query).toLowerCase())).slice(0, 50)
-        : options.slice(0, 50);
+    const normalizedOptions = (options || []).map(normalizeAutocompleteOption).filter(Boolean);
+    const filtered = filterAutocompleteOptions(normalizedOptions, query, 50);
 
     const handleSelect = (opt) => {
-        setQuery(opt);
-        onChange(opt);
+        const label = getAutocompleteDisplayLabel(
+            typeof opt === "object" ? opt : normalizeAutocompleteOption(opt),
+            query
+        );
+        setQuery(label);
+        onChange(label);
         setOpen(false);
     };
 
@@ -90,7 +93,9 @@ function AutocompleteInput({ value, onChange, options = [], placeholder, classNa
                             <div style={{ fontSize: 10, color: '#aaa', padding: '0 8px 8px', letterSpacing: 1, fontFamily: "'Space Mono', monospace" }}>
                                 SELECT {placeholder ? placeholder.toUpperCase() : 'OPTION'}
                             </div>
-                            {filtered.map((opt, i) => (
+                            {filtered.map((opt, i) => {
+                                const displayLabel = getAutocompleteDisplayLabel(opt, query);
+                                return (
                                 <div key={i}
                                     onMouseDown={() => handleSelect(opt)}
                                     style={{
@@ -113,9 +118,10 @@ function AutocompleteInput({ value, onChange, options = [], placeholder, classNa
                                     }}
                                     dir="auto"
                                 >
-                                    <div style={{ flex: 1, transition: 'color 0.2s' }}>{opt}</div>
+                                    <div style={{ flex: 1, transition: 'color 0.2s' }}>{displayLabel}</div>
                                 </div>
-                            ))}
+                                );
+                            })}
                         </div>
                     );
                 })(), document.body

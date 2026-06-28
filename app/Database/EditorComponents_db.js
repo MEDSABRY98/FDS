@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useLayoutEffect, useRef, useMemo } from "react";
 import { createPortal } from "react-dom";
+import { filterAutocompleteOptions, getAutocompleteDisplayLabel, normalizeAutocompleteOption } from "./CatalogBilingual_db";
 // Editor autocomplete (TYPE / TYPE_SUB shrink-to-fit)
 
 const EDITOR_FIT_COLUMNS = new Set(["TYPE", "TYPE_SUB"]);
@@ -136,13 +137,23 @@ export function AutocompleteInputDb({
 
     useEffect(() => { setQuery(value || ""); }, [value]);
 
-    const filtered = query
-        ? options.filter((o) => String(o).toLowerCase().includes(String(query).toLowerCase())).slice(0, 50)
-        : options.slice(0, 50);
+    const normalizedOptions = useMemo(
+        () => (options || []).map(normalizeAutocompleteOption).filter(Boolean),
+        [options]
+    );
+
+    const filtered = useMemo(
+        () => filterAutocompleteOptions(normalizedOptions, query, 50),
+        [normalizedOptions, query]
+    );
 
     const handleSelect = (opt) => {
-        setQuery(opt);
-        onChange(opt);
+        const label = getAutocompleteDisplayLabel(
+            typeof opt === "object" ? opt : normalizeAutocompleteOption(opt),
+            query
+        );
+        setQuery(label);
+        onChange(label);
         setOpen(false);
     };
 
@@ -234,7 +245,9 @@ export function AutocompleteInputDb({
                         animation: openUpwards ? "slideUp 0.2s cubic-bezier(0.16, 1, 0.3, 1)" : "slideIn 0.2s cubic-bezier(0.16, 1, 0.3, 1)",
                         transformOrigin: openUpwards ? "bottom center" : "top center",
                     }}>
-                        {filtered.map((opt, i) => (
+                        {filtered.map((opt, i) => {
+                            const displayLabel = getAutocompleteDisplayLabel(opt, query);
+                            return (
                             <div
                                 key={i}
                                 onMouseDown={() => handleSelect(opt)}
@@ -263,12 +276,13 @@ export function AutocompleteInputDb({
                                 dir="auto"
                             >
                                 {shrinkToFit ? (
-                                    <FitDropdownLabel text={opt} width={dropdownWidth} />
+                                    <FitDropdownLabel text={displayLabel} width={dropdownWidth} />
                                 ) : (
-                                    <div style={{ flex: 1, transition: "color 0.2s" }}>{opt}</div>
+                                    <div style={{ flex: 1, transition: "color 0.2s" }}>{displayLabel}</div>
                                 )}
                             </div>
-                        ))}
+                            );
+                        })}
                     </div>
                 );
             })(), document.body)}

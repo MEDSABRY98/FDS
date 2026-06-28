@@ -151,23 +151,102 @@ export function sortCatalogNames(values = [], lang = "auto") {
 }
 
 export function buildCatalogOptions(rows, config, lang = "auto") {
+    return buildCatalogAutocompleteOptions(rows, config, lang).map((option) => option.label);
+}
+
+export function normalizeAutocompleteOption(option) {
+    if (option == null || option === "") return null;
+
+    if (typeof option === "object" && option.label != null) {
+        const labelAr = String(option.labelAr || "").trim();
+        const labelEn = String(option.labelEn || "").trim();
+        const label = String(option.label || labelAr || labelEn).trim();
+        if (!label) return null;
+
+        const searchParts = [option.searchText, label, labelAr, labelEn]
+            .flatMap((value) => String(value || "").trim())
+            .filter(Boolean);
+
+        return {
+            label,
+            labelAr,
+            labelEn,
+            searchText: [...new Set(searchParts)].join(" ").toLowerCase(),
+        };
+    }
+
+    const label = String(option).trim();
+    if (!label) return null;
+
+    return {
+        label,
+        labelAr: label,
+        labelEn: label,
+        searchText: label.toLowerCase(),
+    };
+}
+
+export function getAutocompleteDisplayLabel(option, query = "") {
+    if (!option) return "";
+
+    const ar = String(option.labelAr || "").trim();
+    const en = String(option.labelEn || "").trim();
+    const fallback = String(option.label || ar || en).trim();
+    const q = String(query || "").trim();
+
+    if (!q) return fallback;
+
+    const script = getScriptType(q);
+    if (script === "arabic") return ar || en || fallback;
+    if (script === "latin") return en || ar || fallback;
+    return fallback;
+}
+
+export function filterAutocompleteOptions(options = [], query = "", limit = 50) {
+    const normalized = options
+        .map(normalizeAutocompleteOption)
+        .filter(Boolean);
+
+    const q = String(query || "").trim().toLowerCase();
+    if (!q) return normalized.slice(0, limit);
+
+    return normalized
+        .filter((option) => option.searchText.includes(q))
+        .slice(0, limit);
+}
+
+export function buildCatalogAutocompleteOptions(rows, config, lang = "auto") {
     const { idCol, nameColAr, nameColEn } = config;
-    const seen = new Set();
+    const seenIds = new Set();
     const options = [];
 
     for (const row of rows || []) {
         const id = row?.[idCol];
-        if (!id) continue;
-        const label = pickBilingualDisplayName(
-            { ar: row[nameColAr], en: row[nameColEn] },
-            lang
-        );
-        if (!label || seen.has(label)) continue;
-        seen.add(label);
-        options.push(label);
+        if (!id || seenIds.has(String(id))) continue;
+        seenIds.add(String(id));
+
+        const ar = String(row[nameColAr] || "").trim();
+        const en = String(row[nameColEn] || "").trim();
+        const label = pickBilingualDisplayName({ ar, en }, lang);
+        if (!label) continue;
+
+        options.push({
+            label,
+            labelAr: ar,
+            labelEn: en,
+            searchText: [ar, en].filter(Boolean).join(" "),
+        });
     }
 
-    return sortCatalogNames(options, lang);
+    return options.sort((a, b) => {
+        if (lang === "en") {
+            return a.label.localeCompare(b.label, "en", NAME_SORT_OPTIONS);
+        }
+        if (lang === "ar") {
+            return a.label.localeCompare(b.label, "ar", NAME_SORT_OPTIONS);
+        }
+        return a.label.localeCompare(b.label, undefined, NAME_SORT_OPTIONS);
+    });
 }
 
 export function getCatalogRowMergeName(row, tableName) {
