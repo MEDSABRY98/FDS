@@ -70,7 +70,7 @@ export default function EgyptNTMatchDetails({
 
     useEffect(() => {
         window.scrollTo(0, 0);
-    }, []);
+    }, [activeTab]);
 
     // Core data extraction
     const matchInfo = useMemo(() => (matches || []).find(m => String(m.MATCH_ID) === String(matchId)), [matchId, matches]);

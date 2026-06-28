@@ -699,6 +699,10 @@ export default function Settings_db({ addNotification }) {
     const [activeTab, setActiveTab] = useState(SETTINGS_TABS.DISPLAY);
 
     useEffect(() => {
+        window.scrollTo(0, 0);
+    }, [activeTab]);
+
+    useEffect(() => {
         let cancelled = false;
 
         const loadSettings = async () => {

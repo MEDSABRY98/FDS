@@ -120,6 +120,10 @@ export default function DBManagement() {
         setCatalogView("normal");
     }, [selectedTable]);
 
+    useEffect(() => {
+        window.scrollTo(0, 0);
+    }, [selectedTable]);
+
     const handleDownloadExcel = () => {
         if (!filteredData || filteredData.length === 0) {
             addNotification("No data available to download.", "warn");

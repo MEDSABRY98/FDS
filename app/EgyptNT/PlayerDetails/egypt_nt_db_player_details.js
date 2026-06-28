@@ -35,7 +35,7 @@ export default function EgyptNTPlayerDetails({ playerName, playerDetails, lineup
 
     useEffect(() => {
         window.scrollTo(0, 0);
-    }, []);
+    }, [activeTab]);
 
     // 1. Calculate career stats
     const { stats, playerTeams, playerComps, playerSYs, playerOpps } = useMemo(() => {

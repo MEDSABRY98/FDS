@@ -243,7 +243,7 @@ function Referee_VsTeams_Module({ stats }) {
 export default function EgyptNTRefereeDetails({ refereeName, masterMatches, playerDetails, onBack }) {
     const [activeTab, setActiveTab] = useState('overview');
 
-    useEffect(() => { window.scrollTo(0, 0); }, []);
+    useEffect(() => { window.scrollTo(0, 0); }, [activeTab]);
 
     const { stats } = useMemo(() => {
         const summary = {

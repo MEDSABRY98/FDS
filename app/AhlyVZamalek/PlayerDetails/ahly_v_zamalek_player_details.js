@@ -25,10 +25,9 @@ export default function AhlyVZamalekPlayerDetails({ playerName, playerDetails, l
     const [selectedOpps, setSelectedOpps] = useState([]);
     const [isFilterModalOpen, setIsFilterModalOpen] = useState(false);
 
-    // Scroll to top on mount
     useEffect(() => {
         window.scrollTo(0, 0);
-    }, []);
+    }, [activeTab]);
 
     // 1. Calculate Player Specific Career Stats from all raw data
     const { stats, playerTeams, playerComps, playerSYs, playerOpps } = useMemo(() => {

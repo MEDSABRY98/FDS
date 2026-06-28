@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { ArrowLeft } from "lucide-react";
 import "./egypt_nt_h2h_details.css";
 import EgyptNTH2HDashboard from "./egypt_nt_db_h2h_dashboard";
@@ -12,6 +12,10 @@ import { buildMatchContextMap } from "../Clubs/egypt_nt_db_clubs_utils";
 
 export default function EgyptNTH2HDetails({ opponent, matches, playerDetails, onBack }) {
     const [activeTab, setActiveTab] = useState("dashboard");
+
+    useEffect(() => {
+        window.scrollTo(0, 0);
+    }, [activeTab]);
 
     // Filter matches exactly for this opponent
     const opponentMatches = useMemo(() => {

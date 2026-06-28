@@ -16,7 +16,7 @@ export default function AlAhlyFinalsMatchDetails({
 
     useEffect(() => {
         window.scrollTo(0, 0);
-    }, []);
+    }, [activeTab]);
 
     // Core data extraction
     const matchInfo = useMemo(() => 

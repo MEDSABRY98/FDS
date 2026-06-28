@@ -14,10 +14,9 @@ export default function AlAhlyPKsPlayerDetails({ playerName, pksData, playerStat
     const [selectedTeams, setSelectedTeams] = useState([]);
     const [showFilterModal, setShowFilterModal] = useState(false);
 
-    // Scroll to top on mount (Important for inline rendering)
     useEffect(() => {
         window.scrollTo({ top: 0, behavior: 'instant' });
-    }, []);
+    }, [activeTab]);
 
     if (!playerName) return null;
 

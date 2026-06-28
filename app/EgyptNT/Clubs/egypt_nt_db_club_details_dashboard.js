@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import NoData_db from "../../lib/NoData_db";
 
 export default function ClubDetailsDashboard({ squadClubStats, scoringClubStats }) {
@@ -8,6 +8,10 @@ export default function ClubDetailsDashboard({ squadClubStats, scoringClubStats 
     const hasScoringData = scoringClubStats && (scoringClubStats.goals > 0 || scoringClubStats.assists > 0);
 
     const [activeTab, setActiveTab] = useState("callups");
+
+    useEffect(() => {
+        window.scrollTo(0, 0);
+    }, [activeTab]);
 
     if (!hasSquadData && !hasScoringData) {
         return <NoData_db message="NO DATA AVAILABLE FOR THIS CLUB" height="240px" />;

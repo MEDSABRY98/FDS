@@ -23,6 +23,11 @@ import "./Clubs/intl_clubs.css";
 export default function InternationalClubPage() {
     const { addNotification } = useNotification();
     const [activeTab, setActiveTab] = useState("dashboard");
+
+    useEffect(() => {
+        window.scrollTo(0, 0);
+    }, [activeTab]);
+
     const [matches, setMatches] = useState([]);
     const [filteredMatches, setFilteredMatches] = useState([]);
     const [loading, setLoading] = useState(true);

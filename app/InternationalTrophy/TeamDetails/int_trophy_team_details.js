@@ -26,6 +26,10 @@ export default function IntTrophyTeamDetails({ championName, trophies, typeFilte
     const [outcomeFilter, setOutcomeFilter] = useState("all");
 
     useEffect(() => {
+        window.scrollTo(0, 0);
+    }, [activeTab]);
+
+    useEffect(() => {
         setActiveTab("finals");
         setOutcomeFilter("all");
     }, [championName, typeFilter]);

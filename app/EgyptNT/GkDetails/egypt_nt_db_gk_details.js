@@ -377,7 +377,7 @@ export default function EgyptNTGKDetails({ gkName, gkDetails, howPenMissed, mast
     const [selectedOpps, setSelectedOpps] = useState([]);
     const [isFilterModalOpen, setIsFilterModalOpen] = useState(false);
 
-    useEffect(() => { window.scrollTo(0, 0); }, []);
+    useEffect(() => { window.scrollTo(0, 0); }, [activeTab]);
 
     const { stats, gkTeams, gkComps, gkSYs, gkOpps } = useMemo(() => {
         const summary = {

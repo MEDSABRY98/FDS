@@ -37,10 +37,10 @@ export default function PlayerDetails({ playerName, playerData, playerDetails, l
     const [isFilterModalOpen, setIsFilterModalOpen] = useState(false);
     const [isCompOpen, setIsCompOpen] = useState(false);
 
-    // Scroll to top on mount
+    // Scroll to top on mount and when switching tabs
     useEffect(() => {
         window.scrollTo(0, 0);
-    }, []);
+    }, [activeTab]);
 
     // 1. Calculate Player Specific Career Stats from all raw data
     const { stats, playerTeams, playerComps, playerSYs, playerOpps } = useMemo(() => {

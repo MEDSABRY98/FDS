@@ -17,6 +17,11 @@ import "./Leaderboard/int_trophy_leaderboard.css";
 export default function InternationalTrophyPage() {
     const { addNotification } = useNotification();
     const [activeTab, setActiveTab] = useState("leaderboard");
+
+    useEffect(() => {
+        window.scrollTo(0, 0);
+    }, [activeTab]);
+
     const [trophies, setTrophies] = useState([]);
     const [filteredTrophies, setFilteredTrophies] = useState([]);
     const [loading, setLoading] = useState(true);

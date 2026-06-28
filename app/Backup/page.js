@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Download } from "lucide-react";
 import Login_db from "../lib/Login_db";
 import SideBar_db from "../lib/SideBar_db";
@@ -11,6 +11,10 @@ const MENU_ITEMS = [{ id: "pickup", label: "PICK UP", icon: Download }];
 
 export default function BackupPage() {
     const [activeTab, setActiveTab] = useState("pickup");
+
+    useEffect(() => {
+        window.scrollTo(0, 0);
+    }, [activeTab]);
 
     return (
         <Login_db title="PRIVATE ACCESS" subtitle="DATABASE BACKUP">

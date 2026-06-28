@@ -46,6 +46,11 @@ import SideBar_db from "../lib/SideBar_db";
 
 export default function AlAhlyDatabase() {
     const [activeTab, setActiveTab] = useState("dashboard");
+
+    useEffect(() => {
+        window.scrollTo(0, 0);
+    }, [activeTab]);
+
     const [matches, setMatches] = useState([]);
     const [playerDetails, setPlayerDetails] = useState([]);
     const [lineupDetails, setLineupDetails] = useState([]);

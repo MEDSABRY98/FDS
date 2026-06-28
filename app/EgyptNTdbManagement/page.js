@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import { Download, Menu } from "lucide-react";
 import * as XLSX from "xlsx";
@@ -61,6 +61,10 @@ export default function EgyptDatabaseManagement() {
         setIsReplacing,
         handleExecuteReplace
     } = useEditRecord(selectedTable, columns, fetchTableData, addNotification);
+
+    useEffect(() => {
+        window.scrollTo(0, 0);
+    }, [selectedTable]);
 
     const handleDownloadExcel = () => {
         if (!filteredData || filteredData.length === 0) {

@@ -15,7 +15,7 @@ import { AlAhlyExcelExport } from "../ExportExcel/alahly_export_excel";
 export default function Referee_Details_Hub({ refereeName, masterMatches, playerDetails, onBack }) {
     const [activeTab, setActiveTab] = useState('overview');
 
-    useEffect(() => { window.scrollTo(0, 0); }, []);
+    useEffect(() => { window.scrollTo(0, 0); }, [activeTab]);
 
     // NEW STATES FOR DASHBOARD FILTERS
     const [selectedComps, setSelectedComps] = useState([]);

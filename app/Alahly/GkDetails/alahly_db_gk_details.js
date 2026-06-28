@@ -29,7 +29,7 @@ export default function GK_Details_Hub({ gkName, gkDetails, howPenMissed, master
     const [isCompOpen, setIsCompOpen] = useState(false);
     const [seasonLimit, setSeasonLimit] = useState('');
 
-    useEffect(() => { window.scrollTo(0, 0); }, []);
+    useEffect(() => { window.scrollTo(0, 0); }, [activeTab]);
 
     const { stats, gkTeams, gkComps, gkSYs, gkOpps } = useMemo(() => {
         const summary = {

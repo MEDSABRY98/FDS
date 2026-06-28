@@ -14,7 +14,7 @@ import { AhlyVZamalekExcelExport } from "../ExportExcel/ahly_v_zamalek_export_ex
 export default function AhlyVZamalekManagerDetails({ managerName, managerStatus, masterMatches, onBack, playerDetails, lineupDetails }) {
     const [activeTab, setActiveTab] = useState('overview');
 
-    useEffect(() => { window.scrollTo(0, 0); }, []);
+    useEffect(() => { window.scrollTo(0, 0); }, [activeTab]);
 
     const { stats } = useMemo(() => {
         const summary = {

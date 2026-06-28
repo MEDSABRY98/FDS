@@ -16,7 +16,7 @@ import { getMatchGoalScoreStates, applyScoreStateStats } from "./alahly_db_manag
 export default function Manager_Details_Hub({ managerName, managerStatus, masterMatches, onBack, playerDetails, lineupDetails }) {
     const [activeTab, setActiveTab] = useState('overview');
 
-    useEffect(() => { window.scrollTo(0, 0); }, []);
+    useEffect(() => { window.scrollTo(0, 0); }, [activeTab]);
 
     const { stats } = useMemo(() => {
         const summary = {

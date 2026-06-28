@@ -12,6 +12,11 @@ import "./egy_c_trophy_seasons.css";
 
 export default function EgyptClubTrophySeasons({ trophies, activeTab }) {
     const [innerTab, setInnerTab] = useState("season"); // "season" | "pivot"
+
+    useEffect(() => {
+        window.scrollTo(0, 0);
+    }, [innerTab]);
+
     const [selectedSeason, setSelectedSeason] = useState("");
     const [searchTerm, setSearchTerm] = useState("");
     const [currentPage, setCurrentPage] = useState(1);

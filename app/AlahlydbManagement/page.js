@@ -79,6 +79,10 @@ export default function DatabaseManagement() {
     }, [selectedTable, fetchTableData]);
 
     useEffect(() => {
+        window.scrollTo(0, 0);
+    }, [selectedTable]);
+
+    useEffect(() => {
         setCurrentPage(1);
         setSelectedRows([]);
     }, [searchTerm]);

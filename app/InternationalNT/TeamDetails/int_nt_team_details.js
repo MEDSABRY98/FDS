@@ -25,6 +25,8 @@ const TABS = [
 export default function IntNtTeamDetails({ teamName, matches, onBack }) {
     const [activeTab, setActiveTab] = useState("matches");
 
+    useEffect(() => { window.scrollTo(0, 0); }, [activeTab]);
+
     useEffect(() => { setActiveTab("matches"); }, [teamName]);
 
     const profile = useMemo(() => buildTeamProfile(matches, teamName), [matches, teamName]);

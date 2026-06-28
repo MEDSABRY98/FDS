@@ -11,6 +11,11 @@ import EgyptClubAddTrophies from "./AddTrophies/egy_c_add_trophies";
 
 export default function EgyptClubTrophyPage() {
     const [activeTab, setActiveTab] = useState("leaderboard");
+
+    useEffect(() => {
+        window.scrollTo(0, 0);
+    }, [activeTab]);
+
     const [trophies, setTrophies] = useState([]);
     const [loading, setLoading] = useState(true);
 

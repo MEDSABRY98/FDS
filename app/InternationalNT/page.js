@@ -24,6 +24,11 @@ import "./Teams/int_nt_teams.css";
 export default function InternationalNTPage() {
     const { addNotification } = useNotification();
     const [activeTab, setActiveTab] = useState("dashboard");
+
+    useEffect(() => {
+        window.scrollTo(0, 0);
+    }, [activeTab]);
+
     const [matches, setMatches] = useState([]);
     const [filteredMatches, setFilteredMatches] = useState([]);
     const [activeFilters, setActiveFilters] = useState({});
