@@ -22,6 +22,7 @@ import PlayerTimingTable from "./egypt_nt_db_player_details_timing";
 import { computePlayerGoalImpact } from "./egypt_nt_db_player_details_goal_impact";
 import { computePlayerAssistImpact } from "./egypt_nt_db_player_details_assist_impact";
 import { gkRowLinksEventId } from "../../Database";
+import { getPenaltyMissOutcome } from "../../Alahly/Penalties/alahly_db_penalties_utils";
 
 export default function EgyptNTPlayerDetails({ playerName, playerDetails, lineupDetails, masterMatches, gkDetails, howPenMissed, onBack }) {
     const [activeTab, setActiveTab] = useState('overview');
@@ -266,8 +267,7 @@ export default function EgyptNTPlayerDetails({ playerName, playerDetails, lineup
             mEvents.filter(e => String(e.TYPE).trim() === "PENMISSED").forEach(e => {
                 const detail = (howPenMissed || []).find(d => String(d.MATCH_ID) === String(mId) && String(d.EVENT_ID) === String(e.EVENT_ID));
                 if (detail) {
-                    const desc = String(detail["HOW MISSED?"] || "").trim();
-                    const isActualMiss = ["برا المرمى", "القائم", "العارضة", "؟"].includes(desc);
+                    const isActualMiss = getPenaltyMissOutcome(detail) === "missed";
                     if (isActualMiss) pmCount++; else psCount++;
                 } else {
                     pmCount++;
@@ -454,8 +454,7 @@ export default function EgyptNTPlayerDetails({ playerName, playerDetails, lineup
                     const gkMatch = matchGKs.find((gk) => gkRowLinksEventId(gk, eId));
                     if (gkMatch) {
                         const gkName = String(gkMatch["PLAYER NAME"]).trim();
-                        const desc = String(pm["HOW MISSED?"] || "").trim();
-                        const isActualMiss = ["برا المرمى", "القائم", "العارضة", "؟"].includes(desc);
+                        const isActualMiss = getPenaltyMissOutcome(pm) === "missed";
                         addStats(gkName, opponentTeam, 0, 0, isActualMiss ? 1 : 0, isActualMiss ? 0 : 1);
                     }
                 });

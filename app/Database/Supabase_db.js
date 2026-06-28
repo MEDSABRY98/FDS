@@ -712,6 +712,12 @@ async function resolveSoftCatalogValue(catalog, val) {
     }
 }
 
+export async function resolvePlayerCatalogId(value) {
+    const raw = String(value || "").trim();
+    if (!raw) return raw;
+    return resolveStrictCatalogValue("db_PLAYERS", raw);
+}
+
 function isCatalogReferenceColumn(col, tableName) {
     if (CATALOG_TABLES.includes(tableName)) return false;
 

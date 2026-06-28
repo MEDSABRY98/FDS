@@ -19,6 +19,11 @@ import Login_db from "../../lib/Login_db";
 import NoData_db from "../../lib/NoData_db";
 import SearchBar_db from "../../lib/SearchBar_db";
 import { useNotification } from "../../lib/Notification_db";
+import {
+    prepareHowPenMissedRowForSave,
+    formatHowPenMissedForDisplay,
+    buildHowPenMissedAutocompleteOptions,
+} from "../../Alahly/Penalties/alahly_db_penalties_utils";
 
 // â”€â”€ Helper â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 const EMPTY_MATCH = {
@@ -358,7 +363,7 @@ const formatGkLine = (row) => {
 
 const formatPenLine = (row) => {
     const parts = [
-        String(row["HOW MISSED?"] || "").trim(),
+        formatHowPenMissedForDisplay(row["HOW MISSED?"]),
         String(row.MINUTE || "").trim() ? `${String(row.MINUTE).trim()}'` : "",
     ].filter(Boolean);
     return parts.join(" · ") || "—";
@@ -910,7 +915,7 @@ function PenaltyMissesPanel({
     setRows,
     matchId,
     teamOptions,
-    howMissedOptions,
+    gkPlayerOptions,
     playerEventRows,
     persistToDb,
     onSaveRow,
@@ -925,6 +930,10 @@ function PenaltyMissesPanel({
 
     const sortedEntries = useMemo(() => listIndexedRowsByEventId(rows), [rows]);
     const eventIdOptions = useMemo(() => buildPlayerEventIdOptions(playerEventRows), [playerEventRows]);
+    const howMissedOptions = useMemo(
+        () => buildHowPenMissedAutocompleteOptions(gkPlayerOptions),
+        [gkPlayerOptions]
+    );
 
     const openAddModal = (preset = {}) => {
         setEditingIndex(null);
@@ -934,7 +943,12 @@ function PenaltyMissesPanel({
 
     const openEditModal = (row, index) => {
         setEditingIndex(index);
-        setForm({ ...EMPTY_PEN, ...row, MATCH_ID: row.MATCH_ID || matchId });
+        setForm({
+            ...EMPTY_PEN,
+            ...row,
+            MATCH_ID: row.MATCH_ID || matchId,
+            "HOW MISSED?": formatHowPenMissedForDisplay(row["HOW MISSED?"]),
+        });
         setModalOpen(true);
     };
 
@@ -1077,11 +1091,11 @@ function PenaltyMissesPanel({
                                 />
                             </div>
                             <div className="player-event-modal-field">
-                                <div className="field-label">HOW MISSED?</div>
+                                <div className="field-label">HOW MISSED? / SAVING GK</div>
                                 <AutocompleteInput
                                     value={form["HOW MISSED?"] ?? ""}
                                     options={howMissedOptions}
-                                    placeholder="How missed"
+                                    placeholder="Miss reason or goalkeeper"
                                     onChange={(val) => updateFormField("HOW MISSED?", val)}
                                     className="field-input"
                                     accentColor={color}
@@ -1456,7 +1470,6 @@ export default function EgyptNTEditor() {
     const [allPlayersList, setAllPlayersList] = useState([]);
     const [eventTypes, setEventTypes] = useState([]);
     const [eventSubTypes, setEventSubTypes] = useState([]);
-    const [howMissedOptions, setHowMissedOptions] = useState([]);
     const [catalogLists, setCatalogLists] = useState({ managers: [], stadiums: [], referees: [] });
     const [allTeamsList, setAllTeamsList] = useState([]);
 
@@ -1501,9 +1514,6 @@ export default function EgyptNTEditor() {
 
                 const ts = await fetchUniqueCol('egy_NT_PLAYERDETAILS', 'TYPE_SUB');
                 setEventSubTypes(ts);
-
-                const hm = await fetchUniqueCol('egy_NT_HOWPENMISSED', 'HOW MISSED?');
-                setHowMissedOptions(hm);
             } catch (error) {
                 console.error("Error fetching catalog lists for dropdown:", error);
             }
@@ -1762,6 +1772,10 @@ export default function EgyptNTEditor() {
                 );
             }
 
+            if (tableName === "egy_NT_HOWPENMISSED") {
+                Object.assign(cleanRow, await prepareHowPenMissedRowForSave(cleanRow));
+            }
+
             let result;
             const treatAsInsert = _isNew && !hasPersistedRowId(row);
 
@@ -1896,7 +1910,12 @@ export default function EgyptNTEditor() {
                         }
 
                         insertPayload = await Promise.all(
-                            insertPayload.map((payload) => resolveCatalogFieldsInForm(tableName, payload))
+                            insertPayload.map(async (payload) => {
+                                const prepared = tableName === "egy_NT_HOWPENMISSED"
+                                    ? await prepareHowPenMissedRowForSave(payload)
+                                    : payload;
+                                return resolveCatalogFieldsInForm(tableName, prepared);
+                            })
                         );
 
                         if (tableName === "egy_NT_PLAYERDETAILS") {
@@ -1956,7 +1975,9 @@ export default function EgyptNTEditor() {
                             const changed = getChangedFormFields(pendingRow._snapshot || {}, clean);
                             if (Object.keys(changed).length === 0) continue;
 
-                            const resolved = await resolveCatalogFieldsInForm(tableName, changed);
+                            const resolved = tableName === "egy_NT_HOWPENMISSED"
+                                ? await prepareHowPenMissedRowForSave({ ...clean, ...changed })
+                                : await resolveCatalogFieldsInForm(tableName, changed);
                             let updateQuery = supabase.from(tableName).update(resolved);
                             if (hasPersistedRowId(clean)) {
                                 updateQuery = updateQuery.eq("ROW_ID", clean.ROW_ID);
@@ -2043,7 +2064,12 @@ export default function EgyptNTEditor() {
                 });
 
                 clean = await Promise.all(
-                    clean.map((row) => resolveCatalogFieldsInForm(tableName, row))
+                    clean.map(async (row) => {
+                        const prepared = tableName === "egy_NT_HOWPENMISSED"
+                            ? await prepareHowPenMissedRowForSave(row)
+                            : row;
+                        return resolveCatalogFieldsInForm(tableName, prepared);
+                    })
                 );
 
                 const { error: insErr } = await supabase.from(tableName).insert(clean);
@@ -2259,7 +2285,7 @@ export default function EgyptNTEditor() {
                                     setRows={setNewPenRows}
                                     matchId={newMatchData.MATCH_ID || '---'}
                                     teamOptions={[newEgyTeamLabel, newMatchData["OPPONENT TEAM"]].filter(Boolean)}
-                                    howMissedOptions={howMissedOptions}
+                                    gkPlayerOptions={allPlayersList}
                                     playerEventRows={newPlayerRows}
                                     persistToDb={false}
                                     onDeleteRow={(row, ri, _, setter) => setter(prev => prev.filter((_, i) => i !== ri))}
@@ -2405,7 +2431,7 @@ export default function EgyptNTEditor() {
                                     setRows={setPenRows}
                                     matchId={matchData.MATCH_ID}
                                     teamOptions={[editEgyTeamLabel, matchData["OPPONENT TEAM"]].filter(Boolean)}
-                                    howMissedOptions={howMissedOptions}
+                                    gkPlayerOptions={allPlayersList}
                                     playerEventRows={playerRows}
                                     persistToDb
                                     onSaveRow={handleSaveRow}

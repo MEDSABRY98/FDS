@@ -1,6 +1,7 @@
 import { isAhlyTeam } from "../PlayerDetails/alahly_player_impact_utils";
 import { sortRowsByTableSortRules } from "../../Database/TableSortLogic_db.js";
 import { gkRowLinksEventId } from "../../Database/EditorComponents_db.js";
+import { getCatalogDisplayName, resolvePlayerCatalogId } from "../../Database/Supabase_db.js";
 
 export const PENALTY_MISS_DESCRIPTIONS = ["برا المرمى", "القائم", "العارضة", "؟"];
 const MISS_DESCRIPTIONS = PENALTY_MISS_DESCRIPTIONS;
@@ -138,10 +139,36 @@ export function findHowPenMissedForEvent(howPenMissed, penEvent) {
     }) || null;
 }
 
+export function isPenaltyMissReason(value) {
+    return MISS_DESCRIPTIONS.includes(String(value || "").trim());
+}
+
+export function isPlayerCatalogId(value) {
+    return /^P-\d+/i.test(String(value || "").trim());
+}
+
+export function formatHowPenMissedForDisplay(value, lang) {
+    const raw = String(value || "").trim();
+    if (!raw) return "";
+    if (isPlayerCatalogId(raw)) {
+        return getCatalogDisplayName("db_PLAYERS", raw, lang) || raw;
+    }
+    return raw;
+}
+
+function resolveGkLookupNameFromHowMissed(value) {
+    const raw = String(value || "").trim();
+    if (!raw) return "";
+    if (isPlayerCatalogId(raw)) {
+        return getCatalogDisplayName("db_PLAYERS", raw) || raw;
+    }
+    return raw;
+}
+
 export function getPenaltyMissOutcome(detail) {
     if (!detail) return "missed";
     const desc = String(detail["HOW MISSED?"] || "").trim();
-    return MISS_DESCRIPTIONS.includes(desc) ? "missed" : "saved";
+    return isPenaltyMissReason(desc) ? "missed" : "saved";
 }
 
 function gkWasOnFieldForPenalty(gk, penMinute) {
@@ -152,6 +179,15 @@ function gkWasOnFieldForPenalty(gk, penMinute) {
     return penMin <= (Number.isNaN(outMin) ? 90 : outMin);
 }
 
+function gkMatchesHowMissedValue(gk, howValue, penMin) {
+    if (!gkWasOnFieldForPenalty(gk, penMin)) return false;
+    const gkName = String(gk["PLAYER NAME"] || "").trim();
+    const lookup = resolveGkLookupNameFromHowMissed(howValue);
+    if (!gkName || !lookup) return false;
+    if (gkName === lookup) return true;
+    return gkName.toLowerCase() === lookup.toLowerCase();
+}
+
 function resolveDefendingGk({ penEvent, gkDetails, howPenMissed, detail }) {
     const mId = String(penEvent.MATCH_ID || "").trim();
     const takerTeam = String(penEvent.TEAM || "").trim();
@@ -159,6 +195,12 @@ function resolveDefendingGk({ penEvent, gkDetails, howPenMissed, detail }) {
     const matchGks = (gkDetails || []).filter(
         (g) => String(g.MATCH_ID || "").trim() === mId && String(g.TEAM || "").trim() !== takerTeam
     );
+
+    const howVal = String(detail?.["HOW MISSED?"] || "").trim();
+    if (howVal && getPenaltyMissOutcome(detail) === "saved") {
+        const viaHowMissed = matchGks.filter((gk) => gkMatchesHowMissedValue(gk, howVal, penMin));
+        if (viaHowMissed.length === 1) return viaHowMissed[0];
+    }
 
     const linkIds = new Set(
         [...getHowPenMissedLinkIds(detail), String(penEvent.EVENT_ID || "").trim()].filter(Boolean)
@@ -216,6 +258,29 @@ export function sanitizeHowPenMissedRowForSave(row) {
     if (!row || typeof row !== "object") return row;
     const { PARENT_EVENT_ID, ...rest } = row;
     return rest;
+}
+
+export async function prepareHowPenMissedRowForSave(row) {
+    const base = sanitizeHowPenMissedRowForSave(row);
+    const howVal = String(base["HOW MISSED?"] || "").trim();
+    if (!howVal || isPenaltyMissReason(howVal) || isPlayerCatalogId(howVal)) {
+        return base;
+    }
+
+    const resolvedId = await resolvePlayerCatalogId(howVal);
+    return { ...base, "HOW MISSED?": resolvedId };
+}
+
+export function buildHowPenMissedAutocompleteOptions(gkPlayerOptions = []) {
+    const seen = new Set();
+    const options = [];
+    [...PENALTY_MISS_DESCRIPTIONS, ...(gkPlayerOptions || [])].forEach((item) => {
+        const key = String(item || "").trim();
+        if (!key || seen.has(key)) return;
+        seen.add(key);
+        options.push(key);
+    });
+    return options;
 }
 
 export function isHowPenMissedRowFilled(row) {

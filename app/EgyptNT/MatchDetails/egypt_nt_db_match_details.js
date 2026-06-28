@@ -4,6 +4,7 @@ import { useMemo, useState, useEffect, useCallback } from "react";
 import "./egypt_nt_db_match_details.css";
 import NoData_db from "../../lib/NoData_db";
 import { reorderMatchEvents, AutocompleteInput } from "../../Database";
+import { formatHowPenMissedForDisplay } from "../../Alahly/Penalties/alahly_db_penalties_utils";
 
 const parseTimelineMinute = (value) => {
     const raw = String(value ?? "").trim();
@@ -951,7 +952,7 @@ export default function EgyptNTMatchDetails({
                                                                     )}
                                                                 </span>
                                                             ) : (
-                                                                <span className="entry-note">HOW MISSED: {e["HOW MISSED?"]}</span>
+                                                                <span className="entry-note">HOW MISSED: {formatHowPenMissedForDisplay(e["HOW MISSED?"])}</span>
                                                             )}
                                                         </div>
                                                     </div>

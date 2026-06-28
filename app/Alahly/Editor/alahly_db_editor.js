@@ -20,8 +20,10 @@ import SearchBar_db from "../../lib/SearchBar_db";
 import { useNotification } from "../../lib/Notification_db";
 import {
     normalizeHowPenMissedRowForEditor,
-    sanitizeHowPenMissedRowForSave,
+    prepareHowPenMissedRowForSave,
     isEditorLinkedRowFilled,
+    formatHowPenMissedForDisplay,
+    buildHowPenMissedAutocompleteOptions,
 } from "../Penalties/alahly_db_penalties_utils";
 // â”€â”€ Helper â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 const EMPTY_MATCH = {
@@ -124,7 +126,7 @@ const formatGkLine = (row) => {
 
 const formatPenLine = (row) => {
     const parts = [
-        String(row["HOW MISSED?"] || "").trim(),
+        formatHowPenMissedForDisplay(row["HOW MISSED?"]),
         String(row.MINUTE || "").trim() ? `${String(row.MINUTE).trim()}'` : "",
     ].filter(Boolean);
     return parts.join(" · ") || "—";
@@ -842,7 +844,7 @@ function PenaltyMissesPanel({
     setRows,
     matchId,
     teamOptions,
-    howMissedOptions,
+    gkPlayerOptions,
     playerEventRows,
     persistToDb,
     onSaveRow,
@@ -857,6 +859,10 @@ function PenaltyMissesPanel({
 
     const sortedEntries = useMemo(() => listIndexedRowsByEventId(rows), [rows]);
     const eventIdOptions = useMemo(() => buildPlayerEventIdOptions(playerEventRows), [playerEventRows]);
+    const howMissedOptions = useMemo(
+        () => buildHowPenMissedAutocompleteOptions(gkPlayerOptions),
+        [gkPlayerOptions]
+    );
 
     const openAddModal = (preset = {}) => {
         setEditingIndex(null);
@@ -866,7 +872,12 @@ function PenaltyMissesPanel({
 
     const openEditModal = (row, index) => {
         setEditingIndex(index);
-        setForm({ ...EMPTY_PEN, ...row, MATCH_ID: row.MATCH_ID || matchId });
+        setForm({
+            ...EMPTY_PEN,
+            ...row,
+            MATCH_ID: row.MATCH_ID || matchId,
+            "HOW MISSED?": formatHowPenMissedForDisplay(row["HOW MISSED?"]),
+        });
         setModalOpen(true);
     };
 
@@ -1009,11 +1020,11 @@ function PenaltyMissesPanel({
                                 />
                             </div>
                             <div className="player-event-modal-field">
-                                <div className="field-label">HOW MISSED?</div>
+                                <div className="field-label">HOW MISSED? / SAVING GK</div>
                                 <AutocompleteInput
                                     value={form["HOW MISSED?"] ?? ""}
                                     options={howMissedOptions}
-                                    placeholder="How missed"
+                                    placeholder="Miss reason or goalkeeper"
                                     onChange={(val) => updateFormField("HOW MISSED?", val)}
                                     className="field-input"
                                     accentColor={color}
@@ -1364,7 +1375,6 @@ export default function AlAhlyEditor() {
     const [allPlayersList, setAllPlayersList] = useState([]);
     const [eventTypes, setEventTypes] = useState([]);
     const [eventSubTypes, setEventSubTypes] = useState([]);
-    const [howMissedOptions, setHowMissedOptions] = useState([]);
     const [wdlFinalOptions, setWdlFinalOptions] = useState([]);
     const [catalogLists, setCatalogLists] = useState({ managers: [], stadiums: [], referees: [] });
     const [confirmDelete, setConfirmDelete] = useState(null);
@@ -1408,8 +1418,6 @@ export default function AlAhlyEditor() {
                 setEventTypes(t);
                 const ts = await fetchUniqueCol('alahly_PLAYERDETAILS', 'TYPE_SUB');
                 setEventSubTypes(ts);
-                const hm = await fetchUniqueCol('alahly_HOWPENMISSED', 'HOW MISSED?');
-                setHowMissedOptions(hm);
                 const wdlFinal = await fetchUniqueCol('alahly_MATCHDETAILS', 'W-D-L FINAL');
                 setWdlFinalOptions(wdlFinal);
 
@@ -1723,7 +1731,7 @@ export default function AlAhlyEditor() {
             }
 
             const payload = tableName === "alahly_HOWPENMISSED"
-                ? sanitizeHowPenMissedRowForSave(cleanRow)
+                ? await prepareHowPenMissedRowForSave(cleanRow)
                 : cleanRow;
 
             let result;
@@ -1855,29 +1863,30 @@ export default function AlAhlyEditor() {
                 const toInsert = filled.filter(r => r._isNew);
                 const toUpdate = filled.filter(r => !r._isNew);
 
-                const cleanObj = (r, isNew) => {
+                const cleanObj = async (r, isNew) => {
                     const { _isNew, _isDirty, _key, ...clean } = { ...r, MATCH_ID: matchData.MATCH_ID };
-                    // For new rows, never send ROW_ID to allow DB to generate it
                     if (isNew || !clean.ROW_ID || clean.ROW_ID === "" || clean.ROW_ID === null) {
                         delete clean.ROW_ID;
                     }
-                    return tableName === "alahly_HOWPENMISSED"
-                        ? sanitizeHowPenMissedRowForSave(clean)
-                        : clean;
+                    if (tableName === "alahly_HOWPENMISSED") {
+                        return prepareHowPenMissedRowForSave(clean);
+                    }
+                    return clean;
                 };
 
                 let savedResults = [];
 
                 try {
-                    // Separate calls to prevent PostgREST mixed-batch NULL issues
                     if (toInsert.length > 0) {
-                        const { data, error: insErr } = await supabase.from(tableName).insert(toInsert.map(r => cleanObj(r, true))).select();
+                        const insertPayload = await Promise.all(toInsert.map((r) => cleanObj(r, true)));
+                        const { data, error: insErr } = await supabase.from(tableName).insert(insertPayload).select();
                         if (insErr) throw insErr;
                         if (data) savedResults.push(...data);
                     }
 
                     if (toUpdate.length > 0) {
-                        const { data, error: upErr } = await supabase.from(tableName).upsert(toUpdate.map(r => cleanObj(r, false))).select();
+                        const updatePayload = await Promise.all(toUpdate.map((r) => cleanObj(r, false)));
+                        const { data, error: upErr } = await supabase.from(tableName).upsert(updatePayload).select();
                         if (upErr) throw upErr;
                         if (data) savedResults.push(...data);
                     }
@@ -1938,13 +1947,14 @@ export default function AlAhlyEditor() {
                 const filled = rows.filter((r) => isEditorLinkedRowFilled(tableName, r));
                 if (filled.length === 0) return;
 
-                const clean = filled.map(({ _isNew, _isDirty, _key, ...r }) => {
+                const clean = await Promise.all(filled.map(async ({ _isNew, _isDirty, _key, ...r }) => {
                     const row = { ...r, MATCH_ID: mid };
                     if (row.ROW_ID === "" || row.ROW_ID === null) delete row.ROW_ID;
-                    return tableName === "alahly_HOWPENMISSED"
-                        ? sanitizeHowPenMissedRowForSave(row)
-                        : row;
-                });
+                    if (tableName === "alahly_HOWPENMISSED") {
+                        return prepareHowPenMissedRowForSave(row);
+                    }
+                    return row;
+                }));
 
                 const { error: insErr } = await supabase.from(tableName).insert(clean);
                 if (insErr) {
@@ -2037,7 +2047,7 @@ export default function AlAhlyEditor() {
                 setRows={isNew ? setNewPenRows : setPenRows}
                 matchId={matchId}
                 teamOptions={teamOptions}
-                howMissedOptions={howMissedOptions}
+                gkPlayerOptions={allPlayersList}
                 playerEventRows={playerEventRows}
                 persistToDb={!isNew}
                 onSaveRow={handleSaveRow}

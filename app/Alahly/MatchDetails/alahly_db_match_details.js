@@ -3,6 +3,7 @@
 import { useMemo, useState, useEffect } from "react";
 import "./alahly_db_match_details.css";
 import NoData_db from "../../lib/NoData_db";
+import { formatHowPenMissedForDisplay } from "../Penalties/alahly_db_penalties_utils";
 
 export default function AlAhlyMatchDetails({
     matchId,
@@ -655,7 +656,7 @@ export default function AlAhlyMatchDetails({
                                                                     {e.TYPE_SUB && <span style={{ color: '#ff5252', fontStyle: 'normal' }}> / {e.TYPE_SUB}</span>}
                                                                 </span>
                                                             ) : (
-                                                                <span className="entry-note">HOW MISSED: {e["HOW MISSED?"]}</span>
+                                                                <span className="entry-note">HOW MISSED: {formatHowPenMissedForDisplay(e["HOW MISSED?"])}</span>
                                                             )}
                                                         </div>
                                                     </div>
