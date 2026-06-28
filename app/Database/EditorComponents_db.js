@@ -330,6 +330,66 @@ function calcStarterLineupTotalMinutes(subOutMinuteValue, matchMinute) {
     return !Number.isNaN(actualOutMin) ? actualOutMin : matchMin;
 }
 
+export function resolveMatchLengthMinute(matchRow) {
+    const et = String(matchRow?.ET ?? "").trim().toLowerCase();
+    if (et && et !== "0" && et !== "no" && et !== "false" && et !== "-" && et !== "—") {
+        return 120;
+    }
+    return 90;
+}
+
+function findGkBenchExitMinute(gkRows, team, entryMinute) {
+    const normalizedTeam = String(team || "").trim();
+    const exits = [];
+
+    gkRows.forEach((row) => {
+        if (String(row.TEAM || "").trim() !== normalizedTeam) return;
+        const minute = parseLineupMinute(row["OUT MINUTE"]);
+        if (Number.isNaN(minute) || minute <= entryMinute) return;
+        exits.push(minute);
+    });
+
+    return exits.length ? Math.min(...exits) : null;
+}
+
+export function calcGkAppearanceMinutes(gkRow, matchGkRows = [], matchMinute = "90") {
+    const stored = String(gkRow?.["TOTAL MINUTE"] || "").trim();
+    if (stored) {
+        const parsed = parseInt(stored, 10);
+        if (!Number.isNaN(parsed)) return parsed;
+    }
+
+    const statu = String(gkRow?.STATU || "").trim();
+    const outRaw = String(gkRow?.["OUT MINUTE"] || "").trim();
+
+    if (statu === "اساسي") {
+        return calcStarterLineupTotalMinutes(outRaw, matchMinute);
+    }
+
+    if (statu === "احتياطي") {
+        const entry = parseLineupMinute(outRaw);
+        if (Number.isNaN(entry) || entry <= 0) return 0;
+
+        const team = String(gkRow?.TEAM || "").trim();
+        const exitMinute = findGkBenchExitMinute(matchGkRows, team, entry);
+        const benchTotal = calcBenchLineupTotalMinutes(
+            outRaw,
+            exitMinute != null ? String(exitMinute) : "",
+            matchMinute
+        );
+        if (benchTotal !== "") return benchTotal;
+
+        const matchMin = parseInt(String(matchMinute || ""), 10) || 90;
+        return Math.max(0, matchMin - entry);
+    }
+
+    const matchMin = parseInt(String(matchMinute || ""), 10) || 90;
+    if (!outRaw) return matchMin;
+
+    const parsedOut = parseLineupMinute(outRaw);
+    return Number.isNaN(parsedOut) ? matchMin : parsedOut;
+}
+
 function findLineupSubOutRow(rows, playerName, team) {
     const normalizedName = String(playerName || "").trim();
     const normalizedTeam = String(team || "").trim();
