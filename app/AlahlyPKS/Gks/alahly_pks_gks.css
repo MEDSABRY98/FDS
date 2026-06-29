@@ -178,6 +178,7 @@
 .gks-table td.faced { color: #555; }
 .gks-table td.saved { color: #2e7d32; }
 .gks-table td.conceded { color: #c62828; }
+.gks-table td.missed { color: #e67e22; }
 
 .team-badge {
     display: inline-block;

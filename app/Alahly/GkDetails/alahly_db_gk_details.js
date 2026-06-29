@@ -33,7 +33,7 @@ export default function GK_Details_Hub({ gkName, gkDetails, masterMatches, playe
 
     const { stats, gkTeams, gkComps, gkSYs, gkOpps } = useMemo(() => {
         const summary = {
-            caps: 0, goalsConceded: 0, cleanSheets: 0, penaltiesSaved: 0, penaltiesReceived: 0,
+            caps: 0, goalsConceded: 0, cleanSheets: 0, penaltiesFaced: 0, penaltiesSaved: 0, penaltiesMissed: 0, penaltiesReceived: 0,
             matchHistory: [], seasonalStats: {}, compStats: {}, statsByChampSeason: {},
             statsBySY: {}, statsByOpponent: {}, statsByScorer: {}
         };
@@ -150,6 +150,7 @@ export default function GK_Details_Hub({ gkName, gkDetails, masterMatches, playe
             });
 
             summary.penaltiesSaved += matchSaves.length;
+            summary.penaltiesMissed += matchMisses.length;
 
             [sy, champion, oppName].forEach((key, i) => {
                 const target = [summary.seasonalStats, summary.compStats, summary.statsByOpponent][i];
@@ -291,6 +292,8 @@ export default function GK_Details_Hub({ gkName, gkDetails, masterMatches, playe
         summary.maxGCStreak = summary.allStreaksGC[0]?.length || 0;
         summary.maxGCMatches = summary.allStreaksGC[0]?.matches || [];
 
+        summary.penaltiesFaced = summary.penaltiesReceived + summary.penaltiesSaved + summary.penaltiesMissed;
+
         return {
             stats: summary,
             gkTeams: uniqueTeams,
@@ -311,7 +314,7 @@ export default function GK_Details_Hub({ gkName, gkDetails, masterMatches, playe
         let filename = `AlAhly_GK_${gkName}_${activeTab}`;
         switch (activeTab) {
             case 'overview':
-                exportData = [{ "METRIC": "Matches", "VALUE": stats.caps }, { "METRIC": "GC", "VALUE": stats.goalsConceded }, { "METRIC": "CS", "VALUE": stats.cleanSheets }, { "METRIC": "PS", "VALUE": stats.penaltiesSaved }, { "METRIC": "PR", "VALUE": stats.penaltiesReceived }];
+                exportData = [{ "METRIC": "Matches", "VALUE": stats.caps }, { "METRIC": "GC", "VALUE": stats.goalsConceded }, { "METRIC": "CS", "VALUE": stats.cleanSheets }, { "METRIC": "PF", "VALUE": stats.penaltiesFaced }, { "METRIC": "PS", "VALUE": stats.penaltiesSaved }, { "METRIC": "PM", "VALUE": stats.penaltiesMissed }, { "METRIC": "PG", "VALUE": stats.penaltiesReceived }];
                 break;
             case 'matches':
                 exportData = stats.matchHistory.map((m, i) => ({

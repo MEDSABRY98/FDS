@@ -36,6 +36,7 @@ export default function AlAhlyPKsGKs({ pksData }) {
                         faced: 0,
                         saved: 0,
                         conceded: 0,
+                        missed: 0,
                     };
                 }
 
@@ -52,8 +53,9 @@ export default function AlAhlyPKsGKs({ pksData }) {
                 } else if ((statusStr.includes("MISS") || statusStr.includes("SAVED")) && howMissStr.includes("الحارس")) {
                     // Only a real save if HowMiss mentions the goalkeeper
                     gk.saved++;
+                } else if (statusStr.includes("MISS") || statusStr.includes("SAVED")) {
+                    gk.missed++;
                 }
-                // else: missed for another reason (post, over bar, etc.) — not counted as a save
             };
 
             // Ahly GK faces opponent kicks → check HOWMISS OPPONENT
@@ -137,6 +139,7 @@ export default function AlAhlyPKsGKs({ pksData }) {
             "FACED": g.faced,
             "SAVED": g.saved,
             "CONCEDED": g.conceded,
+            "MISSED": g.missed,
             "SAVE RATE": g.saveRate + "%",
         }));
         AlAhlyPksExcelExport.exportToExcel(exportData, "AlAhly_PKs_GK_Stats");
@@ -204,6 +207,9 @@ export default function AlAhlyPKsGKs({ pksData }) {
                                 <th className="col-stat clickable" onClick={() => requestSort('conceded')}>
                                     CONCEDED {getSortIcon('conceded')}
                                 </th>
+                                <th className="col-stat clickable" onClick={() => requestSort('missed')}>
+                                    MISSED {getSortIcon('missed')}
+                                </th>
                             </tr>
                         </thead>
                         <tbody>
@@ -224,6 +230,7 @@ export default function AlAhlyPKsGKs({ pksData }) {
                                         </span>
                                     </td>
                                     <td className="col-stat conceded">{gk.conceded}</td>
+                                    <td className="col-stat missed">{gk.missed}</td>
                                 </tr>
                             ))}
                         </tbody>
@@ -243,6 +250,7 @@ export default function AlAhlyPKsGKs({ pksData }) {
                                     })()}
                                 </td>
                                 <td className="col-stat">{filteredStats.reduce((a, b) => a + b.conceded, 0)}</td>
+                                <td className="col-stat">{filteredStats.reduce((a, b) => a + b.missed, 0)}</td>
                             </tr>
                         </tfoot>
                     </table>
@@ -268,6 +276,7 @@ export default function AlAhlyPKsGKs({ pksData }) {
                 <span><strong>FACED:</strong> Total kicks faced</span>
                 <span><strong>SAVED:</strong> Kicks saved/missed</span>
                 <span><strong>CONCEDED:</strong> Goals let in</span>
+                <span><strong>MISSED:</strong> Wide / post / bar (not GK save)</span>
                 <span><strong>SAVE %:</strong> Save percentage</span>
             </div>
         </div>
