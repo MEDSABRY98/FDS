@@ -1,5 +1,5 @@
 import { supabase } from "../../Database";
-import { isEditorLinkedRowFilled, prepareHowPenMissedRowForSave } from "../Penalties/alahly_db_penalties_utils";
+import { isEditorLinkedRowFilled, preparePlayerEventHowMissedForSave } from "../Penalties/alahly_db_penalties_utils";
 import { getNextPlayerEventId } from "./alahly_db_editor_event_utils";
 
 const MATCH_INTEGER_FIELDS = new Set(["GF", "GA", "ET", "SEASON - NUMBER"]);
@@ -25,8 +25,8 @@ export async function cleanLinkedRowForSave(tableName, row, matchId, isNew, allR
     if (tableName === "alahly_PLAYERDETAILS" && isNew && !String(clean.EVENT_ID || "").trim()) {
         clean.EVENT_ID = getNextPlayerEventId(matchId, allRows);
     }
-    if (tableName === "alahly_HOWPENMISSED") {
-        return prepareHowPenMissedRowForSave(clean);
+    if (tableName === "alahly_PLAYERDETAILS") {
+        return preparePlayerEventHowMissedForSave(clean);
     }
     return clean;
 }
@@ -92,8 +92,8 @@ export async function insertStagedLinkedTableRows(tableName, rows, matchId) {
         if (tableName === "alahly_PLAYERDETAILS" && !String(payload.EVENT_ID || "").trim()) {
             payload.EVENT_ID = getNextPlayerEventId(matchId, eventIdContext);
         }
-        if (tableName === "alahly_HOWPENMISSED") {
-            clean.push(await prepareHowPenMissedRowForSave(payload));
+        if (tableName === "alahly_PLAYERDETAILS") {
+            clean.push(await preparePlayerEventHowMissedForSave(payload));
         } else {
             clean.push(payload);
         }

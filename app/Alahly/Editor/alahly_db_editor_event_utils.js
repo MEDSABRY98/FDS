@@ -61,19 +61,21 @@ export const isPlayerEventRowSaveable = (row) => (
 
 export const isGkRowSaveable = (row) => String(row?.["PLAYER NAME"] || "").trim() !== "";
 
-export const isPenRowSaveable = (row) => (
-    String(row?.["HOW MISSED?"] || "").trim() !== "" ||
-    String(row?.MINUTE || "").trim() !== ""
-);
-
 export const UNNAMED_PLAYER_LABEL = "— Unnamed Player —";
 
 export const formatEventLine = (row) => {
+    const type = String(row.TYPE || "").trim();
     const parts = [
-        String(row.TYPE || "").trim(),
+        type,
         String(row.TYPE_SUB || "").trim(),
         String(row.MINUTE || "").trim() ? `${String(row.MINUTE).trim()}'` : "",
     ].filter(Boolean);
+
+    if (type.toUpperCase() === "PENMISSED") {
+        const howMissed = formatHowPenMissedForDisplay(row["HOW MISSED?"]);
+        if (howMissed) parts.push(howMissed);
+    }
+
     return parts.join(" · ") || "—";
 };
 
@@ -84,14 +86,6 @@ export const formatGkLine = (row) => {
         String(row["OUT MINUTE"] || "").trim() ? `OUT ${String(row["OUT MINUTE"]).trim()}'` : "",
         String(row["GOALS CONCEDED"] || "").trim() !== "" ? `GC ${String(row["GOALS CONCEDED"]).trim()}` : "",
         linkedGoals ? `${linkedGoals} goal link${linkedGoals > 1 ? "s" : ""}` : "",
-    ].filter(Boolean);
-    return parts.join(" · ") || "—";
-};
-
-export const formatPenLine = (row) => {
-    const parts = [
-        formatHowPenMissedForDisplay(row["HOW MISSED?"]),
-        String(row.MINUTE || "").trim() ? `${String(row.MINUTE).trim()}'` : "",
     ].filter(Boolean);
     return parts.join(" · ") || "—";
 };

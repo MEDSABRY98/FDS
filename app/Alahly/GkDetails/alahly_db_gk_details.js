@@ -19,7 +19,7 @@ import {
     getPenaltyMissOutcome,
 } from "../Penalties/alahly_db_penalties_utils";
 
-export default function GK_Details_Hub({ gkName, gkDetails, howPenMissed, masterMatches, playerDetails, onBack }) {
+export default function GK_Details_Hub({ gkName, gkDetails, masterMatches, playerDetails, onBack }) {
     const [activeTab, setActiveTab] = useState('overview');
     const [selectedTeams, setSelectedTeams] = useState([]);
     const [selectedComps, setSelectedComps] = useState([]);
@@ -138,14 +138,14 @@ export default function GK_Details_Hub({ gkName, gkDetails, howPenMissed, master
             });
 
             const matchSaves = matchPenMissedEvents.filter((pen) => {
-                const gk = findGkForPenaltyMiss({ penEvent: pen, howPenMissed, gkDetails });
+                const gk = findGkForPenaltyMiss({ penEvent: pen, gkDetails });
                 return gk && String(gk["PLAYER NAME"] || "").trim() === gkName;
             });
 
             const matchMisses = matchPenMissedEvents.filter((pen) => {
-                const detail = findHowPenMissedForEvent(howPenMissed, pen);
+                const detail = findHowPenMissedForEvent(pen);
                 if (getPenaltyMissOutcome(detail) !== "missed") return false;
-                const gk = findDefendingGkForPenalty({ penEvent: pen, howPenMissed, gkDetails });
+                const gk = findDefendingGkForPenalty({ penEvent: pen, gkDetails });
                 return gk && String(gk["PLAYER NAME"] || "").trim() === gkName;
             });
 
@@ -285,7 +285,7 @@ export default function GK_Details_Hub({ gkName, gkDetails, howPenMissed, master
             gkSYs: Array.from(sySet).sort((a, b) => b.localeCompare(a)),
             gkOpps: Array.from(oppSet).sort()
         };
-    }, [gkName, gkDetails, masterMatches, howPenMissed, playerDetails, selectedTeams, selectedComps, selectedSYs, selectedOpps]);
+    }, [gkName, gkDetails, masterMatches, playerDetails, selectedTeams, selectedComps, selectedSYs, selectedOpps]);
 
     useEffect(() => {
         const handleGlobalExport = () => handleExport();

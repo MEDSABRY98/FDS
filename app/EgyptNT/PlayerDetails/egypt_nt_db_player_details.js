@@ -22,9 +22,9 @@ import PlayerTimingTable from "./egypt_nt_db_player_details_timing";
 import { computePlayerGoalImpact } from "./egypt_nt_db_player_details_goal_impact";
 import { computePlayerAssistImpact } from "./egypt_nt_db_player_details_assist_impact";
 import { gkRowLinksEventId } from "../../Database";
-import { getPenaltyMissOutcome } from "../../Alahly/Penalties/alahly_db_penalties_utils";
+import { getPenaltyMissOutcome, findHowPenMissedForEvent } from "../../Alahly/Penalties/alahly_db_penalties_utils";
 
-export default function EgyptNTPlayerDetails({ playerName, playerDetails, lineupDetails, masterMatches, gkDetails, howPenMissed, onBack }) {
+export default function EgyptNTPlayerDetails({ playerName, playerDetails, lineupDetails, masterMatches, gkDetails, onBack }) {
     const [activeTab, setActiveTab] = useState('overview');
     const [seasonLimit, setSeasonLimit] = useState('');
     const [isCompOpen, setIsCompOpen] = useState(false);
@@ -265,7 +265,7 @@ export default function EgyptNTPlayerDetails({ playerName, playerDetails, lineup
             let pmCount = 0;
             let psCount = 0;
             mEvents.filter(e => String(e.TYPE).trim() === "PENMISSED").forEach(e => {
-                const detail = (howPenMissed || []).find(d => String(d.MATCH_ID) === String(mId) && String(d.EVENT_ID) === String(e.EVENT_ID));
+                const detail = findHowPenMissedForEvent(e);
                 if (detail) {
                     const isActualMiss = getPenaltyMissOutcome(detail) === "missed";
                     if (isActualMiss) pmCount++; else psCount++;
@@ -448,13 +448,13 @@ export default function EgyptNTPlayerDetails({ playerName, playerDetails, lineup
                         }
                     }
                 });
-                const matchPenMisses = (howPenMissed || []).filter(pm => String(pm.MATCH_ID) === String(mId) && String(pm["PLAYER NAME"]).trim() === playerName);
-                matchPenMisses.forEach(pm => {
-                    const eId = String(pm.EVENT_ID).trim();
+                const matchPenMisses = mEvents.filter((e) => String(e.TYPE || "").trim().toUpperCase() === "PENMISSED");
+                matchPenMisses.forEach((pen) => {
+                    const eId = String(pen.EVENT_ID).trim();
                     const gkMatch = matchGKs.find((gk) => gkRowLinksEventId(gk, eId));
                     if (gkMatch) {
                         const gkName = String(gkMatch["PLAYER NAME"]).trim();
-                        const isActualMiss = getPenaltyMissOutcome(pm) === "missed";
+                        const isActualMiss = getPenaltyMissOutcome(findHowPenMissedForEvent(pen)) === "missed";
                         addStats(gkName, opponentTeam, 0, 0, isActualMiss ? 1 : 0, isActualMiss ? 0 : 1);
                     }
                 });
@@ -593,7 +593,7 @@ export default function EgyptNTPlayerDetails({ playerName, playerDetails, lineup
         summary.gaContribution = summary.caps > 0 ? ((summary.goals + summary.assists) / summary.caps).toFixed(2) : 0;
 
         return { stats: summary, playerTeams: uniqueTeams, playerComps: uniqueComps, playerSYs: uniqueSYs, playerOpps: uniqueOpps };
-    }, [playerName, playerDetails, lineupDetails, masterMatches, selectedTeams, selectedComps, selectedSYs, selectedOpps, gkDetails, howPenMissed]);
+    }, [playerName, playerDetails, lineupDetails, masterMatches, selectedTeams, selectedComps, selectedSYs, selectedOpps, gkDetails]);
 
     // Excel Export Listener
     useEffect(() => {

@@ -10,7 +10,7 @@ import SearchBar_db from "../../lib/SearchBar_db";
 import DropDownList_db from "../../lib/DropDownList_db";
 import { collectGkPenaltySaves, collectGkPenaltyMisses, getGkPenaltySavePct } from "../../Alahly/Penalties/alahly_db_penalties_utils";
 
-export default function EgyptNTGKs({ gkDetails, howPenMissed, filteredMatches, playerDetails }) {
+export default function EgyptNTGKs({ gkDetails, filteredMatches, playerDetails }) {
     const [searchTerm, setSearchTerm] = useState("");
     const [teamFilter, setTeamFilter] = useState("all");
     const [opponentFilter, setOpponentFilter] = useState("all");
@@ -104,7 +104,6 @@ export default function EgyptNTGKs({ gkDetails, howPenMissed, filteredMatches, p
 
         const savesByGk = collectGkPenaltySaves({
             playerDetails,
-            howPenMissed,
             gkDetails,
             matchIds: currentMatchIds,
         });
@@ -116,7 +115,6 @@ export default function EgyptNTGKs({ gkDetails, howPenMissed, filteredMatches, p
 
         const missesByGk = collectGkPenaltyMisses({
             playerDetails,
-            howPenMissed,
             gkDetails,
             matchIds: currentMatchIds,
         });
@@ -141,7 +139,7 @@ export default function EgyptNTGKs({ gkDetails, howPenMissed, filteredMatches, p
             if (b.name === "?") return -1;
             return b.matches - a.matches;
         });
-    }, [gkDetails, howPenMissed, matchResultsMap, currentMatchIds, teamFilter, opponentFilter, searchTerm, playerDetails]);
+    }, [gkDetails, matchResultsMap, currentMatchIds, teamFilter, opponentFilter, searchTerm, playerDetails]);
 
     const [currentPage, setCurrentPage] = useState(1);
     const pageSize = 50;
@@ -202,7 +200,6 @@ export default function EgyptNTGKs({ gkDetails, howPenMissed, filteredMatches, p
                 <EgyptNTGKDetails
                     gkName={selectedGK}
                     gkDetails={gkDetails}
-                    howPenMissed={howPenMissed}
                     masterMatches={filteredMatches}
                     playerDetails={playerDetails}
                     onBack={() => setSelectedGK(null)}

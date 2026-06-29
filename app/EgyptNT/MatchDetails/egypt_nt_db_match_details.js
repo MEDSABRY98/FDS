@@ -16,7 +16,6 @@ export default function EgyptNTMatchDetails({
     playerDetails,
     lineupDetails,
     gkDetails,
-    howPenMissed,
     onBack,
     onRefresh
 }) {
@@ -104,7 +103,6 @@ export default function EgyptNTMatchDetails({
     const events = useMemo(() => {
         const allEvents = [
             ...(playerDetails || []).filter(p => String(p.MATCH_ID) === String(matchId)).map(e => ({ ...e, eventType: 'player' })),
-            ...(howPenMissed || []).filter(h => String(h.MATCH_ID) === String(matchId)).map(e => ({ ...e, eventType: 'penMiss', TYPE: 'PEN MISS' }))
         ].sort(compareTimelineEvents);
 
         return {
@@ -112,7 +110,7 @@ export default function EgyptNTMatchDetails({
             opp: allEvents.filter(e => !isEgyptSide(e)),
             chronological: allEvents
         };
-    }, [matchId, playerDetails, howPenMissed, isEgyptSide]);
+    }, [matchId, playerDetails, isEgyptSide]);
 
     const gks = useMemo(() => {
         const matchGks = (gkDetails || []).filter(g => String(g.MATCH_ID) === String(matchId));

@@ -15,7 +15,6 @@ import Login_db from "../../lib/Login_db";
 import NoData_db from "../../lib/NoData_db";
 import SearchBar_db from "../../lib/SearchBar_db";
 import { useNotification } from "../../lib/Notification_db";
-import { normalizeHowPenMissedRowForEditor } from "../Penalties/alahly_db_penalties_utils";
 import {
     EMPTY_MATCH,
     ALAHLY_MATCH_LINKED_TABLES,
@@ -41,7 +40,6 @@ import {
 } from "./alahly_db_editor_save_utils";
 import PlayerEventsPanel from "./alahly_db_editor_events_panel";
 import GkDetailsPanel from "./alahly_db_editor_gks_panel";
-import PenaltyMissesPanel from "./alahly_db_editor_pens_panel";
 import LineupPanel from "./alahly_db_editor_lineup_panel";
 
 export default function AlAhlyEditor() {
@@ -50,7 +48,6 @@ export default function AlAhlyEditor() {
     const [lineupRows, setLineupRows] = useState([]);
     const [playerRows, setPlayerRows] = useState([]);
     const [gkRows, setGkRows] = useState([]);
-    const [penRows, setPenRows] = useState([]);
     const [loading, setLoading] = useState(false);
     const [isSaving, setIsSaving] = useState(false);
     const [mode, setMode] = useState('search');
@@ -60,7 +57,6 @@ export default function AlAhlyEditor() {
     const [newLineupRows, setNewLineupRows] = useState([]);
     const [newPlayerRows, setNewPlayerRows] = useState([]);
     const [newGkRows, setNewGkRows] = useState([]);
-    const [newPenRows, setNewPenRows] = useState([]);
     const [matchFieldOptions, setMatchFieldOptions] = useState({});
     const [allPlayersList, setAllPlayersList] = useState([]);
     const [eventTypes, setEventTypes] = useState([]);
@@ -321,12 +317,11 @@ export default function AlAhlyEditor() {
         if (!id) return;
         setLoading(true);
         try {
-            const [{ data: md }, { data: ld }, { data: pd }, { data: gd }, { data: pen }] = await Promise.all([
+            const [{ data: md }, { data: ld }, { data: pd }, { data: gd }] = await Promise.all([
                 supabase.from('alahly_MATCHDETAILS').select('*').eq('MATCH_ID', id).maybeSingle(),
                 supabase.from('alahly_LINEUPDETAILS').select('*').eq('MATCH_ID', id),
                 supabase.from('alahly_PLAYERDETAILS').select('*').eq('MATCH_ID', id),
                 supabase.from('alahly_GKSDETAILS').select('*').eq('MATCH_ID', id),
-                supabase.from('alahly_HOWPENMISSED').select('*').eq('MATCH_ID', id),
             ]);
             if (!md) { addToast(`Match ID "${id}" not found`, 'error'); setLoading(false); return; }
             setMatchData({ ...md });
@@ -338,10 +333,6 @@ export default function AlAhlyEditor() {
             setActiveLinkedTab('lineup-ahly');
             setPlayerRows(sortRowsByEventId((pd || []).map((r, i) => ({ ...r, _key: r._key ?? 1000 + i }))));
             setGkRows(sortRowsByEventId((gd || []).map((r, i) => ({ ...r, _key: r._key ?? 2000 + i }))));
-            setPenRows(sortRowsByEventId((pen || []).map((r, i) => ({
-                ...normalizeHowPenMissedRowForEditor(r),
-                _key: r._key ?? 3000 + i,
-            }))));
             setMode('edit');
         } catch (e) { addToast('Error: ' + e.message, 'error'); }
         setLoading(false);
@@ -360,7 +351,6 @@ export default function AlAhlyEditor() {
             alahly_LINEUPDETAILS: setLineupRows,
             alahly_PLAYERDETAILS: setPlayerRows,
             alahly_GKSDETAILS: setGkRows,
-            alahly_HOWPENMISSED: setPenRows,
         };
         const applyRemove = (prev) => {
             const idx = findRowIndexInList(prev, row, ri);
@@ -407,7 +397,6 @@ export default function AlAhlyEditor() {
             setLineupRows([]);
             setPlayerRows([]);
             setGkRows([]);
-            setPenRows([]);
             setSearchId("");
             setMode("search");
             addToast(`Match "${mid}" deleted from all tables ✓`, "warn");
@@ -434,7 +423,6 @@ export default function AlAhlyEditor() {
             const nextLineup = await persistLinkedTableRows("alahly_LINEUPDETAILS", syncedLineup, matchId);
             const nextPlayers = await persistLinkedTableRows("alahly_PLAYERDETAILS", playerRows, matchId);
             const nextGks = await persistLinkedTableRows("alahly_GKSDETAILS", gkRows, matchId);
-            const nextPens = await persistLinkedTableRows("alahly_HOWPENMISSED", penRows, matchId);
 
             const { error: matchErr } = await supabase.from("alahly_MATCHDETAILS").upsert(matchPayload);
             if (matchErr) throw new Error(`alahly_MATCHDETAILS: ${matchErr.message}`);
@@ -442,7 +430,6 @@ export default function AlAhlyEditor() {
             setLineupRows(nextLineup);
             setPlayerRows(nextPlayers);
             setGkRows(nextGks);
-            setPenRows(nextPens);
             setMatchData({ ...matchData, ...matchPayload });
 
             addToast("Match and all pending records saved ✓");
@@ -483,11 +470,10 @@ export default function AlAhlyEditor() {
             await insertStagedLinkedTableRows('alahly_LINEUPDETAILS', syncedLineup, mid);
             await insertStagedLinkedTableRows('alahly_PLAYERDETAILS', newPlayerRows, mid);
             await insertStagedLinkedTableRows('alahly_GKSDETAILS', newGkRows, mid);
-            await insertStagedLinkedTableRows('alahly_HOWPENMISSED', newPenRows, mid);
 
             addToast('Match + all linked data created ✓');
             setSearchId(mid);
-            setNewLineupRows([]); setNewPlayerRows([]); setNewGkRows([]); setNewPenRows([]);
+            setNewLineupRows([]); setNewPlayerRows([]); setNewGkRows([]);
             setMode('search');
             setTimeout(() => handleSearch(), 400);
 
@@ -517,6 +503,7 @@ export default function AlAhlyEditor() {
                 allPlayersList={allPlayersList}
                 eventTypes={eventTypes}
                 eventSubTypes={eventSubTypes}
+                gkPlayerOptions={allPlayersList}
                 persistToDb={false}
                 onDeleteRow={isNew ? handleStagedDelete : handleDeleteRow}
                 isSaving={isSaving}
@@ -545,27 +532,6 @@ export default function AlAhlyEditor() {
         );
     };
 
-    const renderPenaltyMissesPanel = ({ formData, isNew }) => {
-        const matchId = isNew ? (formData.MATCH_ID || '---') : formData.MATCH_ID;
-        const teamOptions = [formData["AHLY TEAM"], formData["OPPONENT TEAM"]].filter(Boolean);
-        const playerEventRows = isNew ? newPlayerRows : playerRows;
-        return (
-            <PenaltyMissesPanel
-                title="PENALTY MISSES"
-                color="#ef4444"
-                rows={isNew ? newPenRows : penRows}
-                setRows={isNew ? setNewPenRows : setPenRows}
-                matchId={matchId}
-                teamOptions={teamOptions}
-                gkPlayerOptions={allPlayersList}
-                playerEventRows={playerEventRows}
-                persistToDb={false}
-                onDeleteRow={isNew ? handleStagedDelete : handleDeleteRow}
-                isSaving={isSaving}
-            />
-        );
-    };
-
     const renderLinkedTabBar = (formData) => {
         const ahlyTeam = resolveAhlyTeam(formData);
         const oppTeam = resolveOpponentTeam(formData);
@@ -575,7 +541,7 @@ export default function AlAhlyEditor() {
         });
 
         return (
-            <div className="linked-tabs-grid linked-tabs-grid--6">
+            <div className="linked-tabs-grid linked-tabs-grid--5">
                 <button type="button" onClick={() => setActiveLinkedTab('lineup-ahly')} className="tab-btn" style={tabStyle('lineup-ahly', '#c9a84c', '#0a0a0a')}>
                     LINEUP — {ahlyTeam}
                 </button>
@@ -592,7 +558,6 @@ export default function AlAhlyEditor() {
                 <button type="button" onClick={() => setActiveLinkedTab('events')} className="tab-btn" style={tabStyle('events', '#8b5cf6')}>PLAYER EVENTS</button>
                 <button type="button" onClick={() => setActiveLinkedTab('motm')} className="tab-btn" style={tabStyle('motm', '#10b981')}>MOTM</button>
                 <button type="button" onClick={() => setActiveLinkedTab('gks')} className="tab-btn" style={tabStyle('gks', '#f59e0b')}>GK DETAILS</button>
-                <button type="button" onClick={() => setActiveLinkedTab('pens')} className="tab-btn" style={tabStyle('pens', '#ef4444')}>PENALTY MISSES</button>
             </div>
         );
     };
@@ -725,7 +690,6 @@ export default function AlAhlyEditor() {
                             {activeLinkedTab === 'lineup-opponent' && renderLineupTable({ formData: newMatchData, isNew: true, side: 'opponent' })}
                             {activeLinkedTab === 'events' && renderPlayerEventsPanel({ formData: newMatchData, isNew: true })}
                             {activeLinkedTab === 'gks' && renderGkDetailsPanel({ formData: newMatchData, isNew: true })}
-                            {activeLinkedTab === 'pens' && renderPenaltyMissesPanel({ formData: newMatchData, isNew: true })}
                             {activeLinkedTab === 'motm' && (
                                 <div style={{ padding: '20px', background: '#fafafa', borderRadius: '20px', border: '1px solid #eee', maxWidth: '500px', margin: '0 auto' }}>
                                     <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 20 }}>
@@ -807,7 +771,6 @@ export default function AlAhlyEditor() {
                             {activeLinkedTab === 'lineup-opponent' && renderLineupTable({ formData: matchData, isNew: false, side: 'opponent' })}
                             {activeLinkedTab === 'events' && renderPlayerEventsPanel({ formData: matchData, isNew: false })}
                             {activeLinkedTab === 'gks' && renderGkDetailsPanel({ formData: matchData, isNew: false })}
-                            {activeLinkedTab === 'pens' && renderPenaltyMissesPanel({ formData: matchData, isNew: false })}
                             {activeLinkedTab === 'motm' && (
                                 <div style={{ padding: '20px', background: '#fafafa', borderRadius: '20px', border: '1px solid #eee', maxWidth: '500px', margin: '0 auto' }}>
                                     <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 20 }}>

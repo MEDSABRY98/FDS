@@ -57,24 +57,22 @@ const playerColumnsMap = {
     'alahly_LINEUPDETAILS': ['PLAYER NAME', 'PLAYER NAME OUT'],
     'alahly_MATCHDETAILS': ['MOTM'],
     'alahly_PKS': ['AHLY GK', 'AHLY PLAYER', 'OPPONENT GK', 'OPPONENT PLAYER'],
-    'alahly_PLAYERDETAILS': ['PLAYER NAME'],
+    'alahly_PLAYERDETAILS': ['PLAYER NAME', 'HOW MISSED?'],
     'egy_NT_GKSDETAILS': ['PLAYER NAME'],
     'egy_NT_LINEUPDETAILS': ['PLAYER NAME', 'PLAYER NAME OUT'],
     'egy_NT_MATCHDETAILS': ['MOTM'],
     'egy_NT_PKS': ['EGYPT GK', 'Egypt PLAYER', 'OPPONENT GK', 'OPPONENT PLAYER'],
-    'egy_NT_PLAYERDETAILS': ['PLAYER NAME'],
+    'egy_NT_PLAYERDETAILS': ['PLAYER NAME', 'HOW MISSED?'],
     'egy_NT_SQUAD': ['PLAYERNAME']
 };
 
 const teamColumnsMap = {
     'alahly_GKSDETAILS': ['TEAM'],
-    'alahly_HOWPENMISSED': ['TEAM'],
     'alahly_LINEUPDETAILS': ['TEAM'],
     'alahly_MATCHDETAILS': ['AHLY TEAM', 'OPPONENT TEAM'],
     'alahly_PLAYERDETAILS': ['TEAM'],
     'egy_CLUB_MATCHDETAILS': ['EGYPT TEAM', 'OPPONENT TEAM'],
     'egy_NT_GKSDETAILS': ['TEAM'],
-    'egy_NT_HOWPENMISSED': ['TEAM'],
     'egy_NT_LINEUPDETAILS': ['TEAM', 'CLUB'],
     'egy_NT_MATCHDETAILS': ['Egypt TEAM', 'OPPONENT TEAM'],
     'egy_NT_MATCHDETAILS_CANCELLED': ['Egypt TEAM', 'OPPONENT TEAM'],
@@ -1615,39 +1613,6 @@ export async function reorderMatchEvents(matchId, orderedItems = []) {
             .from("egy_NT_GKSDETAILS")
             .update({ EVENT_ID: mappedId })
             .eq("ROW_ID", gkRow.ROW_ID);
-        if (error) throw error;
-    }
-
-    const { data: penRows, error: penFetchError } = await rawSupabase
-        .from("egy_NT_HOWPENMISSED")
-        .select("*")
-        .eq("MATCH_ID", normalizedMatchId);
-
-    if (penFetchError) throw penFetchError;
-
-    for (const penRow of penRows || []) {
-        if (!penRow.ROW_ID) continue;
-
-        const updates = {};
-        const oldParentId = String(penRow.PARENT_EVENT_ID || "").trim();
-        const oldEventId = String(penRow.EVENT_ID || "").trim();
-
-        if (oldParentId && oldToNew.has(oldParentId)) {
-            updates.PARENT_EVENT_ID = oldToNew.get(oldParentId);
-        }
-        if (oldEventId && oldToNew.has(oldEventId)) {
-            updates.EVENT_ID = oldToNew.get(oldEventId);
-        }
-        if (oldParentId && minuteByOldEventId.has(oldParentId)) {
-            updates.MINUTE = minuteByOldEventId.get(oldParentId) || null;
-        }
-
-        if (Object.keys(updates).length === 0) continue;
-
-        const { error } = await rawSupabase
-            .from("egy_NT_HOWPENMISSED")
-            .update(updates)
-            .eq("ROW_ID", penRow.ROW_ID);
         if (error) throw error;
     }
 

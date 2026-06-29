@@ -8,7 +8,7 @@ import Referee_Details_Hub from "../RefereeDetails/alahly_db_referee_details";
 import NoData_db from "../../lib/NoData_db";
 import SearchBar_db from "../../lib/SearchBar_db";
 
-export default function AlAhlyReferees({ matches, playerDetails, howPenMissed }) {
+export default function AlAhlyReferees({ matches, playerDetails }) {
     const [searchTerm, setSearchTerm] = useState("");
     const [selectedReferee, setSelectedReferee] = useState(null);
     const [currentPage, setCurrentPage] = useState(1);

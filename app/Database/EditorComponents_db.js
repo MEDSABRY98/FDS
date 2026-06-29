@@ -127,6 +127,7 @@ export function AutocompleteInputDb({
     className = "",
     shrinkToFit = false,
     accentColor = "#C8102E",
+    optionLimit = 50,
 }) {
     const [open, setOpen] = useState(false);
     const [query, setQuery] = useState(value || "");
@@ -143,8 +144,8 @@ export function AutocompleteInputDb({
     );
 
     const filtered = useMemo(
-        () => filterAutocompleteOptions(normalizedOptions, query, 50),
-        [normalizedOptions, query]
+        () => filterAutocompleteOptions(normalizedOptions, query, optionLimit),
+        [normalizedOptions, query, optionLimit]
     );
 
     const handleSelect = (opt) => {

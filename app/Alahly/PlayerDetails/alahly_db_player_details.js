@@ -27,7 +27,7 @@ import { gkRowLinksEventId } from "../../Database";
 import { AlAhlyService } from "../Service/alahly_db_service";
 import { AlAhlyExcelExport } from "../ExportExcel/alahly_export_excel";
 
-export default function PlayerDetails({ playerName, playerData, playerDetails, lineupDetails, masterMatches, gkDetails, howPenMissed, onBack }) {
+export default function PlayerDetails({ playerName, playerData, playerDetails, lineupDetails, masterMatches, gkDetails, onBack }) {
     const [activeTab, setActiveTab] = useState('overview'); // 'overview' | 'dashboard' | 'matches'
     const [seasonLimit, setSeasonLimit] = useState('');
     const [selectedTeams, setSelectedTeams] = useState([]);
@@ -245,7 +245,7 @@ export default function PlayerDetails({ playerName, playerData, playerDetails, l
             let pmCount = 0;
             let psCount = 0;
             mEvents.filter(e => String(e.TYPE).trim() === "PENMISSED").forEach(e => {
-                const detail = findHowPenMissedForEvent(howPenMissed, e);
+                const detail = findHowPenMissedForEvent(e);
                 if (getPenaltyMissOutcome(detail) === "missed") pmCount++;
                 else if (detail) psCount++;
                 else pmCount++;
@@ -453,11 +453,11 @@ export default function PlayerDetails({ playerName, playerData, playerDetails, l
                     }
                 });
                 mEvents.filter((e) => String(e.TYPE || "").trim().toUpperCase() === "PENMISSED").forEach((pen) => {
-                    const detail = findHowPenMissedForEvent(howPenMissed, pen);
+                    const detail = findHowPenMissedForEvent(pen);
                     const outcome = getPenaltyMissOutcome(detail);
                     const gk = outcome === "saved"
-                        ? findGkForPenaltyMiss({ penEvent: pen, howPenMissed, gkDetails })
-                        : findDefendingGkForPenalty({ penEvent: pen, howPenMissed, gkDetails });
+                        ? findGkForPenaltyMiss({ penEvent: pen, gkDetails })
+                        : findDefendingGkForPenalty({ penEvent: pen, gkDetails });
                     if (!gk) return;
                     const gkName = String(gk["PLAYER NAME"] || "").trim();
                     if (!matchGKs.some((mg) => String(mg["PLAYER NAME"] || "").trim() === gkName)) return;
@@ -546,7 +546,7 @@ export default function PlayerDetails({ playerName, playerData, playerDetails, l
         summary.gaContribution = summary.caps > 0 ? ((summary.goals + summary.assists) / summary.caps).toFixed(2) : 0;
 
         return { stats: summary, playerTeams: uniqueTeams, playerComps: uniqueComps, playerSYs: uniqueSYs, playerOpps: uniqueOpps };
-    }, [playerName, playerDetails, lineupDetails, masterMatches, selectedTeams, selectedComps, selectedSYs, selectedOpps, gkDetails, howPenMissed]);
+    }, [playerName, playerDetails, lineupDetails, masterMatches, selectedTeams, selectedComps, selectedSYs, selectedOpps, gkDetails]);
 
     const squadImpactStats = useMemo(
         () =>

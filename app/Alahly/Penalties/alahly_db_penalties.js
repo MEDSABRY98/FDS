@@ -24,13 +24,13 @@ import AlAhlyPenaltiesPlayers from "./alahly_db_penalties_players";
 const SUB_TABS = ["Dashboard", "Championships", "Seasons", "Vs Teams", "Players"];
 const TEAM_FILTER_LABELS = { all: "All Players", ahly: "With Al Ahly", opponents: "Against Al Ahly" };
 
-export default function AlAhlyPenalties({ playerDetails, filteredMatches, howPenMissed }) {
+export default function AlAhlyPenalties({ playerDetails, filteredMatches }) {
     const [activeSubTab, setActiveSubTab] = useState(1);
     const [teamFilter, setTeamFilter] = useState("all");
 
     const { events } = useMemo(
-        () => normalizePenaltyEvents(playerDetails, filteredMatches, howPenMissed),
-        [playerDetails, filteredMatches, howPenMissed]
+        () => normalizePenaltyEvents(playerDetails, filteredMatches),
+        [playerDetails, filteredMatches]
     );
 
     const teamStats = useMemo(() => aggregateTeamStats(events), [events]);

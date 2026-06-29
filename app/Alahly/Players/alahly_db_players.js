@@ -16,7 +16,7 @@ import AlAhlyPlayersGoalsTiming from "./alahly_db_players_goals_timing";
 import AlAhlyPlayersAssistsTiming from "./alahly_db_players_assists_timing";
 import { computePlayerGoalImpact, computePlayerAssistImpact } from "../PlayerDetails/alahly_player_impact_utils";
 
-export default function AlAhlyPlayers({ playerDetails, lineupDetails, filteredMatches, gkDetails, howPenMissed }) {
+export default function AlAhlyPlayers({ playerDetails, lineupDetails, filteredMatches, gkDetails }) {
     const [searchTerm, setSearchTerm] = useState("");
     const [teamFilter, setTeamFilter] = useState("all");
     const [opponentFilter, setOpponentFilter] = useState("all");
@@ -282,7 +282,7 @@ export default function AlAhlyPlayers({ playerDetails, lineupDetails, filteredMa
     return (
         <div className="tab-content" id="tab-players">
             {selectedPlayer ? (
-                <PlayerDetails playerName={selectedPlayer} playerDetails={playerDetails} lineupDetails={lineupDetails} masterMatches={filteredMatches} gkDetails={gkDetails} howPenMissed={howPenMissed} onBack={() => setSelectedPlayer(null)} />
+                <PlayerDetails playerName={selectedPlayer} playerDetails={playerDetails} lineupDetails={lineupDetails} masterMatches={filteredMatches} gkDetails={gkDetails} onBack={() => setSelectedPlayer(null)} />
             ) : (
                 <div className="players-premium-wrap" style={{ maxWidth: '1400px' }}>
                     <div className="header-tabs-container">

@@ -10,7 +10,7 @@ import EgyptNTGKSeasons from "./egypt_nt_db_gk_details_seasons";
 import EgyptNTGKVSTeams from "./egypt_nt_db_gk_details_vs_teams";
 import "../../Alahly/PlayerDetails/alahly_db_player_details.css";
 
-export default function EgyptNTGKDetails({ gkName, gkDetails, howPenMissed, masterMatches, playerDetails, onBack }) {
+export default function EgyptNTGKDetails({ gkName, gkDetails, masterMatches, playerDetails, onBack }) {
     const [activeTab, setActiveTab] = useState('overview');
     const [selectedTeams, setSelectedTeams] = useState([]);
     const [selectedComps, setSelectedComps] = useState([]);
@@ -25,14 +25,13 @@ export default function EgyptNTGKDetails({ gkName, gkDetails, howPenMissed, mast
             gkName,
             gkDetails,
             masterMatches,
-            howPenMissed,
             playerDetails,
             selectedTeams,
             selectedComps,
             selectedSYs,
             selectedOpps,
         }),
-        [gkName, gkDetails, masterMatches, howPenMissed, playerDetails, selectedTeams, selectedComps, selectedSYs, selectedOpps]
+        [gkName, gkDetails, masterMatches, playerDetails, selectedTeams, selectedComps, selectedSYs, selectedOpps]
     );
 
     useEffect(() => {

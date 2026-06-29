@@ -55,7 +55,6 @@ export default function AlAhlyDatabase() {
     const [playerDetails, setPlayerDetails] = useState([]);
     const [lineupDetails, setLineupDetails] = useState([]);
     const [gkDetails, setGkDetails] = useState([]);
-    const [howPenMissed, setHowPenMissed] = useState([]);
     const [mediaTrackerData, setMediaTrackerData] = useState([]);
     const [countries, setCountries] = useState([]);
     const [loading, setLoading] = useState(true);
@@ -107,13 +106,11 @@ export default function AlAhlyDatabase() {
         const pData = await AlAhlyService.getAllPlayerDetails();
         const lData = await AlAhlyService.getAllLineupDetails();
         const gData = await AlAhlyService.getAllGKDetails();
-        const hData = await AlAhlyService.getAllHowPenMissed();
         const mTrackerData = await AlAhlyService.getAllMediaTracker();
         setMatches(data);
         setPlayerDetails(pData);
         setLineupDetails(lData);
         setGkDetails(gData);
-        setHowPenMissed(hData);
         setMediaTrackerData(mTrackerData);
         if (!silent) setLoading(false);
     }
@@ -514,7 +511,6 @@ export default function AlAhlyDatabase() {
                                         playerDetails={playerDetails}
                                         lineupDetails={lineupDetails}
                                         gkDetails={gkDetails}
-                                        howPenMissed={howPenMissed}
                                         onBack={() => {
                                             setSelectedMatchId(null);
                                             requestAnimationFrame(() => {
@@ -530,18 +526,17 @@ export default function AlAhlyDatabase() {
                         {activeTab === 'seasons' && <AlAhlySeasons matches={filteredMatches} />}
                         {activeTab === 'seasons_n' && <AlAhlySeasonsN matches={filteredMatches} />}
                         {activeTab === 'years' && <AlAhlyYears matches={filteredMatches} />}
-                        {activeTab === 'players' && <AlAhlyPlayers playerDetails={playerDetails} lineupDetails={lineupDetails} filteredMatches={filteredMatches} gkDetails={gkDetails} howPenMissed={howPenMissed} />}
-                        {activeTab === 'gks' && <AlAhlyGKs gkDetails={gkDetails} howPenMissed={howPenMissed} filteredMatches={filteredMatches} playerDetails={playerDetails} />}
+                        {activeTab === 'players' && <AlAhlyPlayers playerDetails={playerDetails} lineupDetails={lineupDetails} filteredMatches={filteredMatches} gkDetails={gkDetails} />}
+                        {activeTab === 'gks' && <AlAhlyGKs gkDetails={gkDetails} filteredMatches={filteredMatches} playerDetails={playerDetails} />}
                         {activeTab === 'managers' && <AlAhlyManagers matches={filteredMatches} playerDetails={playerDetails} lineupDetails={lineupDetails} />}
                         {activeTab === 'h2h' && <AlAhlyH2H matches={filteredMatches} />}
                         {activeTab === 'penalties' && (
                             <AlAhlyPenalties
                                 playerDetails={playerDetails}
                                 filteredMatches={filteredMatches}
-                                howPenMissed={howPenMissed}
                             />
                         )}
-                        {activeTab === 'referees' && <AlAhlyReferees matches={filteredMatches} playerDetails={playerDetails} howPenMissed={howPenMissed} />}
+                        {activeTab === 'referees' && <AlAhlyReferees matches={filteredMatches} playerDetails={playerDetails} />}
                         {activeTab === 'media-tracker' && <AlAhlyMediaTracker matches={filteredMatches} mediaTrackerData={mediaTrackerData} onDataChange={fetchMatchData} />}
                         {activeTab === 'editor' && <AlAhlyEditor />}
                         {activeTab === 'champions' && <AlAhlyChampions matchesData={filteredMatches} />}

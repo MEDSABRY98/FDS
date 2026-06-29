@@ -1,10 +1,9 @@
 import { supabase } from "../../Database";
-import { isHowPenMissedRowFilled, prepareHowPenMissedRowForSave } from "../../Alahly/Penalties/alahly_db_penalties_utils";
+import { preparePlayerEventHowMissedForSave } from "../../Alahly/Penalties/alahly_db_penalties_utils";
 import {
     getNextPlayerEventId,
     isPlayerEventRowSaveable,
     isGkRowSaveable,
-    isPenRowSaveable,
 } from "./egypt_nt_db_editor_event_utils";
 
 const MATCH_INTEGER_FIELDS = new Set(["GF", "GA", "ET"]);
@@ -12,7 +11,6 @@ const MATCH_INTEGER_FIELDS = new Set(["GF", "GA", "ET"]);
 export function isEditorLinkedRowFilled(tableName, row) {
     if (tableName === "egy_NT_PLAYERDETAILS") return isPlayerEventRowSaveable(row);
     if (tableName === "egy_NT_GKSDETAILS") return isGkRowSaveable(row);
-    if (tableName === "egy_NT_HOWPENMISSED") return isHowPenMissedRowFilled(row) || isPenRowSaveable(row);
     return Boolean(row?.["PLAYER NAME"] && String(row["PLAYER NAME"]).trim() !== "");
 }
 
@@ -37,8 +35,8 @@ export async function cleanLinkedRowForSave(tableName, row, matchId, isNew, allR
     if (tableName === "egy_NT_PLAYERDETAILS" && isNew && !String(clean.EVENT_ID || "").trim()) {
         clean.EVENT_ID = getNextPlayerEventId(matchId, allRows);
     }
-    if (tableName === "egy_NT_HOWPENMISSED") {
-        return prepareHowPenMissedRowForSave(clean);
+    if (tableName === "egy_NT_PLAYERDETAILS") {
+        return preparePlayerEventHowMissedForSave(clean);
     }
     return clean;
 }
@@ -104,8 +102,8 @@ export async function insertStagedLinkedTableRows(tableName, rows, matchId) {
         if (tableName === "egy_NT_PLAYERDETAILS" && !String(payload.EVENT_ID || "").trim()) {
             payload.EVENT_ID = getNextPlayerEventId(matchId, eventIdContext);
         }
-        if (tableName === "egy_NT_HOWPENMISSED") {
-            clean.push(await prepareHowPenMissedRowForSave(payload));
+        if (tableName === "egy_NT_PLAYERDETAILS") {
+            clean.push(await preparePlayerEventHowMissedForSave(payload));
         } else {
             clean.push(payload);
         }

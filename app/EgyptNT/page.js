@@ -60,7 +60,6 @@ export default function EgyptNTDatabase() {
     const [playerDetails, setPlayerDetails] = useState([]);
     const [lineupDetails, setLineupDetails] = useState([]);
     const [gkDetails, setGkDetails] = useState([]);
-    const [howPenMissed, setHowPenMissed] = useState([]);
     const [squadData, setSquadData] = useState([]);
     const [countries, setCountries] = useState([]);
     const [loading, setLoading] = useState(true);
@@ -132,14 +131,12 @@ export default function EgyptNTDatabase() {
         const pData = await EgyptNTService.getAllPlayerDetails();
         const lData = await EgyptNTService.getAllLineupDetails();
         const gData = await EgyptNTService.getAllGKDetails();
-        const hData = await EgyptNTService.getAllHowPenMissed();
         const sqData = await EgyptNTService.getAllSquad();
 
         setMatches(mappedMatches);
         setPlayerDetails(pData);
         setLineupDetails(lData);
         setGkDetails(gData);
-        setHowPenMissed(hData);
         setSquadData(sqData);
         if (!silent) setLoading(false);
 
@@ -755,7 +752,6 @@ export default function EgyptNTDatabase() {
                                             playerDetails={playerDetails}
                                             lineupDetails={lineupDetails}
                                             gkDetails={gkDetails}
-                                            howPenMissed={howPenMissed}
                                             onBack={() => {
                                                 setSelectedMatchId(null);
                                                 requestAnimationFrame(() => {
@@ -780,8 +776,8 @@ export default function EgyptNTDatabase() {
                             )}
                             {activeTab === 'seasons' && <EgyptNTSeasons matches={filteredMatches} />}
                             {activeTab === 'years' && <EgyptNTYears matches={filteredMatches} />}
-                            {activeTab === 'players' && <EgyptNTPlayers playerDetails={playerDetails} lineupDetails={lineupDetails} filteredMatches={filteredMatches} gkDetails={gkDetails} howPenMissed={howPenMissed} />}
-                            {activeTab === 'gks' && <EgyptNTGKs gkDetails={gkDetails} howPenMissed={howPenMissed} filteredMatches={filteredMatches} playerDetails={playerDetails} />}
+                            {activeTab === 'players' && <EgyptNTPlayers playerDetails={playerDetails} lineupDetails={lineupDetails} filteredMatches={filteredMatches} gkDetails={gkDetails} />}
+                            {activeTab === 'gks' && <EgyptNTGKs gkDetails={gkDetails} filteredMatches={filteredMatches} playerDetails={playerDetails} />}
                             {activeTab === 'managers' && <EgyptNTManagers matches={filteredMatches} playerDetails={playerDetails} lineupDetails={lineupDetails} />}
                             {activeTab === 'h2h' && (
                                 <>
@@ -807,7 +803,7 @@ export default function EgyptNTDatabase() {
                                     )}
                                 </>
                             )}
-                            {activeTab === 'referees' && <EgyptNTReferees matches={filteredMatches} playerDetails={playerDetails} howPenMissed={howPenMissed} />}
+                            {activeTab === 'referees' && <EgyptNTReferees matches={filteredMatches} playerDetails={playerDetails} />}
                             {activeTab === 'champions' && <EgyptNTChampions matchesData={filteredMatches} />}
                             {activeTab === 'editor' && <EgyptNTEditor />}
                             {activeTab === 'cancelled' && <EgyptNTCancelled />}

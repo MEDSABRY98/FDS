@@ -69,7 +69,6 @@ export function buildEgyptNTGkStats({
     gkName,
     gkDetails,
     masterMatches,
-    howPenMissed,
     playerDetails,
     selectedTeams,
     selectedComps,
@@ -200,14 +199,14 @@ export function buildEgyptNTGkStats({
         });
 
         const matchSaves = matchPenMissedEvents.filter((pen) => {
-            const gk = findGkForPenaltyMiss({ penEvent: pen, howPenMissed, gkDetails });
+            const gk = findGkForPenaltyMiss({ penEvent: pen, gkDetails });
             return gk && String(gk["PLAYER NAME"] || "").trim() === gkName;
         });
 
         const matchMisses = matchPenMissedEvents.filter((pen) => {
-            const detail = findHowPenMissedForEvent(howPenMissed, pen);
+            const detail = findHowPenMissedForEvent(pen);
             if (getPenaltyMissOutcome(detail) !== "missed") return false;
-            const gk = findDefendingGkForPenalty({ penEvent: pen, howPenMissed, gkDetails });
+            const gk = findDefendingGkForPenalty({ penEvent: pen, gkDetails });
             return gk && String(gk["PLAYER NAME"] || "").trim() === gkName;
         });
 

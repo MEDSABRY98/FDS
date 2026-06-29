@@ -8,7 +8,7 @@ import EgyptNTRefereeDetails from "../RefereeDetails/egypt_nt_db_referee_details
 import NoData_db from "../../lib/NoData_db";
 import SearchBar_db from "../../lib/SearchBar_db";
 
-export default function EgyptNTReferees({ matches, playerDetails, howPenMissed }) {
+export default function EgyptNTReferees({ matches, playerDetails }) {
     const [searchTerm, setSearchTerm] = useState("");
     const [selectedReferee, setSelectedReferee] = useState(null);
     const [currentPage, setCurrentPage] = useState(1);

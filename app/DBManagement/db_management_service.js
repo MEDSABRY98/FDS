@@ -21,6 +21,7 @@ const MERGE_CATALOG_REFERENCES = {
         ["alahly_PKS", "OPPONENT GK"],
         ["alahly_PKS", "OPPONENT PLAYER"],
         ["alahly_PLAYERDETAILS", "PLAYER NAME"],
+        ["alahly_PLAYERDETAILS", "HOW MISSED?"],
         ["egy_NT_GKSDETAILS", "PLAYER NAME"],
         ["egy_NT_LINEUPDETAILS", "PLAYER NAME"],
         ["egy_NT_LINEUPDETAILS", "PLAYER NAME OUT"],
@@ -30,6 +31,7 @@ const MERGE_CATALOG_REFERENCES = {
         ["egy_NT_PKS", "OPPONENT GK"],
         ["egy_NT_PKS", "OPPONENT PLAYER"],
         ["egy_NT_PLAYERDETAILS", "PLAYER NAME"],
+        ["egy_NT_PLAYERDETAILS", "HOW MISSED?"],
         ["egy_NT_SQUAD", "PLAYERNAME"],
     ],
     db_MANAGERS: [
@@ -53,7 +55,6 @@ const MERGE_CATALOG_REFERENCES = {
     ],
     db_TEAMS: [
         ["alahly_GKSDETAILS", "TEAM"],
-        ["alahly_HOWPENMISSED", "TEAM"],
         ["alahly_LINEUPDETAILS", "TEAM"],
         ["alahly_MATCHDETAILS", "AHLY TEAM"],
         ["alahly_MATCHDETAILS", "OPPONENT TEAM"],
@@ -63,7 +64,6 @@ const MERGE_CATALOG_REFERENCES = {
         ["egy_CLUB_TROPHY", "CHAMPION"],
         ["egy_CLUB_TROPHY", "RUNNER-UP"],
         ["egy_NT_GKSDETAILS", "TEAM"],
-        ["egy_NT_HOWPENMISSED", "TEAM"],
         ["egy_NT_LINEUPDETAILS", "TEAM"],
         ["egy_NT_LINEUPDETAILS", "CLUB"],
         ["egy_NT_MATCHDETAILS", "Egypt TEAM"],

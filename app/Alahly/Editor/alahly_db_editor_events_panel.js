@@ -7,6 +7,10 @@ import { useNotification } from "../../lib/Notification_db";
 import { EMPTY_PLAYER } from "./alahly_db_editor_constants";
 import EditorEventCard from "./alahly_db_editor_event_card";
 import {
+    buildHowPenMissedAutocompleteOptions,
+    formatHowPenMissedForDisplay,
+} from "../Penalties/alahly_db_penalties_utils";
+import {
     listIndexedRowsByEventId,
     parseEventIdSuffix,
     sortRowsByEventId,
@@ -31,6 +35,7 @@ export default function PlayerEventsPanel({
     onDeleteRow,
     isSaving,
     resolveNextEventId,
+    gkPlayerOptions = [],
 }) {
     const [modalOpen, setModalOpen] = useState(false);
     const [editingIndex, setEditingIndex] = useState(null);
@@ -47,6 +52,13 @@ export default function PlayerEventsPanel({
         return [...new Set(ids)].sort((a, b) => parseEventIdSuffix(a) - parseEventIdSuffix(b));
     }, [rows]);
 
+    const howMissedOptions = useMemo(
+        () => buildHowPenMissedAutocompleteOptions(gkPlayerOptions),
+        [gkPlayerOptions]
+    );
+
+    const isPenMissedType = String(form.TYPE || "").trim().toUpperCase() === "PENMISSED";
+
     const openAddModal = (preset = {}) => {
         setEditingIndex(null);
         setForm({ ...EMPTY_PLAYER, MATCH_ID: matchId, ...preset });
@@ -55,7 +67,12 @@ export default function PlayerEventsPanel({
 
     const openEditModal = (row, index) => {
         setEditingIndex(index);
-        setForm({ ...EMPTY_PLAYER, ...row, MATCH_ID: row.MATCH_ID || matchId });
+        setForm({
+            ...EMPTY_PLAYER,
+            ...row,
+            MATCH_ID: row.MATCH_ID || matchId,
+            "HOW MISSED?": formatHowPenMissedForDisplay(row["HOW MISSED?"]),
+        });
         setModalOpen(true);
     };
 
@@ -67,7 +84,13 @@ export default function PlayerEventsPanel({
     };
 
     const updateFormField = (field, value) => {
-        setForm((prev) => ({ ...prev, [field]: value }));
+        setForm((prev) => {
+            const next = { ...prev, [field]: value };
+            if (field === "TYPE" && String(value || "").trim().toUpperCase() !== "PENMISSED") {
+                next["HOW MISSED?"] = "";
+            }
+            return next;
+        });
     };
 
     const handleModalSave = async () => {
@@ -256,6 +279,21 @@ export default function PlayerEventsPanel({
                                     style={{ width: "100%", height: "42px", fontSize: "14px" }}
                                 />
                             </div>
+                            {isPenMissedType && (
+                                <div className="player-event-modal-field">
+                                    <div className="field-label">HOW MISSED? / SAVING GK</div>
+                                    <AutocompleteInput
+                                        value={form["HOW MISSED?"] ?? ""}
+                                        options={howMissedOptions}
+                                        placeholder="Miss reason or goalkeeper"
+                                        onChange={(val) => updateFormField("HOW MISSED?", val)}
+                                        className="field-input"
+                                        accentColor={color}
+                                        optionLimit={80}
+                                        style={{ width: "100%", height: "42px", fontSize: "14px", background: "#fff" }}
+                                    />
+                                </div>
+                            )}
                         </div>
 
                         <div className="player-event-modal-actions">

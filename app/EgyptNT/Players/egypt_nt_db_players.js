@@ -24,7 +24,7 @@ import {
     sortEventsByMinute 
 } from "../PlayerDetails/egypt_nt_player_impact_utils";
 
-export default function EgyptNTPlayers({ playerDetails, lineupDetails, filteredMatches, gkDetails, howPenMissed }) {
+export default function EgyptNTPlayers({ playerDetails, lineupDetails, filteredMatches, gkDetails }) {
     const [searchTerm, setSearchTerm] = useState("");
     const [teamFilter, setTeamFilter] = useState("all");
     const [opponentFilter, setOpponentFilter] = useState("all");
@@ -312,7 +312,6 @@ export default function EgyptNTPlayers({ playerDetails, lineupDetails, filteredM
                     lineupDetails={lineupDetails}
                     masterMatches={filteredMatches}
                     gkDetails={gkDetails}
-                    howPenMissed={howPenMissed}
                     onBack={() => setSelectedPlayer(null)}
                 />
             ) : (

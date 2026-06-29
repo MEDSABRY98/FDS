@@ -5,15 +5,13 @@ export const EMPTY_MATCH = {
     "PEN": "", "OPPONENT TEAM": "", "NOTE": "", "MOTM": ""
 };
 export const EMPTY_LINEUP = { "MATCH_ID": "", "MATCH MINUTE": "", "TEAM": "", "PLAYER NAME": "", "CLUB": "", "STATU": "", "PLAYER NAME OUT": "", "OUT MINUTE": "", "TOTAL MINUTE": "" };
-export const EMPTY_PLAYER = { "MATCH_ID": "", "EVENT_ID": "", "PARENT_EVENT_ID": "", "PLAYER NAME": "", "TEAM": "", "CLUB": "", "TYPE": "", "TYPE_SUB": "", "MINUTE": "" };
+export const EMPTY_PLAYER = { "MATCH_ID": "", "EVENT_ID": "", "PARENT_EVENT_ID": "", "PLAYER NAME": "", "TEAM": "", "CLUB": "", "TYPE": "", "TYPE_SUB": "", "MINUTE": "", "HOW MISSED?": "" };
 export const EMPTY_GK = { "MATCH_ID": "", "EVENT_ID": "", "TEAM": "", "PLAYER NAME": "", "STATU": "", "OUT MINUTE": "", "GOALS CONCEDED": "" };
-export const EMPTY_PEN = { "MATCH_ID": "", "EVENT_ID": "", "HOW MISSED?": "", "TEAM": "", "MINUTE": "" };
 
 export const EGYPT_NT_MATCH_LINKED_TABLES = [
     "egy_NT_LINEUPDETAILS",
     "egy_NT_PLAYERDETAILS",
     "egy_NT_GKSDETAILS",
-    "egy_NT_HOWPENMISSED",
 ];
 
 export const AUTOCOMPLETE_FIELDS = [

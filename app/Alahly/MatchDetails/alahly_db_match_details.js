@@ -16,7 +16,6 @@ export default function AlAhlyMatchDetails({
     playerDetails,
     lineupDetails,
     gkDetails,
-    howPenMissed,
     onBack
 }) {
     const [activeTab, setActiveTab] = useState('info');
@@ -54,7 +53,6 @@ export default function AlAhlyMatchDetails({
     const events = useMemo(() => {
         const allEvents = [
             ...(playerDetails || []).filter(p => String(p.MATCH_ID) === String(matchId)).map(e => ({ ...e, eventType: 'player' })),
-            ...(howPenMissed || []).filter(h => String(h.MATCH_ID) === String(matchId)).map(e => ({ ...e, eventType: 'penMiss', TYPE: 'PEN MISS' }))
         ].sort((a, b) => parseInt(a.MINUTE || 0) - parseInt(b.MINUTE || 0));
 
         return {
@@ -62,7 +60,7 @@ export default function AlAhlyMatchDetails({
             opp: allEvents.filter(e => !checkIfAhly(e.TEAM, opponentName)),
             chronological: allEvents
         };
-    }, [matchId, playerDetails, howPenMissed, opponentName]);
+    }, [matchId, playerDetails, opponentName]);
 
     const gks = useMemo(() => ({
         ahly: (gkDetails || []).filter(g => String(g.MATCH_ID) === String(matchId) && checkIfAhly(g.TEAM, opponentName)),

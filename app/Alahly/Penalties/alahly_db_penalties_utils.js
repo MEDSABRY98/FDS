@@ -15,10 +15,11 @@ function getHowPenMissedLinkIds(row) {
     ].filter(Boolean);
 }
 
-export function howPenMissedRowMatchesEventId(howRow, eventId) {
-    const target = String(eventId || "").trim();
-    if (!target) return false;
-    return getHowPenMissedLinkIds(howRow).includes(target);
+export function findHowPenMissedForEvent(penEvent) {
+    if (!penEvent) return null;
+    const howMissed = String(penEvent["HOW MISSED?"] || "").trim();
+    if (!howMissed) return null;
+    return penEvent;
 }
 
 export function createEmptyPenaltyStats() {
@@ -128,17 +129,6 @@ export function buildMatchContextMap(filteredMatches) {
     return map;
 }
 
-export function findHowPenMissedForEvent(howPenMissed, penEvent) {
-    const matchId = String(penEvent?.MATCH_ID || "").trim();
-    const eventId = String(penEvent?.EVENT_ID || "").trim();
-    if (!matchId || !eventId) return null;
-
-    return (howPenMissed || []).find((d) => {
-        if (String(d.MATCH_ID || "").trim() !== matchId) return false;
-        return howPenMissedRowMatchesEventId(d, eventId);
-    }) || null;
-}
-
 export function isPenaltyMissReason(value) {
     return MISS_DESCRIPTIONS.includes(String(value || "").trim());
 }
@@ -188,7 +178,7 @@ function gkMatchesHowMissedValue(gk, howValue, penMin) {
     return gkName.toLowerCase() === lookup.toLowerCase();
 }
 
-function resolveDefendingGk({ penEvent, gkDetails, howPenMissed, detail }) {
+function resolveDefendingGk({ penEvent, gkDetails, detail }) {
     const mId = String(penEvent.MATCH_ID || "").trim();
     const takerTeam = String(penEvent.TEAM || "").trim();
     const penMin = penEvent.MINUTE;
@@ -196,14 +186,14 @@ function resolveDefendingGk({ penEvent, gkDetails, howPenMissed, detail }) {
         (g) => String(g.MATCH_ID || "").trim() === mId && String(g.TEAM || "").trim() !== takerTeam
     );
 
-    const howVal = String(detail?.["HOW MISSED?"] || "").trim();
-    if (howVal && getPenaltyMissOutcome(detail) === "saved") {
+    const howVal = String(detail?.["HOW MISSED?"] || penEvent["HOW MISSED?"] || "").trim();
+    if (howVal && getPenaltyMissOutcome(detail || penEvent) === "saved") {
         const viaHowMissed = matchGks.filter((gk) => gkMatchesHowMissedValue(gk, howVal, penMin));
         if (viaHowMissed.length === 1) return viaHowMissed[0];
     }
 
     const linkIds = new Set(
-        [...getHowPenMissedLinkIds(detail), String(penEvent.EVENT_ID || "").trim()].filter(Boolean)
+        [...getHowPenMissedLinkIds(detail || penEvent), String(penEvent.EVENT_ID || "").trim()].filter(Boolean)
     );
 
     for (const linkId of linkIds) {
@@ -217,74 +207,56 @@ function resolveDefendingGk({ penEvent, gkDetails, howPenMissed, detail }) {
     return null;
 }
 
-export function findDefendingGkForPenalty({ penEvent, howPenMissed, gkDetails }) {
-    const detail = findHowPenMissedForEvent(howPenMissed, penEvent);
-    return resolveDefendingGk({ penEvent, gkDetails, howPenMissed, detail });
+export function findDefendingGkForPenalty({ penEvent, gkDetails }) {
+    const detail = findHowPenMissedForEvent(penEvent);
+    return resolveDefendingGk({ penEvent, gkDetails, detail });
 }
 
-export function findGkForPenaltyMiss({ penEvent, howPenMissed, gkDetails }) {
-    const detail = findHowPenMissedForEvent(howPenMissed, penEvent);
+export function findGkForPenaltyMiss({ penEvent, gkDetails }) {
+    const detail = findHowPenMissedForEvent(penEvent);
     if (getPenaltyMissOutcome(detail) !== "saved") return null;
-    return resolveDefendingGk({ penEvent, gkDetails, howPenMissed, detail });
+    return resolveDefendingGk({ penEvent, gkDetails, detail });
 }
 
-export function findPenaltyTakerForHowPenRow(howPenRow, playerDetails) {
-    const mId = String(howPenRow?.MATCH_ID || "").trim();
-    if (!mId) return null;
-
-    for (const linkId of getHowPenMissedLinkIds(howPenRow)) {
-        const pen = (playerDetails || []).find(
-            (p) =>
-                String(p.MATCH_ID || "").trim() === mId &&
-                String(p.EVENT_ID || "").trim() === linkId &&
-                String(p.TYPE || "").trim().toUpperCase() === "PENMISSED"
-        );
-        if (pen) return pen;
-    }
-
-    return null;
-}
-
-export function normalizeHowPenMissedRowForEditor(row) {
-    if (!row) return row;
-    const { PARENT_EVENT_ID, ...rest } = row;
-    return {
-        ...rest,
-        EVENT_ID: String(rest.EVENT_ID || PARENT_EVENT_ID || "").trim(),
-    };
-}
-
-export function sanitizeHowPenMissedRowForSave(row) {
+export async function preparePlayerEventHowMissedForSave(row) {
     if (!row || typeof row !== "object") return row;
-    const { PARENT_EVENT_ID, ...rest } = row;
-    return rest;
-}
+    if (String(row.TYPE || "").trim().toUpperCase() !== "PENMISSED") return row;
 
-export async function prepareHowPenMissedRowForSave(row) {
-    const base = sanitizeHowPenMissedRowForSave(row);
-    const howVal = String(base["HOW MISSED?"] || "").trim();
+    const howVal = String(row["HOW MISSED?"] || "").trim();
     if (!howVal || isPenaltyMissReason(howVal) || isPlayerCatalogId(howVal)) {
-        return base;
+        return row;
     }
 
     const resolvedId = await resolvePlayerCatalogId(howVal);
-    return { ...base, "HOW MISSED?": resolvedId };
+    return { ...row, "HOW MISSED?": resolvedId };
 }
 
 export function buildHowPenMissedAutocompleteOptions(gkPlayerOptions = []) {
     const seen = new Set();
     const options = [];
-    [...PENALTY_MISS_DESCRIPTIONS, ...(gkPlayerOptions || [])].forEach((item) => {
-        const key = String(item || "").trim();
+
+    PENALTY_MISS_DESCRIPTIONS.forEach((reason) => {
+        const key = String(reason || "").trim();
         if (!key || seen.has(key)) return;
         seen.add(key);
         options.push(key);
     });
-    return options;
-}
 
-export function isHowPenMissedRowFilled(row) {
-    return String(row?.EVENT_ID || "").trim() !== "";
+    (gkPlayerOptions || []).forEach((item) => {
+        if (item && typeof item === "object" && item.label != null) {
+            const label = String(item.label || item.labelAr || item.labelEn || "").trim();
+            if (!label || seen.has(label.toLowerCase())) return;
+            seen.add(label.toLowerCase());
+            options.push(item);
+            return;
+        }
+        const key = String(item || "").trim();
+        if (!key || seen.has(key.toLowerCase())) return;
+        seen.add(key.toLowerCase());
+        options.push(key);
+    });
+
+    return options;
 }
 
 export function formatPenMissedEventOption(playerEvent) {
@@ -314,11 +286,10 @@ export function buildPenMissedEventOptions(playerRowsList) {
 }
 
 export function isEditorLinkedRowFilled(tableName, row) {
-    if (tableName === "alahly_HOWPENMISSED") return isHowPenMissedRowFilled(row);
     return Boolean(row?.["PLAYER NAME"] && String(row["PLAYER NAME"]).trim() !== "");
 }
 
-export function collectGkPenaltySaves({ playerDetails, howPenMissed, gkDetails, matchIds }) {
+export function collectGkPenaltySaves({ playerDetails, gkDetails, matchIds }) {
     const allowed = matchIds instanceof Set ? matchIds : new Set(matchIds || []);
     const savesByGk = {};
 
@@ -327,7 +298,7 @@ export function collectGkPenaltySaves({ playerDetails, howPenMissed, gkDetails, 
         if (!allowed.has(mId)) return;
         if (String(penEvent.TYPE || "").trim().toUpperCase() !== "PENMISSED") return;
 
-        const gk = findGkForPenaltyMiss({ penEvent, howPenMissed, gkDetails });
+        const gk = findGkForPenaltyMiss({ penEvent, gkDetails });
         if (!gk) return;
 
         const gkName = String(gk["PLAYER NAME"] || "").trim();
@@ -336,7 +307,7 @@ export function collectGkPenaltySaves({ playerDetails, howPenMissed, gkDetails, 
         if (!savesByGk[gkName]) savesByGk[gkName] = [];
         savesByGk[gkName].push({
             penEvent,
-            detail: findHowPenMissedForEvent(howPenMissed, penEvent),
+            detail: findHowPenMissedForEvent(penEvent),
             takerName: String(penEvent["PLAYER NAME"] || "").trim(),
             matchId: mId,
             eventId: String(penEvent.EVENT_ID || "").trim(),
@@ -346,7 +317,7 @@ export function collectGkPenaltySaves({ playerDetails, howPenMissed, gkDetails, 
     return savesByGk;
 }
 
-export function collectGkPenaltyMisses({ playerDetails, howPenMissed, gkDetails, matchIds }) {
+export function collectGkPenaltyMisses({ playerDetails, gkDetails, matchIds }) {
     const allowed = matchIds instanceof Set ? matchIds : new Set(matchIds || []);
     const missesByGk = {};
 
@@ -355,10 +326,10 @@ export function collectGkPenaltyMisses({ playerDetails, howPenMissed, gkDetails,
         if (!allowed.has(mId)) return;
         if (String(penEvent.TYPE || "").trim().toUpperCase() !== "PENMISSED") return;
 
-        const detail = findHowPenMissedForEvent(howPenMissed, penEvent);
+        const detail = findHowPenMissedForEvent(penEvent);
         if (getPenaltyMissOutcome(detail) !== "missed") return;
 
-        const gk = findDefendingGkForPenalty({ penEvent, howPenMissed, gkDetails });
+        const gk = findDefendingGkForPenalty({ penEvent, gkDetails });
         if (!gk) return;
 
         const gkName = String(gk["PLAYER NAME"] || "").trim();
@@ -377,12 +348,12 @@ export function collectGkPenaltyMisses({ playerDetails, howPenMissed, gkDetails,
     return missesByGk;
 }
 
-function isPenaltyMissSaved(event, howPenMissed) {
-    const detail = findHowPenMissedForEvent(howPenMissed, event);
+function isPenaltyMissSaved(event) {
+    const detail = findHowPenMissedForEvent(event);
     return getPenaltyMissOutcome(detail) === "saved";
 }
 
-export function classifyPenaltyEvent(event, howPenMissed) {
+export function classifyPenaltyEvent(event) {
     const type = String(event.TYPE || "").trim().toUpperCase();
     const sub = String(event.TYPE_SUB || "").trim().toUpperCase();
     const playerName = String(event["PLAYER NAME"] || "").trim();
@@ -396,7 +367,7 @@ export function classifyPenaltyEvent(event, howPenMissed) {
     if (sub === "PENGOAL" || sub === "هدف جزاء" || type === "PENGOAL") {
         category = "scored";
     } else if (type === "PENMISSED") {
-        category = isPenaltyMissSaved(event, howPenMissed) ? "saved" : "missed";
+        category = isPenaltyMissSaved(event) ? "saved" : "missed";
     } else if (type === "PENASSISTGOAL") {
         category = "wonGoal";
     } else if (type === "PENASSISTMISSED") {
@@ -419,7 +390,7 @@ export function classifyPenaltyEvent(event, howPenMissed) {
     };
 }
 
-export function normalizePenaltyEvents(playerDetails, filteredMatches, howPenMissed) {
+export function normalizePenaltyEvents(playerDetails, filteredMatches) {
     const matchMap = buildMatchContextMap(filteredMatches);
     const events = [];
 
@@ -427,7 +398,7 @@ export function normalizePenaltyEvents(playerDetails, filteredMatches, howPenMis
         const matchId = String(event.MATCH_ID || "").trim();
         if (!matchMap.has(matchId)) return;
 
-        const classified = classifyPenaltyEvent(event, howPenMissed);
+        const classified = classifyPenaltyEvent(event);
         if (!classified) return;
 
         const ctx = matchMap.get(matchId);
@@ -643,8 +614,8 @@ export function sumPenaltyRows(rows) {
     };
 }
 
-export function applyPenaltyEventToPlayerRow(row, event, howPenMissed) {
-    const classified = classifyPenaltyEvent(event, howPenMissed);
+export function applyPenaltyEventToPlayerRow(row, event) {
+    const classified = classifyPenaltyEvent(event);
     if (!classified) return;
     applyEventToPlayerStats(row, classified);
 }

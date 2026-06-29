@@ -177,39 +177,6 @@ export const EgyptNTService = {
     },
 
     /**
-     * Fetch ALL penalty miss details from egy_NT_HOWPENMISSED.
-     */
-    async getAllHowPenMissed() {
-        try {
-            let allData = [];
-            let from = 0;
-            const step = 1000;
-            let finished = false;
-
-            while (!finished) {
-                const { data, error } = await supabase
-                    .from('egy_NT_HOWPENMISSED')
-                    .select('*')
-                    .order('ROW_ID', { ascending: true })
-                    .range(from, from + step - 1);
-
-                if (error) throw error;
-                if (data && data.length > 0) {
-                    allData = [...allData, ...data];
-                    from += step;
-                    if (data.length < step) finished = true;
-                } else {
-                    finished = true;
-                }
-            }
-            return allData;
-        } catch (error) {
-            console.error("Error fetching HowPenMissed:", error.message);
-            return [];
-        }
-    },
-
-    /**
      * Fetch ALL squad entries from egy_NT_SQUAD.
      */
     async getAllSquad() {

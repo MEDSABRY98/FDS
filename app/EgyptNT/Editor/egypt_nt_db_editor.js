@@ -35,7 +35,6 @@ import {
 } from "./egypt_nt_db_editor_save_utils";
 import PlayerEventsPanel from "./egypt_nt_db_editor_events_panel";
 import GkDetailsPanel from "./egypt_nt_db_editor_gks_panel";
-import PenaltyMissesPanel from "./egypt_nt_db_editor_pens_panel";
 import LineupPanel from "./egypt_nt_db_editor_lineup_panel";
 
 export default function EgyptNTEditor() {
@@ -45,7 +44,6 @@ export default function EgyptNTEditor() {
     const [oppLineupRows, setOppLineupRows] = useState([]);
     const [playerRows, setPlayerRows] = useState([]);
     const [gkRows, setGkRows] = useState([]);
-    const [penRows, setPenRows] = useState([]);
     const [loading, setLoading] = useState(false);
     const [isSaving, setIsSaving] = useState(false);
     const [mode, setMode] = useState('search');
@@ -59,7 +57,6 @@ export default function EgyptNTEditor() {
     const [newOppLineupRows, setNewOppLineupRows] = useState([]);
     const [newPlayerRows, setNewPlayerRows] = useState([]);
     const [newGkRows, setNewGkRows] = useState([]);
-    const [newPenRows, setNewPenRows] = useState([]);
     const [matchFieldOptions, setMatchFieldOptions] = useState({});
     const [allPlayersList, setAllPlayersList] = useState([]);
     const [eventTypes, setEventTypes] = useState([]);
@@ -116,12 +113,11 @@ export default function EgyptNTEditor() {
     }, []);
 
     const loadMatchIntoEditor = useCallback(async (id) => {
-        const [{ data: md }, { data: ld }, { data: pd }, { data: gd }, { data: pen }] = await Promise.all([
+        const [{ data: md }, { data: ld }, { data: pd }, { data: gd }] = await Promise.all([
             supabase.from('egy_NT_MATCHDETAILS').select('*').eq('MATCH_ID', id).maybeSingle(),
             supabase.from('egy_NT_LINEUPDETAILS').select('*').eq('MATCH_ID', id),
             supabase.from('egy_NT_PLAYERDETAILS').select('*').eq('MATCH_ID', id),
             supabase.from('egy_NT_GKSDETAILS').select('*').eq('MATCH_ID', id),
-            supabase.from('egy_NT_HOWPENMISSED').select('*').eq('MATCH_ID', id),
         ]);
         if (!md) {
             addNotification(`Match ID "${id}" not found`, 'error');
@@ -142,7 +138,6 @@ export default function EgyptNTEditor() {
         }
         setPlayerRows(sortRowsByEventId((pd || []).map((r, i) => ({ ...r, _key: r._key ?? 1000 + i }))));
         setGkRows(sortRowsByEventId((gd || []).map((r, i) => ({ ...r, _key: r._key ?? 2000 + i }))));
-        setPenRows(sortRowsByEventId((pen || []).map((r, i) => ({ ...r, _key: r._key ?? 3000 + i }))));
         setMode('edit');
         return true;
     }, [addNotification]);
@@ -277,7 +272,6 @@ export default function EgyptNTEditor() {
         const setterMap = {
             egy_NT_PLAYERDETAILS: setPlayerRows,
             egy_NT_GKSDETAILS: setGkRows,
-            egy_NT_HOWPENMISSED: setPenRows,
         };
         const applyRemove = (prev) => {
             const idx = findRowIndexInList(prev, row, ri);
@@ -325,7 +319,6 @@ export default function EgyptNTEditor() {
             setOppLineupRows([]);
             setPlayerRows([]);
             setGkRows([]);
-            setPenRows([]);
             setSearchId("");
             setMode("search");
             addToast(`Match "${mid}" deleted from all tables ✓`, "warn");
@@ -353,7 +346,6 @@ export default function EgyptNTEditor() {
             const nextOpp = await persistLinkedTableRows("egy_NT_LINEUPDETAILS", syncedOpp, matchId);
             const nextPlayers = await persistLinkedTableRows("egy_NT_PLAYERDETAILS", playerRows, matchId);
             const nextGks = await persistLinkedTableRows("egy_NT_GKSDETAILS", gkRows, matchId);
-            const nextPens = await persistLinkedTableRows("egy_NT_HOWPENMISSED", penRows, matchId);
 
             const { error: matchErr } = await supabase.from("egy_NT_MATCHDETAILS").upsert(matchPayload);
             if (matchErr) throw new Error(`egy_NT_MATCHDETAILS: ${matchErr.message}`);
@@ -362,7 +354,6 @@ export default function EgyptNTEditor() {
             setOppLineupRows(nextOpp);
             setPlayerRows(nextPlayers);
             setGkRows(nextGks);
-            setPenRows(nextPens);
             setMatchData({ ...matchData, ...matchPayload });
 
             addToast("Match and all pending records saved ✓");
@@ -402,7 +393,6 @@ export default function EgyptNTEditor() {
             await insertStagedLinkedTableRows('egy_NT_LINEUPDETAILS', [...syncedEgy, ...syncedOpp], mid);
             await insertStagedLinkedTableRows('egy_NT_PLAYERDETAILS', newPlayerRows, mid);
             await insertStagedLinkedTableRows('egy_NT_GKSDETAILS', newGkRows, mid);
-            await insertStagedLinkedTableRows('egy_NT_HOWPENMISSED', newPenRows, mid);
 
             addToast('Match + all linked data created ✓');
             setSearchId(mid);
@@ -410,7 +400,6 @@ export default function EgyptNTEditor() {
             setNewOppLineupRows([]);
             setNewPlayerRows([]);
             setNewGkRows([]);
-            setNewPenRows([]);
             setMode('search');
             setTimeout(() => handleSearch(), 400);
         } catch (e) {
@@ -463,6 +452,7 @@ export default function EgyptNTEditor() {
                 allTeamsList={allTeamsList}
                 eventTypes={eventTypes}
                 eventSubTypes={eventSubTypes}
+                gkPlayerOptions={allPlayersList}
                 persistToDb={false}
                 onDeleteRow={isNew ? handleStagedDelete : handleDeleteRow}
                 isSaving={isSaving}
@@ -483,27 +473,6 @@ export default function EgyptNTEditor() {
                 matchId={matchId}
                 teamOptions={teamOptions}
                 allPlayersList={allPlayersList}
-                playerEventRows={playerEventRows}
-                persistToDb={false}
-                onDeleteRow={isNew ? handleStagedDelete : handleDeleteRow}
-                isSaving={isSaving}
-            />
-        );
-    };
-
-    const renderPenaltyMissesPanel = ({ formData, isNew }) => {
-        const matchId = isNew ? (formData.MATCH_ID || '---') : formData.MATCH_ID;
-        const teamOptions = [getDefaultEgyptTeamLabel(formData), formData["OPPONENT TEAM"]].filter(Boolean);
-        const playerEventRows = isNew ? newPlayerRows : playerRows;
-        return (
-            <PenaltyMissesPanel
-                title="PENALTY MISSES"
-                color="#ef4444"
-                rows={isNew ? newPenRows : penRows}
-                setRows={isNew ? setNewPenRows : setPenRows}
-                matchId={matchId}
-                teamOptions={teamOptions}
-                gkPlayerOptions={allPlayersList}
                 playerEventRows={playerEventRows}
                 persistToDb={false}
                 onDeleteRow={isNew ? handleStagedDelete : handleDeleteRow}
@@ -635,7 +604,6 @@ export default function EgyptNTEditor() {
                                 <button onClick={() => setActiveLinkedTab('events')} className="tab-btn" style={{ background: activeLinkedTab === 'events' ? '#8b5cf6' : '#f8f8f8', color: activeLinkedTab === 'events' ? '#fff' : '#888' }}>PLAYER EVENTS</button>
                                 <button onClick={() => setActiveLinkedTab('motm')} className="tab-btn" style={{ background: activeLinkedTab === 'motm' ? '#10b981' : '#f8f8f8', color: activeLinkedTab === 'motm' ? '#fff' : '#888' }}>MOTM</button>
                                 <button onClick={() => setActiveLinkedTab('gks')} className="tab-btn" style={{ background: activeLinkedTab === 'gks' ? '#f59e0b' : '#f8f8f8', color: activeLinkedTab === 'gks' ? '#fff' : '#888' }}>GK DETAILS</button>
-                                <button onClick={() => setActiveLinkedTab('pens')} className="tab-btn" style={{ background: activeLinkedTab === 'pens' ? '#ef4444' : '#f8f8f8', color: activeLinkedTab === 'pens' ? '#fff' : '#888' }}>PENALTY MISSES</button>
                             </div>
 
                             {activeLinkedTab === 'lineup_egy' && renderLineupPanel({
@@ -658,7 +626,6 @@ export default function EgyptNTEditor() {
                             })}
                             {activeLinkedTab === 'events' && renderPlayerEventsPanel({ formData: newMatchData, isNew: true })}
                             {activeLinkedTab === 'gks' && renderGkDetailsPanel({ formData: newMatchData, isNew: true })}
-                            {activeLinkedTab === 'pens' && renderPenaltyMissesPanel({ formData: newMatchData, isNew: true })}
                             {activeLinkedTab === 'motm' && renderMotmPanel(newMatchData, setNewMatchData)}
                         </div>
                     </>
@@ -719,7 +686,6 @@ export default function EgyptNTEditor() {
                                 <button onClick={() => setActiveLinkedTab('events')} className="tab-btn" style={{ background: activeLinkedTab === 'events' ? '#8b5cf6' : '#f8f8f8', color: activeLinkedTab === 'events' ? '#fff' : '#888' }}>PLAYER EVENTS</button>
                                 <button onClick={() => setActiveLinkedTab('motm')} className="tab-btn" style={{ background: activeLinkedTab === 'motm' ? '#10b981' : '#f8f8f8', color: activeLinkedTab === 'motm' ? '#fff' : '#888' }}>MOTM</button>
                                 <button onClick={() => setActiveLinkedTab('gks')} className="tab-btn" style={{ background: activeLinkedTab === 'gks' ? '#f59e0b' : '#f8f8f8', color: activeLinkedTab === 'gks' ? '#fff' : '#888' }}>GK DETAILS</button>
-                                <button onClick={() => setActiveLinkedTab('pens')} className="tab-btn" style={{ background: activeLinkedTab === 'pens' ? '#ef4444' : '#f8f8f8', color: activeLinkedTab === 'pens' ? '#fff' : '#888' }}>PENALTY MISSES</button>
                             </div>
 
                             {activeLinkedTab === 'lineup_egy' && renderLineupPanel({
@@ -742,7 +708,6 @@ export default function EgyptNTEditor() {
                             })}
                             {activeLinkedTab === 'events' && renderPlayerEventsPanel({ formData: matchData, isNew: false })}
                             {activeLinkedTab === 'gks' && renderGkDetailsPanel({ formData: matchData, isNew: false })}
-                            {activeLinkedTab === 'pens' && renderPenaltyMissesPanel({ formData: matchData, isNew: false })}
                             {activeLinkedTab === 'motm' && renderMotmPanel(matchData, setMatchData)}
                         </div>
                     </>

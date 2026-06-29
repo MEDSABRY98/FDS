@@ -10,7 +10,7 @@ import SearchBar_db from "../../lib/SearchBar_db";
 import DropDownList_db from "../../lib/DropDownList_db";
 import { collectGkPenaltySaves, collectGkPenaltyMisses, getGkPenaltySavePct } from "../Penalties/alahly_db_penalties_utils";
 
-export default function AlAhlyGKs({ gkDetails, howPenMissed, filteredMatches, playerDetails }) {
+export default function AlAhlyGKs({ gkDetails, filteredMatches, playerDetails }) {
     const [searchTerm, setSearchTerm] = useState("");
     const [teamFilter, setTeamFilter] = useState("all");
     const [opponentFilter, setOpponentFilter] = useState("all");
@@ -103,7 +103,6 @@ export default function AlAhlyGKs({ gkDetails, howPenMissed, filteredMatches, pl
 
         const savesByGk = collectGkPenaltySaves({
             playerDetails,
-            howPenMissed,
             gkDetails,
             matchIds: currentMatchIds,
         });
@@ -115,7 +114,6 @@ export default function AlAhlyGKs({ gkDetails, howPenMissed, filteredMatches, pl
 
         const missesByGk = collectGkPenaltyMisses({
             playerDetails,
-            howPenMissed,
             gkDetails,
             matchIds: currentMatchIds,
         });
@@ -137,7 +135,7 @@ export default function AlAhlyGKs({ gkDetails, howPenMissed, filteredMatches, pl
             if (b.name === "?") return -1;
             return b.matches - a.matches;
         });
-    }, [gkDetails, howPenMissed, matchResultsMap, currentMatchIds, teamFilter, opponentFilter, searchTerm, playerDetails]);
+    }, [gkDetails, matchResultsMap, currentMatchIds, teamFilter, opponentFilter, searchTerm, playerDetails]);
 
     const [currentPage, setCurrentPage] = useState(1);
     const pageSize = 50;
@@ -199,7 +197,6 @@ export default function AlAhlyGKs({ gkDetails, howPenMissed, filteredMatches, pl
                 <GK_Details_Hub
                     gkName={selectedGK}
                     gkDetails={gkDetails}
-                    howPenMissed={howPenMissed}
                     masterMatches={filteredMatches}
                     playerDetails={playerDetails}
                     onBack={() => setSelectedGK(null)}
