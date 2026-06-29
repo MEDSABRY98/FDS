@@ -59,32 +59,20 @@ export default function AlAhlyPenalties({ playerDetails, filteredMatches }) {
             const exportData = championRows.map((r, i) => ({
                 "#": i + 1,
                 COMPETITION: r.name,
-                "ATT(F)": r.attFor,
+                ATT: r.attFor,
                 SCORED: r.scored,
+                "CONV%": `${r.conversion}%`,
                 MISS: r.missed,
                 SAVED: r.saved,
-                "WON(G)": r.wonGoal,
-                "WON(M)": r.wonMiss,
-                "CONC(G)": r.concGoal,
-                "CONC(M)": r.concMiss,
-                "MAKE(G)": r.makeGoal,
-                "MAKE(M)": r.makeMiss,
-                "CONV%": `${r.conversion}%`,
             }));
             exportData.push({
                 "#": "TOTALS",
                 COMPETITION: "",
-                "ATT(F)": totals.attFor,
+                ATT: totals.attFor,
                 SCORED: totals.scored,
+                "CONV%": `${totals.conversion}%`,
                 MISS: totals.missed,
                 SAVED: totals.saved,
-                "WON(G)": totals.wonGoal,
-                "WON(M)": totals.wonMiss,
-                "CONC(G)": totals.concGoal,
-                "CONC(M)": totals.concMiss,
-                "MAKE(G)": totals.makeGoal,
-                "MAKE(M)": totals.makeMiss,
-                "CONV%": `${totals.conversion}%`,
             });
             AlAhlyExcelExport.exportToExcel(exportData, "AlAhly_Penalties_Championships");
             return;
@@ -95,32 +83,20 @@ export default function AlAhlyPenalties({ playerDetails, filteredMatches }) {
             const exportData = seasonRowsName.map((r, i) => ({
                 "#": i + 1,
                 SEASON: r.name,
-                "ATT(F)": r.attFor,
+                ATT: r.attFor,
                 SCORED: r.scored,
+                "CONV%": `${r.conversion}%`,
                 MISS: r.missed,
                 SAVED: r.saved,
-                "WON(G)": r.wonGoal,
-                "WON(M)": r.wonMiss,
-                "CONC(G)": r.concGoal,
-                "CONC(M)": r.concMiss,
-                "MAKE(G)": r.makeGoal,
-                "MAKE(M)": r.makeMiss,
-                "CONV%": `${r.conversion}%`,
             }));
             exportData.push({
                 "#": "TOTALS",
                 SEASON: "",
-                "ATT(F)": totals.attFor,
+                ATT: totals.attFor,
                 SCORED: totals.scored,
+                "CONV%": `${totals.conversion}%`,
                 MISS: totals.missed,
                 SAVED: totals.saved,
-                "WON(G)": totals.wonGoal,
-                "WON(M)": totals.wonMiss,
-                "CONC(G)": totals.concGoal,
-                "CONC(M)": totals.concMiss,
-                "MAKE(G)": totals.makeGoal,
-                "MAKE(M)": totals.makeMiss,
-                "CONV%": `${totals.conversion}%`,
             });
             AlAhlyExcelExport.exportToExcel(exportData, "AlAhly_Penalties_Seasons");
             return;

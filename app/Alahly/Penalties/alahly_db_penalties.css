@@ -334,10 +334,18 @@
 .penalties-seasons-table th,
 .penalties-seasons-table td {
     text-align: center !important;
+    font-size: 15px;
+    padding: 14px 10px;
+}
+
+.penalties-seasons-table th {
+    font-size: 13px;
+    letter-spacing: 1px;
 }
 
 .penalties-seasons-table .season-cell {
-    font-weight: 700;
+    font-weight: 800;
+    font-size: 16px;
 }
 
 .penalties-championships-table th:nth-child(2),
@@ -345,8 +353,25 @@
     text-align: center !important;
 }
 
+.penalties-championships-table th,
+.penalties-championships-table td {
+    font-size: 15px;
+    padding: 14px 10px;
+}
+
+.penalties-championships-table th {
+    font-size: 13px;
+    letter-spacing: 1px;
+}
+
 .penalties-championships-table .champion-cell {
-    font-weight: 700;
+    font-weight: 800;
+    font-size: 16px;
+}
+
+.penalties-championships-table .rank-badge-premium,
+.penalties-seasons-table .rank-badge-premium {
+    font-size: 14px;
 }
 
 .penalties-vs-teams-table th,

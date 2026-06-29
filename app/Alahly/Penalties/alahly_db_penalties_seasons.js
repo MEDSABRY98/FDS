@@ -93,17 +93,11 @@ export default function AlAhlyPenaltiesSeasons({ rowsName, rowsNumber }) {
                         <tr>
                             <th style={{ width: "50px", textAlign: "center" }}>#</th>
                             <SortableTh label="SEASON" sortKey="season" sortConfig={sortConfig} onSort={handleSort} />
-                            <SortableTh label="ATT(F)" sortKey="attFor" sortConfig={sortConfig} onSort={handleSort} />
+                            <SortableTh label="ATT" sortKey="attFor" sortConfig={sortConfig} onSort={handleSort} />
                             <SortableTh label="SCORED" sortKey="scored" sortConfig={sortConfig} onSort={handleSort} />
+                            <SortableTh label="CONV%" sortKey="conversion" sortConfig={sortConfig} onSort={handleSort} />
                             <SortableTh label="MISS" sortKey="missed" sortConfig={sortConfig} onSort={handleSort} />
                             <SortableTh label="SAVED" sortKey="saved" sortConfig={sortConfig} onSort={handleSort} />
-                            <SortableTh label="WON(G)" sortKey="wonGoal" sortConfig={sortConfig} onSort={handleSort} />
-                            <SortableTh label="WON(M)" sortKey="wonMiss" sortConfig={sortConfig} onSort={handleSort} />
-                            <SortableTh label="CONC(G)" sortKey="concGoal" sortConfig={sortConfig} onSort={handleSort} />
-                            <SortableTh label="CONC(M)" sortKey="concMiss" sortConfig={sortConfig} onSort={handleSort} />
-                            <SortableTh label="MAKE(G)" sortKey="makeGoal" sortConfig={sortConfig} onSort={handleSort} />
-                            <SortableTh label="MAKE(M)" sortKey="makeMiss" sortConfig={sortConfig} onSort={handleSort} />
-                            <SortableTh label="CONV%" sortKey="conversion" sortConfig={sortConfig} onSort={handleSort} />
                         </tr>
                     </thead>
                     <tbody>
@@ -113,15 +107,9 @@ export default function AlAhlyPenaltiesSeasons({ rowsName, rowsNumber }) {
                                 <td className="season-cell">{row.name}</td>
                                 <td>{row.attFor || "-"}</td>
                                 <td className="pen-scored">{row.scored || "-"}</td>
+                                <td style={{ color: "var(--gold)" }}>{row.conversion}%</td>
                                 <td className="pen-missed">{row.missed || "-"}</td>
                                 <td className="pen-saved">{row.saved || "-"}</td>
-                                <td>{row.wonGoal || "-"}</td>
-                                <td>{row.wonMiss || "-"}</td>
-                                <td className="pen-missed">{row.concGoal || "-"}</td>
-                                <td>{row.concMiss || "-"}</td>
-                                <td>{row.makeGoal || "-"}</td>
-                                <td>{row.makeMiss || "-"}</td>
-                                <td style={{ color: "var(--gold)" }}>{row.conversion}%</td>
                             </tr>
                         ))}
                     </tbody>
@@ -130,15 +118,9 @@ export default function AlAhlyPenaltiesSeasons({ rowsName, rowsNumber }) {
                             <td colSpan="2">TOTALS</td>
                             <td>{totals.attFor}</td>
                             <td className="pen-scored">{totals.scored}</td>
+                            <td style={{ color: "var(--gold)" }}>{totals.conversion}%</td>
                             <td className="pen-missed">{totals.missed}</td>
                             <td className="pen-saved">{totals.saved}</td>
-                            <td>{totals.wonGoal}</td>
-                            <td>{totals.wonMiss}</td>
-                            <td className="pen-missed">{totals.concGoal}</td>
-                            <td>{totals.concMiss}</td>
-                            <td>{totals.makeGoal}</td>
-                            <td>{totals.makeMiss}</td>
-                            <td style={{ color: "var(--gold)" }}>{totals.conversion}%</td>
                         </tr>
                     </tfoot>
                 </table>
