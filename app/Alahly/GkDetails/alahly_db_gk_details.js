@@ -153,9 +153,12 @@ export default function GK_Details_Hub({ gkName, gkDetails, masterMatches, playe
 
             [sy, champion, oppName].forEach((key, i) => {
                 const target = [summary.seasonalStats, summary.compStats, summary.statsByOpponent][i];
-                if (!target[key]) target[key] = { matches: 0, wins: 0, draws: 0, losses: 0, gs: 0, ga: 0, gc: 0, cs: 0, ps: 0, pr: 0 };
+                if (!target[key]) target[key] = { matches: 0, wins: 0, draws: 0, losses: 0, gs: 0, ga: 0, gc: 0, cs: 0, ps: 0, pr: 0, pm: 0 };
                 const t = target[key];
-                t.matches += 1; t.gc += gc; if (isClean) t.cs += 1; t.ps += matchSaves.length; t.pr += matchPens.length;
+                t.matches += 1; t.gc += gc; if (isClean) t.cs += 1;
+                t.ps += matchSaves.length;
+                t.pr += matchPens.length;
+                t.pm += matchMisses.length;
 
                 // Add team record (gf/ga from Ahly's point of view)
                 t.gs += isAhly(tv) ? ctx.gf : ctx.ga;
@@ -202,7 +205,7 @@ export default function GK_Details_Hub({ gkName, gkDetails, masterMatches, playe
             opponentGoalsRow.forEach(r => {
                 const sName = String(r["PLAYER NAME"] || "Unknown").trim();
                 const sTeam = String(r.TEAM || "Unknown").trim();
-                if (!summary.statsByScorer[sName]) summary.statsByScorer[sName] = { goals: 0, pens_scored: 0, pens_saved: 0, teams: new Set() };
+                if (!summary.statsByScorer[sName]) summary.statsByScorer[sName] = { goals: 0, pens_scored: 0, pens_saved: 0, pens_missed: 0, teams: new Set() };
                 summary.statsByScorer[sName].goals += 1;
                 if (String(r.TYPE_SUB).toUpperCase() === "PENGOAL") summary.statsByScorer[sName].pens_scored += 1;
                 summary.statsByScorer[sName].teams.add(sTeam);
@@ -213,9 +216,19 @@ export default function GK_Details_Hub({ gkName, gkDetails, masterMatches, playe
                 const sName = String(pen["PLAYER NAME"] || "Unknown").trim();
                 const sTeam = String(pen.TEAM || "Unknown").trim();
                 if (!summary.statsByScorer[sName]) {
-                    summary.statsByScorer[sName] = { goals: 0, pens_scored: 0, pens_saved: 0, teams: new Set() };
+                    summary.statsByScorer[sName] = { goals: 0, pens_scored: 0, pens_saved: 0, pens_missed: 0, teams: new Set() };
                 }
                 summary.statsByScorer[sName].pens_saved += 1;
+                summary.statsByScorer[sName].teams.add(sTeam);
+            });
+
+            matchMisses.forEach((pen) => {
+                const sName = String(pen["PLAYER NAME"] || "Unknown").trim();
+                const sTeam = String(pen.TEAM || "Unknown").trim();
+                if (!summary.statsByScorer[sName]) {
+                    summary.statsByScorer[sName] = { goals: 0, pens_scored: 0, pens_saved: 0, pens_missed: 0, teams: new Set() };
+                }
+                summary.statsByScorer[sName].pens_missed += 1;
                 summary.statsByScorer[sName].teams.add(sTeam);
             });
         });
@@ -329,13 +342,13 @@ export default function GK_Details_Hub({ gkName, gkDetails, masterMatches, playe
             case 'vs_teams':
                 exportData = Object.keys(stats.statsByOpponent).sort((a, b) => stats.statsByOpponent[b].matches - stats.statsByOpponent[a].matches).map((opp, i) => {
                     const s = stats.statsByOpponent[opp];
-                    return { "#": i + 1, "OPPONENT": opp, "MP": s.matches, "W": s.wins, "D": s.draws, "L": s.losses, "GC": s.gc, "CS": s.cs, "PS": s.ps };
+                    return { "#": i + 1, "OPPONENT": opp, "MP": s.matches, "W": s.wins, "D": s.draws, "L": s.losses, "GC": s.gc, "CS": s.cs, "P. REC.": (s.pr || 0) + (s.ps || 0) + (s.pm || 0), "P. SAVED": s.ps, "P. MISSED": s.pm };
                 });
                 break;
             case 'vs_players':
                 exportData = Object.keys(stats.statsByScorer).sort((a, b) => stats.statsByScorer[b].goals - stats.statsByScorer[a].goals).map((p, i) => {
                     const s = stats.statsByScorer[p];
-                    return { "#": i + 1, "SCORER": p, "TEAMS": Array.from(s.teams).join(', '), "G": s.goals, "PG": s.pens_scored, "PS": s.pens_saved };
+                    return { "#": i + 1, "SCORER": p, "TEAMS": Array.from(s.teams).join(', '), "G": s.goals, "P. SCORED": s.pens_scored, "P. SAVED": s.pens_saved, "P. MISSED": s.pens_missed };
                 });
                 break;
         }

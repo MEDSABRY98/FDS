@@ -185,9 +185,16 @@ function resolveDefendingGk({ penEvent, gkDetails, detail }) {
     const matchGks = (gkDetails || []).filter(
         (g) => String(g.MATCH_ID || "").trim() === mId && String(g.TEAM || "").trim() !== takerTeam
     );
+    const outcome = getPenaltyMissOutcome(detail || penEvent);
+
+    if (outcome === "missed") {
+        const onField = matchGks.filter((gk) => gkWasOnFieldForPenalty(gk, penMin));
+        if (onField.length === 1) return onField[0];
+        return null;
+    }
 
     const howVal = String(detail?.["HOW MISSED"] || penEvent["HOW MISSED"] || "").trim();
-    if (howVal && getPenaltyMissOutcome(detail || penEvent) === "saved") {
+    if (howVal) {
         const viaHowMissed = matchGks.filter((gk) => gkMatchesHowMissedValue(gk, howVal, penMin));
         if (viaHowMissed.length === 1) return viaHowMissed[0];
     }
