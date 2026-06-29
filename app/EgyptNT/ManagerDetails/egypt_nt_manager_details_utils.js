@@ -99,7 +99,17 @@ export function Manager_StatsSummary_Table({
                 {filteredRows.length === 0 ? (
                     <NoData_db message="No data found for your search." />
                 ) : (
-                    <table className="player-match-table mgr-matches-table mgr-stats-table">
+                    <table className="player-match-table mgr-matches-table mgr-stats-table" style={{ tableLayout: "fixed", width: "100%" }}>
+                        <colgroup>
+                            <col style={{ width: "28%" }} />
+                            <col style={{ width: "10%" }} />
+                            <col style={{ width: "10%" }} />
+                            <col style={{ width: "10%" }} />
+                            <col style={{ width: "10%" }} />
+                            <col style={{ width: "11%" }} />
+                            <col style={{ width: "11%" }} />
+                            <col style={{ width: "10%" }} />
+                        </colgroup>
                         <thead>
                             <tr>
                                 {renderSortTh(labelKey, labelHeader, "mgr-season-col")}

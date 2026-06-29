@@ -1,9 +1,11 @@
 "use client";
 
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import NoData_db from "../../lib/NoData_db";
+import SearchBar_db from "../../lib/SearchBar_db";
 
 export default function PlayerSeasonsTable({ stats }) {
+    const [search, setSearch] = useState("");
     const statsByChampSeason = stats.statsByChampSeason || {};
 
     const extractYear = (str) => {
@@ -11,28 +13,52 @@ export default function PlayerSeasonsTable({ stats }) {
         return match ? parseInt(match[0]) : 0;
     };
 
+    const sortSeasons = (champ) => {
+        return Object.keys(statsByChampSeason[champ]).sort((a, b) => {
+            const yearA = extractYear(a);
+            const yearB = extractYear(b);
+            if (yearB !== yearA) return yearB - yearA;
+            return b.localeCompare(a);
+        });
+    };
+
     const sortedChamps = useMemo(() => {
         return Object.keys(statsByChampSeason).sort();
     }, [statsByChampSeason]);
 
+    const filteredChamps = useMemo(() => {
+        const q = search.trim().toLowerCase();
+        return sortedChamps
+            .map(champ => {
+                const allSeasons = sortSeasons(champ);
+                if (!q) return { champ, seasons: allSeasons };
+                const champMatches = champ.toLowerCase().includes(q);
+                const seasons = champMatches
+                    ? allSeasons
+                    : allSeasons.filter(season => season.toLowerCase().includes(q));
+                return { champ, seasons };
+            })
+            .filter(({ seasons }) => seasons.length > 0);
+    }, [sortedChamps, statsByChampSeason, search]);
+
     return (
         <div className="tab-content">
             <div className="seasons-wrap" style={{ maxWidth: '1400px', width: '95%', margin: '0 auto', paddingTop: '10px' }}>
-                <div className="section-title" style={{ fontSize: '24px', color: 'var(--player-gold)', fontFamily: 'Bebas Neue', letterSpacing: '2px', marginBottom: '10px' }}>
-                    PLAYER PERFORMANCE <span className="accent" style={{ color: '#fff' }}>- SEASONS</span>
-                </div>
-                <div className="gold-line" style={{ height: '2px', background: 'var(--player-gold)', width: '60px', marginBottom: '30px' }}></div>
-
-                {sortedChamps.length === 0 ? (
-                    <NoData_db message="NO DATA AVAILABLE FOR THIS PLAYER" />
+                {sortedChamps.length > 0 && (
+                    <div style={{ width: '100%', display: 'flex', justifyContent: 'center', marginBottom: '35px' }}>
+                        <div style={{ flex: 'none', width: '100%', maxWidth: '450px' }}>
+                            <SearchBar_db
+                                value={search}
+                                onChange={setSearch}
+                                placeholder="SEARCH CHAMPIONSHIP OR SEASON..."
+                            />
+                        </div>
+                    </div>
+                )}
+                {filteredChamps.length === 0 ? (
+                    <NoData_db message={sortedChamps.length === 0 ? "NO DATA AVAILABLE FOR THIS PLAYER" : "NO CHAMPIONSHIPS OR SEASONS MATCH YOUR SEARCH."} />
                 ) : (
-                    sortedChamps.map(champ => {
-                        const sortedSeasons = Object.keys(statsByChampSeason[champ]).sort((a, b) => {
-                            const yearA = extractYear(a);
-                            const yearB = extractYear(b);
-                            if (yearB !== yearA) return yearB - yearA;
-                            return b.localeCompare(a);
-                        });
+                    filteredChamps.map(({ champ, seasons: sortedSeasons }) => {
 
                         const totals = { MP: 0, mins: 0, G: 0, A: 0, PG: 0, PS: 0, PM: 0 };
                         sortedSeasons.forEach(sKey => {

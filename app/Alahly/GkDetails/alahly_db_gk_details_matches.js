@@ -3,6 +3,22 @@
 import { useState, useMemo } from "react";
 
 import NoData_db from "../../lib/NoData_db";
+import SearchBar_db from "../../lib/SearchBar_db";
+
+function gkMatchSearchText(m) {
+    return [
+        m.id,
+        m.idx,
+        m.date,
+        m.season,
+        m.opponent,
+        m.role,
+        m.mins,
+        m.gc,
+        m.psm,
+        m.pg
+    ].map(v => String(v ?? "").toLowerCase()).join(" ");
+}
 
 export default function GK_Matches_Component_Unique({
     stats,
@@ -10,28 +26,35 @@ export default function GK_Matches_Component_Unique({
     gkDetails,
     renderEventsCell
 }) {
+    const [search, setSearch] = useState("");
     const [currentPage, setCurrentPage] = useState(1);
     const [filter, setFilter] = useState('all');
     const [threshold, setThreshold] = useState(1);
     const [operator, setOperator] = useState('>=');
     const pageSize = 50;
 
-    const filteredMatches = useMemo(() => {
-        return stats.matchHistory.filter(m => {
-            if (filter === 'all') return true;
-            let val = 0;
-            if (filter === 'gc') val = (m.gc || 0);
-            else if (filter === 'cs') val = (m.gc === 0 ? 1 : 0);
-            else if (filter === 'psm') val = (m.psm || 0);
-            else if (filter === 'pg') val = (m.pg || 0);
+    const matchHistory = stats.matchHistory || [];
 
-            const numThreshold = parseInt(threshold) || 1;
-            if (operator === '>=') return val >= numThreshold;
-            if (operator === '==') return val === numThreshold;
-            if (operator === '<=') return val <= numThreshold && val > 0;
+    const filteredMatches = useMemo(() => {
+        const q = search.trim().toLowerCase();
+        return matchHistory.filter(m => {
+            if (filter !== 'all') {
+                let val = 0;
+                if (filter === 'gc') val = (m.gc || 0);
+                else if (filter === 'cs') val = (m.gc === 0 ? 1 : 0);
+                else if (filter === 'psm') val = (m.psm || 0);
+                else if (filter === 'pg') val = (m.pg || 0);
+
+                const numThreshold = parseInt(threshold) || 1;
+                if (operator === '>=' && val < numThreshold) return false;
+                if (operator === '==' && val !== numThreshold) return false;
+                if (operator === '<=' && (val > numThreshold || val <= 0)) return false;
+            }
+
+            if (q && !gkMatchSearchText(m).includes(q)) return false;
             return true;
         });
-    }, [stats.matchHistory, filter, threshold, operator]);
+    }, [matchHistory, filter, threshold, operator, search]);
 
     const totalMatchesNum = filteredMatches.length;
     const totalPages = Math.ceil(totalMatchesNum / pageSize);
@@ -51,16 +74,19 @@ export default function GK_Matches_Component_Unique({
 
     return (
         <div className="history-section fade-in">
-            <div className="history-header" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', marginBottom: '30px', gap: '20px' }}>
-                <div className="history-title" style={{ textAlign: 'center' }}>
-                    GK MATCHES PLAYED
-                    <span style={{ color: '#aaa', fontSize: '12px', letterSpacing: '1px', marginLeft: '10px' }}>
-                        ({totalMatchesNum} {filter === 'all' ? 'GAMES' : 'MATCHES FOUND'})
-                    </span>
+            {matchHistory.length > 0 && (
+                <div style={{ width: '100%', display: 'flex', justifyContent: 'center', marginBottom: '25px' }}>
+                    <div style={{ flex: 'none', width: '100%', maxWidth: '450px' }}>
+                        <SearchBar_db
+                            value={search}
+                            onChange={(value) => { setSearch(value); setCurrentPage(1); }}
+                            placeholder="SEARCH MATCH ID, OPPONENT, SEASON..."
+                        />
+                    </div>
                 </div>
-
-                <div className="event-filters-wrap" style={{ display: 'flex', gap: '10px', alignItems: 'center', justifyContent: 'center', flexWrap: 'wrap' }}>
-                    <div className="filter-controls-group" style={{ display: 'flex', gap: '5px', background: '#fff', padding: '5px', borderRadius: '15px', border: '1px solid #e0e0e0', boxShadow: '0 4px 15px rgba(0,0,0,0.05)' }}>
+            )}
+            <div className="event-filters-wrap" style={{ display: 'flex', gap: '10px', alignItems: 'center', justifyContent: 'center', flexWrap: 'wrap', marginBottom: '30px' }}>
+                <div className="filter-controls-group" style={{ display: 'flex', gap: '5px', background: '#fff', padding: '5px', borderRadius: '15px', border: '1px solid #e0e0e0', boxShadow: '0 4px 15px rgba(0,0,0,0.05)' }}>
                         <select
                             value={filter}
                             onChange={(e) => { setFilter(e.target.value); setCurrentPage(1); }}
@@ -113,11 +139,10 @@ export default function GK_Matches_Component_Unique({
                         </div>
                     </div>
                 </div>
-            </div>
 
             <div style={{ overflowX: 'auto' }}>
                 {totalMatchesNum === 0 ? (
-                    <NoData_db message="NO MATCH RECORDS FOUND FOR THIS GK" />
+                    <NoData_db message={matchHistory.length === 0 ? "NO MATCH RECORDS FOUND FOR THIS GK" : "NO MATCHES MATCH YOUR SEARCH OR FILTERS."} />
                 ) : (
                     <table className="player-match-table">
                     <thead>

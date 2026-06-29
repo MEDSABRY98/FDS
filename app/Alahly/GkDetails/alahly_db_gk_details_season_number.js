@@ -1,9 +1,11 @@
 "use client";
 
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import NoData_db from "../../lib/NoData_db";
+import SearchBar_db from "../../lib/SearchBar_db";
 
 export default function GK_SeasonNumber_Component_Unique({ stats }) {
+    const [search, setSearch] = useState("");
     const statsBySY = stats.statsBySY || {};
 
     const extractYear = (str) => {
@@ -12,17 +14,21 @@ export default function GK_SeasonNumber_Component_Unique({ stats }) {
     };
 
     const sortedSYs = useMemo(() => {
-        return Object.keys(statsBySY).sort((a, b) => {
-            const yearA = extractYear(a);
-            const yearB = extractYear(b);
-            if (yearB !== yearA) return yearB - yearA;
-            return b.localeCompare(a);
-        });
-    }, [statsBySY]);
+        const q = search.trim().toLowerCase();
+        return Object.keys(statsBySY)
+            .filter(sy => !q || sy.toLowerCase().includes(q))
+            .sort((a, b) => {
+                const yearA = extractYear(a);
+                const yearB = extractYear(b);
+                if (yearB !== yearA) return yearB - yearA;
+                return b.localeCompare(a);
+            });
+    }, [statsBySY, search]);
 
     const grandTotals = useMemo(() => {
         const t = { MP: 0, GC: 0, CS: 0, PR: 0, PS: 0 };
-        Object.values(statsBySY).forEach(s => {
+        sortedSYs.forEach(sy => {
+            const s = statsBySY[sy];
             t.MP += s.matches;
             t.GC += s.gc;
             t.CS += s.cs;
@@ -30,19 +36,25 @@ export default function GK_SeasonNumber_Component_Unique({ stats }) {
             t.PS += s.ps;
         });
         return t;
-    }, [statsBySY]);
+    }, [statsBySY, sortedSYs]);
 
     return (
         <div className="tab-content">
             <div className="seasons-wrap" style={{ maxWidth: '1400px', width: '95%', margin: '0 auto', paddingTop: '10px' }}>
-                <div className="section-title" style={{ fontSize: '24px', color: 'var(--player-gold)', fontFamily: 'Bebas Neue', letterSpacing: '3px', marginBottom: '10px' }}>
-                    GK PERFORMANCE <span className="accent" style={{ color: '#fff' }}>- SEASON NUMBER (SY)</span>
-                </div>
-                <div className="gold-line" style={{ height: '3px', background: 'var(--player-gold)', width: '80px', marginBottom: '30px' }}></div>
-
+                {Object.keys(statsBySY).length > 0 && (
+                    <div style={{ width: '100%', display: 'flex', justifyContent: 'center', marginBottom: '35px' }}>
+                        <div style={{ flex: 'none', width: '100%', maxWidth: '450px' }}>
+                            <SearchBar_db
+                                value={search}
+                                onChange={setSearch}
+                                placeholder="SEARCH SEASON NUMBER (SY)..."
+                            />
+                        </div>
+                    </div>
+                )}
                 <div className="table-responsive" style={{ background: '#fff', borderRadius: '16px', overflow: 'hidden', border: '1px solid #ebebeb', boxShadow: '0 10px 40px rgba(0,0,0,0.05)' }}>
                     {sortedSYs.length === 0 ? (
-                        <NoData_db message="No data found for this GK." />
+                        <NoData_db message={Object.keys(statsBySY).length === 0 ? "No data found for this GK." : "No season numbers match your search."} />
                     ) : (
                         <table className="analysis-table" style={{ width: '100%', borderCollapse: 'collapse', color: '#333' }}>
                         <thead>

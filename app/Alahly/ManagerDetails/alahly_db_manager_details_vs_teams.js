@@ -33,8 +33,6 @@ export default function Manager_VsTeams_Module({ stats, managerStatus }) {
 
     return (
         <div className="history-section fade-in">
-            <div className="history-title" style={{ marginBottom: '15px' }}>MANAGER PERFORMANCE VS OPPONENTS</div>
-
             {/* Role Toggle & Search Container */}
             <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', marginBottom: '40px', gap: '20px' }}>
                 {/* Role Switcher */}
@@ -107,7 +105,7 @@ export default function Manager_VsTeams_Module({ stats, managerStatus }) {
                                 const wr = s.matches > 0 ? ((s.wins / s.matches) * 100).toFixed(1) : 0;
                                 return (
                                     <tr key={name}>
-                                        <td style={{ fontWeight: '800', color: 'var(--player-dark)', fontSize: '15px', fontFamily: 'Outfit' }}>
+                                        <td style={{ fontWeight: '800', color: 'var(--player-dark)', fontSize: '15px', fontFamily: 'Outfit', textAlign: 'center', wordBreak: 'break-word' }}>
                                             {name}
                                         </td>
                                         <td style={{ textAlign: 'center', fontFamily: 'Outfit', fontWeight: '900', fontSize: '18px', color: 'var(--player-gold)' }}>{s.matches || "-"}</td>
@@ -122,7 +120,7 @@ export default function Manager_VsTeams_Module({ stats, managerStatus }) {
                             );
                         })}
                         <tr style={{ background: 'rgba(201, 168, 76, 0.05)', borderTop: '2px solid var(--player-gold)' }}>
-                                <td style={{ fontWeight: '900', color: 'var(--player-gold)', textTransform: 'uppercase', letterSpacing: '2px', fontSize: '14px', fontFamily: 'Outfit' }}>TOTAL</td>
+                                <td style={{ fontWeight: '900', color: 'var(--player-gold)', textTransform: 'uppercase', letterSpacing: '2px', fontSize: '14px', fontFamily: 'Outfit', textAlign: 'center' }}>TOTAL</td>
                                 <td style={{ textAlign: 'center', fontFamily: 'Outfit', fontWeight: '900', fontSize: '20px' }}>{totals.matches || "-"}</td>
                                 <td style={{ textAlign: 'center', color: '#2ecc71', fontWeight: '900', fontSize: '20px', fontFamily: 'Outfit' }}>{totals.wins || "-"}</td>
                                 <td style={{ textAlign: 'center', color: '#e67e22', fontWeight: '900', fontSize: '20px', fontFamily: 'Outfit' }}>{totals.draws || "-"}</td>

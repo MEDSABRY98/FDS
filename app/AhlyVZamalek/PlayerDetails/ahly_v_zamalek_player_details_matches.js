@@ -1,5 +1,17 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import NoData_db from "../../lib/NoData_db";
+import SearchBar_db from "../../lib/SearchBar_db";
+
+function matchSearchText(m) {
+    return [
+        m.id,
+        m.date,
+        m.season,
+        m.opponent,
+        m.role,
+        m.mins
+    ].map(v => String(v ?? "").toLowerCase()).join(" ");
+}
 
 export default function PlayerMatchesTable({
     stats,
@@ -7,24 +19,45 @@ export default function PlayerMatchesTable({
     playerDetails,
     renderEventsCell
 }) {
+    const [search, setSearch] = useState("");
     const [currentPage, setCurrentPage] = useState(1);
     const pageSize = 50;
 
-    const totalMatches = stats.matchHistory.length;
+    const matchHistory = stats.matchHistory || [];
+
+    const filteredMatches = useMemo(() => {
+        const q = search.trim().toLowerCase();
+        if (!q) return matchHistory;
+        return matchHistory.filter(m => matchSearchText(m).includes(q));
+    }, [matchHistory, search]);
+
+    const totalMatches = filteredMatches.length;
     const totalPages = Math.ceil(totalMatches / pageSize);
     const startIdx = (currentPage - 1) * pageSize;
-    const currentMatches = stats.matchHistory.slice(startIdx, startIdx + pageSize);
+    const currentMatches = filteredMatches.slice(startIdx, startIdx + pageSize);
+
+    const handleSearchChange = (value) => {
+        setSearch(value);
+        setCurrentPage(1);
+    };
 
     return (
         <div className="history-section fade-in">
-            <div className="history-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '15px' }}>
-                <div className="history-title">MATCHES PLAYED <span style={{ color: '#aaa', fontSize: '12px', letterSpacing: '1px' }}>({totalMatches} GAMES)</span></div>
-            </div>
-
-            <div style={{ overflowX: 'auto' }}>
-                {currentMatches.length === 0 ? (
-                    <NoData_db message="NO MATCH RECORDS FOUND FOR THIS PLAYER" />
-                ) : (
+            {matchHistory.length > 0 && (
+                <div style={{ width: '100%', display: 'flex', justifyContent: 'center', marginBottom: '35px' }}>
+                    <div style={{ flex: 'none', width: '100%', maxWidth: '450px' }}>
+                        <SearchBar_db
+                            value={search}
+                            onChange={handleSearchChange}
+                            placeholder="SEARCH MATCH ID, OPPONENT, SEASON..."
+                        />
+                    </div>
+                </div>
+            )}
+            {totalMatches === 0 ? (
+                <NoData_db message={matchHistory.length === 0 ? "NO MATCH RECORDS FOUND FOR THIS PLAYER" : "NO MATCHES MATCH YOUR SEARCH."} />
+            ) : (
+                <div style={{ overflowX: 'auto' }}>
                     <table className="player-match-table">
                         <thead>
                             <tr>
@@ -59,8 +92,8 @@ export default function PlayerMatchesTable({
                             ))}
                         </tbody>
                     </table>
-                )}
-            </div>
+                </div>
+            )}
 
             {totalPages > 1 && (
                 <div className="p-pagination" style={{ marginTop: '20px', justifyContent: 'center' }}>

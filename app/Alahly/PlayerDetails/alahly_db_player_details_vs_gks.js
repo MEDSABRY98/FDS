@@ -32,9 +32,6 @@ export default function PlayerVsGksTable({ stats }) {
 
     return (
         <div className="history-section fade-in">
-            <div className="history-title" style={{ marginBottom: '15px' }}>PERFORMANCE VS GOALKEEPERS</div>
-
-            {/* Premium Search Box Centered */}
             <div style={{ width: '100%', display: 'flex', justifyContent: 'center', marginBottom: '35px' }}>
                 <div style={{ flex: 'none', width: '100%', maxWidth: '450px' }}>
                     <SearchBar_db

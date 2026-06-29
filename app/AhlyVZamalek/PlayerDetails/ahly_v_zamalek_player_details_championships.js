@@ -1,14 +1,19 @@
 "use client";
 
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import NoData_db from "../../lib/NoData_db";
+import SearchBar_db from "../../lib/SearchBar_db";
 
 export default function PlayerChampionshipsTable({ stats }) {
+    const [search, setSearch] = useState("");
     const compStore = stats.compStats || {};
 
     const comps = useMemo(() => {
-        return Object.keys(compStore).sort((a, b) => (compStore[b].apps - compStore[a].apps) || a.localeCompare(b));
-    }, [compStore]);
+        const q = search.trim().toLowerCase();
+        return Object.keys(compStore)
+            .filter(name => !q || name.toLowerCase().includes(q))
+            .sort((a, b) => (compStore[b].apps - compStore[a].apps) || a.localeCompare(b));
+    }, [compStore, search]);
 
     const totals = useMemo(() => {
         return comps.reduce((acc, name) => {
@@ -28,11 +33,20 @@ export default function PlayerChampionshipsTable({ stats }) {
 
     return (
         <div className="history-section fade-in">
-            <div className="history-title" style={{ marginBottom: '25px' }}>PLAYER PERFORMANCE BY CHAMPIONSHIP</div>
-
+            {Object.keys(compStore).length > 0 && (
+                <div style={{ width: '100%', display: 'flex', justifyContent: 'center', marginBottom: '35px' }}>
+                    <div style={{ flex: 'none', width: '100%', maxWidth: '450px' }}>
+                        <SearchBar_db
+                            value={search}
+                            onChange={setSearch}
+                            placeholder="SEARCH CHAMPIONSHIP..."
+                        />
+                    </div>
+                </div>
+            )}
             <div style={{ overflowX: 'auto' }}>
                 {comps.length === 0 ? (
-                    <NoData_db message="No championship data available." />
+                    <NoData_db message={Object.keys(compStore).length === 0 ? "No championship data available." : "No championships match your search."} />
                 ) : (
                     <table className="player-match-table">
                         <thead>

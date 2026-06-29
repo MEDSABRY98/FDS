@@ -210,6 +210,11 @@
 }
 
 /* Specific styling for VS TEAMS table */
+.vs-teams-table {
+    table-layout: fixed;
+    width: 100%;
+}
+
 .vs-teams-table td {
     font-size: 17px;
     font-weight: 700;
@@ -218,6 +223,18 @@
 .vs-teams-table th {
     font-size: 15px;
     color: #666;
+}
+
+.vs-teams-table th:first-child,
+.vs-teams-table td:first-child {
+    text-align: center;
+    word-break: break-word;
+    overflow-wrap: break-word;
+}
+
+.vs-teams-table th:not(:first-child),
+.vs-teams-table td:not(:first-child) {
+    white-space: nowrap;
 }
 
 .m-id-cell {

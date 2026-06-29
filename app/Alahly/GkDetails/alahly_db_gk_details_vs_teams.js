@@ -24,9 +24,6 @@ export default function GK_VsTeams_Component_Unique({ stats }) {
 
     return (
         <div className="history-section fade-in">
-            <div className="history-title" style={{ marginBottom: '15px' }}>GK PERFORMANCE VS OPPONENTS</div>
-
-            {/* Replicated Premium Search Box Centered */}
             <div style={{ width: '100%', display: 'flex', justifyContent: 'center', marginBottom: '35px' }}>
                 <div style={{ flex: 'none', width: '100%', maxWidth: '450px' }}>
                     <SearchBar_db

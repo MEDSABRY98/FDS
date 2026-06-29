@@ -72,7 +72,16 @@ export default function Manager_PlayersUsed_Module({ stats }) {
                 {playersList.length === 0 ? (
                     <NoData_db message="No players found for this manager." />
                 ) : (
-                    <table className="player-match-table mgr-matches-table mgr-stats-table">
+                    <table className="player-match-table mgr-matches-table mgr-stats-table" style={{ tableLayout: "fixed", width: "100%" }}>
+                        <colgroup>
+                            <col style={{ width: "5%" }} />
+                            <col style={{ width: "28%" }} />
+                            <col style={{ width: "11%" }} />
+                            <col style={{ width: "14%" }} />
+                            <col style={{ width: "14%" }} />
+                            <col style={{ width: "14%" }} />
+                            <col style={{ width: "14%" }} />
+                        </colgroup>
                         <thead>
                             <tr>
                                 <th>#</th>

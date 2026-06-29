@@ -72,8 +72,6 @@ export default function PlayerWithAgainstTable({ data = [], title, isAgainst = f
 
     return (
         <div className="history-section fade-in">
-            <div className="history-title" style={{ marginBottom: '15px' }}>{title}</div>
-
             <div style={{ width: '100%', display: 'flex', justifyContent: 'center', marginBottom: '35px' }}>
                 <div style={{ flex: 'none', width: '100%', maxWidth: '450px' }}>
                     <SearchBar_db

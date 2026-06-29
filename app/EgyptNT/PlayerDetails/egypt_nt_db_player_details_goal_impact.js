@@ -58,11 +58,7 @@ export default function PlayerGoalImpactTable({ impactData = {}, opponentByMatch
                 </div>
             </div>
 
-            <div className="history-header" style={{ marginBottom: "20px", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                <div className="history-title">
-                    DECISIVE MATCH HISTORY{" "}
-                    <span style={{ color: "#aaa", fontSize: "12px", letterSpacing: "1px" }}>({impactMatches.length} RECORDS)</span>
-                </div>
+            <div style={{ marginBottom: "20px", display: "flex", justifyContent: "flex-end", alignItems: "center" }}>
                 <div className="filter-pills" style={{ display: "flex", gap: "10px" }}>
                     {["ALL", "WIN", "DRAW"].map(f => (
                         <button key={f} className={`f-pill ${activeFilter === f ? "active" : ""}`} onClick={() => setActiveFilter(f)}>

@@ -2,38 +2,57 @@
 
 import { useState, useMemo } from "react";
 import NoData_db from "../../lib/NoData_db";
+import SearchBar_db from "../../lib/SearchBar_db";
+
+function matchSearchText(m) {
+    return [
+        m.id,
+        m.date,
+        m.season,
+        m.opponent,
+        m.role,
+        m.mins
+    ].map(v => String(v ?? "").toLowerCase()).join(" ");
+}
 
 export default function PlayerEventsTable({
     stats,
     renderEventsCell
 }) {
+    const [search, setSearch] = useState("");
     const [currentPage, setCurrentPage] = useState(1);
     const [filter, setFilter] = useState('goal');
     const [threshold, setThreshold] = useState(1);
     const [operator, setOperator] = useState('>=');
     const pageSize = 50;
 
-    const filteredEvents = useMemo(() => {
-        return stats.matchEventsHistory.filter(m => {
-            let val = 0;
-            if (filter === 'all') return true;
-            if (filter === 'goal') val = (m.goals || 0);
-            else if (filter === 'assist') val = (m.assists || 0);
-            else if (filter === 'pengoal') val = (m.penGoals || 0);
-            else if (filter === 'pensaved') val = (m.penSaved || 0);
-            else if (filter === 'penmissed') val = (m.penMissed || 0);
-            else if (filter === 'wongoal') val = (m.wonGoal || 0);
-            else if (filter === 'wonmiss') val = (m.wonMiss || 0);
-            else if (filter === 'makegoal') val = (m.makeGoal || 0);
-            else if (filter === 'makemiss') val = (m.makeGoal || 0);
+    const matchEventsHistory = stats.matchEventsHistory || [];
 
-            const numThreshold = parseInt(threshold) || 1;
-            if (operator === '>=') return val >= numThreshold;
-            if (operator === '==') return val === numThreshold;
-            if (operator === '<=') return val <= numThreshold && val > 0;
+    const filteredEvents = useMemo(() => {
+        const q = search.trim().toLowerCase();
+        return matchEventsHistory.filter(m => {
+            let val = 0;
+            if (filter !== 'all') {
+                if (filter === 'goal') val = (m.goals || 0);
+                else if (filter === 'assist') val = (m.assists || 0);
+                else if (filter === 'pengoal') val = (m.penGoals || 0);
+                else if (filter === 'pensaved') val = (m.penSaved || 0);
+                else if (filter === 'penmissed') val = (m.penMissed || 0);
+                else if (filter === 'wongoal') val = (m.wonGoal || 0);
+                else if (filter === 'wonmiss') val = (m.wonMiss || 0);
+                else if (filter === 'makegoal') val = (m.makeGoal || 0);
+                else if (filter === 'makemiss') val = (m.makeGoal || 0);
+
+                const numThreshold = parseInt(threshold) || 1;
+                if (operator === '>=' && val < numThreshold) return false;
+                if (operator === '==' && val !== numThreshold) return false;
+                if (operator === '<=' && (val > numThreshold || val <= 0)) return false;
+            }
+
+            if (q && !matchSearchText(m).includes(q)) return false;
             return true;
         });
-    }, [stats.matchEventsHistory, filter, threshold, operator]);
+    }, [matchEventsHistory, filter, threshold, operator, search]);
 
     const totalEvents = filteredEvents.length;
     const totalPages = Math.ceil(totalEvents / pageSize);
@@ -58,15 +77,18 @@ export default function PlayerEventsTable({
 
     return (
         <div className="history-section fade-in">
-            <div className="history-header" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', marginBottom: '30px', gap: '20px' }}>
-                <div className="history-title" style={{ textAlign: 'center' }}>
-                    PERFORMANCE EVENTS
-                    <span style={{ color: '#aaa', fontSize: '12px', letterSpacing: '1px', marginLeft: '10px' }}>
-                        ({totalEvents} {filter === 'all' ? 'GAMES' : 'MATCHES FOUND'})
-                    </span>
+            {matchEventsHistory.length > 0 && (
+                <div style={{ width: '100%', display: 'flex', justifyContent: 'center', marginBottom: '25px' }}>
+                    <div style={{ flex: 'none', width: '100%', maxWidth: '450px' }}>
+                        <SearchBar_db
+                            value={search}
+                            onChange={(value) => { setSearch(value); setCurrentPage(1); }}
+                            placeholder="SEARCH MATCH ID, OPPONENT, SEASON..."
+                        />
+                    </div>
                 </div>
-
-                <div className="event-filters-wrap" style={{ display: 'flex', gap: '10px', alignItems: 'center', justifyContent: 'center', flexWrap: 'wrap' }}>
+            )}
+            <div className="event-filters-wrap" style={{ display: 'flex', gap: '10px', alignItems: 'center', justifyContent: 'center', flexWrap: 'wrap', marginBottom: '30px' }}>
                     <div className="filter-controls-group" style={{ display: 'flex', gap: '5px', background: '#fff', padding: '5px', borderRadius: '15px', border: '1px solid #e0e0e0', boxShadow: '0 4px 15px rgba(0,0,0,0.05)' }}>
                         <select
                             value={filter}
@@ -126,10 +148,9 @@ export default function PlayerEventsTable({
                         </div>
                     </div>
                 </div>
-            </div>
 
             {filteredEvents.length === 0 ? (
-                <NoData_db message="NO PERFORMANCE EVENTS FOUND FOR THIS PLAYER" />
+                <NoData_db message={matchEventsHistory.length === 0 ? "NO PERFORMANCE EVENTS FOUND FOR THIS PLAYER" : "NO MATCHES MATCH YOUR SEARCH OR FILTERS."} />
             ) : (
                 <div style={{ overflowX: 'auto' }}>
                     <table className="player-match-table">

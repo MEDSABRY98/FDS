@@ -1,15 +1,23 @@
 "use client";
 
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import NoData_db from "../../lib/NoData_db";
+import SearchBar_db from "../../lib/SearchBar_db";
 
 export default function Manager_SeasonNumber_Module({ stats }) {
+    const [search, setSearch] = useState("");
     const statsBySY = stats.statsBySY || {};
-    const sortedSYs = Object.keys(statsBySY).sort((a, b) => b.localeCompare(a));
+    const allSYs = Object.keys(statsBySY).sort((a, b) => b.localeCompare(a));
+
+    const sortedSYs = useMemo(() => {
+        const q = search.trim().toLowerCase();
+        return allSYs.filter(sy => !q || sy.toLowerCase().includes(q));
+    }, [allSYs, search]);
 
     const grandTotals = useMemo(() => {
         const t = { MP: 0, W: 0, D: 0, L: 0, GS: 0, GA: 0, CS_FOR: 0, CS_AGN: 0 };
-        Object.values(statsBySY).forEach(s => {
+        sortedSYs.forEach(sy => {
+            const s = statsBySY[sy];
             t.MP += s.matches;
             t.W += s.wins;
             t.D += s.draws;
@@ -20,19 +28,26 @@ export default function Manager_SeasonNumber_Module({ stats }) {
             t.CS_AGN += s.csAgainst;
         });
         return t;
-    }, [statsBySY]);
+    }, [statsBySY, sortedSYs]);
 
     return (
         <div className="tab-content" style={{ paddingTop: '20px' }}>
             <div className="seasons-wrap" style={{ maxWidth: '1400px', width: '95%', margin: '0 auto' }}>
-                <div className="section-title" style={{ fontSize: '24px', color: 'var(--player-gold)', fontFamily: 'Bebas Neue', letterSpacing: '2px', marginBottom: '10px' }}>
-                    MANAGER PERFORMANCE <span className="accent" style={{ color: '#fff' }}>- SEASON NUMBER (SY)</span>
-                </div>
-                <div className="gold-line" style={{ height: '2px', background: 'var(--player-gold)', width: '60px', marginBottom: '30px' }}></div>
+                {allSYs.length > 0 && (
+                    <div style={{ width: '100%', display: 'flex', justifyContent: 'center', marginBottom: '35px' }}>
+                        <div style={{ flex: 'none', width: '100%', maxWidth: '450px' }}>
+                            <SearchBar_db
+                                value={search}
+                                onChange={setSearch}
+                                placeholder="SEARCH SEASON NUMBER..."
+                            />
+                        </div>
+                    </div>
+                )}
 
                 <div className="table-responsive" style={{ background: '#fff', borderRadius: '12px', overflow: 'hidden', border: '1px solid #ebebeb', boxShadow: '0 4px 20px rgba(0,0,0,0.05)' }}>
                     {sortedSYs.length === 0 ? (
-                        <NoData_db message="No data found for this manager." />
+                        <NoData_db message={allSYs.length === 0 ? "No data found for this manager." : "No season numbers match your search."} />
                     ) : (
                         <table className="analysis-table" style={{ width: '100%', borderCollapse: 'collapse', color: '#333' }}>
                         <thead>

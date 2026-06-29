@@ -34,13 +34,12 @@ export default function EgyptNTGKMatches({ stats, renderEventsCell }) {
     const currentMatches = filteredMatches.slice(startIdx, startIdx + pageSize);
 
     const summary = useMemo(() => {
-        const s = { gc: 0, cs: 0, psm: 0, pg: 0, mins: 0 };
+        const s = { gc: 0, cs: 0, psm: 0, pg: 0 };
         filteredMatches.forEach(m => {
             s.gc += (m.gc || 0);
             if (m.clean) s.cs += 1;
             s.psm += (m.psm || 0);
             s.pg += (m.pg || 0);
-            s.mins += parseInt(m.mins, 10) || 0;
         });
         return s;
     }, [filteredMatches]);
@@ -48,13 +47,6 @@ export default function EgyptNTGKMatches({ stats, renderEventsCell }) {
     return (
         <div className="history-section fade-in">
             <div className="gk-matches-header">
-                <div className="history-title gk-matches-title">
-                    GK MATCHES PLAYED
-                    <span className="gk-matches-count">
-                        ({totalMatchesNum} {filter === 'all' ? 'GAMES' : 'MATCHES FOUND'})
-                    </span>
-                </div>
-
                 <div className="gk-matches-controls-row">
                     <div className="gk-matches-filter-group">
                         <select
@@ -120,12 +112,11 @@ export default function EgyptNTGKMatches({ stats, renderEventsCell }) {
                     <table className="player-match-table gk-matches-table">
                         <colgroup>
                             <col style={{ width: 44 }} />
-                            <col style={{ width: 108 }} />
+                            <col style={{ width: 140 }} />
                             <col style={{ width: 102 }} />
                             <col style={{ width: 128 }} />
-                            <col style={{ width: "22%" }} />
+                            <col style={{ width: "24%" }} />
                             <col style={{ width: 88 }} />
-                            <col style={{ width: 64 }} />
                             <col style={{ width: 96 }} />
                             <col style={{ width: 132 }} />
                         </colgroup>
@@ -137,7 +128,6 @@ export default function EgyptNTGKMatches({ stats, renderEventsCell }) {
                                 <th>SEASON</th>
                                 <th>OPPONENT TEAM</th>
                                 <th>STATUS</th>
-                                <th>TIME</th>
                                 <th>GOALS CONC.</th>
                                 <th>STATS</th>
                             </tr>
@@ -146,7 +136,9 @@ export default function EgyptNTGKMatches({ stats, renderEventsCell }) {
                             {currentMatches.map((m, idx) => (
                                 <tr key={startIdx + idx}>
                                     <td className="gk-cell-idx">{startIdx + idx + 1}</td>
-                                    <td className="m-id-cell gk-cell-id">{m.idx}</td>
+                                    <td className="m-id-cell gk-cell-id">
+                                        <span className="gk-match-id-text">{m.idx}</span>
+                                    </td>
                                     <td className="gk-cell-date">{m.date}</td>
                                     <td className="gk-cell-season">{m.season}</td>
                                     <td className="gk-cell-opp">{m.opponent}</td>
@@ -155,14 +147,12 @@ export default function EgyptNTGKMatches({ stats, renderEventsCell }) {
                                             {m.role === 'اساسي' || !m.role ? 'Starter' : 'Sub'}
                                         </span>
                                     </td>
-                                    <td>{m.mins}'</td>
                                     <td style={{ color: m.gc > 0 ? '#e74c3c' : '#2ecc71', fontWeight: '900' }}>{m.gc}</td>
                                     <td>{renderEventsCell(m)}</td>
                                 </tr>
                             ))}
                             <tr style={GK_TOTAL_ROW_STYLE}>
                                 <td colSpan={6} style={GK_TOTAL_LABEL_STYLE}>TOTAL</td>
-                                <td style={{ ...GK_TOTAL_VAL_STYLE, color: "var(--gold)" }}>{summary.mins || "—"}</td>
                                 <td style={{ ...GK_TOTAL_VAL_STYLE, color: summary.gc > 0 ? "#ff6b6b" : "#5ef193" }}>{summary.gc || "—"}</td>
                                 <td style={GK_TOTAL_VAL_STYLE}>
                                     <div className="m-stats-cell" style={{ display: "flex", gap: "4px", flexWrap: "nowrap", alignItems: "center", justifyContent: "center" }}>
@@ -192,10 +182,21 @@ export default function EgyptNTGKMatches({ stats, renderEventsCell }) {
                     width: 100%;
                 }
                 .gk-matches-table .gk-cell-idx,
-                .gk-matches-table .gk-cell-id,
-                .gk-matches-table .gk-cell-time,
-                .gk-matches-table td:nth-child(8) {
+                .gk-matches-table td:nth-child(7) {
                     white-space: nowrap;
+                }
+                .gk-matches-table .gk-cell-id {
+                    white-space: normal;
+                    word-break: break-word;
+                    overflow-wrap: anywhere;
+                    line-height: 1.35;
+                }
+                .gk-match-id-text {
+                    display: inline;
+                    font-family: 'Space Mono', monospace;
+                    font-size: 12px;
+                    font-weight: 700;
+                    color: var(--player-gold, var(--gold));
                 }
                 .gk-matches-table .gk-cell-date {
                     white-space: nowrap;
@@ -225,16 +226,6 @@ export default function EgyptNTGKMatches({ stats, renderEventsCell }) {
                     flex-direction: column;
                     align-items: center;
                     margin-bottom: 30px;
-                    gap: 22px;
-                }
-                .gk-matches-title {
-                    text-align: center;
-                }
-                .gk-matches-count {
-                    color: #aaa;
-                    font-size: 12px;
-                    letter-spacing: 1px;
-                    margin-left: 10px;
                 }
                 .gk-matches-controls-row {
                     display: flex;

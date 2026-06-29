@@ -57,8 +57,6 @@ export default function ManagerPlayersUsed({ stats }) {
 
     return (
         <div className="history-section fade-in">
-            <div className="history-title" style={{ marginBottom: '15px' }}>PLAYERS USED BY MANAGER</div>
-
             {/* Search Container */}
             <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '40px' }}>
                 <div style={{ width: '100%', maxWidth: '450px' }}>

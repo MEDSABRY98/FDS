@@ -1,26 +1,61 @@
 "use client";
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import NoData_db from "../../lib/NoData_db";
+import SearchBar_db from "../../lib/SearchBar_db";
+
+function matchSearchText(m) {
+    return [
+        m.idx,
+        m.date,
+        m.champion,
+        m.season,
+        m.gf,
+        m.ga,
+        m.wdl,
+    ].map(v => String(v ?? "").toLowerCase()).join(" ");
+}
 
 export default function ManagerMatches({ stats }) {
+    const [search, setSearch] = useState("");
     const [currentPage, setCurrentPage] = useState(1);
     const pageSize = 50;
 
-    const totalMatches = stats.matchHistory.length;
+    const matchHistory = stats.matchHistory || [];
+
+    const filteredMatches = useMemo(() => {
+        const q = search.trim().toLowerCase();
+        if (!q) return matchHistory;
+        return matchHistory.filter(m => matchSearchText(m).includes(q));
+    }, [matchHistory, search]);
+
+    const totalMatches = filteredMatches.length;
     const totalPages = Math.ceil(totalMatches / pageSize);
     const startIdx = (currentPage - 1) * pageSize;
-    const currentMatches = stats.matchHistory.slice(startIdx, startIdx + pageSize);
+    const currentMatches = filteredMatches.slice(startIdx, startIdx + pageSize);
+
+    const handleSearchChange = (value) => {
+        setSearch(value);
+        setCurrentPage(1);
+    };
 
     return (
         <div className="history-section fade-in">
-            <div className="history-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '15px' }}>
-                <div className="history-title">GAMES MANAGED <span style={{ color: '#aaa', fontSize: '12px', letterSpacing: '1px' }}>({totalMatches} GAMES)</span></div>
-            </div>
+            {matchHistory.length > 0 && (
+                <div style={{ width: '100%', display: 'flex', justifyContent: 'center', marginBottom: '35px' }}>
+                    <div style={{ flex: 'none', width: '100%', maxWidth: '450px' }}>
+                        <SearchBar_db
+                            value={search}
+                            onChange={handleSearchChange}
+                            placeholder="SEARCH MATCHES..."
+                        />
+                    </div>
+                </div>
+            )}
 
             <div style={{ overflowX: 'auto' }}>
                 {currentMatches.length === 0 ? (
-                    <NoData_db message="NO MATCH RECORDS FOUND FOR THIS MANAGER" />
+                    <NoData_db message={matchHistory.length === 0 ? "NO MATCH RECORDS FOUND FOR THIS MANAGER" : "No matches match your search."} />
                 ) : (
                     <table className="player-match-table">
                         <thead>
