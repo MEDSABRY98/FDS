@@ -57,12 +57,12 @@ const playerColumnsMap = {
     'alahly_LINEUPDETAILS': ['PLAYER NAME', 'PLAYER NAME OUT'],
     'alahly_MATCHDETAILS': ['MOTM'],
     'alahly_PKS': ['AHLY GK', 'AHLY PLAYER', 'OPPONENT GK', 'OPPONENT PLAYER'],
-    'alahly_PLAYERDETAILS': ['PLAYER NAME', 'HOW MISSED?'],
+    'alahly_PLAYERDETAILS': ['PLAYER NAME', 'HOW MISSED'],
     'egy_NT_GKSDETAILS': ['PLAYER NAME'],
     'egy_NT_LINEUPDETAILS': ['PLAYER NAME', 'PLAYER NAME OUT'],
     'egy_NT_MATCHDETAILS': ['MOTM'],
     'egy_NT_PKS': ['EGYPT GK', 'Egypt PLAYER', 'OPPONENT GK', 'OPPONENT PLAYER'],
-    'egy_NT_PLAYERDETAILS': ['PLAYER NAME', 'HOW MISSED?'],
+    'egy_NT_PLAYERDETAILS': ['PLAYER NAME', 'HOW MISSED'],
     'egy_NT_SQUAD': ['PLAYERNAME']
 };
 
@@ -130,6 +130,8 @@ function isSkippableCatalogValue(val) {
 
 function getCatalogForColumn(colName) {
     const col = String(colName || "").toUpperCase();
+
+    if (col === "HOW MISSED") return "db_PLAYERS";
 
     if (col.includes("COUNTRY")) return "db_COUNTRIES";
     if (
@@ -830,7 +832,7 @@ function parseTrailingIdNumber(value) {
 
 const PKS_TABLES = new Set(["alahly_PKS", "egy_NT_PKS"]);
 
-const ROW_ID_AUTO_TABLE_PATTERN = /_(LINEUPDETAILS|PLAYERDETAILS|GKSDETAILS|HOWPENMISSED|SQUAD|MATCHDETAILS)$/i;
+const ROW_ID_AUTO_TABLE_PATTERN = /_(LINEUPDETAILS|PLAYERDETAILS|GKSDETAILS|SQUAD|MATCHDETAILS)$/i;
 
 export function formatRowId(num) {
     const n = Math.max(0, parseInt(num, 10) || 0);

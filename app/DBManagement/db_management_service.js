@@ -21,7 +21,7 @@ const MERGE_CATALOG_REFERENCES = {
         ["alahly_PKS", "OPPONENT GK"],
         ["alahly_PKS", "OPPONENT PLAYER"],
         ["alahly_PLAYERDETAILS", "PLAYER NAME"],
-        ["alahly_PLAYERDETAILS", "HOW MISSED?"],
+        ["alahly_PLAYERDETAILS", "HOW MISSED"],
         ["egy_NT_GKSDETAILS", "PLAYER NAME"],
         ["egy_NT_LINEUPDETAILS", "PLAYER NAME"],
         ["egy_NT_LINEUPDETAILS", "PLAYER NAME OUT"],
@@ -31,7 +31,7 @@ const MERGE_CATALOG_REFERENCES = {
         ["egy_NT_PKS", "OPPONENT GK"],
         ["egy_NT_PKS", "OPPONENT PLAYER"],
         ["egy_NT_PLAYERDETAILS", "PLAYER NAME"],
-        ["egy_NT_PLAYERDETAILS", "HOW MISSED?"],
+        ["egy_NT_PLAYERDETAILS", "HOW MISSED"],
         ["egy_NT_SQUAD", "PLAYERNAME"],
     ],
     db_MANAGERS: [

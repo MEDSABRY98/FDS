@@ -17,7 +17,7 @@ function getHowPenMissedLinkIds(row) {
 
 export function findHowPenMissedForEvent(penEvent) {
     if (!penEvent) return null;
-    const howMissed = String(penEvent["HOW MISSED?"] || "").trim();
+    const howMissed = String(penEvent["HOW MISSED"] || "").trim();
     if (!howMissed) return null;
     return penEvent;
 }
@@ -157,7 +157,7 @@ function resolveGkLookupNameFromHowMissed(value) {
 
 export function getPenaltyMissOutcome(detail) {
     if (!detail) return "missed";
-    const desc = String(detail["HOW MISSED?"] || "").trim();
+    const desc = String(detail["HOW MISSED"] || "").trim();
     return isPenaltyMissReason(desc) ? "missed" : "saved";
 }
 
@@ -186,7 +186,7 @@ function resolveDefendingGk({ penEvent, gkDetails, detail }) {
         (g) => String(g.MATCH_ID || "").trim() === mId && String(g.TEAM || "").trim() !== takerTeam
     );
 
-    const howVal = String(detail?.["HOW MISSED?"] || penEvent["HOW MISSED?"] || "").trim();
+    const howVal = String(detail?.["HOW MISSED"] || penEvent["HOW MISSED"] || "").trim();
     if (howVal && getPenaltyMissOutcome(detail || penEvent) === "saved") {
         const viaHowMissed = matchGks.filter((gk) => gkMatchesHowMissedValue(gk, howVal, penMin));
         if (viaHowMissed.length === 1) return viaHowMissed[0];
@@ -222,13 +222,13 @@ export async function preparePlayerEventHowMissedForSave(row) {
     if (!row || typeof row !== "object") return row;
     if (String(row.TYPE || "").trim().toUpperCase() !== "PENMISSED") return row;
 
-    const howVal = String(row["HOW MISSED?"] || "").trim();
+    const howVal = String(row["HOW MISSED"] || "").trim();
     if (!howVal || isPenaltyMissReason(howVal) || isPlayerCatalogId(howVal)) {
         return row;
     }
 
     const resolvedId = await resolvePlayerCatalogId(howVal);
-    return { ...row, "HOW MISSED?": resolvedId };
+    return { ...row, "HOW MISSED": resolvedId };
 }
 
 export function buildHowPenMissedAutocompleteOptions(gkPlayerOptions = []) {

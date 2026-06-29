@@ -306,7 +306,7 @@ export default function EventsTab({ matchId, playerDetails, events, isEgyptSide,
                                                             }`}>
                                                                 {typeUpper}
                                                             </span>
-                                                        ) : !e["HOW MISSED?"] ? (
+                                                        ) : !e["HOW MISSED"] ? (
                                                             <span className={`entry-type entry-type--${eventMeta.kind}`}>
                                                                 {eventMeta.label}
                                                                 {eventMeta.subLabel && (
@@ -314,7 +314,7 @@ export default function EventsTab({ matchId, playerDetails, events, isEgyptSide,
                                                                 )}
                                                             </span>
                                                         ) : (
-                                                            <span className="entry-note">HOW MISSED: {formatHowPenMissedForDisplay(e["HOW MISSED?"])}</span>
+                                                            <span className="entry-note">HOW MISSED: {formatHowPenMissedForDisplay(e["HOW MISSED"])}</span>
                                                         )}
                                                     </div>
                                                 </div>

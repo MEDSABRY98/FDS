@@ -33,13 +33,13 @@ export default function EventsTab({ events, opponentName }) {
                                                     }`}>
                                                         {typeUpper}
                                                     </span>
-                                                ) : !e["HOW MISSED?"] ? (
+                                                ) : !e["HOW MISSED"] ? (
                                                     <span className="entry-type">
                                                         {e.TYPE}
                                                         {e.TYPE_SUB && <span style={{ color: '#ff5252', fontStyle: 'normal' }}> / {e.TYPE_SUB}</span>}
                                                     </span>
                                                 ) : (
-                                                    <span className="entry-note">HOW MISSED: {formatHowPenMissedForDisplay(e["HOW MISSED?"])}</span>
+                                                    <span className="entry-note">HOW MISSED: {formatHowPenMissedForDisplay(e["HOW MISSED"])}</span>
                                                 )}
                                             </div>
                                         </div>

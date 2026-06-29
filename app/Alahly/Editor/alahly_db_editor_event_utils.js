@@ -72,7 +72,7 @@ export const formatEventLine = (row) => {
     ].filter(Boolean);
 
     if (type.toUpperCase() === "PENMISSED") {
-        const howMissed = formatHowPenMissedForDisplay(row["HOW MISSED?"]);
+        const howMissed = formatHowPenMissedForDisplay(row["HOW MISSED"]);
         if (howMissed) parts.push(howMissed);
     }
 

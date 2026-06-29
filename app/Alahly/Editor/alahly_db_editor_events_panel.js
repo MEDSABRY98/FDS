@@ -71,7 +71,7 @@ export default function PlayerEventsPanel({
             ...EMPTY_PLAYER,
             ...row,
             MATCH_ID: row.MATCH_ID || matchId,
-            "HOW MISSED?": formatHowPenMissedForDisplay(row["HOW MISSED?"]),
+            "HOW MISSED": formatHowPenMissedForDisplay(row["HOW MISSED"]),
         });
         setModalOpen(true);
     };
@@ -87,7 +87,7 @@ export default function PlayerEventsPanel({
         setForm((prev) => {
             const next = { ...prev, [field]: value };
             if (field === "TYPE" && String(value || "").trim().toUpperCase() !== "PENMISSED") {
-                next["HOW MISSED?"] = "";
+                next["HOW MISSED"] = "";
             }
             return next;
         });
@@ -283,10 +283,10 @@ export default function PlayerEventsPanel({
                                 <div className="player-event-modal-field">
                                     <div className="field-label">HOW MISSED? / SAVING GK</div>
                                     <AutocompleteInput
-                                        value={form["HOW MISSED?"] ?? ""}
+                                        value={form["HOW MISSED"] ?? ""}
                                         options={howMissedOptions}
                                         placeholder="Miss reason or goalkeeper"
-                                        onChange={(val) => updateFormField("HOW MISSED?", val)}
+                                        onChange={(val) => updateFormField("HOW MISSED", val)}
                                         className="field-input"
                                         accentColor={color}
                                         optionLimit={80}
