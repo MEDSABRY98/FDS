@@ -64,6 +64,7 @@ export default function EgyptNTDatabase() {
     const [countries, setCountries] = useState([]);
     const [loading, setLoading] = useState(true);
     const [selectedMatchId, setSelectedMatchId] = useState(null);
+    const [matchNavList, setMatchNavList] = useState([]);
     const [selectedOpponent, setSelectedOpponent] = useState(null);
     const [isFilterOpen, setIsFilterOpen] = useState(false);
     const matchesListScrollY = useRef(0);
@@ -740,8 +741,9 @@ export default function EgyptNTDatabase() {
                                         <EgyptNTMatches
                                             matches={filteredMatches}
                                             playerDetails={playerDetails}
-                                            onMatchClick={(id) => {
+                                            onMatchClick={(id, navigableMatches) => {
                                                 matchesListScrollY.current = window.scrollY;
+                                                setMatchNavList(navigableMatches || []);
                                                 setSelectedMatchId(id);
                                             }}
                                         />
@@ -750,9 +752,14 @@ export default function EgyptNTDatabase() {
                                         <EgyptNTMatchDetails
                                             matchId={selectedMatchId}
                                             matches={matches}
+                                            navMatches={matchNavList}
                                             playerDetails={playerDetails}
                                             lineupDetails={lineupDetails}
                                             gkDetails={gkDetails}
+                                            onNavigateMatch={(id) => {
+                                                setSelectedMatchId(id);
+                                                window.scrollTo(0, 0);
+                                            }}
                                             onBack={() => {
                                                 setSelectedMatchId(null);
                                                 requestAnimationFrame(() => {

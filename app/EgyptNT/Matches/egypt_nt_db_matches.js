@@ -357,7 +357,7 @@ export default function EgyptNTMatches({ matches, playerDetails, onMatchClick })
                                     <div 
                                         key={m.MATCH_ID} 
                                         className="modern-match-row-h" 
-                                        onClick={() => onMatchClick && onMatchClick(m.MATCH_ID)}
+                                        onClick={() => onMatchClick && onMatchClick(m.MATCH_ID, filteredBySearch)}
                                     >
                                         <div 
                                             className="match-result-indicator"

@@ -15,6 +15,60 @@
     justify-content: space-between;
     align-items: center;
     margin-bottom: 25px;
+    gap: 16px;
+}
+
+.match-nav-left {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex-wrap: wrap;
+}
+
+.match-nav-arrows {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.btn-match-nav {
+    background: #fff;
+    border: 1px solid #e0e0e0;
+    width: 40px;
+    height: 40px;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    font-weight: 800;
+    font-size: 22px;
+    line-height: 1;
+    color: #1a1a1a;
+    transition: all 0.2s;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+    padding: 0;
+}
+
+.btn-match-nav:hover:not(:disabled) {
+    background: var(--gold, #c9a84c);
+    border-color: var(--gold, #c9a84c);
+    color: #000;
+}
+
+.btn-match-nav:disabled {
+    opacity: 0.35;
+    cursor: not-allowed;
+}
+
+.match-nav-counter {
+    font-size: 11px;
+    font-weight: 800;
+    color: #888;
+    letter-spacing: 0.5px;
+    padding: 0 4px;
+    min-width: 52px;
+    text-align: center;
 }
 
 .btn-back {

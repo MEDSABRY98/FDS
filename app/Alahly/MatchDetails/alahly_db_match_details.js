@@ -13,16 +13,35 @@ import { checkIfAhly } from "./alahly_db_match_details_utils";
 export default function AlAhlyMatchDetails({
     matchId,
     matches,
+    navMatches,
     playerDetails,
     lineupDetails,
     gkDetails,
-    onBack
+    onBack,
+    onNavigateMatch,
 }) {
     const [activeTab, setActiveTab] = useState('info');
 
     useEffect(() => {
         window.scrollTo(0, 0);
-    }, [activeTab]);
+    }, [activeTab, matchId]);
+
+    const navigationList = navMatches ?? matches;
+
+    const { prevMatch, nextMatch, navPosition } = useMemo(() => {
+        const list = navigationList || [];
+        const idx = list.findIndex((m) => String(m.MATCH_ID) === String(matchId));
+        return {
+            prevMatch: idx > 0 ? list[idx - 1] : null,
+            nextMatch: idx >= 0 && idx < list.length - 1 ? list[idx + 1] : null,
+            navPosition: idx >= 0 ? { current: idx + 1, total: list.length } : null,
+        };
+    }, [navigationList, matchId]);
+
+    const goToMatch = (target) => {
+        if (!target?.MATCH_ID || !onNavigateMatch) return;
+        onNavigateMatch(String(target.MATCH_ID));
+    };
 
     const matchInfo = useMemo(() => (matches || []).find(m => String(m.MATCH_ID) === String(matchId)), [matchId, matches]);
     const opponentName = matchInfo?.["OPPONENT TEAM"] || "";
@@ -72,10 +91,41 @@ export default function AlAhlyMatchDetails({
     return (
         <div className="match-center-page fade-in">
             <div className="match-nav">
-                <button className="btn-back" onClick={onBack}>
-                    <span className="icon">←</span>
-                    <span className="text">All Matche's</span>
-                </button>
+                <div className="match-nav-left">
+                    <button type="button" className="btn-back" onClick={onBack}>
+                        <span className="icon">←</span>
+                        <span className="text">All Matche&apos;s</span>
+                    </button>
+                    {onNavigateMatch && (
+                        <div className="match-nav-arrows">
+                            <button
+                                type="button"
+                                className="btn-match-nav"
+                                onClick={() => goToMatch(prevMatch)}
+                                disabled={!prevMatch}
+                                title={prevMatch ? `Newer: vs ${prevMatch["OPPONENT TEAM"]}` : "No newer match"}
+                                aria-label="Newer match"
+                            >
+                                ‹
+                            </button>
+                            <button
+                                type="button"
+                                className="btn-match-nav"
+                                onClick={() => goToMatch(nextMatch)}
+                                disabled={!nextMatch}
+                                title={nextMatch ? `Older: vs ${nextMatch["OPPONENT TEAM"]}` : "No older match"}
+                                aria-label="Older match"
+                            >
+                                ›
+                            </button>
+                            {navPosition && (
+                                <span className="match-nav-counter">
+                                    {navPosition.current} / {navPosition.total}
+                                </span>
+                            )}
+                        </div>
+                    )}
+                </div>
                 <div className="match-id-badge">{matchId}</div>
             </div>
 
