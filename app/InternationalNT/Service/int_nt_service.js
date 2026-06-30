@@ -37,6 +37,16 @@ export function buildIntNtMatchId(season, date, teamA, teamB) {
         .join("");
 }
 
+/** Composite key for duplicate detection (ROW_ID is the sole stored identifier). */
+export function buildIntNtMatchFingerprint(row) {
+    const season = String(row?.SEASON ?? "").trim().toLowerCase();
+    const date = String(row?.DATE ?? "").trim();
+    const teamA = String(row?.TEAMA ?? "").trim().toLowerCase();
+    const teamB = String(row?.TEAMB ?? "").trim().toLowerCase();
+    if (!season || !date || !teamA || !teamB) return "";
+    return `${season}|${date}|${teamA}|${teamB}`;
+}
+
 export function formatPenDisplay(match) {
     const a = match?.TEAMAPEN;
     const b = match?.TEAMBPEN;
@@ -132,8 +142,8 @@ export function normalizeCategoryValue(category) {
     return trimmed;
 }
 
-function normalizePayloadRow(row, rowId, matchId) {
-    const payload = { ROW_ID: rowId, MATCH_ID: matchId };
+function normalizePayloadRow(row, rowId) {
+    const payload = { ROW_ID: rowId };
     EDITABLE_COLUMNS.forEach((col) => {
         const val = row[col];
         if (val === "" || val === undefined || val === null) {
@@ -218,9 +228,9 @@ export const IntNtService = {
         }
     },
 
-    async getExistingMatchIds() {
+    async getExistingMatchFingerprints() {
         try {
-            const ids = new Set();
+            const fingerprints = new Set();
             let from = 0;
             const step = 1000;
             let finished = false;
@@ -228,14 +238,14 @@ export const IntNtService = {
             while (!finished) {
                 const { data, error } = await supabase
                     .from(TABLE_NAME)
-                    .select("MATCH_ID")
+                    .select("SEASON, DATE, TEAMA, TEAMB")
                     .range(from, from + step - 1);
 
                 if (error) throw error;
                 if (data?.length) {
                     data.forEach((row) => {
-                        const id = String(row.MATCH_ID ?? "").trim();
-                        if (id) ids.add(id);
+                        const fp = buildIntNtMatchFingerprint(row);
+                        if (fp) fingerprints.add(fp);
                     });
                     from += step;
                     if (data.length < step) finished = true;
@@ -244,16 +254,16 @@ export const IntNtService = {
                 }
             }
 
-            return ids;
+            return fingerprints;
         } catch (error) {
-            console.error("Error in IntNtService.getExistingMatchIds:", error.message);
+            console.error("Error in IntNtService.getExistingMatchFingerprints:", error.message);
             return new Set();
         }
     },
 
-    validateBulkRows(rows, existingIds = new Set()) {
+    validateBulkRows(rows, existingFingerprints = new Set()) {
         const errors = [];
-        const seenIds = new Set();
+        const seen = new Set();
 
         rows.forEach((row, index) => {
             const rowNum = index + 1;
@@ -267,20 +277,20 @@ export const IntNtService = {
                 return;
             }
 
-            const matchId = buildIntNtMatchId(season, date, teamA, teamB);
-            if (!matchId) {
-                errors.push(`Row ${rowNum}: Could not build MATCH_ID.`);
+            const fingerprint = buildIntNtMatchFingerprint(row);
+            if (!fingerprint) {
+                errors.push(`Row ${rowNum}: Could not validate match identity.`);
                 return;
             }
 
-            if (seenIds.has(matchId)) {
-                errors.push(`Row ${rowNum}: Duplicate MATCH_ID "${matchId}" in this batch.`);
+            if (seen.has(fingerprint)) {
+                errors.push(`Row ${rowNum}: Duplicate match in this batch (same season, date, and teams).`);
                 return;
             }
-            seenIds.add(matchId);
+            seen.add(fingerprint);
 
-            if (existingIds.has(matchId)) {
-                errors.push(`Row ${rowNum}: MATCH_ID "${matchId}" already exists in the database.`);
+            if (existingFingerprints.has(fingerprint)) {
+                errors.push(`Row ${rowNum}: A match with the same season, date, and teams already exists.`);
             }
         });
 
@@ -291,17 +301,7 @@ export const IntNtService = {
         if (!rows?.length) return { inserted: 0 };
 
         const rowIds = await this.allocateIntNtRowIds(rows.length);
-        const existingIds = await this.getExistingMatchIds();
-        const batchIds = new Set();
-
-        const resolvedRows = rows.map((row, index) => {
-            let matchId = buildIntNtMatchId(row.SEASON, row.DATE, row.TEAMA, row.TEAMB);
-            if (batchIds.has(matchId) || existingIds.has(matchId)) {
-                matchId = `${matchId}${rowIds[index]}`;
-            }
-            batchIds.add(matchId);
-            return normalizePayloadRow(row, rowIds[index], matchId);
-        });
+        const resolvedRows = rows.map((row, index) => normalizePayloadRow(row, rowIds[index]));
 
         let inserted = 0;
         for (let i = 0; i < resolvedRows.length; i += INSERT_CHUNK_SIZE) {

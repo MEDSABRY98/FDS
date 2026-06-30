@@ -184,7 +184,7 @@ function groupedStatsToRows(items, labelKey) {
 
 export async function exportIntNtMatchesToExcel(matches, fileName = "IntlNT_Matches") {
     const rows = (matches || []).map((m) => ({
-        ROW_ID: m.ROW_ID || "", MATCH_ID: m.MATCH_ID || "", GAME: m.GAME || "", AGE: m.AGE || "",
+        ROW_ID: m.ROW_ID || "", GAME: m.GAME || "", AGE: m.AGE || "",
         SEASON: m.SEASON || "", "HOST COUNTRY": m["HOST COUNTRY"] || "", DATE: m.DATE || "",
         CATEGORY: m.CATEGORY || "", ROUND: m.ROUND || "", TEAMA: m.TEAMA || "",
         "TEAMA CONTINENT": m["TEAMA CONTINENT"] || "", TEAMASCORE: m.TEAMASCORE ?? "",

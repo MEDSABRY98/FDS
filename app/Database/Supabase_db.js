@@ -721,6 +721,13 @@ export async function resolvePlayerCatalogId(value) {
     return resolveStrictCatalogValue("db_PLAYERS", raw);
 }
 
+export async function resolveTeamCatalogId(value) {
+    const raw = String(value || "").trim();
+    if (!raw) return raw;
+    if (/^T-/i.test(raw)) return raw;
+    return resolveStrictCatalogValue("db_TEAMS", raw);
+}
+
 function isCatalogReferenceColumn(col, tableName) {
     if (CATALOG_TABLES.includes(tableName)) return false;
 

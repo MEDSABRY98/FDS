@@ -35,6 +35,15 @@ export function buildIntlMatchId(edition, teamA, teamB) {
         .join("");
 }
 
+/** Composite key for duplicate detection (ROW_ID is the sole stored identifier). */
+export function buildIntlClubMatchFingerprint(row) {
+    const edition = String(row?.Edition ?? "").trim().toLowerCase();
+    const teamA = String(row?.["TEAM A"] ?? "").trim().toLowerCase();
+    const teamB = String(row?.["TEAM B"] ?? "").trim().toLowerCase();
+    if (!edition || !teamA || !teamB) return "";
+    return `${edition}|${teamA}|${teamB}`;
+}
+
 export function omitIntComputedFromPayload(payload) {
     const next = { ...payload };
     COMPUTED_MATCH_COLUMNS.forEach((col) => delete next[col]);
@@ -112,8 +121,8 @@ export function getIntlClubTeamOutcome(match, clubName) {
     return outcome;
 }
 
-function normalizePayloadRow(row, rowId, matchId) {
-    const payload = { ROW_ID: rowId, MATCH_ID: matchId };
+function normalizePayloadRow(row, rowId) {
+    const payload = { ROW_ID: rowId };
     EDITABLE_COLUMNS.forEach((col) => {
         const val = row[col];
         if (val === "" || val === undefined || val === null) {
@@ -196,9 +205,9 @@ export const IntlClubService = {
         }
     },
 
-    async getExistingMatchIds() {
+    async getExistingMatchFingerprints() {
         try {
-            const ids = new Set();
+            const fingerprints = new Set();
             let from = 0;
             const step = 1000;
             let finished = false;
@@ -206,14 +215,14 @@ export const IntlClubService = {
             while (!finished) {
                 const { data, error } = await supabase
                     .from(TABLE_NAME)
-                    .select("MATCH_ID")
+                    .select('"Edition", "TEAM A", "TEAM B"')
                     .range(from, from + step - 1);
 
                 if (error) throw error;
                 if (data?.length) {
                     data.forEach((row) => {
-                        const id = String(row.MATCH_ID ?? "").trim();
-                        if (id) ids.add(id);
+                        const fp = buildIntlClubMatchFingerprint(row);
+                        if (fp) fingerprints.add(fp);
                     });
                     from += step;
                     if (data.length < step) finished = true;
@@ -222,16 +231,16 @@ export const IntlClubService = {
                 }
             }
 
-            return ids;
+            return fingerprints;
         } catch (error) {
-            console.error("Error in IntlClubService.getExistingMatchIds:", error.message);
+            console.error("Error in IntlClubService.getExistingMatchFingerprints:", error.message);
             return new Set();
         }
     },
 
-    validateBulkRows(rows, existingIds = new Set()) {
+    validateBulkRows(rows, existingFingerprints = new Set()) {
         const errors = [];
-        const seenIds = new Set();
+        const seen = new Set();
 
         rows.forEach((row, index) => {
             const rowNum = index + 1;
@@ -244,20 +253,20 @@ export const IntlClubService = {
                 return;
             }
 
-            const matchId = buildIntlMatchId(edition, teamA, teamB);
-            if (!matchId) {
-                errors.push(`Row ${rowNum}: Could not build MATCH_ID.`);
+            const fingerprint = buildIntlClubMatchFingerprint(row);
+            if (!fingerprint) {
+                errors.push(`Row ${rowNum}: Could not validate match identity.`);
                 return;
             }
 
-            if (seenIds.has(matchId)) {
-                errors.push(`Row ${rowNum}: Duplicate MATCH_ID "${matchId}" in this batch.`);
+            if (seen.has(fingerprint)) {
+                errors.push(`Row ${rowNum}: Duplicate match in this batch (same edition and teams).`);
                 return;
             }
-            seenIds.add(matchId);
+            seen.add(fingerprint);
 
-            if (existingIds.has(matchId)) {
-                errors.push(`Row ${rowNum}: MATCH_ID "${matchId}" already exists in the database.`);
+            if (existingFingerprints.has(fingerprint)) {
+                errors.push(`Row ${rowNum}: A match with the same edition and teams already exists.`);
             }
         });
 
@@ -268,10 +277,7 @@ export const IntlClubService = {
         if (!rows?.length) return { inserted: 0 };
 
         const rowIds = await this.allocateIntlRowIds(rows.length);
-        const resolvedRows = rows.map((row, index) => {
-            const matchId = buildIntlMatchId(row.Edition, row["TEAM A"], row["TEAM B"]);
-            return normalizePayloadRow(row, rowIds[index], matchId);
-        });
+        const resolvedRows = rows.map((row, index) => normalizePayloadRow(row, rowIds[index]));
 
         let inserted = 0;
         for (let i = 0; i < resolvedRows.length; i += INSERT_CHUNK_SIZE) {

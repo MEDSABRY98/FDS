@@ -53,7 +53,7 @@ export default function EgyptClubDatabase() {
     const [endDate, setEndDate] = useState("");
 
     const [dbFilters, setDbFilters] = useState({
-        match_id: 'All',
+        row_id: 'All',
         champion_system: 'All',
         year: 'All',
         champion: 'All',
@@ -137,7 +137,7 @@ export default function EgyptClubDatabase() {
         }
         
         const colMap = {
-            match_id: 'MATCH_ID',
+            row_id: 'ROW_ID',
             champion_system: 'CHAMPION SYSTEM',
             champion: 'CHAMPION',
             season: 'SEASON',
@@ -236,7 +236,7 @@ export default function EgyptClubDatabase() {
     // Dynamic Filter Options for ALL columns
     const filterOptions = useMemo(() => {
         return {
-            match_ids: getOptionsForField('match_id', 'MATCH_ID'),
+            row_ids: getOptionsForField('row_id', 'ROW_ID'),
             champion_systems: getOptionsForField('champion_system', 'CHAMPION SYSTEM'),
             years: getOptionsForField('year', null),
             champions: getOptionsForField('champion', 'CHAMPION'),
@@ -267,7 +267,7 @@ export default function EgyptClubDatabase() {
         setStartDate("");
         setEndDate("");
         setDbFilters({
-            match_id: 'All',
+            row_id: 'All',
             champion_system: 'All',
             year: 'All',
             champion: 'All',
@@ -359,7 +359,7 @@ export default function EgyptClubDatabase() {
                 withinRange &&
                 passCountry &&
                 passContinent &&
-                check('match_id', 'MATCH_ID') &&
+                check('row_id', 'ROW_ID') &&
                 check('champion_system', 'CHAMPION SYSTEM') &&
                 check('champion', 'CHAMPION') &&
                 check('season', 'SEASON') &&

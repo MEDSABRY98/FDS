@@ -15,7 +15,7 @@ export default function IntlClubMatches({ matches }) {
         if (!search.trim()) return matches || [];
         const q = search.toLowerCase();
         return (matches || []).filter((m) =>
-            ["Edition", "GAME", "KIND", "ROUND", "TEAM A", "TEAM B", "MATCH_ID", "NOTE"].some((col) =>
+            ["Edition", "GAME", "KIND", "ROUND", "TEAM A", "TEAM B", "ROW_ID", "NOTE"].some((col) =>
                 String(m[col] ?? "").toLowerCase().includes(q)
             )
         );
@@ -50,7 +50,7 @@ export default function IntlClubMatches({ matches }) {
                     </thead>
                     <tbody>
                         {paginated.map((m) => (
-                            <tr key={m.ROW_ID || m.MATCH_ID}>
+                            <tr key={m.ROW_ID || `${m.Edition}-${m["TEAM A"]}-${m["TEAM B"]}`}>
                                 <td className="mono">{m.ROW_ID}</td>
                                 <td>{m.Edition || "—"}</td>
                                 <td>{m.GAME || "—"}</td>

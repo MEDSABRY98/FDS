@@ -225,7 +225,6 @@ function groupedStatsToRows(items, labelKey) {
 export async function exportIntlMatchesToExcel(matches, fileName = "IntlClubs_Matches") {
     const rows = (matches || []).map((m) => ({
         ROW_ID: m.ROW_ID || "",
-        MATCH_ID: m.MATCH_ID || "",
         GAME: m.GAME || "",
         KIND: m.KIND || "",
         Edition: m.Edition || "",

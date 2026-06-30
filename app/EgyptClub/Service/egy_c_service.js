@@ -1,6 +1,6 @@
-﻿import { supabase, resolveCatalogFieldsInForm, buildOpponentDateMatchId, dateToExcelSerial, parseMatchDate } from "../../Database";
+﻿import { resolveCatalogFieldsInForm, dateToExcelSerial, parseMatchDate, supabase } from "../../Database";
 
-export { parseMatchDate, dateToExcelSerial, buildOpponentDateMatchId as buildEgyptClubMatchId };
+export { parseMatchDate, dateToExcelSerial };
 
 const TABLE_NAME = "egy_CLUB_MATCHDETAILS";
 const INSERT_CHUNK_SIZE = 100;
@@ -8,6 +8,14 @@ const INSERT_CHUNK_SIZE = 100;
 export function deriveYearFromDate(dateInput) {
     const date = parseMatchDate(dateInput);
     return date ? String(date.getFullYear()) : "";
+}
+
+export function buildEgyptClubMatchFingerprint(row) {
+    const egyptTeam = String(row?.["EGYPT TEAM"] ?? "").trim().toLowerCase();
+    const opponent = String(row?.["OPPONENT TEAM"] ?? "").trim().toLowerCase();
+    const date = String(row?.DATE ?? "").trim();
+    if (!egyptTeam || !opponent || !date) return "";
+    return `${egyptTeam}|${opponent}|${date}`;
 }
 
 function normalizePayloadRow(row) {
@@ -18,7 +26,7 @@ function normalizePayloadRow(row) {
         if (payload[key] === "") payload[key] = null;
     });
 
-    payload.MATCH_ID = buildOpponentDateMatchId(payload["OPPONENT TEAM"], payload.DATE);
+    payload.MATCH_ID = null;
     if (!payload.YEAR && payload.DATE) {
         payload.YEAR = deriveYearFromDate(payload.DATE);
     }
@@ -96,9 +104,9 @@ export const EgyptClubService = {
         }
     },
 
-    async getExistingMatchIds() {
+    async getExistingMatchFingerprints() {
         try {
-            const ids = new Set();
+            const fingerprints = new Set();
             let from = 0;
             const step = 1000;
             let finished = false;
@@ -106,14 +114,14 @@ export const EgyptClubService = {
             while (!finished) {
                 const { data, error } = await supabase
                     .from(TABLE_NAME)
-                    .select("MATCH_ID")
+                    .select('"EGYPT TEAM", "OPPONENT TEAM", DATE')
                     .range(from, from + step - 1);
 
                 if (error) throw error;
                 if (data?.length) {
                     data.forEach((row) => {
-                        const id = String(row.MATCH_ID ?? "").trim();
-                        if (id) ids.add(id);
+                        const fp = buildEgyptClubMatchFingerprint(row);
+                        if (fp) fingerprints.add(fp);
                     });
                     from += step;
                     if (data.length < step) finished = true;
@@ -122,16 +130,16 @@ export const EgyptClubService = {
                 }
             }
 
-            return ids;
+            return fingerprints;
         } catch (error) {
-            console.error("Error in EgyptClubService.getExistingMatchIds:", error.message);
+            console.error("Error in EgyptClubService.getExistingMatchFingerprints:", error.message);
             return new Set();
         }
     },
 
-    validateBulkRows(rows, existingIds = new Set()) {
+    validateBulkRows(rows, existingFingerprints = new Set()) {
         const errors = [];
-        const seenIds = new Set();
+        const seen = new Set();
 
         rows.forEach((row, index) => {
             const rowNum = index + 1;
@@ -144,20 +152,20 @@ export const EgyptClubService = {
                 return;
             }
 
-            const matchId = buildOpponentDateMatchId(opponent, date);
-            if (!matchId) {
-                errors.push(`Row ${rowNum}: Could not build MATCH_ID from opponent and date.`);
+            const fingerprint = buildEgyptClubMatchFingerprint(row);
+            if (!fingerprint) {
+                errors.push(`Row ${rowNum}: Could not validate match identity.`);
                 return;
             }
 
-            if (seenIds.has(matchId)) {
-                errors.push(`Row ${rowNum}: Duplicate MATCH_ID "${matchId}" in this batch.`);
+            if (seen.has(fingerprint)) {
+                errors.push(`Row ${rowNum}: Duplicate match in this batch (same club, opponent, and date).`);
                 return;
             }
-            seenIds.add(matchId);
+            seen.add(fingerprint);
 
-            if (existingIds.has(matchId)) {
-                errors.push(`Row ${rowNum}: MATCH_ID "${matchId}" already exists in the database.`);
+            if (existingFingerprints.has(fingerprint)) {
+                errors.push(`Row ${rowNum}: A match with the same club, opponent, and date already exists.`);
             }
         });
 
@@ -197,7 +205,7 @@ export const EgyptClubService = {
         const years = [...new Set(matches.map(m => m.YEAR || (m.DATE ? new Date(m.DATE).getFullYear().toString() : null)).filter(Boolean))].sort().reverse();
 
         return {
-            match_ids: getUnique('MATCH_ID'),
+            row_ids: getUnique('ROW_ID'),
             champion_systems: getUnique('CHAMPION SYSTEM'),
             years: ["All", ...years],
             champions: getUnique('CHAMPION'),

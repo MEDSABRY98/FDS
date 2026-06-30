@@ -5,7 +5,7 @@ import "./int_nt_add_matches.css";
 import Login_db from "../../lib/Login_db";
 import { useNotification } from "../../lib/Notification_db";
 import { AutocompleteInput, fetchCatalogDisplayNames } from "../../Database";
-import { buildIntNtMatchId, IntNtService } from "../Service/int_nt_service";
+import { IntNtService } from "../Service/int_nt_service";
 
 const EMPTY_ROW = {
     GAME: "", AGE: "", SEASON: "", "HOST COUNTRY": "", DATE: "", CATEGORY: "", ROUND: "",
@@ -79,8 +79,8 @@ export default function IntNtAddMatches({ matches = [], onRefresh }) {
         setSaving(true);
         setErrors([]);
         try {
-            const existingIds = await IntNtService.getExistingMatchIds();
-            const validationErrors = IntNtService.validateBulkRows(payloadRows, existingIds);
+            const existingFingerprints = await IntNtService.getExistingMatchFingerprints();
+            const validationErrors = IntNtService.validateBulkRows(payloadRows, existingFingerprints);
             if (validationErrors.length) {
                 setErrors(validationErrors);
                 addNotification("Fix validation errors before saving.", "error");
@@ -140,15 +140,13 @@ export default function IntNtAddMatches({ matches = [], onRefresh }) {
                 </div>
                 <div className="gold-line" />
                 <div className="int-nt-cards-list">
-                    {rows.map((row, index) => {
-                        const matchId = buildIntNtMatchId(row.SEASON, row.DATE, row.TEAMA, row.TEAMB);
-                        return (
+                    {rows.map((row, index) => (
                             <article key={row._key} className="int-nt-card">
                                 <div className="int-nt-card-header">
                                     <span className="int-nt-card-index">MATCH {index + 1}</span>
                                     <div className="int-nt-preview-wrap">
-                                        <span className="int-nt-preview-label">NEXT ROW_ID: {nextRowIdPreview}</span>
-                                        <div className={`int-nt-preview ${matchId ? "" : "empty"}`}>MATCH_ID: {matchId || "—"}</div>
+                                        <span className="int-nt-preview-label">ROW_ID</span>
+                                        <div className="int-nt-preview empty">auto on save ({nextRowIdPreview})</div>
                                     </div>
                                     <button type="button" className="int-nt-delete-btn" onClick={() => deleteRow(row._key)}>✕</button>
                                 </div>
@@ -157,8 +155,7 @@ export default function IntNtAddMatches({ matches = [], onRefresh }) {
                                 {renderGroup(row, FIELD_ROW_3)}
                                 {renderGroup(row, FIELD_ROW_4)}
                             </article>
-                        );
-                    })}
+                    ))}
                 </div>
                 {errors.length > 0 && (
                     <div className="int-nt-errors">

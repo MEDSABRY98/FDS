@@ -187,7 +187,7 @@ export default function EgyptClubDashboard({ matches }) {
                         <div className="chart-card-title">Top 5 Performances (Largest Wins)</div>
                         <div className="scorer-list">
                             {stats.topWins.length > 0 ? stats.topWins.map((m, idx) => (
-                                <div key={m.MATCH_ID} className="scorer-row" style={{ borderLeft: '3px solid #00c853', paddingLeft: '12px' }}>
+                                <div key={m.ROW_ID || `${m.DATE}-${m["EGYPT TEAM"]}-${idx}`} className="scorer-row" style={{ borderLeft: '3px solid #00c853', paddingLeft: '12px' }}>
                                     <div className="scorer-rank">{`0${idx + 1}`}</div>
                                     <div className="scorer-avatar">🏆</div>
                                     <div className="scorer-info">
@@ -207,7 +207,7 @@ export default function EgyptClubDashboard({ matches }) {
                         <div className="chart-card-title">Worst 5 Defeats (Largest Losses)</div>
                         <div className="scorer-list">
                             {stats.worstLosses.length > 0 ? stats.worstLosses.map((m, idx) => (
-                                <div key={m.MATCH_ID} className="scorer-row" style={{ borderLeft: '3px solid #ff4d4d', paddingLeft: '12px' }}>
+                                <div key={m.ROW_ID || `${m.DATE}-${m["EGYPT TEAM"]}-${idx}`} className="scorer-row" style={{ borderLeft: '3px solid #ff4d4d', paddingLeft: '12px' }}>
                                     <div className="scorer-rank">{`0${idx + 1}`}</div>
                                     <div className="scorer-avatar">🔻</div>
                                     <div className="scorer-info">

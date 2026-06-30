@@ -15,7 +15,7 @@ export default function IntNtMatches({ matches }) {
         if (!search.trim()) return matches || [];
         const q = search.toLowerCase();
         return (matches || []).filter((m) =>
-            ["SEASON", "GAME", "AGE", "CATEGORY", "ROUND", "TEAMA", "TEAMB", "HOST COUNTRY", "DATE", "MATCH_ID"].some((col) =>
+            ["SEASON", "GAME", "AGE", "CATEGORY", "ROUND", "TEAMA", "TEAMB", "HOST COUNTRY", "DATE", "ROW_ID"].some((col) =>
                 String(m[col] ?? "").toLowerCase().includes(q)
             )
         );
@@ -51,7 +51,7 @@ export default function IntNtMatches({ matches }) {
                     </thead>
                     <tbody>
                         {paginated.map((m) => (
-                            <tr key={m.ROW_ID || m.MATCH_ID}>
+                            <tr key={m.ROW_ID || `${m.SEASON}-${m.DATE}-${m.TEAMA}-${m.TEAMB}`}>
                                 <td className="mono">{m.ROW_ID}</td>
                                 <td>{m.DATE || "—"}</td>
                                 <td>{m["HOST COUNTRY"] || "—"}</td>

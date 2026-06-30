@@ -32,6 +32,71 @@ export function buildOpponentDateMatchId(opponentTeam, date) {
     return `${opponent}${serial}`;
 }
 
+/** Al Ahly canonical MATCH_ID: TEAM_ID + Excel date serial (e.g. T-034644197). */
+export function buildTeamIdDateMatchId(teamId, date) {
+    const id = String(teamId ?? "").trim();
+    const serial = dateToExcelSerial(date);
+    if (!id || !serial) return "";
+    return `${id}${serial}`;
+}
+
+export function buildAlAhlyMatchId(teamId, date) {
+    return buildTeamIdDateMatchId(teamId, date);
+}
+
+export function normalizeCatalogLookupKey(value) {
+    return String(value ?? "")
+        .trim()
+        .replace(/\s+/g, " ")
+        .toLowerCase();
+}
+
+/** Build lookup map from db_TEAMS rows for migration scripts. */
+export function buildTeamIdLookupMap(teams = []) {
+    const map = new Map();
+    const register = (key, teamId) => {
+        const normalized = normalizeCatalogLookupKey(key);
+        if (!normalized || !teamId) return;
+        if (!map.has(normalized)) map.set(normalized, teamId);
+    };
+
+    teams.forEach((row) => {
+        const teamId = String(row?.TEAM_ID || "").trim();
+        if (!teamId) return;
+        register(teamId, teamId);
+        register(row.TEAM_NAME, teamId);
+        register(row.TEAM_NAME_EN, teamId);
+    });
+
+    return map;
+}
+
+/** Resolve OPPONENT TEAM raw value to TEAM_ID using catalog lookup (no throw). */
+export function resolveTeamIdFromLookup(opponentTeam, lookup) {
+    const raw = String(opponentTeam ?? "").trim();
+    if (!raw || !lookup) return "";
+
+    const tryKeys = [raw];
+    if (raw.includes(" - ")) {
+        tryKeys.push(raw.split(" - ")[0].trim());
+    }
+
+    for (const key of tryKeys) {
+        const teamId = lookup.get(normalizeCatalogLookupKey(key));
+        if (teamId) return teamId;
+    }
+
+    if (/^T-/i.test(raw)) return raw;
+    return "";
+}
+
+export function suggestAlAhlyMatchId({ opponentTeam, date, teamId, teamLookup }) {
+    const resolvedTeamId = String(teamId || "").trim()
+        || resolveTeamIdFromLookup(opponentTeam, teamLookup)
+        || (/^T-/i.test(String(opponentTeam || "").trim()) ? String(opponentTeam).trim() : "");
+    return buildTeamIdDateMatchId(resolvedTeamId, date);
+}
+
 export function collectMatchIds(rows) {
     return new Set(
         (rows || [])
@@ -110,15 +175,36 @@ export function getEgyptNtMatchIdAgePrefix({ age = "", egyptTeam = "" } = {}) {
     return "";
 }
 
-export function buildEgyptNtMatchIdStem({ age, egyptTeam, opponent, date } = {}) {
-    const legacyId = buildOpponentDateMatchId(opponent, date);
-    if (!legacyId) return "";
+export function buildEgyptNtMatchIdFromTeamId({ age, egyptTeam, opponentTeamId, date } = {}) {
+    const teamId = String(opponentTeamId ?? "").trim();
+    const serial = buildTeamIdDateMatchId(teamId, date);
+    if (!teamId || !serial) return "";
 
     const agePrefix = getEgyptNtMatchIdAgePrefix({ age, egyptTeam });
-    return `${agePrefix}${legacyId}`;
+    return `${agePrefix}${serial}`;
 }
 
-export function buildEgyptNtMatchId({ age, egyptTeam, opponent, date } = {}) {
+export function suggestEgyptNtMatchId({ age, egyptTeam, opponent, date, teamLookup } = {}) {
+    const teamId = resolveTeamIdFromLookup(opponent, teamLookup)
+        || (/^T-/i.test(String(opponent || "").trim()) ? String(opponent).trim() : "");
+    return buildEgyptNtMatchIdFromTeamId({ age, egyptTeam, opponentTeamId: teamId, date });
+}
+
+export function buildEgyptNtMatchIdStem({ age, egyptTeam, opponent, date, teamLookup } = {}) {
+    if (teamLookup) {
+        return suggestEgyptNtMatchId({ age, egyptTeam, opponent, date, teamLookup });
+    }
+    const teamId = /^T-/i.test(String(opponent ?? "").trim()) ? String(opponent).trim() : "";
+    if (teamId) {
+        return buildEgyptNtMatchIdFromTeamId({ age, egyptTeam, opponentTeamId: teamId, date });
+    }
+    return "";
+}
+
+export function buildEgyptNtMatchId({ age, egyptTeam, opponent, date, teamLookup } = {}) {
+    if (teamLookup) {
+        return suggestEgyptNtMatchId({ age, egyptTeam, opponent, date, teamLookup });
+    }
     return buildEgyptNtMatchIdStem({ age, egyptTeam, opponent, date });
 }
 

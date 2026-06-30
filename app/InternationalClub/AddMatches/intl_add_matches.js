@@ -5,7 +5,7 @@ import "./intl_add_matches.css";
 import Login_db from "../../lib/Login_db";
 import { useNotification } from "../../lib/Notification_db";
 import { AutocompleteInput, fetchCatalogDisplayNames } from "../../Database";
-import { buildIntlMatchId, IntlClubService } from "../Service/intl_service";
+import { IntlClubService } from "../Service/intl_service";
 
 const EMPTY_ROW = {
     GAME: "",
@@ -100,8 +100,8 @@ export default function IntlClubAddMatches({ matches = [], onRefresh }) {
         setSaving(true);
         setErrors([]);
         try {
-            const existingIds = await IntlClubService.getExistingMatchIds();
-            const validationErrors = IntlClubService.validateBulkRows(payloadRows, existingIds);
+            const existingFingerprints = await IntlClubService.getExistingMatchFingerprints();
+            const validationErrors = IntlClubService.validateBulkRows(payloadRows, existingFingerprints);
             if (validationErrors.length) {
                 setErrors(validationErrors);
                 addNotification("Fix validation errors before saving.", "error");
@@ -166,17 +166,13 @@ export default function IntlClubAddMatches({ matches = [], onRefresh }) {
                 </div>
                 <div className="gold-line" />
                 <div className="intl-cards-list">
-                    {rows.map((row, index) => {
-                        const matchId = buildIntlMatchId(row.Edition, row["TEAM A"], row["TEAM B"]);
-                        return (
+                    {rows.map((row, index) => (
                             <article key={row._key} className="intl-card">
                                 <div className="intl-card-header">
                                     <span className="intl-card-index">MATCH {index + 1}</span>
                                     <div className="intl-preview-wrap">
-                                        <span className="intl-preview-label">NEXT ROW_ID: {nextRowIdPreview}</span>
-                                        <div className={`intl-preview ${matchId ? "" : "empty"}`}>
-                                            MATCH_ID: {matchId || "—"}
-                                        </div>
+                                        <span className="intl-preview-label">ROW_ID</span>
+                                        <div className="intl-preview empty">auto on save ({nextRowIdPreview})</div>
                                     </div>
                                     <button type="button" className="intl-delete-btn" onClick={() => deleteRow(row._key)}>✕</button>
                                 </div>
@@ -185,8 +181,7 @@ export default function IntlClubAddMatches({ matches = [], onRefresh }) {
                                 {renderGroup(row, FIELD_ROW_3)}
                                 {renderGroup(row, FIELD_ROW_4, "NOTE")}
                             </article>
-                        );
-                    })}
+                    ))}
                 </div>
                 {errors.length > 0 && (
                     <div className="intl-errors">

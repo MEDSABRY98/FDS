@@ -9,7 +9,7 @@ const TABLE_NAME = "egy_CLUB_MATCHDETAILS";
 const FILTER_FIELD_DEFS = [
     { key: "country", label: "COUNTRY", type: "select", optionsKey: "countries" },
     { key: "continent", label: "CONTINENT", type: "select", optionsKey: "continents" },
-    { key: "match_id", label: "MATCH ID", type: "select", optionsKey: "match_ids", dbColumn: "MATCH_ID" },
+    { key: "row_id", label: "ROW ID", type: "select", optionsKey: "row_ids", dbColumn: "ROW_ID" },
     { key: "champion_system", label: "CHAMPION SYSTEM", type: "select", optionsKey: "champion_systems", dbColumn: "CHAMPION SYSTEM" },
     { key: "date_from", label: "DATE FROM", type: "date", dbColumn: "DATE" },
     { key: "date_to", label: "DATE TO", type: "date", dbColumn: "DATE" },

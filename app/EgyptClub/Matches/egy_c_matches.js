@@ -12,6 +12,7 @@ function SearchScopeSelect({ value, onChange }) {
 
     const rawOptions = [
         { value: "all", label: "All Fields" },
+        { value: "row_id", label: "Row ID" },
         { value: "egypt_team", label: "Egypt Team" },
         { value: "opponent_team", label: "Opponent Team" },
         { value: "champion", label: "Champion" },
@@ -171,6 +172,7 @@ export default function EgyptClubMatches({ matches, onMatchClick }) {
         return (matches || []).filter(m => {
             if (searchScope === "all") {
                 return (
+                    String(m.ROW_ID || "").toLowerCase().includes(lowSearch) ||
                     String(m["EGYPT TEAM"] || "").toLowerCase().includes(lowSearch) ||
                     String(m["OPPONENT TEAM"] || "").toLowerCase().includes(lowSearch) ||
                     String(m["CHAMPION"] || "").toLowerCase().includes(lowSearch) ||
@@ -183,6 +185,7 @@ export default function EgyptClubMatches({ matches, onMatchClick }) {
             }
 
             const scopeMap = {
+                row_id: "ROW_ID",
                 egypt_team: "EGYPT TEAM",
                 opponent_team: "OPPONENT TEAM",
                 champion: "CHAMPION",
@@ -306,7 +309,7 @@ export default function EgyptClubMatches({ matches, onMatchClick }) {
                             <div className="match-list-vertical">
                                 {groupedMatches[monthYear].map(m => (
                                     <div 
-                                        key={m.ROW_ID || m.MATCH_ID} 
+                                        key={m.ROW_ID || `${m.DATE}-${m["EGYPT TEAM"]}-${m["OPPONENT TEAM"]}`} 
                                         className="modern-match-row-h" 
                                         onClick={() => onMatchClick && onMatchClick(m)}
                                     >

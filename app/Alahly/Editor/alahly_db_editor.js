@@ -7,9 +7,10 @@ import {
     AutocompleteInput,
     fetchCatalogDisplayNames,
     applyLineupLogic,
-    buildOpponentDateMatchId,
+    buildTeamIdDateMatchId,
     fetchMatchIdExists,
     normalizeMatchId,
+    resolveTeamCatalogId,
 } from "../../Database";
 import Login_db from "../../lib/Login_db";
 import NoData_db from "../../lib/NoData_db";
@@ -148,11 +149,34 @@ export default function AlAhlyEditor() {
 
     useEffect(() => {
         if (mode !== 'new') return;
-        const suggested = buildOpponentDateMatchId(
-            newMatchData['OPPONENT TEAM'],
-            newMatchData.DATE,
-        );
-        setNewMatchData(prev => (prev.MATCH_ID === suggested ? prev : { ...prev, MATCH_ID: suggested }));
+        let cancelled = false;
+
+        (async () => {
+            const opponent = newMatchData['OPPONENT TEAM'];
+            const date = newMatchData.DATE;
+            if (!opponent || !date) {
+                if (!cancelled) {
+                    setNewMatchData((prev) => (prev.MATCH_ID ? { ...prev, MATCH_ID: '' } : prev));
+                }
+                return;
+            }
+
+            try {
+                const teamId = await resolveTeamCatalogId(opponent);
+                const suggested = buildTeamIdDateMatchId(teamId, date);
+                if (!cancelled && suggested) {
+                    setNewMatchData((prev) => (
+                        prev.MATCH_ID === suggested ? prev : { ...prev, MATCH_ID: suggested }
+                    ));
+                }
+            } catch {
+                if (!cancelled) {
+                    setNewMatchData((prev) => (prev.MATCH_ID ? { ...prev, MATCH_ID: '' } : prev));
+                }
+            }
+        })();
+
+        return () => { cancelled = true; };
     }, [newMatchData['OPPONENT TEAM'], newMatchData.DATE, mode]);
 
     useEffect(() => {
@@ -198,7 +222,7 @@ export default function AlAhlyEditor() {
     const renderMatchField = (field, formData, setFormData, { matchIdAuto = false } = {}) => (
         <div key={field}>
             <div className="field-label" style={{ color: field === 'MATCH_ID' && matchIdAuto ? '#22c55e' : '#999' }}>
-                {field} {field === 'MATCH_ID' && matchIdAuto && <span style={{ color: '#aaa', fontWeight: 400, letterSpacing: 0 }}>(auto: Opponent + Date)</span>}
+                {field} {field === 'MATCH_ID' && matchIdAuto && <span style={{ color: '#aaa', fontWeight: 400, letterSpacing: 0 }}>(auto: Team ID + Date)</span>}
             </div>
             {AUTOCOMPLETE_FIELDS.includes(field) ? (
                 <AutocompleteInput

@@ -1,0 +1,393 @@
+{
+  "generatedAt": "2026-06-30T17:02:20.788Z",
+  "stats": {
+    "total": 1444,
+    "unchanged": 0,
+    "toUpdate": 1444,
+    "unresolved": 0,
+    "collisions": 0
+  },
+  "unresolved": [],
+  "duplicateGroups": [],
+  "sampleChanges": [
+    {
+      "rowId": "R-1432",
+      "currentMatchId": "Belgium2332818",
+      "opponentRaw": "T-0092",
+      "age": "الأول",
+      "egyptTeam": "T-0125",
+      "teamId": "T-0092",
+      "date": "2026-06-15",
+      "proposedMatchId": "FirstT-009246188",
+      "needsChange": true,
+      "unresolved": false
+    },
+    {
+      "rowId": "R-1434",
+      "currentMatchId": "Iran2332820",
+      "opponentRaw": "T-0663",
+      "age": "الأول",
+      "egyptTeam": "T-0125",
+      "teamId": "T-0663",
+      "date": "2026-06-27",
+      "proposedMatchId": "FirstT-066346200",
+      "needsChange": true,
+      "unresolved": false
+    },
+    {
+      "rowId": "R-0389",
+      "currentMatchId": "Malawi31995",
+      "opponentRaw": "T-0616",
+      "age": "الأول",
+      "egyptTeam": "T-0125",
+      "teamId": "T-0616",
+      "date": "1987-08-06",
+      "proposedMatchId": "FirstT-061631995",
+      "needsChange": true,
+      "unresolved": false
+    },
+    {
+      "rowId": "R-0292",
+      "currentMatchId": "Sudan30176",
+      "opponentRaw": "T-0173",
+      "age": "U20",
+      "egyptTeam": "T-0125",
+      "teamId": "T-0173",
+      "date": "1982-08-13",
+      "proposedMatchId": "U20T-017330176",
+      "needsChange": true,
+      "unresolved": false
+    },
+    {
+      "rowId": "R-0765",
+      "currentMatchId": "Uganda37478",
+      "opponentRaw": "T-0559",
+      "age": "U20",
+      "egyptTeam": "T-0125",
+      "teamId": "T-0559",
+      "date": "2002-08-10",
+      "proposedMatchId": "U20T-055937478",
+      "needsChange": true,
+      "unresolved": false
+    },
+    {
+      "rowId": "R-1380",
+      "currentMatchId": "38312تايوان",
+      "opponentRaw": "T-0646",
+      "age": "فوتسال",
+      "egyptTeam": "T-0125",
+      "teamId": "T-0646",
+      "date": "2004-11-21",
+      "proposedMatchId": "T-064638312",
+      "needsChange": true,
+      "unresolved": false
+    },
+    {
+      "rowId": "R-0791",
+      "currentMatchId": "Eswatini37766",
+      "opponentRaw": "T-0283",
+      "age": "U17",
+      "egyptTeam": "T-0125",
+      "teamId": "T-0283",
+      "date": "2003-05-25",
+      "proposedMatchId": "U17T-028337766",
+      "needsChange": true,
+      "unresolved": false
+    },
+    {
+      "rowId": "R-0771",
+      "currentMatchId": "Zimbabwe37549",
+      "opponentRaw": "T-0240",
+      "age": "U20",
+      "egyptTeam": "T-0125",
+      "teamId": "T-0240",
+      "date": "2002-10-20",
+      "proposedMatchId": "U20T-024037549",
+      "needsChange": true,
+      "unresolved": false
+    },
+    {
+      "rowId": "R-0880",
+      "currentMatchId": "Gambia38961",
+      "opponentRaw": "T-0665",
+      "age": "U23",
+      "egyptTeam": "T-0125",
+      "teamId": "T-0665",
+      "date": "2006-09-01",
+      "proposedMatchId": "U23T-066538961",
+      "needsChange": true,
+      "unresolved": false
+    },
+    {
+      "rowId": "R-0893",
+      "currentMatchId": "Cameroon39103",
+      "opponentRaw": "T-0550",
+      "age": "U20",
+      "egyptTeam": "T-0125",
+      "teamId": "T-0550",
+      "date": "2007-01-21",
+      "proposedMatchId": "U20T-055039103",
+      "needsChange": true,
+      "unresolved": false
+    },
+    {
+      "rowId": "R-0894",
+      "currentMatchId": "Nigeria39106",
+      "opponentRaw": "T-0416",
+      "age": "U20",
+      "egyptTeam": "T-0125",
+      "teamId": "T-0416",
+      "date": "2007-01-24",
+      "proposedMatchId": "U20T-041639106",
+      "needsChange": true,
+      "unresolved": false
+    },
+    {
+      "rowId": "R-0784",
+      "currentMatchId": "Ivory Coast37638",
+      "opponentRaw": "T-0390",
+      "age": "U20",
+      "egyptTeam": "T-0125",
+      "teamId": "T-0390",
+      "date": "2003-01-17",
+      "proposedMatchId": "U20T-039037638",
+      "needsChange": true,
+      "unresolved": false
+    },
+    {
+      "rowId": "R-0662",
+      "currentMatchId": "Ethiopia36014",
+      "opponentRaw": "T-0160",
+      "age": "U20",
+      "egyptTeam": "T-0125",
+      "teamId": "T-0160",
+      "date": "1998-08-07",
+      "proposedMatchId": "U20T-016036014",
+      "needsChange": true,
+      "unresolved": false
+    },
+    {
+      "rowId": "R-0792",
+      "currentMatchId": "Guinea37769",
+      "opponentRaw": "T-0237",
+      "age": "U17",
+      "egyptTeam": "T-0125",
+      "teamId": "T-0237",
+      "date": "2003-05-28",
+      "proposedMatchId": "U17T-023737769",
+      "needsChange": true,
+      "unresolved": false
+    },
+    {
+      "rowId": "R-0348",
+      "currentMatchId": "Guinea31050",
+      "opponentRaw": "T-0237",
+      "age": "U17",
+      "egyptTeam": "T-0125",
+      "teamId": "T-0237",
+      "date": "1985-01-03",
+      "proposedMatchId": "U17T-023731050",
+      "needsChange": true,
+      "unresolved": false
+    },
+    {
+      "rowId": "R-0812",
+      "currentMatchId": "Senegal37975",
+      "opponentRaw": "T-0232",
+      "age": "U23",
+      "egyptTeam": "T-0125",
+      "teamId": "T-0232",
+      "date": "2003-12-20",
+      "proposedMatchId": "U23T-023237975",
+      "needsChange": true,
+      "unresolved": false
+    },
+    {
+      "rowId": "R-0386",
+      "currentMatchId": "Italy31974",
+      "opponentRaw": "T-0281",
+      "age": "U17",
+      "egyptTeam": "T-0125",
+      "teamId": "T-0281",
+      "date": "1987-07-16",
+      "proposedMatchId": "U17T-028131974",
+      "needsChange": true,
+      "unresolved": false
+    },
+    {
+      "rowId": "R-0849",
+      "currentMatchId": "Argentina38517",
+      "opponentRaw": "T-0303",
+      "age": "U20",
+      "egyptTeam": "T-0125",
+      "teamId": "T-0303",
+      "date": "2005-06-14",
+      "proposedMatchId": "U20T-030338517",
+      "needsChange": true,
+      "unresolved": false
+    },
+    {
+      "rowId": "R-0842",
+      "currentMatchId": "South Korea38387",
+      "opponentRaw": "T-0650",
+      "age": "الأول",
+      "egyptTeam": "T-0125",
+      "teamId": "T-0650",
+      "date": "2005-02-04",
+      "proposedMatchId": "FirstT-065038387",
+      "needsChange": true,
+      "unresolved": false
+    },
+    {
+      "rowId": "R-0821",
+      "currentMatchId": "Nigeria38059",
+      "opponentRaw": "T-0416",
+      "age": "U23",
+      "egyptTeam": "T-0125",
+      "teamId": "T-0416",
+      "date": "2004-03-13",
+      "proposedMatchId": "U23T-041638059",
+      "needsChange": true,
+      "unresolved": false
+    },
+    {
+      "rowId": "R-0820",
+      "currentMatchId": "Tunisia38039",
+      "opponentRaw": "T-0526",
+      "age": "U23",
+      "egyptTeam": "T-0125",
+      "teamId": "T-0526",
+      "date": "2004-02-22",
+      "proposedMatchId": "U23T-052638039",
+      "needsChange": true,
+      "unresolved": false
+    },
+    {
+      "rowId": "R-1401",
+      "currentMatchId": "42484المغرب",
+      "opponentRaw": "T-0531",
+      "age": "فوتسال",
+      "egyptTeam": "T-0125",
+      "teamId": "T-0531",
+      "date": "2016-04-24",
+      "proposedMatchId": "T-053142484",
+      "needsChange": true,
+      "unresolved": false
+    },
+    {
+      "rowId": "R-1363",
+      "currentMatchId": "35395أستراليا",
+      "opponentRaw": "T-0433",
+      "age": "فوتسال",
+      "egyptTeam": "T-0125",
+      "teamId": "T-0433",
+      "date": "1996-11-26",
+      "proposedMatchId": "T-043335395",
+      "needsChange": true,
+      "unresolved": false
+    },
+    {
+      "rowId": "R-1396",
+      "currentMatchId": "41225إيطاليا",
+      "opponentRaw": "T-0281",
+      "age": "فوتسال",
+      "egyptTeam": "T-0125",
+      "teamId": "T-0281",
+      "date": "2012-11-12",
+      "proposedMatchId": "T-028141225",
+      "needsChange": true,
+      "unresolved": false
+    },
+    {
+      "rowId": "R-0283",
+      "currentMatchId": "Cameroon29688",
+      "opponentRaw": "T-0550",
+      "age": "U20",
+      "egyptTeam": "T-0125",
+      "teamId": "T-0550",
+      "date": "1981-04-12",
+      "proposedMatchId": "U20T-055029688",
+      "needsChange": true,
+      "unresolved": false
+    },
+    {
+      "rowId": "R-0763",
+      "currentMatchId": "Uganda37457",
+      "opponentRaw": "T-0559",
+      "age": "U20",
+      "egyptTeam": "T-0125",
+      "teamId": "T-0559",
+      "date": "2002-07-20",
+      "proposedMatchId": "U20T-055937457",
+      "needsChange": true,
+      "unresolved": false
+    },
+    {
+      "rowId": "R-0770",
+      "currentMatchId": "Zimbabwe37528",
+      "opponentRaw": "T-0240",
+      "age": "U20",
+      "egyptTeam": "T-0125",
+      "teamId": "T-0240",
+      "date": "2002-09-29",
+      "proposedMatchId": "U20T-024037528",
+      "needsChange": true,
+      "unresolved": false
+    },
+    {
+      "rowId": "R-1041",
+      "currentMatchId": "Angola41174",
+      "opponentRaw": "T-0606",
+      "age": "U20",
+      "egyptTeam": "T-0125",
+      "teamId": "T-0606",
+      "date": "2012-09-22",
+      "proposedMatchId": "U20T-060641174",
+      "needsChange": true,
+      "unresolved": false
+    },
+    {
+      "rowId": "R-0889",
+      "currentMatchId": "Morocco39024",
+      "opponentRaw": "T-0531",
+      "age": "U20",
+      "egyptTeam": "T-0125",
+      "teamId": "T-0531",
+      "date": "2006-11-03",
+      "proposedMatchId": "U20T-053139024",
+      "needsChange": true,
+      "unresolved": false
+    },
+    {
+      "rowId": "R-0890",
+      "currentMatchId": "Tunisia39026",
+      "opponentRaw": "T-0526",
+      "age": "U20",
+      "egyptTeam": "T-0125",
+      "teamId": "T-0526",
+      "date": "2006-11-05",
+      "proposedMatchId": "U20T-052639026",
+      "needsChange": true,
+      "unresolved": false
+    }
+  ],
+  "orphansByTable": {
+    "egy_NT_LINEUPDETAILS": [],
+    "egy_NT_PLAYERDETAILS": [
+      {
+        "ROW_ID": "R-5386",
+        "MATCH_ID": "Qater40528"
+      },
+      {
+        "ROW_ID": "R-5387",
+        "MATCH_ID": "Qater40528"
+      },
+      {
+        "ROW_ID": "R-5385",
+        "MATCH_ID": "Qater40528"
+      }
+    ],
+    "egy_NT_GKSDETAILS": [],
+    "egy_NT_PKS": []
+  }
+}

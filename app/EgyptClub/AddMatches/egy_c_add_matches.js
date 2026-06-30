@@ -6,7 +6,6 @@ import Login_db from "../../lib/Login_db";
 import { useNotification } from "../../lib/Notification_db";
 import { AutocompleteInput, fetchCatalogDisplayNames } from "../../Database";
 import {
-    buildEgyptClubMatchId,
     EgyptClubService,
 } from "../Service/egy_c_service";
 
@@ -151,8 +150,8 @@ export default function EgyptClubAddMatches({ matches = [], onRefresh }) {
         setErrors([]);
 
         try {
-            const existingIds = await EgyptClubService.getExistingMatchIds();
-            const validationErrors = EgyptClubService.validateBulkRows(payloadRows, existingIds);
+            const existingFingerprints = await EgyptClubService.getExistingMatchFingerprints();
+            const validationErrors = EgyptClubService.validateBulkRows(payloadRows, existingFingerprints);
             if (validationErrors.length > 0) {
                 setErrors(validationErrors);
                 addNotification("Fix validation errors before saving.", "error");
@@ -243,16 +242,14 @@ export default function EgyptClubAddMatches({ matches = [], onRefresh }) {
                     <div className="gold-line" />
 
                     <div className="match-cards-list">
-                        {rows.map((row, index) => {
-                            const previewId = buildEgyptClubMatchId(row["OPPONENT TEAM"], row.DATE);
-                            return (
+                        {rows.map((row, index) => (
                                 <article key={row._key} className="match-card">
                                     <div className="match-card-header">
                                         <div className="match-card-index">MATCH {index + 1}</div>
                                         <div className="match-card-id-wrap">
-                                            <span className="match-card-id-label">MATCH_ID</span>
-                                            <div className={`match-id-preview ${previewId ? "" : "empty"}`}>
-                                                {previewId || "—"}
+                                            <span className="match-card-id-label">ROW_ID</span>
+                                            <div className="match-id-preview empty">
+                                                auto on save
                                             </div>
                                         </div>
                                         <button
@@ -268,8 +265,7 @@ export default function EgyptClubAddMatches({ matches = [], onRefresh }) {
                                     {renderFieldGroup(row, FIELD_ROW_1)}
                                     {renderFieldGroup(row, FIELD_ROW_2)}
                                 </article>
-                            );
-                        })}
+                        ))}
                     </div>
 
                     {errors.length > 0 && (

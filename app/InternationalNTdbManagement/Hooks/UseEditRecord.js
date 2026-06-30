@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { supabase, getChangedFormFields } from "../../Database";
-import { buildIntNtMatchId, IntNtService } from "../../InternationalNT/Service/int_nt_service";
+import { IntNtService } from "../../InternationalNT/Service/int_nt_service";
 import { omitIntComputedFromPayload } from "../../InternationalNT/Service/int_nt_service";
 
 const INTL_MATCH_TABLE = "int_nt_MATCHDETAILS";
@@ -32,7 +32,7 @@ export function useEditRecord(selectedTable, columns, fetchTableData, addNotific
             if (selectedTable === INTL_MATCH_TABLE) {
                 const [rowId] = await IntNtService.allocateIntNtRowIds(1);
                 payload.ROW_ID = rowId;
-                payload.MATCH_ID = buildIntNtMatchId(payload.SEASON, payload.DATE, payload.TEAMA, payload.TEAMB);
+                delete payload.MATCH_ID;
             }
 
             const { error } = await supabase.from(selectedTable).insert([omitIntComputedFromPayload(payload)]);
@@ -59,6 +59,9 @@ export function useEditRecord(selectedTable, columns, fetchTableData, addNotific
         setSaving(true);
         try {
             const changedForm = omitIntComputedFromPayload(getChangedFormFields(editingRow, editForm));
+            if (selectedTable === INTL_MATCH_TABLE) {
+                delete changedForm.MATCH_ID;
+            }
             if (Object.keys(changedForm).length === 0) {
                 if (addNotification) addNotification("No changes to save.", "info");
                 setSaving(false);

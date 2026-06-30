@@ -7,7 +7,8 @@ import {
     AutocompleteInput,
     fetchCatalogDisplayNames,
     applyLineupLogic,
-    buildEgyptNtMatchId,
+    buildTeamIdLookupMap,
+    suggestEgyptNtMatchId,
     fetchMatchIdExists,
     normalizeMatchId,
 } from "../../Database";
@@ -63,6 +64,7 @@ export default function EgyptNTEditor() {
     const [eventSubTypes, setEventSubTypes] = useState([]);
     const [catalogLists, setCatalogLists] = useState({ managers: [], stadiums: [], referees: [] });
     const [allTeamsList, setAllTeamsList] = useState([]);
+    const [teamLookupMap, setTeamLookupMap] = useState(() => new Map());
 
     useEffect(() => {
         let cancelled = false;
@@ -77,9 +79,14 @@ export default function EgyptNTEditor() {
                     fetchCatalogDisplayNames('db_TEAMS'),
                 ]);
 
+                const { data: teamRows } = await supabase
+                    .from('db_TEAMS')
+                    .select('TEAM_ID, TEAM_NAME, TEAM_NAME_EN');
+
                 if (cancelled) return;
                 setAllPlayersList(players);
                 setAllTeamsList(teams);
+                setTeamLookupMap(buildTeamIdLookupMap(teamRows || []));
                 setCatalogLists({ managers, stadiums, referees });
 
                 const fetchUniqueCol = async (tableName, col) => {
@@ -191,14 +198,15 @@ export default function EgyptNTEditor() {
 
     useEffect(() => {
         if (mode !== 'new') return;
-        const suggested = buildEgyptNtMatchId({
+        const suggested = suggestEgyptNtMatchId({
             age: newMatchData.AGE,
             egyptTeam: newMatchData["Egypt TEAM"],
             opponent: newMatchData["OPPONENT TEAM"],
             date: newMatchData.DATE,
+            teamLookup: teamLookupMap,
         });
         setNewMatchData(prev => (prev.MATCH_ID === suggested ? prev : { ...prev, MATCH_ID: suggested }));
-    }, [newMatchData.AGE, newMatchData["Egypt TEAM"], newMatchData["OPPONENT TEAM"], newMatchData.DATE, mode]);
+    }, [newMatchData.AGE, newMatchData["Egypt TEAM"], newMatchData["OPPONENT TEAM"], newMatchData.DATE, mode, teamLookupMap]);
 
     const handleNewEgyLineupRows = useCallback((action) => setNewEgyLineupRows(p => applyLineupLogic(p, action)), []);
     const handleNewOppLineupRows = useCallback((action) => setNewOppLineupRows(p => applyLineupLogic(p, action)), []);
@@ -556,7 +564,7 @@ export default function EgyptNTEditor() {
                                 {matchInfoFields.map(field => (
                                     <div key={field}>
                                         <div className="field-label" style={{ color: field === 'MATCH_ID' ? '#22c55e' : '#999' }}>
-                                            {field} {field === 'MATCH_ID' && <span style={{ color: '#aaa', fontWeight: 400, letterSpacing: 0 }}>(auto: Age + Opponent + Date)</span>}
+                                            {field} {field === 'MATCH_ID' && <span style={{ color: '#aaa', fontWeight: 400, letterSpacing: 0 }}>(auto: Age + Team ID + Date)</span>}
                                         </div>
                                         {AUTOCOMPLETE_FIELDS.includes(field) ? (
                                             <AutocompleteInput
