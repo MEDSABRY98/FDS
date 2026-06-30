@@ -5,28 +5,35 @@ import { EgyptNTService } from "../Service/egypt_nt_db_service";
 import { EgyptNTExcelExport } from "../ExportExcel/egypt_nt_export_excel";
 import NoData_db from "../../lib/NoData_db";
 import SearchBar_db from "../../lib/SearchBar_db";
+import {
+    MATCH_EVENT_FILTER_OPTIONS,
+    buildMatchEventIndex,
+    matchPassesEventFilter,
+} from "../../Alahly/Matches/alahly_db_matches_event_utils";
 
-function SearchScopeSelect({ value, onChange }) {
+const SEARCH_SCOPE_OPTIONS = [
+    { value: "all", label: "All Fields" },
+    { value: "opponent_team", label: "Opponent Team" },
+    { value: "opponent_manager", label: "Opponent Manager" },
+    { value: "egypt_manager", label: "Egypt Manager" },
+    { value: "season", label: "Season" },
+    { value: "match_id", label: "Match ID" },
+    { value: "referee", label: "Referee" },
+    { value: "place", label: "Place" },
+];
+
+function FilterDropdown({ value, onChange, options, width = "200px", sortRestAlphabetically = true }) {
     const [isOpen, setIsOpen] = useState(false);
     const containerRef = useRef(null);
 
-    const rawOptions = [
-        { value: "all", label: "All Fields" },
-        { value: "opponent_team", label: "Opponent Team" },
-        { value: "opponent_manager", label: "Opponent Manager" },
-        { value: "egypt_manager", label: "Egypt Manager" },
-        { value: "season", label: "Season" },
-        { value: "match_id", label: "Match ID" },
-        { value: "referee", label: "Referee" },
-        { value: "place", label: "Place" }
-    ];
+    const sortedOptions = useMemo(() => {
+        if (!sortRestAlphabetically) return options;
+        const [first, ...rest] = options;
+        if (!first) return options;
+        return [first, ...[...rest].sort((a, b) => a.label.localeCompare(b.label))];
+    }, [options, sortRestAlphabetically]);
 
-    const options = [
-        rawOptions[0],
-        ...rawOptions.slice(1).sort((a, b) => a.label.localeCompare(b.label))
-    ];
-
-    const currentLabel = options.find(o => o.value === value)?.label || "All Fields";
+    const currentLabel = sortedOptions.find(o => o.value === value)?.label || sortedOptions[0]?.label || "";
 
     useEffect(() => {
         function handleClickOutside(event) {
@@ -39,7 +46,7 @@ function SearchScopeSelect({ value, onChange }) {
     }, []);
 
     return (
-        <div className="search-scope-container" ref={containerRef}>
+        <div className="search-scope-container" ref={containerRef} style={{ width }}>
             <div
                 className={`search-scope-box ${isOpen ? 'open' : ''}`}
                 onClick={() => setIsOpen(!isOpen)}
@@ -51,7 +58,7 @@ function SearchScopeSelect({ value, onChange }) {
             {isOpen && (
                 <div className="search-scope-dropdown">
                     <div className="options-list">
-                        {options.map((opt) => (
+                        {sortedOptions.map((opt) => (
                             <div
                                 key={opt.value}
                                 className={`option-item ${value === opt.value ? 'active' : ''}`}
@@ -160,16 +167,23 @@ function SearchScopeSelect({ value, onChange }) {
     );
 }
 
-export default function EgyptNTMatches({ matches, onMatchClick }) {
+export default function EgyptNTMatches({ matches, playerDetails, onMatchClick }) {
     const [currentPage, setCurrentPage] = useState(1);
     const [searchTerm, setSearchTerm] = useState("");
     const [searchScope, setSearchScope] = useState("all");
+    const [eventFilter, setEventFilter] = useState("all");
     const pageSize = 50;
 
+    const matchEventIndex = useMemo(
+        () => buildMatchEventIndex(playerDetails),
+        [playerDetails]
+    );
+
     const filteredBySearch = useMemo(() => {
-        if (!searchTerm) return matches || [];
+        let list = matches || [];
+        if (searchTerm) {
         const lowSearch = searchTerm.toLowerCase().trim();
-        return (matches || []).filter(m => {
+        list = list.filter(m => {
             if (searchScope === "all") {
                 return (
                     String(m["OPPONENT TEAM"] || "").toLowerCase().includes(lowSearch) ||
@@ -196,7 +210,14 @@ export default function EgyptNTMatches({ matches, onMatchClick }) {
             if (!colName) return false;
             return String(m[colName] || "").toLowerCase().includes(lowSearch);
         });
-    }, [matches, searchTerm, searchScope]);
+        }
+
+        if (eventFilter !== "all") {
+            list = list.filter((m) => matchPassesEventFilter(m.MATCH_ID, matchEventIndex, eventFilter));
+        }
+
+        return list;
+    }, [matches, searchTerm, searchScope, eventFilter, matchEventIndex]);
 
     const groupMatchesByMonth = (matchList) => {
         const groups = {};
@@ -247,7 +268,7 @@ export default function EgyptNTMatches({ matches, onMatchClick }) {
 
     useEffect(() => {
         setCurrentPage(1);
-    }, [matches, searchTerm, searchScope]);
+    }, [matches, searchTerm, searchScope, eventFilter]);
 
     const getResultColor = (wdl) => {
         if (wdl === "W") return "#10b981"; // Emerald
@@ -292,9 +313,19 @@ export default function EgyptNTMatches({ matches, onMatchClick }) {
 
                     <div className="match-search-container">
                         <div className="search-scope-wrapper">
-                            <SearchScopeSelect
+                            <FilterDropdown
                                 value={searchScope}
                                 onChange={setSearchScope}
+                                options={SEARCH_SCOPE_OPTIONS}
+                            />
+                        </div>
+                        <div className="search-scope-wrapper event-filter-wrapper">
+                            <FilterDropdown
+                                value={eventFilter}
+                                onChange={setEventFilter}
+                                options={MATCH_EVENT_FILTER_OPTIONS}
+                                width="220px"
+                                sortRestAlphabetically={false}
                             />
                         </div>
                         <div className="match-search-box">
@@ -303,6 +334,10 @@ export default function EgyptNTMatches({ matches, onMatchClick }) {
                                 onChange={setSearchTerm}
                                 placeholder="Type search term..."
                             />
+                        </div>
+                        <div className="match-count-badge" title="Matches matching current filters">
+                            <span className="match-count-num">{filteredBySearch.length}</span>
+                            <span className="match-count-label">MATCHES</span>
                         </div>
                     </div>
                 </div>
@@ -432,14 +467,47 @@ export default function EgyptNTMatches({ matches, onMatchClick }) {
                     gap: 12px;
                     margin-top: 20px;
                     margin-bottom: 20px;
+                    flex-wrap: wrap;
                 }
                 .search-scope-wrapper {
                     width: 200px;
                     flex-shrink: 0;
                 }
+                .event-filter-wrapper {
+                    width: 220px;
+                }
                 .match-search-box {
                     width: 100%;
                     max-width: 350px;
+                }
+                .match-count-badge {
+                    flex-shrink: 0;
+                    display: flex;
+                    flex-direction: column;
+                    align-items: center;
+                    justify-content: center;
+                    min-width: 72px;
+                    height: 52px;
+                    padding: 0 14px;
+                    border-radius: 12px;
+                    border: 2px solid rgba(201, 168, 76, 0.35);
+                    background: rgba(201, 168, 76, 0.08);
+                    box-sizing: border-box;
+                }
+                .match-count-num {
+                    font-family: 'Bebas Neue', sans-serif;
+                    font-size: 22px;
+                    line-height: 1;
+                    letter-spacing: 1px;
+                    color: #0a0a0a;
+                }
+                .match-count-label {
+                    font-family: 'Space Mono', monospace;
+                    font-size: 9px;
+                    font-weight: 700;
+                    letter-spacing: 1px;
+                    color: #888;
+                    margin-top: 2px;
                 }
                 .month-section {
                     margin-bottom: 30px;

@@ -121,6 +121,8 @@ export function buildMatchContextMap(filteredMatches) {
             seasonNumber: String(m["SEASON - NUMBER"] || "Unknown").trim(),
             date: m.DATE || "",
             opponent: String(m["OPPONENT TEAM"] || "").trim(),
+            ahlyManager: String(m["AHLY MANAGER"] || "Unknown Manager").trim(),
+            opponentManager: String(m["OPPONENT MANAGER"] || "Unknown Manager").trim(),
             gf: parseInt(m.GF, 10) || 0,
             ga: parseInt(m.GA, 10) || 0,
             wdl: String(m["W-D-L"] || "").trim(),
@@ -416,6 +418,8 @@ export function normalizePenaltyEvents(playerDetails, filteredMatches) {
             seasonNumber: ctx.seasonNumber,
             date: ctx.date,
             opponent: ctx.opponent,
+            ahlyManager: ctx.ahlyManager,
+            opponentManager: ctx.opponentManager,
         });
     });
 
@@ -558,6 +562,26 @@ export function aggregateByOpponent(events) {
 
     (events || []).forEach((ev) => {
         const key = String(ev.opponent || "").trim() || "Unknown Opponent";
+        if (!map.has(key)) map.set(key, { name: key, ...createEmptyPenaltyStats() });
+        applyEventToStats(map.get(key), ev);
+    });
+
+    return Array.from(map.values())
+        .map((row) => ({
+            ...row,
+            conversion: getConversionPct(row.scored, row.attFor),
+            concAtt: getConcAttempts(row),
+        }))
+        .filter((row) => row.attFor > 0 || row.concAtt > 0)
+        .sort((a, b) => b.attFor - a.attFor || b.concAtt - a.concAtt || String(a.name).localeCompare(String(b.name), "ar"));
+}
+
+export function aggregateByManager(events, managerType = "ahly") {
+    const field = managerType === "opponent" ? "opponentManager" : "ahlyManager";
+    const map = new Map();
+
+    (events || []).forEach((ev) => {
+        const key = String(ev[field] || "").trim() || "Unknown Manager";
         if (!map.has(key)) map.set(key, { name: key, ...createEmptyPenaltyStats() });
         applyEventToStats(map.get(key), ev);
     });

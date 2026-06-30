@@ -498,6 +498,7 @@ export default function AlAhlyDatabase() {
                                 <div hidden={!!selectedMatchId}>
                                     <AlAhlyMatches
                                         matches={filteredMatches}
+                                        playerDetails={playerDetails}
                                         onMatchClick={(id) => {
                                             matchesListScrollY.current = window.scrollY;
                                             setSelectedMatchId(id);

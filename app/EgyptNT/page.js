@@ -739,6 +739,7 @@ export default function EgyptNTDatabase() {
                                     <div hidden={!!selectedMatchId}>
                                         <EgyptNTMatches
                                             matches={filteredMatches}
+                                            playerDetails={playerDetails}
                                             onMatchClick={(id) => {
                                                 matchesListScrollY.current = window.scrollY;
                                                 setSelectedMatchId(id);
