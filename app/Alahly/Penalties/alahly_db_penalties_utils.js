@@ -135,14 +135,6 @@ export function buildMatchContextMap(filteredMatches) {
     return map;
 }
 
-export function isPenaltyMissReason(value) {
-    return PENALTY_MISS_DESCRIPTIONS.includes(String(value || "").trim());
-}
-
-export function isPlayerCatalogId(value) {
-    return /^P-\d+/i.test(String(value || "").trim());
-}
-
 export function formatHowPenMissedForDisplay(value, lang) {
     const raw = String(value || "").trim();
     if (!raw) return "";
