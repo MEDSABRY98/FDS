@@ -25,6 +25,7 @@ import {
     serializeTableSettings,
 } from "./TableSortLogic_db";
 import { remapGkEventIdsField } from "./EditorComponents_db";
+import { isHowMissedCatalogExempt } from "./pen_missed_catalog_db";
 
 const supabaseUrl = 'https://wsygeerxfdaavdtvogvy.supabase.co'
 const supabaseAnonKey = 'sb_publishable_Y2kr-reraWveea23ykKViw_8Z3AbtOk'
@@ -767,6 +768,10 @@ async function resolveAndRegisterPayload(payload, tableName) {
     
     const resolveOrRegister = async (col, val) => {
         if (isSkippableCatalogValue(val)) return val;
+
+        if (col === "HOW MISSED" && isHowMissedCatalogExempt(val)) {
+            return val;
+        }
 
         const isStadium = ['STAD', 'PLACE'].includes(col);
         if (isStadium) {

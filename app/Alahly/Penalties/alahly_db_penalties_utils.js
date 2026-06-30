@@ -2,9 +2,13 @@ import { isAhlyTeam } from "../PlayerDetails/alahly_player_impact_utils";
 import { sortRowsByTableSortRules } from "../../Database/TableSortLogic_db.js";
 import { gkRowLinksEventId } from "../../Database/EditorComponents_db.js";
 import { getCatalogDisplayName, resolvePlayerCatalogId } from "../../Database/Supabase_db.js";
+import {
+    PENALTY_MISS_DESCRIPTIONS,
+    isPenaltyMissReason,
+    isPlayerCatalogId,
+} from "../../Database/pen_missed_catalog_db.js";
 
-export const PENALTY_MISS_DESCRIPTIONS = ["برا المرمى", "القائم", "العارضة", "؟"];
-const MISS_DESCRIPTIONS = PENALTY_MISS_DESCRIPTIONS;
+export { PENALTY_MISS_DESCRIPTIONS, isPenaltyMissReason, isPlayerCatalogId };
 
 export const PEN_EVENT_OPTION_SEP = " · ";
 
@@ -132,7 +136,7 @@ export function buildMatchContextMap(filteredMatches) {
 }
 
 export function isPenaltyMissReason(value) {
-    return MISS_DESCRIPTIONS.includes(String(value || "").trim());
+    return PENALTY_MISS_DESCRIPTIONS.includes(String(value || "").trim());
 }
 
 export function isPlayerCatalogId(value) {
