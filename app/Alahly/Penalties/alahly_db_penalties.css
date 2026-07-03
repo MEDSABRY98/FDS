@@ -379,6 +379,12 @@
     text-align: center !important;
 }
 
+.penalties-vs-teams-table th {
+    font-size: 13px;
+    letter-spacing: 1px;
+    padding: 14px 10px;
+}
+
 .penalties-vs-teams-table td {
     font-size: 15px;
     padding: 14px 10px;
@@ -398,17 +404,6 @@
 
 .penalties-vs-teams-table .rank-badge-premium {
     font-size: 14px;
-}
-
-.penalties-vs-teams-group-row th {
-    font-size: 12px;
-    letter-spacing: 1px;
-    color: rgba(255, 255, 255, 0.95);
-}
-
-.penalties-vs-teams-subhead th {
-    font-size: 12px;
-    letter-spacing: 0.5px;
 }
 
 .pen-scored {

@@ -494,7 +494,7 @@ function getAhlySaveRate(againstStats) {
     return ((againstStats.concSaved / faced) * 100).toFixed(1);
 }
 
-export function aggregateByChampion(events) {
+export function aggregateByChampion(events, perspective = "for") {
     const map = new Map();
 
     (events || []).forEach((ev) => {
@@ -504,14 +504,28 @@ export function aggregateByChampion(events) {
     });
 
     return Array.from(map.values())
-        .map((row) => ({
-            ...row,
-            conversion: getConversionPct(row.scored, row.attFor),
-        }))
+        .map((row) => {
+            if (perspective === "against") {
+                const concAtt = (row.concGoal || 0) + (row.concMiss || 0) + (row.concSaved || 0);
+                return {
+                    ...row,
+                    attFor: concAtt,
+                    scored: row.concGoal,
+                    missed: row.concMiss,
+                    saved: row.concSaved,
+                    conversion: getConversionPct(row.concGoal, concAtt),
+                };
+            }
+            return {
+                ...row,
+                conversion: getConversionPct(row.scored, row.attFor),
+            };
+        })
+        .filter((row) => row.attFor > 0)
         .sort((a, b) => b.attFor - a.attFor || b.scored - a.scored);
 }
 
-export function aggregateBySeason(events, mode = "name") {
+export function aggregateBySeason(events, mode = "name", perspective = "for") {
     const map = new Map();
 
     (events || []).forEach((ev) => {
@@ -540,10 +554,23 @@ export function aggregateBySeason(events, mode = "name") {
     });
 
     return sortSeasonRows(
-        Array.from(map.values()).map((row) => ({
-            ...row,
-            conversion: getConversionPct(row.scored, row.attFor),
-        })),
+        Array.from(map.values()).map((row) => {
+            if (perspective === "against") {
+                const concAtt = (row.concGoal || 0) + (row.concMiss || 0) + (row.concSaved || 0);
+                return {
+                    ...row,
+                    attFor: concAtt,
+                    scored: row.concGoal,
+                    missed: row.concMiss,
+                    saved: row.concSaved,
+                    conversion: getConversionPct(row.concGoal, concAtt),
+                };
+            }
+            return {
+                ...row,
+                conversion: getConversionPct(row.scored, row.attFor),
+            };
+        }).filter((row) => row.attFor > 0),
         mode,
         "desc"
     );
@@ -553,7 +580,7 @@ export function getConcAttempts(stats) {
     return (stats?.concGoal || 0) + (stats?.concMiss || 0) + (stats?.concSaved || 0);
 }
 
-export function aggregateByOpponent(events) {
+export function aggregateByOpponent(events, perspective = "for") {
     const map = new Map();
 
     (events || []).forEach((ev) => {
@@ -563,16 +590,30 @@ export function aggregateByOpponent(events) {
     });
 
     return Array.from(map.values())
-        .map((row) => ({
-            ...row,
-            conversion: getConversionPct(row.scored, row.attFor),
-            concAtt: getConcAttempts(row),
-        }))
-        .filter((row) => row.attFor > 0 || row.concAtt > 0)
-        .sort((a, b) => b.attFor - a.attFor || b.concAtt - a.concAtt || String(a.name).localeCompare(String(b.name), "ar"));
+        .map((row) => {
+            if (perspective === "against") {
+                const concAtt = (row.concGoal || 0) + (row.concMiss || 0) + (row.concSaved || 0);
+                return {
+                    ...row,
+                    attFor: concAtt,
+                    scored: row.concGoal,
+                    missed: row.concMiss,
+                    saved: row.concSaved,
+                    conversion: getConversionPct(row.concGoal, concAtt),
+                    concAtt: concAtt,
+                };
+            }
+            return {
+                ...row,
+                conversion: getConversionPct(row.scored, row.attFor),
+                concAtt: (row.concGoal || 0) + (row.concMiss || 0) + (row.concSaved || 0),
+            };
+        })
+        .filter((row) => row.attFor > 0)
+        .sort((a, b) => b.attFor - a.attFor || b.scored - a.scored || String(a.name).localeCompare(String(b.name), "ar"));
 }
 
-export function aggregateByManager(events, managerType = "ahly") {
+export function aggregateByManager(events, managerType = "ahly", perspective = "for") {
     const field = managerType === "opponent" ? "opponentManager" : "ahlyManager";
     const map = new Map();
 
@@ -583,13 +624,27 @@ export function aggregateByManager(events, managerType = "ahly") {
     });
 
     return Array.from(map.values())
-        .map((row) => ({
-            ...row,
-            conversion: getConversionPct(row.scored, row.attFor),
-            concAtt: getConcAttempts(row),
-        }))
-        .filter((row) => row.attFor > 0 || row.concAtt > 0)
-        .sort((a, b) => b.attFor - a.attFor || b.concAtt - a.concAtt || String(a.name).localeCompare(String(b.name), "ar"));
+        .map((row) => {
+            if (perspective === "against") {
+                const concAtt = (row.concGoal || 0) + (row.concMiss || 0) + (row.concSaved || 0);
+                return {
+                    ...row,
+                    attFor: concAtt,
+                    scored: row.concGoal,
+                    missed: row.concMiss,
+                    saved: row.concSaved,
+                    conversion: getConversionPct(row.concGoal, concAtt),
+                    concAtt: concAtt,
+                };
+            }
+            return {
+                ...row,
+                conversion: getConversionPct(row.scored, row.attFor),
+                concAtt: (row.concGoal || 0) + (row.concMiss || 0) + (row.concSaved || 0),
+            };
+        })
+        .filter((row) => row.attFor > 0)
+        .sort((a, b) => b.attFor - a.attFor || b.scored - a.scored || String(a.name).localeCompare(String(b.name), "ar"));
 }
 
 export function aggregateByPlayer(events, teamFilter = "all") {
@@ -612,8 +667,8 @@ export function aggregateByPlayer(events, teamFilter = "all") {
         .sort((a, b) => b.total - a.total || b.goal - a.goal);
 }
 
-export function getTopChampionshipsForChart(events, limit = 6) {
-    const rows = aggregateByChampion(events);
+export function getTopChampionshipsForChart(events, limit = 6, perspective = "for") {
+    const rows = aggregateByChampion(events, perspective);
     return rows
         .filter((r) => r.attFor > 0)
         .slice(0, limit);

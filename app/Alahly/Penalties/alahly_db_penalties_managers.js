@@ -6,14 +6,14 @@ import SearchBar_db from "../../lib/SearchBar_db";
 import DropDownList_db from "../../lib/DropDownList_db";
 import { sumPenaltyRows } from "./alahly_db_penalties_utils";
 
-function SortableTh({ label, sortKey, sortConfig, onSort, rowSpan = 1, colSpan = 1 }) {
+function SortableTh({ label, sortKey, sortConfig, onSort, rowSpan = 1, colSpan = 1, style }) {
     const active = sortConfig.key === sortKey;
     return (
         <th
             className="sortable"
             rowSpan={rowSpan}
             colSpan={colSpan}
-            style={{ color: active ? "var(--gold)" : undefined, cursor: "pointer" }}
+            style={{ ...style, color: active ? "var(--gold)" : undefined, cursor: "pointer" }}
             onClick={() => onSort(sortKey)}
         >
             {label}
@@ -103,21 +103,13 @@ export default function AlAhlyPenaltiesManagers({
             <div className="table-container-premium">
                 <table className="modern-h2h-table penalties-table penalties-managers-table penalties-vs-teams-table">
                     <thead>
-                        <tr className="penalties-vs-teams-group-row">
-                            <th rowSpan={2} style={{ width: "50px" }}>#</th>
-                            <th rowSpan={2}>MANAGER</th>
-                            <th colSpan={4}>FOR AHLY</th>
-                            <th colSpan={4}>AGAINST AHLY</th>
-                        </tr>
-                        <tr className="penalties-vs-teams-subhead">
+                        <tr>
+                            <th style={{ width: "50px" }}>#</th>
+                            <SortableTh label="MANAGER" sortKey="name" sortConfig={sortConfig} onSort={handleSort} style={{ textAlign: "center" }} />
                             <SortableTh label="ATT" sortKey="attFor" sortConfig={sortConfig} onSort={handleSort} />
                             <SortableTh label="G" sortKey="scored" sortConfig={sortConfig} onSort={handleSort} />
                             <SortableTh label="MISS" sortKey="missed" sortConfig={sortConfig} onSort={handleSort} />
                             <SortableTh label="SAVED" sortKey="saved" sortConfig={sortConfig} onSort={handleSort} />
-                            <SortableTh label="ATT" sortKey="concAtt" sortConfig={sortConfig} onSort={handleSort} />
-                            <SortableTh label="G" sortKey="concGoal" sortConfig={sortConfig} onSort={handleSort} />
-                            <SortableTh label="MISS" sortKey="concMiss" sortConfig={sortConfig} onSort={handleSort} />
-                            <SortableTh label="SAVED" sortKey="concSaved" sortConfig={sortConfig} onSort={handleSort} />
                         </tr>
                     </thead>
                     <tbody>
@@ -129,10 +121,6 @@ export default function AlAhlyPenaltiesManagers({
                                 {cell(row.scored, "pen-scored")}
                                 {cell(row.missed, "pen-missed")}
                                 {cell(row.saved, "pen-saved")}
-                                {cell(row.concAtt)}
-                                {cell(row.concGoal, "pen-missed")}
-                                {cell(row.concMiss)}
-                                {cell(row.concSaved, "pen-saved")}
                             </tr>
                         ))}
                     </tbody>
@@ -143,10 +131,6 @@ export default function AlAhlyPenaltiesManagers({
                             <td className="pen-scored">{totals.scored}</td>
                             <td className="pen-missed">{totals.missed}</td>
                             <td className="pen-saved">{totals.saved}</td>
-                            <td>{totals.concAtt}</td>
-                            <td className="pen-missed">{totals.concGoal}</td>
-                            <td>{totals.concMiss}</td>
-                            <td className="pen-saved">{totals.concSaved}</td>
                         </tr>
                     </tfoot>
                 </table>

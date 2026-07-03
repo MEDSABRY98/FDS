@@ -29,7 +29,7 @@ const MANAGER_TYPE_LABELS = { ahly: "Ahly Managers", opponent: "Opponent Manager
 
 export default function AlAhlyPenalties({ playerDetails, filteredMatches }) {
     const [activeSubTab, setActiveSubTab] = useState(1);
-    const [teamFilter, setTeamFilter] = useState("all");
+    const [perspective, setPerspective] = useState("for"); // "for" or "against"
     const [managerType, setManagerType] = useState("ahly");
 
     const { events } = useMemo(
@@ -38,12 +38,14 @@ export default function AlAhlyPenalties({ playerDetails, filteredMatches }) {
     );
 
     const teamStats = useMemo(() => aggregateTeamStats(events), [events]);
-    const championRows = useMemo(() => aggregateByChampion(events), [events]);
-    const seasonRowsName = useMemo(() => aggregateBySeason(events, "name"), [events]);
-    const seasonRowsNumber = useMemo(() => aggregateBySeason(events, "number"), [events]);
-    const opponentRows = useMemo(() => aggregateByOpponent(events), [events]);
-    const managerRows = useMemo(() => aggregateByManager(events, managerType), [events, managerType]);
-    const playerRows = useMemo(() => aggregateByPlayer(events, teamFilter), [events, teamFilter]);
+    const championRows = useMemo(() => aggregateByChampion(events, perspective), [events, perspective]);
+    const seasonRowsName = useMemo(() => aggregateBySeason(events, "name", perspective), [events, perspective]);
+    const seasonRowsNumber = useMemo(() => aggregateBySeason(events, "number", perspective), [events, perspective]);
+    const opponentRows = useMemo(() => aggregateByOpponent(events, perspective), [events, perspective]);
+    const managerRows = useMemo(() => aggregateByManager(events, managerType, perspective), [events, managerType, perspective]);
+    
+    // Players team filter derived from perspective: "for" -> "ahly", "against" -> "opponents"
+    const playerRows = useMemo(() => aggregateByPlayer(events, perspective === "for" ? "ahly" : "opponents"), [events, perspective]);
 
     const handleExport = () => {
         if (activeSubTab === 1) {
@@ -52,10 +54,16 @@ export default function AlAhlyPenalties({ playerDetails, filteredMatches }) {
             const againstConversion = againstAttempts
                 ? ((againstAhly.concGoal / againstAttempts) * 100).toFixed(1)
                 : "0.0";
-            AlAhlyExcelExport.exportToExcel([
-                { SIDE: "FOR AHLY", ATTEMPTS: forAhly.attFor, SCORED: forAhly.scored, MISSED: forAhly.missed, SAVED: forAhly.saved, "CONV%": `${forAhly.conversion}%` },
-                { SIDE: "AGAINST AHLY", ATTEMPTS: againstAttempts, SCORED: againstAhly.concGoal, MISSED: againstAhly.concMiss, SAVED: againstAhly.concSaved, "CONV%": `${againstConversion}%` },
-            ], "AlAhly_Penalties_Dashboard");
+            
+            if (perspective === "against") {
+                AlAhlyExcelExport.exportToExcel([
+                    { SIDE: "AGAINST AHLY", ATTEMPTS: againstAttempts, SCORED: againstAhly.concGoal, MISSED: againstAhly.concMiss, SAVED: againstAhly.concSaved, "CONV%": `${againstConversion}%` },
+                ], "AlAhly_Penalties_Dashboard_Against");
+            } else {
+                AlAhlyExcelExport.exportToExcel([
+                    { SIDE: "FOR AHLY", ATTEMPTS: forAhly.attFor, SCORED: forAhly.scored, MISSED: forAhly.missed, SAVED: forAhly.saved, "CONV%": `${forAhly.conversion}%` },
+                ], "AlAhly_Penalties_Dashboard_For");
+            }
             return;
         }
 
@@ -112,28 +120,20 @@ export default function AlAhlyPenalties({ playerDetails, filteredMatches }) {
             const exportData = opponentRows.map((r, i) => ({
                 "#": i + 1,
                 TEAM: r.name,
-                "FOR ATT": r.attFor,
-                "FOR G": r.scored,
-                "FOR MISS": r.missed,
-                "FOR SAVED": r.saved,
-                "AGAINST ATT": r.concAtt,
-                "AGAINST G": r.concGoal,
-                "AGAINST MISS": r.concMiss,
-                "AGAINST SAVED": r.concSaved,
+                "ATT": r.attFor,
+                "G": r.scored,
+                "MISS": r.missed,
+                "SAVED": r.saved,
             }));
             exportData.push({
                 "#": "TOTALS",
                 TEAM: "",
-                "FOR ATT": totals.attFor,
-                "FOR G": totals.scored,
-                "FOR MISS": totals.missed,
-                "FOR SAVED": totals.saved,
-                "AGAINST ATT": totals.concAtt,
-                "AGAINST G": totals.concGoal,
-                "AGAINST MISS": totals.concMiss,
-                "AGAINST SAVED": totals.concSaved,
+                "ATT": totals.attFor,
+                "G": totals.scored,
+                "MISS": totals.missed,
+                "SAVED": totals.saved,
             });
-            AlAhlyExcelExport.exportToExcel(exportData, "AlAhly_Penalties_Vs_Teams");
+            AlAhlyExcelExport.exportToExcel(exportData, `AlAhly_Penalties_Vs_Teams_${perspective}`);
             return;
         }
 
@@ -142,28 +142,20 @@ export default function AlAhlyPenalties({ playerDetails, filteredMatches }) {
             const exportData = managerRows.map((r, i) => ({
                 "#": i + 1,
                 MANAGER: r.name,
-                "FOR ATT": r.attFor,
-                "FOR G": r.scored,
-                "FOR MISS": r.missed,
-                "FOR SAVED": r.saved,
-                "AGAINST ATT": r.concAtt,
-                "AGAINST G": r.concGoal,
-                "AGAINST MISS": r.concMiss,
-                "AGAINST SAVED": r.concSaved,
+                "ATT": r.attFor,
+                "G": r.scored,
+                "MISS": r.missed,
+                "SAVED": r.saved,
             }));
             exportData.push({
                 "#": "TOTALS",
                 MANAGER: "",
-                "FOR ATT": totals.attFor,
-                "FOR G": totals.scored,
-                "FOR MISS": totals.missed,
-                "FOR SAVED": totals.saved,
-                "AGAINST ATT": totals.concAtt,
-                "AGAINST G": totals.concGoal,
-                "AGAINST MISS": totals.concMiss,
-                "AGAINST SAVED": totals.concSaved,
+                "ATT": totals.attFor,
+                "G": totals.scored,
+                "MISS": totals.missed,
+                "SAVED": totals.saved,
             });
-            AlAhlyExcelExport.exportToExcel(exportData, managerType === "opponent" ? "AlAhly_Penalties_Opponent_Managers" : "AlAhly_Penalties_Ahly_Managers");
+            AlAhlyExcelExport.exportToExcel(exportData, `AlAhly_Penalties_${managerType === "opponent" ? "Opponent" : "Ahly"}_Managers_${perspective}`);
             return;
         }
 
@@ -191,14 +183,22 @@ export default function AlAhlyPenalties({ playerDetails, filteredMatches }) {
         const handleGlobalExport = () => handleExport();
         window.addEventListener("alahly-export-excel", handleGlobalExport);
         return () => window.removeEventListener("alahly-export-excel", handleGlobalExport);
-    }, [activeSubTab, teamStats, championRows, seasonRowsName, opponentRows, playerRows, managerRows, managerType]);
+    }, [activeSubTab, teamStats, championRows, seasonRowsName, opponentRows, playerRows, managerRows, managerType, perspective]);
 
     return (
         <div className="tab-content fade-in" id="tab-alahly-penalties">
             <div className="penalties-premium-wrap">
                 <div className="penalties-header-block">
-                    <div className="section-title">AL AHLY <span className="accent">PENALTIES</span></div>
-                    <div className="gold-line"></div>
+                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                        <div>
+                            <div className="section-title">AL AHLY <span className="accent">PENALTIES</span></div>
+                            <div className="gold-line"></div>
+                        </div>
+                        <div className="penalties-season-toggle">
+                            <button type="button" className={perspective === "for" ? "active" : ""} onClick={() => setPerspective("for")}>For Al Ahly</button>
+                            <button type="button" className={perspective === "against" ? "active" : ""} onClick={() => setPerspective("against")}>Against Al Ahly</button>
+                        </div>
+                    </div>
                     <div className="penalties-sub-tabs-selection">
                         {SUB_TABS.map((label, index) => {
                             const num = index + 1;
@@ -215,7 +215,7 @@ export default function AlAhlyPenalties({ playerDetails, filteredMatches }) {
                     </div>
                 </div>
 
-                {activeSubTab === 1 && <AlAhlyPenaltiesDashboard teamStats={teamStats} events={events} />}
+                {activeSubTab === 1 && <AlAhlyPenaltiesDashboard teamStats={teamStats} events={events} perspective={perspective} />}
                 {activeSubTab === 2 && <AlAhlyPenaltiesChampionships rows={championRows} />}
                 {activeSubTab === 3 && (
                     <AlAhlyPenaltiesSeasons rowsName={seasonRowsName} rowsNumber={seasonRowsNumber} />
@@ -232,9 +232,6 @@ export default function AlAhlyPenalties({ playerDetails, filteredMatches }) {
                 {activeSubTab === 6 && (
                     <AlAhlyPenaltiesPlayers
                         rows={playerRows}
-                        teamFilter={teamFilter}
-                        onTeamFilterChange={setTeamFilter}
-                        teamFilterLabels={TEAM_FILTER_LABELS}
                     />
                 )}
             </div>

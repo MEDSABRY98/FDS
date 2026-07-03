@@ -82,65 +82,52 @@ function CompetitionDonutCard({ row, rank }) {
     );
 }
 
-export default function AlAhlyPenaltiesDashboard({ teamStats, events }) {
+export default function AlAhlyPenaltiesDashboard({ teamStats, events, perspective }) {
     const { forAhly, againstAhly } = teamStats;
-    const chartRows = getTopChampionshipsForChart(events, 6);
+    const chartRows = getTopChampionshipsForChart(events, 6, perspective);
     const againstAttempts = (againstAhly.concGoal || 0) + (againstAhly.concMiss || 0) + (againstAhly.concSaved || 0);
     const againstConversion = againstAttempts
         ? ((againstAhly.concGoal / againstAttempts) * 100).toFixed(1)
         : "0.0";
-    const hasData = forAhly.attFor > 0 || againstAttempts > 0;
+
+    const stats = perspective === "against" ? {
+        attFor: againstAttempts,
+        scored: againstAhly.concGoal,
+        missed: againstAhly.concMiss,
+        saved: againstAhly.concSaved,
+        conversion: againstConversion
+    } : forAhly;
+
+    const hasData = stats.attFor > 0;
 
     if (!hasData) {
         return <NoData_db message="NO PENALTY DATA IN CURRENT FILTER" />;
     }
 
+    const title = perspective === "against" ? "AGAINST AL AHLY" : "FOR AL AHLY";
+
     return (
         <div className="penalties-dashboard-wrap">
-            <div className="penalties-section-label">FOR AL AHLY</div>
+            <div className="penalties-section-label">{title}</div>
             <div className="kpi-grid penalties-kpi-grid">
                 <div className="kpi-card penalties-kpi-card">
                     <span className="kpi-label">ATTEMPTS</span>
-                    <div className="kpi-value">{forAhly.attFor}</div>
+                    <div className="kpi-value">{stats.attFor}</div>
                     <div className="kpi-sub">Total penalty shots</div>
                 </div>
                 <div className="kpi-card penalties-kpi-card">
                     <span className="kpi-label">SCORED</span>
-                    <div className="kpi-value" style={{ color: "#2ecc71" }}>{forAhly.scored}</div>
-                    <div className="kpi-sub">Conversion {forAhly.conversion}%</div>
+                    <div className="kpi-value" style={{ color: "#2ecc71" }}>{stats.scored}</div>
+                    <div className="kpi-sub">Conversion {stats.conversion}%</div>
                 </div>
                 <div className="kpi-card penalties-kpi-card">
                     <span className="kpi-label">MISSED</span>
-                    <div className="kpi-value" style={{ color: "#e74c3c" }}>{forAhly.missed}</div>
+                    <div className="kpi-value" style={{ color: "#e74c3c" }}>{stats.missed}</div>
                     <div className="kpi-sub">Off target / post</div>
                 </div>
                 <div className="kpi-card penalties-kpi-card">
                     <span className="kpi-label">SAVED</span>
-                    <div className="kpi-value" style={{ color: "#3498db" }}>{forAhly.saved}</div>
-                    <div className="kpi-sub">GK saves</div>
-                </div>
-            </div>
-
-            <div className="penalties-section-label">AGAINST AL AHLY</div>
-            <div className="kpi-grid penalties-kpi-grid">
-                <div className="kpi-card penalties-kpi-card">
-                    <span className="kpi-label">ATTEMPTS</span>
-                    <div className="kpi-value">{againstAttempts}</div>
-                    <div className="kpi-sub">Total penalty shots</div>
-                </div>
-                <div className="kpi-card penalties-kpi-card">
-                    <span className="kpi-label">SCORED</span>
-                    <div className="kpi-value" style={{ color: "#2ecc71" }}>{againstAhly.concGoal}</div>
-                    <div className="kpi-sub">Conversion {againstConversion}%</div>
-                </div>
-                <div className="kpi-card penalties-kpi-card">
-                    <span className="kpi-label">MISSED</span>
-                    <div className="kpi-value" style={{ color: "#e74c3c" }}>{againstAhly.concMiss}</div>
-                    <div className="kpi-sub">Off target / post</div>
-                </div>
-                <div className="kpi-card penalties-kpi-card">
-                    <span className="kpi-label">SAVED</span>
-                    <div className="kpi-value" style={{ color: "#3498db" }}>{againstAhly.concSaved}</div>
+                    <div className="kpi-value" style={{ color: "#3498db" }}>{stats.saved}</div>
                     <div className="kpi-sub">GK saves</div>
                 </div>
             </div>
@@ -148,7 +135,7 @@ export default function AlAhlyPenaltiesDashboard({ teamStats, events }) {
             {chartRows.length > 0 && (
                 <div className="penalties-chart-card penalties-donut-section">
                     <div className="penalties-chart-header">
-                        <span>TOP COMPETITIONS — AHLY PENALTIES</span>
+                        <span>TOP COMPETITIONS — {title}</span>
                         <div className="penalties-chart-legend">
                             <span style={{ color: "#2ecc71" }}>■ SCORED</span>
                             <span style={{ color: "#e74c3c" }}>■ MISSED</span>

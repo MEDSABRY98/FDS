@@ -17,7 +17,7 @@ function SortableTh({ label, sortKey, sortConfig, onSort }) {
     );
 }
 
-export default function AlAhlyPenaltiesPlayers({ rows, teamFilter, onTeamFilterChange, teamFilterLabels }) {
+export default function AlAhlyPenaltiesPlayers({ rows }) {
     const [searchTerm, setSearchTerm] = useState("");
     const [sortConfig, setSortConfig] = useState({ key: "total", direction: "desc" });
     const [currentPage, setCurrentPage] = useState(1);
@@ -51,23 +51,14 @@ export default function AlAhlyPenaltiesPlayers({ rows, teamFilter, onTeamFilterC
     const totalPages = Math.max(1, Math.ceil(filtered.length / pageSize));
     const paginated = filtered.slice((currentPage - 1) * pageSize, currentPage * pageSize);
     const emptyMessage = !rows?.length
-        ? "NO PENALTY DATA IN CURRENT FILTER"
+        ? "NO PENALTY DATA"
         : searchTerm.trim()
             ? "NO PLAYERS MATCH YOUR SEARCH"
-            : "NO PLAYERS IN CURRENT FILTER";
+            : "NO PLAYERS";
 
     return (
         <>
             <div className="penalties-controls">
-                <DropDownList_db
-                    options={Object.keys(teamFilterLabels).map((key) => ({
-                        value: key,
-                        label: teamFilterLabels[key],
-                    }))}
-                    value={teamFilter}
-                    onChange={onTeamFilterChange}
-                    placeholder="Select Category"
-                />
                 <SearchBar_db
                     value={searchTerm}
                     onChange={(v) => { setSearchTerm(v); setCurrentPage(1); }}
