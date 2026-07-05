@@ -203,7 +203,7 @@ export default function EgyptNTPKSDatabase() {
                 }
             ]}
         >
-            <main className="egy-pks-content-viewport" style={{ padding: '0', maxWidth: (activeTab === 'egy_pks_h2h' || activeTab === 'egy_pks_champions' || activeTab === 'egy_pks_managers' || activeTab === 'egy_pks_editor') ? '100%' : '1380px', margin: '0 auto', width: '100%' }}>
+            <main className="egy-pks-content-viewport" style={{ padding: '0', maxWidth: '1400px', margin: '0 auto', width: '100%' }}>
                 {loading ? (
                     <Loading_db title="EGYPT NT" subtitle="PKs DATABASE" message="SYNCING DATA" inline={true} />
                 ) : (

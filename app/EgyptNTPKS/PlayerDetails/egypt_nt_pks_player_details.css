@@ -1,0 +1,123 @@
+/* Egypt NT PKs Player Details Specific CSS */
+
+/* Tabs */
+.player-details-tabs {
+    display: grid;
+    grid-template-columns: repeat(6, 1fr);
+    gap: 15px;
+    margin-top: 30px;
+    margin-bottom: 20px;
+}
+
+.player-tab-item {
+    background-color: #f8f9fa;
+    padding: 18px 10px;
+    text-align: center;
+    border-radius: 12px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    border: 1px solid #eee;
+    color: #444;
+}
+
+.player-tab-item:hover {
+    background-color: #f0f0f0;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+}
+
+.player-tab-item.active {
+    background-color: #C8102E;
+    color: #ffffff;
+    border-color: #C8102E;
+    box-shadow: 0 8px 20px rgba(200, 16, 46, 0.2);
+}
+
+.player-tab-item .tab-title {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 22px;
+    letter-spacing: 2px;
+}
+
+/* Premium Tables for Champions and Seasons */
+.table-container-premium {
+    background: #ffffff;
+    border-radius: 16px;
+    padding: 25px;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.04);
+    border: 1px solid rgba(0,0,0,0.05);
+    margin-top: 20px;
+    overflow-x: auto;
+}
+
+.modern-h2h-table {
+    width: 100%;
+    border-collapse: separate;
+    border-spacing: 0;
+}
+
+.modern-h2h-table th {
+    background: #111;
+    color: #fff;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 13px;
+    font-weight: 700;
+    letter-spacing: 1px;
+    padding: 16px 15px;
+    text-transform: uppercase;
+    border: none;
+}
+
+.modern-h2h-table th:first-child {
+    border-top-left-radius: 10px;
+    border-bottom-left-radius: 10px;
+}
+
+.modern-h2h-table th:last-child {
+    border-top-right-radius: 10px;
+    border-bottom-right-radius: 10px;
+}
+
+.modern-h2h-table td {
+    padding: 16px 15px;
+    font-family: 'Inter', sans-serif;
+    font-size: 15px;
+    border-bottom: 1px solid #f0f0f0;
+    color: #333;
+    transition: background 0.2s;
+}
+
+.modern-h2h-table tr:hover td {
+    background: #fafafa;
+}
+
+.modern-h2h-table tr:last-child td {
+    border-bottom: none;
+}
+
+.modern-h2h-table tfoot td {
+    background: #111;
+    color: #fff;
+    border-top: 2px solid #333;
+}
+
+.modern-h2h-table tfoot tr:hover td {
+    background: #111;
+}
+
+.modern-h2h-table tfoot td:first-child {
+    border-bottom-left-radius: 10px;
+}
+
+.modern-h2h-table tfoot td:last-child {
+    border-bottom-right-radius: 10px;
+}
+
+.rate-badge {
+    display: inline-block;
+    padding: 6px 12px;
+    border-radius: 6px;
+    font-weight: 700;
+    font-size: 14px;
+    background: rgba(0,0,0,0.03);
+}

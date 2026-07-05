@@ -1,13 +1,21 @@
 "use client";
 
-import { useMemo, useEffect } from "react";
-import NoData_db from "../../lib/NoData_db";
+import { useMemo, useState, useEffect } from "react";
 import "../MatchDetails/egypt_nt_pks_match_details.css";
+import "./egypt_nt_pks_player_details.css";
+import EgyptNTPKSPlayerDetailsDashboard from "./egypt_nt_pks_player_details_dashboard";
+import EgyptNTPKSPlayerDetailsMatches from "./egypt_nt_pks_player_details_matches";
+import EgyptNTPKSPlayerDetailsChampions from "./egypt_nt_pks_player_details_champions";
+import EgyptNTPKSPlayerDetailsSeasons from "./egypt_nt_pks_player_details_seasons";
+import EgyptNTPKSPlayerDetailsVsGks from "./egypt_nt_pks_player_details_vs_gks";
+import EgyptNTPKSPlayerDetailsVsTeams from "./egypt_nt_pks_player_details_vs_teams";
 
 export default function EgyptNTPKSPlayerDetails({ playerName, pksData, onBack }) {
+    const [activeTab, setActiveTab] = useState('dashboard'); // 'dashboard' | 'matches' | 'champions' | 'seasons'
+
     useEffect(() => {
         window.scrollTo({ top: 0, behavior: "smooth" });
-    }, []);
+    }, [activeTab]);
 
     const playerKicks = useMemo(() => {
         const kicks = [];
@@ -45,17 +53,6 @@ export default function EgyptNTPKSPlayerDetails({ playerName, pksData, onBack })
         return { total, goals, misses, successRate: total > 0 ? ((goals / total) * 100).toFixed(1) : "0.0" };
     }, [playerKicks]);
 
-    const formatDate = (dateStr) => {
-        if (!dateStr) return "---";
-        try {
-            const d = new Date(dateStr);
-            if (isNaN(d.getTime())) return dateStr;
-            return `${String(d.getDate()).padStart(2, '0')}/${String(d.getMonth() + 1).padStart(2, '0')}/${d.getFullYear()}`;
-        } catch (e) {
-            return dateStr;
-        }
-    };
-
     return (
         <div className="pks-details-container fade-in">
             <div className="pks-details-header">
@@ -69,70 +66,52 @@ export default function EgyptNTPKSPlayerDetails({ playerName, pksData, onBack })
                 </div>
             </div>
 
-            <div className="shootout-summary-card">
-                <div className="gk-stats-grid" style={{ width: '100%' }}>
-                    <div className="gk-stat-card total">
-                        <span className="s-val">{stats.total}</span>
-                        <span className="s-lbl">TOTAL KICKS</span>
-                    </div>
-                    <div className="gk-stat-card goals">
-                        <span className="s-val">{stats.goals}</span>
-                        <span className="s-lbl">GOALS</span>
-                    </div>
-                    <div className="gk-stat-card misses">
-                        <span className="s-val">{stats.misses}</span>
-                        <span className="s-lbl">MISSES</span>
-                    </div>
-                    <div className="gk-stat-card saves">
-                        <span className="s-val">{stats.successRate}%</span>
-                        <span className="s-lbl">SUCCESS RATE</span>
-                    </div>
+            <div className="player-details-tabs">
+                <div 
+                    className={`player-tab-item ${activeTab === 'dashboard' ? 'active' : ''}`} 
+                    onClick={() => setActiveTab('dashboard')}
+                >
+                    <span className="tab-title">DASHBOARD</span>
+                </div>
+                <div 
+                    className={`player-tab-item ${activeTab === 'matches' ? 'active' : ''}`} 
+                    onClick={() => setActiveTab('matches')}
+                >
+                    <span className="tab-title">MATCHES</span>
+                </div>
+                <div 
+                    className={`player-tab-item ${activeTab === 'champions' ? 'active' : ''}`} 
+                    onClick={() => setActiveTab('champions')}
+                >
+                    <span className="tab-title">CHAMPIONSHIPS</span>
+                </div>
+                <div 
+                    className={`player-tab-item ${activeTab === 'seasons' ? 'active' : ''}`} 
+                    onClick={() => setActiveTab('seasons')}
+                >
+                    <span className="tab-title">SEASONS</span>
+                </div>
+                <div 
+                    className={`player-tab-item ${activeTab === 'vs_gks' ? 'active' : ''}`} 
+                    onClick={() => setActiveTab('vs_gks')}
+                >
+                    <span className="tab-title">VS GKs</span>
+                </div>
+                <div 
+                    className={`player-tab-item ${activeTab === 'vs_teams' ? 'active' : ''}`} 
+                    onClick={() => setActiveTab('vs_teams')}
+                >
+                    <span className="tab-title">VS TEAMS</span>
                 </div>
             </div>
 
-            <div className="kicks-table-luxury">
-                <div className="kicks-header" style={{ display: 'flex', alignItems: 'center' }}>
-                    <div className="k-col-seq" style={{ textAlign: 'center', display: 'flex', justifyContent: 'center', alignItems: 'center' }}>#</div>
-                    <div style={{ width: 110, flexShrink: 0, textAlign: 'center', display: 'flex', justifyContent: 'center', alignItems: 'center' }}>PKS ID</div>
-                    <div style={{ width: 110, flexShrink: 0, textAlign: 'center', display: 'flex', justifyContent: 'center', alignItems: 'center' }}>DATE</div>
-                    <div style={{ width: 160, flexShrink: 0, textAlign: 'center', display: 'flex', justifyContent: 'center', alignItems: 'center' }}>SEASON</div>
-                    <div className="k-col-main" style={{ flex: 1.5, textAlign: 'center', display: 'flex', justifyContent: 'center', alignItems: 'center' }}>OPPONENT</div>
-                    <div className="k-col-main" style={{ flex: 1.2, textAlign: 'center', display: 'flex', justifyContent: 'center', alignItems: 'center' }}>OPPONENT GK</div>
-                    <div className="k-col-result" style={{ flex: 1, textAlign: 'center', display: 'flex', justifyContent: 'center', alignItems: 'center' }}>RESULT</div>
-                    <div className="k-col-note" style={{ flex: 0.8, textAlign: 'center', display: 'flex', justifyContent: 'center', alignItems: 'center' }}>HOW</div>
-                </div>
-                <div className="kicks-body">
-                    {playerKicks.length === 0 ? (
-                        <NoData_db message="NO KICK DATA FOUND" />
-                    ) : (
-                        playerKicks.map((kick, idx) => {
-                            const isGoal = String(kick.status || "").toUpperCase().includes('GOAL') || String(kick.status || "").toUpperCase() === 'G';
-                            const opponent = kick.side === "EGYPT" ? kick["OPPONENT TEAM"] : "مصر";
-                            return (
-                                <div key={idx} className="kick-row-premium" style={{ display: 'flex', alignItems: 'center' }}>
-                                    <div className="k-col-seq" style={{ textAlign: 'center', display: 'flex', justifyContent: 'center', alignItems: 'center' }}>{idx + 1}</div>
-                                    <div style={{ width: 110, flexShrink: 0, fontSize: 12, fontFamily: "'Space Mono', monospace", color: '#999', textAlign: 'center', display: 'flex', justifyContent: 'center', alignItems: 'center' }}>{kick.DISPLAY_ID}</div>
-                                    <div style={{ width: 110, flexShrink: 0, fontSize: 14, fontFamily: 'inherit', color: '#333', textAlign: 'center', display: 'flex', justifyContent: 'center', alignItems: 'center' }}>{formatDate(kick.DATE)}</div>
-                                    <div style={{ width: 160, flexShrink: 0, fontSize: 14, fontFamily: 'inherit', color: '#333', textAlign: 'center', display: 'flex', justifyContent: 'center', alignItems: 'center' }}>{kick.SEASON || "---"}</div>
-                                    <div className="k-col-main" style={{ flex: 1.5, textAlign: 'center', display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
-                                        <span className="player-name-val">{opponent || "---"}</span>
-                                    </div>
-                                    <div className="k-col-main" style={{ flex: 1.2, textAlign: 'center', display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
-                                        <span className="player-name-val" style={{ color: '#555', fontWeight: '500', fontSize: '15px' }}>{kick.gk || "---"}</span>
-                                    </div>
-                                    <div className="k-col-result" style={{ flex: 1, display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
-                                        <div className={`kick-indicator ${isGoal ? 'goal' : 'miss'}`}>
-                                            {isGoal ? '⚽ GOAL' : '❌ MISS'}
-                                        </div>
-                                    </div>
-                                    <div className="k-col-note" style={{ flex: 0.8, textAlign: 'center', display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
-                                        <span className="kick-note-txt">{kick.howMiss || ""}</span>
-                                    </div>
-                                </div>
-                            );
-                        })
-                    )}
-                </div>
+            <div className="history-section shadow-lux">
+                {activeTab === 'dashboard' && <EgyptNTPKSPlayerDetailsDashboard stats={stats} />}
+                {activeTab === 'matches' && <EgyptNTPKSPlayerDetailsMatches playerKicks={playerKicks} />}
+                {activeTab === 'champions' && <EgyptNTPKSPlayerDetailsChampions playerKicks={playerKicks} />}
+                {activeTab === 'seasons' && <EgyptNTPKSPlayerDetailsSeasons playerKicks={playerKicks} />}
+                {activeTab === 'vs_gks' && <EgyptNTPKSPlayerDetailsVsGks playerKicks={playerKicks} />}
+                {activeTab === 'vs_teams' && <EgyptNTPKSPlayerDetailsVsTeams playerKicks={playerKicks} />}
             </div>
         </div>
     );

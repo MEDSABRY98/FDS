@@ -3,6 +3,7 @@
 import { useMemo, useState, useEffect } from "react";
 import { EgyptNTPKSService } from "../Service/egypt_nt_pks_service";
 import { EgyptNTPksExcelExport } from "../ExportExcel/egypt_nt_pks_export_excel";
+import EgyptNTPKSGkDetails from "../GkDetails/egypt_nt_pks_gk_details";
 import NoData_db from "../../lib/NoData_db";
 import SearchBar_db from "../../lib/SearchBar_db";
 import DropDownList_db from "../../lib/DropDownList_db";
@@ -11,6 +12,7 @@ import "./egypt_nt_pks_gks.css";
 export default function EgyptNTPKSGKs({ pksData }) {
     const [searchTerm, setSearchTerm] = useState("");
     const [gkScope, setGkScope] = useState("ALL");
+    const [selectedGk, setSelectedGk] = useState(null);
     const scopeOptions = [
         { value: "ALL", label: "ALL GKs" },
         { value: "EGYPT", label: "EGYPT GKs" },
@@ -34,6 +36,7 @@ export default function EgyptNTPKSGKs({ pksData }) {
                         matchIds: new Set(),
                         faced: 0,
                         saved: 0,
+                        missed: 0,
                         conceded: 0,
                     };
                 }
@@ -48,8 +51,10 @@ export default function EgyptNTPKSGKs({ pksData }) {
 
                 if (statusStr.includes("GOAL") || statusStr === "G") {
                     gk.conceded++;
-                } else if (howMissStr.includes("الحارس") || howMissStr.includes("حارس") || howMissStr.includes("صد")) {
+                } else if (howMissStr.includes("الحارس") || howMissStr.includes("حارس") || howMissStr.includes("صد") || statusStr.includes("SAVED") || statusStr === "S") {
                     gk.saved++;
+                } else if (statusStr) {
+                    gk.missed++;
                 }
             };
 
@@ -135,6 +140,7 @@ export default function EgyptNTPKSGKs({ pksData }) {
             "SAVED": g.saved,
             "CONCEDED": g.conceded,
             "SAVE RATE": g.saveRate + "%",
+            "MISSED": g.missed,
         }));
         EgyptNTPksExcelExport.exportToExcel(exportData, "Egypt_NT_PKs_GK_Stats");
     };
@@ -147,34 +153,42 @@ export default function EgyptNTPKSGKs({ pksData }) {
 
     return (
         <div className="pks-gks-container fade-in">
-            {/* HEADER */}
-            <div className="gks-header-row">
-                <h1 className="gks-title">EGYPT NT <span className="gold-text">PKs GOALKEEPERS</span></h1>
+            {!selectedGk && (
+                <div className="gks-header-row">
+                    <h1 className="gks-title">EGYPT NT <span className="gold-text">PKs GOALKEEPERS</span></h1>
 
-                <div className="gks-controls-row" style={{ display: 'flex', gap: '15px', alignItems: 'center', justifyContent: 'center', width: '100%', maxWidth: '900px', margin: '0 auto' }}>
-                    {/* Search */}
-                    <div style={{ flex: 1, maxWidth: '450px' }}>
-                        <SearchBar_db
-                            value={searchTerm}
-                            onChange={(val) => { setSearchTerm(val); setCurrentPage(1); }}
-                            placeholder="Search goalkeeper name..."
-                        />
-                    </div>
+                    <div className="gks-controls-row" style={{ display: 'flex', gap: '15px', alignItems: 'center', justifyContent: 'center', width: '100%', maxWidth: '900px', margin: '0 auto' }}>
+                        {/* Search */}
+                        <div style={{ flex: 1, maxWidth: '450px' }}>
+                            <SearchBar_db
+                                value={searchTerm}
+                                onChange={(val) => { setSearchTerm(val); setCurrentPage(1); }}
+                                placeholder="Search goalkeeper name..."
+                            />
+                        </div>
 
-                    {/* Scope Dropdown */}
-                    <div style={{ width: '250px' }}>
-                        <DropDownList_db
-                            options={scopeOptions}
-                            value={gkScope}
-                            onChange={(val) => { setGkScope(val); setCurrentPage(1); }}
-                            placeholder="Select Scope"
-                        />
+                        {/* Scope Dropdown */}
+                        <div style={{ width: '250px' }}>
+                            <DropDownList_db
+                                options={scopeOptions}
+                                value={gkScope}
+                                onChange={(val) => { setGkScope(val); setCurrentPage(1); }}
+                                placeholder="Select Scope"
+                            />
+                        </div>
                     </div>
                 </div>
-            </div>
+            )}
 
-            {/* TABLE */}
-            {paginatedStats.length === 0 ? (
+            {selectedGk ? (
+                <EgyptNTPKSGkDetails 
+                    gkName={selectedGk} 
+                    pksData={pksData} 
+                    onBack={() => setSelectedGk(null)} 
+                />
+            ) : (
+                <>
+                    {paginatedStats.length === 0 ? (
                 <NoData_db message="NO GOALKEEPER RECORDS FOUND" />
             ) : (
                 <div className="gks-table-wrapper">
@@ -200,11 +214,22 @@ export default function EgyptNTPKSGKs({ pksData }) {
                                 <th className="col-stat clickable" onClick={() => requestSort('conceded')}>
                                     CONCEDED {getSortIcon('conceded')}
                                 </th>
+                                <th className="col-stat clickable" onClick={() => requestSort('missed')}>
+                                    MISSED {getSortIcon('missed')}
+                                </th>
                             </tr>
                         </thead>
                         <tbody>
                             {paginatedStats.map((gk, i) => (
-                                <tr key={i} className="gks-row">
+                                <tr 
+                                    key={i} 
+                                    className="gks-row fade-in" 
+                                    onClick={() => {
+                                        setSelectedGk(gk.name);
+                                        window.scrollTo(0, 0);
+                                    }}
+                                    style={{ cursor: 'pointer' }}
+                                >
                                     <td className="col-rank">
                                         <span className="gks-rank-badge">{(currentPage - 1) * pageSize + i + 1}</span>
                                     </td>
@@ -220,6 +245,7 @@ export default function EgyptNTPKSGKs({ pksData }) {
                                         </span>
                                     </td>
                                     <td className="col-stat conceded">{gk.conceded}</td>
+                                    <td className="col-stat">{gk.missed}</td>
                                 </tr>
                             ))}
                         </tbody>
@@ -239,6 +265,7 @@ export default function EgyptNTPKSGKs({ pksData }) {
                                     })()}
                                 </td>
                                 <td className="col-stat">{filteredStats.reduce((a, b) => a + b.conceded, 0)}</td>
+                                <td className="col-stat">{filteredStats.reduce((a, b) => a + b.missed, 0)}</td>
                             </tr>
                         </tfoot>
                     </table>
@@ -258,14 +285,17 @@ export default function EgyptNTPKSGKs({ pksData }) {
                 </div>
             )}
 
-            {/* LEGEND */}
-            <div className="gks-legend">
-                <span><strong>M:</strong> Matches</span>
-                <span><strong>FACED:</strong> Total kicks faced</span>
-                <span><strong>SAVED:</strong> Kicks saved</span>
-                <span><strong>CONCEDED:</strong> Goals let in</span>
-                <span><strong>SAVE %:</strong> Save percentage</span>
-            </div>
+                    {/* LEGEND */}
+                    <div className="gks-legend">
+                        <span><strong>M:</strong> Matches</span>
+                        <span><strong>FACED:</strong> Total kicks faced</span>
+                        <span><strong>SAVED:</strong> Kicks saved</span>
+                        <span><strong>CONCEDED:</strong> Goals let in</span>
+                        <span><strong>SAVE %:</strong> Save percentage</span>
+                        <span><strong>MISSED:</strong> Off target / Post</span>
+                    </div>
+                </>
+            )}
         </div>
     );
 }
