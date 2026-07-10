@@ -183,37 +183,37 @@ export default function EgyptNTH2H({ matches, onOpponentClick }) {
                             <thead>
                                 <tr>
                                     <th style={{ width: '60px' }}>#</th>
-                                    <th className="team-name-cell" onClick={() => handleSort('opponent')} style={{ cursor: 'pointer' }}>
+                                    <th className="team-name-cell" onClick={() => handleSort('opponent')} style={{ cursor: 'pointer', width: '22%' }}>
                                         OPPONENT {sortConfig.key === 'opponent' && (sortConfig.direction === 'asc' ? '↑' : '↓')}
                                     </th>
-                                    <th onClick={() => handleSort('matches')} style={{ cursor: 'pointer' }}>
+                                    <th onClick={() => handleSort('matches')} style={{ cursor: 'pointer', width: '7%' }}>
                                         P {sortConfig.key === 'matches' && (sortConfig.direction === 'asc' ? '↑' : '↓')}
                                     </th>
-                                    <th onClick={() => handleSort('wins')} style={{ cursor: 'pointer' }}>
+                                    <th onClick={() => handleSort('wins')} style={{ cursor: 'pointer', width: '7%' }}>
                                         W {sortConfig.key === 'wins' && (sortConfig.direction === 'asc' ? '↑' : '↓')}
                                     </th>
-                                    <th onClick={() => handleSort('pDraws')} style={{ cursor: 'pointer' }}>
+                                    <th onClick={() => handleSort('pDraws')} style={{ cursor: 'pointer', width: '7%' }}>
                                         D (+) {sortConfig.key === 'pDraws' && (sortConfig.direction === 'asc' ? '↑' : '↓')}
                                     </th>
-                                    <th onClick={() => handleSort('nDraws')} style={{ cursor: 'pointer' }}>
+                                    <th onClick={() => handleSort('nDraws')} style={{ cursor: 'pointer', width: '7%' }}>
                                         D (-) {sortConfig.key === 'nDraws' && (sortConfig.direction === 'asc' ? '↑' : '↓')}
                                     </th>
-                                    <th onClick={() => handleSort('losses')} style={{ cursor: 'pointer' }}>
+                                    <th onClick={() => handleSort('losses')} style={{ cursor: 'pointer', width: '7%' }}>
                                         L {sortConfig.key === 'losses' && (sortConfig.direction === 'asc' ? '↑' : '↓')}
                                     </th>
-                                    <th onClick={() => handleSort('gf')} style={{ cursor: 'pointer' }}>
+                                    <th onClick={() => handleSort('gf')} style={{ cursor: 'pointer', width: '7%' }}>
                                         GF {sortConfig.key === 'gf' && (sortConfig.direction === 'asc' ? '↑' : '↓')}
                                     </th>
-                                    <th onClick={() => handleSort('ga')} style={{ cursor: 'pointer' }}>
+                                    <th onClick={() => handleSort('ga')} style={{ cursor: 'pointer', width: '7%' }}>
                                         GA {sortConfig.key === 'ga' && (sortConfig.direction === 'asc' ? '↑' : '↓')}
                                     </th>
-                                    <th onClick={() => handleSort('gd')} style={{ cursor: 'pointer' }}>
+                                    <th onClick={() => handleSort('gd')} style={{ cursor: 'pointer', width: '7%' }}>
                                         GD {sortConfig.key === 'gd' && (sortConfig.direction === 'asc' ? '↑' : '↓')}
                                     </th>
-                                    <th onClick={() => handleSort('csFor')} style={{ cursor: 'pointer' }}>
+                                    <th onClick={() => handleSort('csFor')} style={{ cursor: 'pointer', width: '9%' }}>
                                         CS FOR {sortConfig.key === 'csFor' && (sortConfig.direction === 'asc' ? '↑' : '↓')}
                                     </th>
-                                    <th onClick={() => handleSort('csAgainst')} style={{ cursor: 'pointer' }}>
+                                    <th onClick={() => handleSort('csAgainst')} style={{ cursor: 'pointer', width: '9%' }}>
                                         CS AG {sortConfig.key === 'csAgainst' && (sortConfig.direction === 'asc' ? '↑' : '↓')}
                                     </th>
                                 </tr>

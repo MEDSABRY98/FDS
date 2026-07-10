@@ -46,6 +46,7 @@
 .modern-h2h-table {
     width: 100%;
     border-collapse: collapse;
+    table-layout: fixed;
 }
 .modern-h2h-table th {
     background: #0a0a0a;
