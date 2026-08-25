@@ -4,6 +4,8 @@ import { useMemo, useRef } from "react";
 import { AutocompleteInput, getLineupSubOutOptions } from "../../Database";
 import { EMPTY_LINEUP } from "./alahly_db_editor_constants";
 import { createEmptyStarterSlot } from "./alahly_db_editor_lineup_utils";
+import * as XLSX from "xlsx";
+import { Download, Upload } from "lucide-react";
 
 function LineupPlayerCard({
     row,
@@ -128,6 +130,7 @@ export default function LineupPanel({
     isSaving,
 }) {
     const savingRef = useRef(new Set());
+    const fileInputRef = useRef(null);
     const rowsRef = useRef(rows);
     rowsRef.current = rows;
     const matchMinute = String(rows[0]?.["MATCH MINUTE"] || "90").trim() || "90";
@@ -194,6 +197,74 @@ export default function LineupPanel({
         ]);
     };
 
+    const handleDownloadTemplate = () => {
+        const templateData = [
+            { "PLAYER NAME": "", "STATU": "اساسي", "OUT MINUTE": "", "PLAYER NAME OUT": "" },
+            { "PLAYER NAME": "", "STATU": "اساسي", "OUT MINUTE": "", "PLAYER NAME OUT": "" },
+            { "PLAYER NAME": "", "STATU": "اساسي", "OUT MINUTE": "", "PLAYER NAME OUT": "" },
+            { "PLAYER NAME": "", "STATU": "اساسي", "OUT MINUTE": "", "PLAYER NAME OUT": "" },
+            { "PLAYER NAME": "", "STATU": "اساسي", "OUT MINUTE": "", "PLAYER NAME OUT": "" },
+            { "PLAYER NAME": "", "STATU": "اساسي", "OUT MINUTE": "", "PLAYER NAME OUT": "" },
+            { "PLAYER NAME": "", "STATU": "اساسي", "OUT MINUTE": "", "PLAYER NAME OUT": "" },
+            { "PLAYER NAME": "", "STATU": "اساسي", "OUT MINUTE": "", "PLAYER NAME OUT": "" },
+            { "PLAYER NAME": "", "STATU": "اساسي", "OUT MINUTE": "", "PLAYER NAME OUT": "" },
+            { "PLAYER NAME": "", "STATU": "اساسي", "OUT MINUTE": "", "PLAYER NAME OUT": "" },
+            { "PLAYER NAME": "", "STATU": "اساسي", "OUT MINUTE": "", "PLAYER NAME OUT": "" },
+            { "PLAYER NAME": "", "STATU": "احتياطي", "OUT MINUTE": "", "PLAYER NAME OUT": "" },
+            { "PLAYER NAME": "", "STATU": "احتياطي", "OUT MINUTE": "", "PLAYER NAME OUT": "" },
+            { "PLAYER NAME": "", "STATU": "احتياطي", "OUT MINUTE": "", "PLAYER NAME OUT": "" },
+        ];
+        const ws = XLSX.utils.json_to_sheet(templateData);
+        const wb = XLSX.utils.book_new();
+        XLSX.utils.book_append_sheet(wb, ws, "Lineup Template");
+        XLSX.writeFile(wb, "Lineup_Template.xlsx");
+    };
+
+    const handleFileUpload = (e) => {
+        const file = e.target.files?.[0];
+        if (!file) return;
+
+        const reader = new FileReader();
+        reader.onload = (evt) => {
+            const data = new Uint8Array(evt.target.result);
+            const workbook = XLSX.read(data, { type: "array" });
+            const sheetName = workbook.SheetNames[0];
+            const worksheet = workbook.Sheets[sheetName];
+            const jsonData = XLSX.utils.sheet_to_json(worksheet);
+
+            if (jsonData && jsonData.length > 0) {
+                // Keep rows that already have a player name or are saved in DB
+                const existingValidRows = rows.filter(r => String(r["PLAYER NAME"] || "").trim() || r.ROW_ID);
+                
+                const newRows = jsonData
+                    .filter(r => String(r["PLAYER NAME"] || "").trim())
+                    .map((row, idx) => {
+                        return {
+                            ...EMPTY_LINEUP,
+                            "MATCH MINUTE": matchMinute,
+                            TEAM: teamName,
+                            MATCH_ID: matchId,
+                            "PLAYER NAME": String(row["PLAYER NAME"] || "").trim(),
+                            "STATU": String(row["STATU"] || "").trim(),
+                            "OUT MINUTE": String(row["OUT MINUTE"] || "").trim(),
+                            "PLAYER NAME OUT": String(row["PLAYER NAME OUT"] || "").trim(),
+                            _isNew: true,
+                            _isDirty: true,
+                            _key: `lineup-upload-${Date.now()}-${idx}`,
+                        };
+                    });
+
+                if (newRows.length > 0) {
+                    setRows([...existingValidRows, ...newRows]);
+                }
+            }
+            if (fileInputRef.current) {
+                fileInputRef.current.value = "";
+            }
+        };
+        reader.readAsArrayBuffer(file);
+    };
+
     const handleDelete = (row, variant) => {
         const idx = rows.findIndex((r) => r._key === row._key);
         if (idx < 0) return;
@@ -246,6 +317,36 @@ export default function LineupPanel({
                         {title}
                         <span className="player-events-count">({rows.length} slots)</span>
                     </h3>
+                </div>
+
+                <div style={{ display: "flex", gap: "8px" }}>
+                    <button
+                        type="button"
+                        className="player-events-add-btn"
+                        onClick={handleDownloadTemplate}
+                        style={{ background: "#f8f8f8", color: "#333", border: "1px solid #ddd", padding: "8px" }}
+                        disabled={isSaving}
+                        title="Download Template"
+                    >
+                        <Download size={16} />
+                    </button>
+                    <button
+                        type="button"
+                        className="player-events-add-btn"
+                        onClick={() => fileInputRef.current?.click()}
+                        style={{ background: "#22c55e", color: "#fff", padding: "8px" }}
+                        disabled={isSaving}
+                        title="Upload Excel"
+                    >
+                        <Upload size={16} />
+                    </button>
+                    <input
+                        type="file"
+                        ref={fileInputRef}
+                        onChange={handleFileUpload}
+                        accept=".xlsx, .xls"
+                        style={{ display: "none" }}
+                    />
                 </div>
             </div>
 
