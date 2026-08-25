@@ -128,6 +128,7 @@ export default function LineupPanel({
     onSaveRow,
     onDeleteRow,
     isSaving,
+    addToast,
 }) {
     const savingRef = useRef(new Set());
     const fileInputRef = useRef(null);
@@ -192,7 +193,7 @@ export default function LineupPanel({
                 STATU: "احتياطي",
                 MATCH_ID: matchId,
                 _isNew: true,
-                _key: `lineup-add-${Date.now()}`,
+                _key: `lineup-add-${Date.now()}-${Math.random()}`,
             },
         ]);
     };
@@ -233,29 +234,74 @@ export default function LineupPanel({
             const jsonData = XLSX.utils.sheet_to_json(worksheet);
 
             if (jsonData && jsonData.length > 0) {
-                // Keep rows that already have a player name or are saved in DB
-                const existingValidRows = rows.filter(r => String(r["PLAYER NAME"] || "").trim() || r.ROW_ID);
-                
-                const newRows = jsonData
-                    .filter(r => String(r["PLAYER NAME"] || "").trim())
-                    .map((row, idx) => {
-                        return {
-                            ...EMPTY_LINEUP,
-                            "MATCH MINUTE": matchMinute,
-                            TEAM: teamName,
-                            MATCH_ID: matchId,
-                            "PLAYER NAME": String(row["PLAYER NAME"] || "").trim(),
-                            "STATU": String(row["STATU"] || "").trim(),
-                            "OUT MINUTE": String(row["OUT MINUTE"] || "").trim(),
-                            "PLAYER NAME OUT": String(row["PLAYER NAME OUT"] || "").trim(),
-                            _isNew: true,
-                            _isDirty: true,
-                            _key: `lineup-upload-${Date.now()}-${idx}`,
-                        };
-                    });
+                setRows((prev) => {
+                    const nextRows = [...prev];
+                    let starterIndex = 0;
 
-                if (newRows.length > 0) {
-                    setRows([...existingValidRows, ...newRows]);
+                    jsonData.forEach((uploadedRow, idx) => {
+                        const pName = String(uploadedRow["PLAYER NAME"] || "").trim();
+                        if (!pName) return;
+                        const statu = String(uploadedRow["STATU"] || "اساسي").trim();
+                        const outMin = String(uploadedRow["OUT MINUTE"] || "").trim();
+                        const outName = String(uploadedRow["PLAYER NAME OUT"] || "").trim();
+
+                        if (statu === "اساسي") {
+                            let slotIdx = -1;
+                            // Find next empty starter slot
+                            for (let i = starterIndex; i < nextRows.length; i++) {
+                                if (String(nextRows[i].STATU || "").trim() === "اساسي" && 
+                                    !String(nextRows[i]["PLAYER NAME"] || "").trim() && 
+                                    !nextRows[i].ROW_ID) {
+                                    slotIdx = i;
+                                    break;
+                                }
+                            }
+
+                            if (slotIdx >= 0) {
+                                nextRows[slotIdx] = {
+                                    ...nextRows[slotIdx],
+                                    "PLAYER NAME": pName,
+                                    "OUT MINUTE": outMin,
+                                    "PLAYER NAME OUT": outName,
+                                    _isDirty: true,
+                                };
+                                starterIndex = slotIdx + 1;
+                            } else {
+                                nextRows.push({
+                                    ...EMPTY_LINEUP,
+                                    "PLAYER NAME": pName,
+                                    STATU: statu,
+                                    "OUT MINUTE": outMin,
+                                    "PLAYER NAME OUT": outName,
+                                    "MATCH MINUTE": matchMinute,
+                                    TEAM: teamName,
+                                    MATCH_ID: matchId,
+                                    _isNew: true,
+                                    _isDirty: true,
+                                    _key: `lineup-upload-${Date.now()}-${idx}-${Math.random()}`,
+                                });
+                            }
+                        } else {
+                            nextRows.push({
+                                ...EMPTY_LINEUP,
+                                "PLAYER NAME": pName,
+                                STATU: statu,
+                                "OUT MINUTE": outMin,
+                                "PLAYER NAME OUT": outName,
+                                "MATCH MINUTE": matchMinute,
+                                TEAM: teamName,
+                                MATCH_ID: matchId,
+                                _isNew: true,
+                                _isDirty: true,
+                                _key: `lineup-upload-${Date.now()}-${idx}-${Math.random()}`,
+                            });
+                        }
+                    });
+                    return nextRows;
+                });
+
+                if (addToast) {
+                    addToast(`تم إدراج لاعبين من الإكسيل بنجاح ✓`, "success");
                 }
             }
             if (fileInputRef.current) {
@@ -294,7 +340,6 @@ export default function LineupPanel({
 
     const renderCard = (row, slotLabel, variant) => (
         <LineupPlayerCard
-            key={row._key ?? `${variant}-${slotLabel}`}
             row={row}
             slotLabel={slotLabel}
             variant={variant}
@@ -369,14 +414,22 @@ export default function LineupPanel({
 
             <h4 className="lineup-section-title">STARTING XI</h4>
             <div className="player-events-grid lineup-grid">
-                {starters.map((row, i) => renderCard(row, `#${i + 1}`, "starter"))}
+                {starters.map((row, i) => (
+                    <div key={row._key ?? `starter-${i}`}>
+                        {renderCard(row, `#${i + 1}`, "starter")}
+                    </div>
+                ))}
             </div>
 
             {bench.length > 0 && (
                 <>
                     <h4 className="lineup-section-title">BENCH</h4>
                     <div className="player-events-grid lineup-grid">
-                        {bench.map((row, i) => renderCard(row, `SUB ${i + 1}`, "bench"))}
+                        {bench.map((row, i) => (
+                            <div key={row._key ?? `bench-${i}`}>
+                                {renderCard(row, `SUB ${i + 1}`, "bench")}
+                            </div>
+                        ))}
                     </div>
                 </>
             )}

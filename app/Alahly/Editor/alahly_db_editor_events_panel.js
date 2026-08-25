@@ -116,7 +116,7 @@ export default function PlayerEventsPanel({
                     MATCH_ID: matchId,
                     EVENT_ID: eventId,
                     _isNew: true,
-                    _key: Date.now(),
+                    _key: Date.now() + Math.random(),
                 };
 
                 const nextRows = sortRowsByEventId([...rows, newRow]);

@@ -91,7 +91,7 @@ export default function GkDetailsPanel({
                     MATCH_ID: matchId,
                     EVENT_ID: serializedEventId,
                     _isNew: true,
-                    _key: Date.now(),
+                    _key: Date.now() + Math.random(),
                 };
 
                 const nextRows = sortRowsByEventId([...rows, newRow]);

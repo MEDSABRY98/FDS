@@ -325,6 +325,24 @@ export default function AlAhlyEditor() {
         }
     }, [newMatchData.MATCH_ID, mode]);
 
+    useEffect(() => {
+        if (mode === 'new') {
+            const oppTeam = resolveOpponentTeam(newMatchData);
+            const ahlyTeam = resolveAhlyTeam(newMatchData);
+            if (oppTeam) {
+                setNewLineupRows(prev => {
+                    const hasOpponentRows = prev.some(r => isLineupForOpponent(r, oppTeam, ahlyTeam));
+                    if (!hasOpponentRows) {
+                        const matchId = newMatchData.MATCH_ID || '';
+                        const oppRows = createInitialTeamLineup(matchId, oppTeam);
+                        return [...prev, ...oppRows];
+                    }
+                    return prev;
+                });
+            }
+        }
+    }, [newMatchData['OPPONENT TEAM'], mode]);
+
     const addToast = (msg, type = 'success') => {
         addNotification(msg, type);
     };
@@ -620,6 +638,7 @@ export default function AlAhlyEditor() {
                 persistToDb={false}
                 onDeleteRow={isNew ? handleStagedDelete : handleDeleteRow}
                 isSaving={isSaving}
+                addToast={addToast}
             />
         );
     };
