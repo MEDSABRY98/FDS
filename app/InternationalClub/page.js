@@ -119,6 +119,8 @@ export default function InternationalClubPage() {
             menuItems={tabs}
             activeTab={activeTab}
             setActiveTab={setActiveTab}
+            onRefresh={() => fetchData(true)}
+            isRefreshing={loading}
             actions={[
                 { label: "EXPORT TO EXCEL", icon: Download, onClick: handleExport, className: "export-btn", title: "DOWNLOAD AS EXCEL" },
                 { label: "FILTERS", icon: Filter, onClick: () => setIsFilterOpen(true), className: "filter-btn", title: "OPEN FILTERS" },

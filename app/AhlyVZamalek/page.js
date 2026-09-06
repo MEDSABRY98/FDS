@@ -184,6 +184,8 @@ export default function AhlyVZamalekDatabase() {
             menuItems={tabs}
             activeTab={activeTab}
             setActiveTab={handleTabChange}
+            onRefresh={() => fetchAvZData()}
+            isRefreshing={loading}
             actions={[
                 {
                     label: "EXPORT TO EXCEL",

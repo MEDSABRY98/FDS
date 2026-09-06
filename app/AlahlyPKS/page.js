@@ -184,6 +184,8 @@ export default function AlAhlyPKsDatabase() {
                 setActiveTab(tabId);
                 setSelectedPksId(null);
             }}
+            onRefresh={() => fetchPKData({ silent: true })}
+            isRefreshing={loading}
             actions={[
                 {
                     label: "EXPORT TO EXCEL",

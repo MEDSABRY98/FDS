@@ -6,6 +6,8 @@ export default function DatabaseSidebar({
     selectedTable, 
     setSelectedTable, 
     handleDownloadExcel,
+    onRefresh,
+    isRefreshing,
     children
 }) {
     return (
@@ -20,6 +22,8 @@ export default function DatabaseSidebar({
             }))}
             activeTab={selectedTable}
             setActiveTab={setSelectedTable}
+            onRefresh={onRefresh}
+            isRefreshing={isRefreshing}
             actions={[
                 {
                     label: "EXPORT TO EXCEL",

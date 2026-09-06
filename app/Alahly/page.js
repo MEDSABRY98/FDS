@@ -458,6 +458,8 @@ export default function AlAhlyDatabase() {
                 setActiveTab(tabId);
                 setSelectedMatchId(null);
             }}
+            onRefresh={() => fetchMatchData(true)}
+            isRefreshing={loading}
             actions={[
                 {
                     label: "EXPORT TO EXCEL",

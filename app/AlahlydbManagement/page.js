@@ -138,11 +138,13 @@ export default function DatabaseManagement() {
 
     return (
         <Login_db title="EDITOR ACCESS" subtitle="AUTHORIZATION REQUIRED">
-            <DatabaseSidebar 
+            <DatabaseSidebar
                 availableTables={availableTables}
                 selectedTable={selectedTable}
-                setSelectedTable={handleTableChange}
+                setSelectedTable={setSelectedTable}
                 handleDownloadExcel={handleDownloadExcel}
+                onRefresh={() => fetchTableData()}
+                isRefreshing={tableLoading}
             >
                 <div className="alahly-db-page">
                     <main className="db-content">

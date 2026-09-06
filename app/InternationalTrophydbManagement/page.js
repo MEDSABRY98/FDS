@@ -107,6 +107,8 @@ export default function InternationalTrophyDatabaseManagement() {
                     selectedTable={selectedTable}
                     setSelectedTable={setSelectedTable}
                     handleDownloadExcel={handleDownloadExcel}
+                    onRefresh={() => fetchTableData()}
+                    isRefreshing={loading}
                 />
 
                 <div className="egypt-main-content">

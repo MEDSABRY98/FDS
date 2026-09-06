@@ -173,6 +173,8 @@ export default function EgyptNTPKSDatabase() {
                 setActiveTab(tabId);
                 setSelectedPksId(null);
             }}
+            onRefresh={() => fetchPKData({ silent: true })}
+            isRefreshing={loading}
             actions={[
                 {
                     label: "EXPORT TO EXCEL",

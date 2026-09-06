@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { ArrowLeft, X, Menu } from "lucide-react";
+import { ArrowLeft, X, Menu, RefreshCw } from "lucide-react";
 import "./SideBar_db.css";
 
 export default function SideBar_db({
@@ -16,9 +16,29 @@ export default function SideBar_db({
     children, // The main content goes here
     mobileBrandName = "DATABASE DB",
     mobileActions = [], // Array of { icon: IconComponent, onClick, title }
+    onRefresh,
+    isRefreshing = false,
 }) {
     const [isSidebarMobileOpen, setIsSidebarMobileOpen] = useState(false);
     const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(true);
+    const [internalRefreshing, setInternalRefreshing] = useState(false);
+
+    const handleRefresh = async () => {
+        if (internalRefreshing || isRefreshing || !onRefresh) return;
+        setInternalRefreshing(true);
+        try {
+            await onRefresh();
+        } catch (error) {
+            console.error("Error refreshing data:", error);
+        } finally {
+            // Guarantee at least one full spin cycle (600ms) for visual feedback
+            setTimeout(() => {
+                setInternalRefreshing(false);
+            }, 600);
+        }
+    };
+
+    const isCurrentlyRefreshing = isRefreshing || internalRefreshing;
 
     return (
         <div className={`db-sidebar-container ${isSidebarCollapsed ? 'sidebar-collapsed' : ''}`}>
@@ -68,24 +88,67 @@ export default function SideBar_db({
                 </div>
 
                 <div className="db-sidebar-actions">
+                    {actions.filter(a => a.label.toUpperCase().includes('FILTER')).map((act, idx) => {
+                        const Icon = act.icon;
+                        return (
+                            <button
+                                key={`filter-${idx}`}
+                                className={`db-sidebar-action-btn ${act.className || ''}`}
+                                onClick={act.onClick}
+                                title={act.title}
+                            >
+                                {Icon && <Icon size={18} />}
+                                <span>{act.label}</span>
+                            </button>
+                        );
+                    })}
+                    
+                    {actions.filter(a => a.label.toUpperCase().includes('EXPORT')).map((act, idx) => {
+                        const Icon = act.icon;
+                        return (
+                            <button
+                                key={`export-${idx}`}
+                                className={`db-sidebar-action-btn ${act.className || ''}`}
+                                onClick={act.onClick}
+                                title={act.title}
+                            >
+                                {Icon && <Icon size={18} />}
+                                <span>{act.label}</span>
+                            </button>
+                        );
+                    })}
+
+                    {onRefresh && (
+                        <button
+                            className="db-sidebar-action-btn refresh-btn"
+                            onClick={handleRefresh}
+                            title="REFRESH DATA"
+                            disabled={isCurrentlyRefreshing}
+                        >
+                            <RefreshCw size={18} className={isCurrentlyRefreshing ? "animate-spin" : ""} />
+                            <span>REFRESH DATA</span>
+                        </button>
+                    )}
+
                     <button
                         className="db-sidebar-collapse-toggle-btn"
                         onClick={() => setIsSidebarCollapsed(!isSidebarCollapsed)}
                         title={isSidebarCollapsed ? "EXPAND MENU" : "COLLAPSE MENU"}
                     >
-                        <ArrowLeft size={14} style={{ transform: isSidebarCollapsed ? 'rotate(180deg)' : 'none', transition: 'transform 0.3s' }} />
+                        <ArrowLeft size={18} style={{ transform: isSidebarCollapsed ? 'rotate(180deg)' : 'none', transition: 'transform 0.3s' }} />
                         <span>COLLAPSE MENU</span>
                     </button>
-                    {actions.map((act, idx) => {
+
+                    {actions.filter(a => !a.label.toUpperCase().includes('FILTER') && !a.label.toUpperCase().includes('EXPORT')).map((act, idx) => {
                         const Icon = act.icon;
                         return (
                             <button
-                                key={idx}
+                                key={`other-${idx}`}
                                 className={`db-sidebar-action-btn ${act.className || ''}`}
                                 onClick={act.onClick}
                                 title={act.title}
                             >
-                                {Icon && <Icon size={14} />}
+                                {Icon && <Icon size={18} />}
                                 <span>{act.label}</span>
                             </button>
                         );
@@ -111,6 +174,17 @@ export default function SideBar_db({
                         </Link>
                     </div>
                     <div className="db-mobile-actions">
+                        {onRefresh && (
+                            <button
+                                onClick={handleRefresh}
+                                className="db-mobile-action-icon"
+                                title="REFRESH DATA"
+                                disabled={isCurrentlyRefreshing}
+                                style={{ marginRight: '8px' }}
+                            >
+                                <RefreshCw size={16} className={isCurrentlyRefreshing ? "animate-spin" : ""} />
+                            </button>
+                        )}
                         {mobileActions.map((act, idx) => {
                             const Icon = act.icon;
                             return (

@@ -107,6 +107,8 @@ export default function EgyptClubDatabaseManagement() {
                     selectedTable={selectedTable}
                     setSelectedTable={setSelectedTable}
                     handleDownloadExcel={handleDownloadExcel}
+                    onRefresh={() => fetchTableData()}
+                    isRefreshing={loading}
                 />
 
                 <div className="egypt-main-content">

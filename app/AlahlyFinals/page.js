@@ -124,6 +124,8 @@ export default function AlAhlyFinalsDatabase() {
             ]}
             activeTab={activeTab}
             setActiveTab={handleTabChange}
+            onRefresh={() => fetchFinalsData()}
+            isRefreshing={loading}
             actions={[
                 {
                     label: "FILTERS",

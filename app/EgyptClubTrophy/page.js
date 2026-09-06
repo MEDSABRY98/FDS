@@ -71,7 +71,9 @@ export default function EgyptClubTrophyPage() {
             logoText="ET"
             menuItems={tabs}
             activeTab={activeTab}
-            setActiveTab={(tabId) => setActiveTab(tabId)}
+            setActiveTab={setActiveTab}
+            onRefresh={() => fetchTrophyData(true)}
+            isRefreshing={loading}
             actions={[
                 {
                     label: "EXPORT TO EXCEL",

@@ -160,6 +160,8 @@ export default function DBManagement() {
                 selectedTable={selectedTable}
                 setSelectedTable={setSelectedTable}
                 handleDownloadExcel={handleDownloadExcel}
+                onRefresh={() => fetchTableData()}
+                isRefreshing={tableLoading}
             >
                 <div className="global-db-page">
                     <main className="db-content">
