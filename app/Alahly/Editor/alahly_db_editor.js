@@ -55,6 +55,7 @@ export default function AlAhlyEditor() {
     const { addNotification } = useNotification();
     const [newMatchData, setNewMatchData] = useState({ ...EMPTY_MATCH });
     const [activeLinkedTab, setActiveLinkedTab] = useState('lineup-ahly');
+    const [activeNewMatchSection, setActiveNewMatchSection] = useState('details');
     const [newLineupRows, setNewLineupRows] = useState([]);
     const [newPlayerRows, setNewPlayerRows] = useState([]);
     const [newGkRows, setNewGkRows] = useState([]);
@@ -699,64 +700,84 @@ export default function AlAhlyEditor() {
 
                 {mode === 'new' && (
                     <>
-                        <div className="editor-card">
-                            <div className="card-header" style={{ marginBottom: 30 }}>
-                                <div className="card-title-wrap">
-                                    <div className="card-indicator" style={{ background: '#22c55e' }} />
-                                    <h2 className="card-title">NEW MATCH DETAILS</h2>
+                        <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 20 }}>
+                            <div style={{ display: 'flex', background: '#f8f8f8', padding: 4, borderRadius: 12, gap: 4, width: '100%', maxWidth: '600px' }}>
+                                <button type="button" onClick={() => setActiveNewMatchSection('details')} style={{ flex: 1, padding: '14px 20px', fontSize: '15px', borderRadius: 8, border: 'none', background: activeNewMatchSection === 'details' ? '#22c55e' : 'transparent', color: activeNewMatchSection === 'details' ? '#fff' : '#888', fontWeight: 800, cursor: 'pointer', transition: 'all 0.2s', fontFamily: "'Outfit', sans-serif" }}>MATCH DETAILS</button>
+                                <button type="button" onClick={() => setActiveNewMatchSection('linked')} style={{ flex: 1, padding: '14px 20px', fontSize: '15px', borderRadius: 8, border: 'none', background: activeNewMatchSection === 'linked' ? '#3b82f6' : 'transparent', color: activeNewMatchSection === 'linked' ? '#fff' : '#888', fontWeight: 800, cursor: 'pointer', transition: 'all 0.2s', fontFamily: "'Outfit', sans-serif" }}>LINKED DATA</button>
+                                <button type="button" onClick={() => setActiveNewMatchSection('create')} style={{ flex: 1, padding: '14px 20px', fontSize: '15px', borderRadius: 8, border: 'none', background: activeNewMatchSection === 'create' ? '#c9a84c' : 'transparent', color: activeNewMatchSection === 'create' ? '#0a0a0a' : '#888', fontWeight: 800, cursor: 'pointer', transition: 'all 0.2s', fontFamily: "'Outfit', sans-serif" }}>CREATE MATCH</button>
+                            </div>
+                        </div>
+
+                        {activeNewMatchSection === 'details' && (
+                            <div className="editor-card">
+                                <div className="card-header" style={{ marginBottom: 30 }}>
+                                    <div className="card-title-wrap">
+                                        <div className="card-indicator" style={{ background: '#22c55e' }} />
+                                        <h2 className="card-title">NEW MATCH DETAILS</h2>
+                                    </div>
+                                </div>
+                                <div className="grid-fields">
+                                    {renderMatchFieldsGrid(newMatchData, setNewMatchData, { matchIdAuto: true })}
                                 </div>
                             </div>
-                            <div className="grid-fields" style={{ marginBottom: 30 }}>
-                                {renderMatchFieldsGrid(newMatchData, setNewMatchData, { matchIdAuto: true })}
+                        )}
+
+                        {activeNewMatchSection === 'linked' && (
+                            <div className="editor-card">
+                                <div className="card-header">
+                                    <div className="card-title-wrap">
+                                        <div className="card-indicator" style={{ background: '#3b82f6' }} />
+                                        <h2 className="card-title">LINKED TABLE DATA</h2>
+                                    </div>
+                                </div>
+
+                                {renderLinkedTabBar(newMatchData)}
+
+                                {activeLinkedTab === 'lineup-ahly' && renderLineupTable({ formData: newMatchData, isNew: true, side: 'ahly' })}
+                                {activeLinkedTab === 'lineup-opponent' && renderLineupTable({ formData: newMatchData, isNew: true, side: 'opponent' })}
+                                {activeLinkedTab === 'events' && renderPlayerEventsPanel({ formData: newMatchData, isNew: true })}
+                                {activeLinkedTab === 'gks' && renderGkDetailsPanel({ formData: newMatchData, isNew: true })}
+                                {activeLinkedTab === 'motm' && (
+                                    <div style={{ padding: '20px', background: '#fafafa', borderRadius: '20px', border: '1px solid #eee', maxWidth: '500px', margin: '0 auto' }}>
+                                        <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 20 }}>
+                                            <span style={{ fontSize: 24 }}>🏆</span>
+                                            <h3 style={{ margin: 0, fontFamily: "'Bebas Neue', sans-serif", fontSize: 20, letterSpacing: 2, color: '#0a0a0a' }}>
+                                                MAN OF THE MATCH
+                                            </h3>
+                                        </div>
+                                        <div className="field-label">SELECT MOTM PLAYER</div>
+                                        <AutocompleteInput
+                                            value={newMatchData.MOTM ?? ''}
+                                            options={allPlayersList}
+                                            placeholder="Search player name..."
+                                            onChange={val => setNewMatchData(prev => ({ ...prev, MOTM: val }))}
+                                            className="field-input"
+                                            accentColor="#c9a84c"
+                                            style={{ width: '100%', height: '40px', fontSize: '14px', background: '#fff' }}
+                                        />
+                                        <p style={{ fontSize: '11px', color: '#888', marginTop: '10px' }}>
+                                            * This searchable dropdown suggests all players in the system. Search and select the Man of the Match winner.
+                                        </p>
+                                    </div>
+                                )}
                             </div>
-                            <div style={{ display: 'flex', justifyContent: 'center' }}>
+                        )}
+
+                        {activeNewMatchSection === 'create' && (
+                            <div className="editor-card" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', padding: '40px 20px' }}>
+                                <div style={{ fontSize: '24px', fontWeight: 800, fontFamily: "'Bebas Neue', sans-serif", letterSpacing: '2px', color: '#0a0a0a', marginBottom: '10px' }}>READY TO SAVE?</div>
+                                <div style={{ color: '#666', marginBottom: '30px', textAlign: 'center', maxWidth: '400px', fontSize: '14px' }}>
+                                    Make sure you have filled all required match details and linked data before creating the match.
+                                </div>
                                 <button
                                     onClick={handleCreateMatch}
                                     disabled={isSaving}
-                                    className="create-match-btn">
+                                    className="create-match-btn"
+                                    style={{ width: '100%', maxWidth: '400px', fontSize: '18px', padding: '16px' }}>
                                     {isSaving ? 'Creating...' : '✓ CREATE MATCH'}
                                 </button>
                             </div>
-                        </div>
-
-                        <div className="editor-card">
-                            <div className="card-header">
-                                <div className="card-title-wrap">
-                                    <div className="card-indicator" style={{ background: '#3b82f6' }} />
-                                    <h2 className="card-title">LINKED TABLE DATA</h2>
-                                </div>
-                            </div>
-
-                            {renderLinkedTabBar(newMatchData)}
-
-                            {activeLinkedTab === 'lineup-ahly' && renderLineupTable({ formData: newMatchData, isNew: true, side: 'ahly' })}
-                            {activeLinkedTab === 'lineup-opponent' && renderLineupTable({ formData: newMatchData, isNew: true, side: 'opponent' })}
-                            {activeLinkedTab === 'events' && renderPlayerEventsPanel({ formData: newMatchData, isNew: true })}
-                            {activeLinkedTab === 'gks' && renderGkDetailsPanel({ formData: newMatchData, isNew: true })}
-                            {activeLinkedTab === 'motm' && (
-                                <div style={{ padding: '20px', background: '#fafafa', borderRadius: '20px', border: '1px solid #eee', maxWidth: '500px', margin: '0 auto' }}>
-                                    <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 20 }}>
-                                        <span style={{ fontSize: 24 }}>🏆</span>
-                                        <h3 style={{ margin: 0, fontFamily: "'Bebas Neue', sans-serif", fontSize: 20, letterSpacing: 2, color: '#0a0a0a' }}>
-                                            MAN OF THE MATCH
-                                        </h3>
-                                    </div>
-                                    <div className="field-label">SELECT MOTM PLAYER</div>
-                                    <AutocompleteInput
-                                        value={newMatchData.MOTM ?? ''}
-                                        options={allPlayersList}
-                                        placeholder="Search player name..."
-                                        onChange={val => setNewMatchData(prev => ({ ...prev, MOTM: val }))}
-                                        className="field-input"
-                                        accentColor="#c9a84c"
-                                        style={{ width: '100%', height: '40px', fontSize: '14px', background: '#fff' }}
-                                    />
-                                    <p style={{ fontSize: '11px', color: '#888', marginTop: '10px' }}>
-                                        * This searchable dropdown suggests all players in the system. Search and select the Man of the Match winner.
-                                    </p>
-                                </div>
-                            )}
-                        </div>
+                        )}
                     </>
                 )}
 

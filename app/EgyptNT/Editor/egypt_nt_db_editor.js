@@ -54,6 +54,7 @@ export default function EgyptNTEditor() {
     const [isDeleting, setIsDeleting] = useState(false);
     const [newMatchData, setNewMatchData] = useState({ ...EMPTY_MATCH });
     const [activeLinkedTab, setActiveLinkedTab] = useState('lineup_egy');
+    const [activeNewMatchSection, setActiveNewMatchSection] = useState('details');
     const [newEgyLineupRows, setNewEgyLineupRows] = useState([]);
     const [newOppLineupRows, setNewOppLineupRows] = useState([]);
     const [newPlayerRows, setNewPlayerRows] = useState([]);
@@ -553,89 +554,114 @@ export default function EgyptNTEditor() {
 
                 {mode === 'new' && (
                     <>
-                        <div className="editor-card">
-                            <div className="card-header" style={{ marginBottom: 30 }}>
-                                <div className="card-title-wrap">
-                                    <div className="card-indicator" style={{ background: '#22c55e' }} />
-                                    <h2 className="card-title">NEW MATCH DETAILS</h2>
-                                </div>
+                        <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 20 }}>
+                            <div style={{ display: 'flex', background: '#f8f8f8', padding: 4, borderRadius: 12, gap: 4, width: '100%', maxWidth: '600px' }}>
+                                <button type="button" onClick={() => setActiveNewMatchSection('details')} style={{ flex: 1, padding: '14px 20px', fontSize: '15px', borderRadius: 8, border: 'none', background: activeNewMatchSection === 'details' ? '#22c55e' : 'transparent', color: activeNewMatchSection === 'details' ? '#fff' : '#888', fontWeight: 800, cursor: 'pointer', transition: 'all 0.2s', fontFamily: "'Outfit', sans-serif" }}>MATCH DETAILS</button>
+                                <button type="button" onClick={() => setActiveNewMatchSection('linked')} style={{ flex: 1, padding: '14px 20px', fontSize: '15px', borderRadius: 8, border: 'none', background: activeNewMatchSection === 'linked' ? '#3b82f6' : 'transparent', color: activeNewMatchSection === 'linked' ? '#fff' : '#888', fontWeight: 800, cursor: 'pointer', transition: 'all 0.2s', fontFamily: "'Outfit', sans-serif" }}>LINKED DATA</button>
+                                <button type="button" onClick={() => setActiveNewMatchSection('create')} style={{ flex: 1, padding: '14px 20px', fontSize: '15px', borderRadius: 8, border: 'none', background: activeNewMatchSection === 'create' ? '#C8102E' : 'transparent', color: activeNewMatchSection === 'create' ? '#fff' : '#888', fontWeight: 800, cursor: 'pointer', transition: 'all 0.2s', fontFamily: "'Outfit', sans-serif" }}>CREATE MATCH</button>
                             </div>
-                            <div className="grid-fields" style={{ marginBottom: 30 }}>
-                                {matchInfoFields.map(field => (
-                                    <div key={field}>
-                                        <div className="field-label" style={{ color: field === 'MATCH_ID' ? '#22c55e' : '#999' }}>
-                                            {field} {field === 'MATCH_ID' && <span style={{ color: '#aaa', fontWeight: 400, letterSpacing: 0 }}>(auto: Age + Team ID + Date)</span>}
-                                        </div>
-                                        {AUTOCOMPLETE_FIELDS.includes(field) ? (
-                                            <AutocompleteInput
-                                                value={newMatchData[field] ?? ''}
-                                                options={matchFieldOptions[field] || []}
-                                                onChange={val => setNewMatchData(prev => ({ ...prev, [field]: val }))}
-                                                className="field-input"
-                                            />
-                                        ) : (
-                                            <input
-                                                type={field === 'DATE' ? 'date' : 'text'}
-                                                value={newMatchData[field] ?? ''}
-                                                disabled={field === 'MATCH_ID'}
-                                                onChange={e => {
-                                                    if (field === 'MATCH_ID') return;
-                                                    setNewMatchData(prev => ({ ...prev, [field]: e.target.value }));
-                                                }}
-                                                className="field-input"
-                                                style={{
-                                                    border: field === 'MATCH_ID' ? '2px solid #22c55e' : '1.5px solid #e8e8e8',
-                                                    background: field === 'MATCH_ID' ? 'rgba(34,197,94,0.05)' : '#fff',
-                                                }}
-                                                onFocus={e => { if (field !== 'MATCH_ID') e.target.style.borderColor = '#C8102E'; }}
-                                                onBlur={e => { if (field !== 'MATCH_ID') e.target.style.borderColor = '#e8e8e8'; }}
-                                            />
-                                        )}
+                        </div>
+
+                        {activeNewMatchSection === 'details' && (
+                            <div className="editor-card">
+                                <div className="card-header" style={{ marginBottom: 30 }}>
+                                    <div className="card-title-wrap">
+                                        <div className="card-indicator" style={{ background: '#22c55e' }} />
+                                        <h2 className="card-title">NEW MATCH DETAILS</h2>
                                     </div>
-                                ))}
-                            </div>
-                            <div style={{ display: 'flex', justifyContent: 'center' }}>
-                                <button onClick={handleCreateMatch} disabled={isSaving} className="create-match-btn">{isSaving ? 'Creating...' : '✓ CREATE MATCH'}</button>
-                            </div>
-                        </div>
-
-                        <div className="editor-card">
-                            <div className="card-header">
-                                <div className="card-title-wrap">
-                                    <div className="card-indicator" style={{ background: '#3b82f6' }} />
-                                    <h2 className="card-title">LINKED TABLE DATA</h2>
+                                </div>
+                                <div className="grid-fields" style={{ marginBottom: 30 }}>
+                                    {matchInfoFields.map(field => (
+                                        <div key={field}>
+                                            <div className="field-label" style={{ color: field === 'MATCH_ID' ? '#22c55e' : '#999' }}>
+                                                {field} {field === 'MATCH_ID' && <span style={{ color: '#aaa', fontWeight: 400, letterSpacing: 0 }}>(auto: Age + Team ID + Date)</span>}
+                                            </div>
+                                            {AUTOCOMPLETE_FIELDS.includes(field) ? (
+                                                <AutocompleteInput
+                                                    value={newMatchData[field] ?? ''}
+                                                    options={matchFieldOptions[field] || []}
+                                                    onChange={val => setNewMatchData(prev => ({ ...prev, [field]: val }))}
+                                                    className="field-input"
+                                                />
+                                            ) : (
+                                                <input
+                                                    type={field === 'DATE' ? 'date' : 'text'}
+                                                    value={newMatchData[field] ?? ''}
+                                                    disabled={field === 'MATCH_ID'}
+                                                    onChange={e => {
+                                                        if (field === 'MATCH_ID') return;
+                                                        setNewMatchData(prev => ({ ...prev, [field]: e.target.value }));
+                                                    }}
+                                                    className="field-input"
+                                                    style={{
+                                                        border: field === 'MATCH_ID' ? '2px solid #22c55e' : '1.5px solid #e8e8e8',
+                                                        background: field === 'MATCH_ID' ? 'rgba(34,197,94,0.05)' : '#fff',
+                                                    }}
+                                                    onFocus={e => { if (field !== 'MATCH_ID') e.target.style.borderColor = '#C8102E'; }}
+                                                    onBlur={e => { if (field !== 'MATCH_ID') e.target.style.borderColor = '#e8e8e8'; }}
+                                                />
+                                            )}
+                                        </div>
+                                    ))}
                                 </div>
                             </div>
-                            <div className="linked-tabs-grid">
-                                <button onClick={() => setActiveLinkedTab('lineup_egy')} className="tab-btn" style={{ background: activeLinkedTab === 'lineup_egy' ? '#C8102E' : '#f8f8f8', color: activeLinkedTab === 'lineup_egy' ? '#fff' : '#888' }}>EGYPT LINEUP</button>
-                                <button onClick={() => setActiveLinkedTab('lineup_opp')} className="tab-btn" style={{ background: activeLinkedTab === 'lineup_opp' ? '#3b82f6' : '#f8f8f8', color: activeLinkedTab === 'lineup_opp' ? '#fff' : '#888' }}>OPPONENT LINEUP</button>
-                                <button onClick={() => setActiveLinkedTab('events')} className="tab-btn" style={{ background: activeLinkedTab === 'events' ? '#8b5cf6' : '#f8f8f8', color: activeLinkedTab === 'events' ? '#fff' : '#888' }}>PLAYER EVENTS</button>
-                                <button onClick={() => setActiveLinkedTab('motm')} className="tab-btn" style={{ background: activeLinkedTab === 'motm' ? '#10b981' : '#f8f8f8', color: activeLinkedTab === 'motm' ? '#fff' : '#888' }}>MOTM</button>
-                                <button onClick={() => setActiveLinkedTab('gks')} className="tab-btn" style={{ background: activeLinkedTab === 'gks' ? '#f59e0b' : '#f8f8f8', color: activeLinkedTab === 'gks' ? '#fff' : '#888' }}>GK DETAILS</button>
-                            </div>
+                        )}
 
-                            {activeLinkedTab === 'lineup_egy' && renderLineupPanel({
-                                title: "EGYPT LINEUP",
-                                color: "#C8102E",
-                                rows: newEgyLineupRows,
-                                setRows: handleNewEgyLineupRows,
-                                formData: newMatchData,
-                                isNew: true,
-                                teamName: newEgyTeamLabel,
-                            })}
-                            {activeLinkedTab === 'lineup_opp' && renderLineupPanel({
-                                title: "OPPONENT LINEUP",
-                                color: "#3b82f6",
-                                rows: newOppLineupRows,
-                                setRows: handleNewOppLineupRows,
-                                formData: newMatchData,
-                                isNew: true,
-                                teamName: getOpponentTeamLabel(newMatchData),
-                            })}
-                            {activeLinkedTab === 'events' && renderPlayerEventsPanel({ formData: newMatchData, isNew: true })}
-                            {activeLinkedTab === 'gks' && renderGkDetailsPanel({ formData: newMatchData, isNew: true })}
-                            {activeLinkedTab === 'motm' && renderMotmPanel(newMatchData, setNewMatchData)}
-                        </div>
+                        {activeNewMatchSection === 'linked' && (
+                            <div className="editor-card">
+                                <div className="card-header">
+                                    <div className="card-title-wrap">
+                                        <div className="card-indicator" style={{ background: '#3b82f6' }} />
+                                        <h2 className="card-title">LINKED TABLE DATA</h2>
+                                    </div>
+                                </div>
+                                <div className="linked-tabs-grid">
+                                    <button onClick={() => setActiveLinkedTab('lineup_egy')} className="tab-btn" style={{ background: activeLinkedTab === 'lineup_egy' ? '#C8102E' : '#f8f8f8', color: activeLinkedTab === 'lineup_egy' ? '#fff' : '#888' }}>EGYPT LINEUP</button>
+                                    <button onClick={() => setActiveLinkedTab('lineup_opp')} className="tab-btn" style={{ background: activeLinkedTab === 'lineup_opp' ? '#3b82f6' : '#f8f8f8', color: activeLinkedTab === 'lineup_opp' ? '#fff' : '#888' }}>OPPONENT LINEUP</button>
+                                    <button onClick={() => setActiveLinkedTab('events')} className="tab-btn" style={{ background: activeLinkedTab === 'events' ? '#8b5cf6' : '#f8f8f8', color: activeLinkedTab === 'events' ? '#fff' : '#888' }}>PLAYER EVENTS</button>
+                                    <button onClick={() => setActiveLinkedTab('motm')} className="tab-btn" style={{ background: activeLinkedTab === 'motm' ? '#10b981' : '#f8f8f8', color: activeLinkedTab === 'motm' ? '#fff' : '#888' }}>MOTM</button>
+                                    <button onClick={() => setActiveLinkedTab('gks')} className="tab-btn" style={{ background: activeLinkedTab === 'gks' ? '#f59e0b' : '#f8f8f8', color: activeLinkedTab === 'gks' ? '#fff' : '#888' }}>GK DETAILS</button>
+                                </div>
+
+                                {activeLinkedTab === 'lineup_egy' && renderLineupPanel({
+                                    title: "EGYPT LINEUP",
+                                    color: "#C8102E",
+                                    rows: newEgyLineupRows,
+                                    setRows: handleNewEgyLineupRows,
+                                    formData: newMatchData,
+                                    isNew: true,
+                                    teamName: newEgyTeamLabel,
+                                })}
+                                {activeLinkedTab === 'lineup_opp' && renderLineupPanel({
+                                    title: "OPPONENT LINEUP",
+                                    color: "#3b82f6",
+                                    rows: newOppLineupRows,
+                                    setRows: handleNewOppLineupRows,
+                                    formData: newMatchData,
+                                    isNew: true,
+                                    teamName: getOpponentTeamLabel(newMatchData),
+                                })}
+                                {activeLinkedTab === 'events' && renderPlayerEventsPanel({ formData: newMatchData, isNew: true })}
+                                {activeLinkedTab === 'gks' && renderGkDetailsPanel({ formData: newMatchData, isNew: true })}
+                                {activeLinkedTab === 'motm' && renderMotmPanel(newMatchData, setNewMatchData)}
+                            </div>
+                        )}
+
+                        {activeNewMatchSection === 'create' && (
+                            <div className="editor-card" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', padding: '40px 20px' }}>
+                                <div style={{ fontSize: '24px', fontWeight: 800, fontFamily: "'Bebas Neue', sans-serif", letterSpacing: '2px', color: '#0a0a0a', marginBottom: '10px' }}>READY TO SAVE?</div>
+                                <div style={{ color: '#666', marginBottom: '30px', textAlign: 'center', maxWidth: '400px', fontSize: '14px' }}>
+                                    Make sure you have filled all required match details and linked data before creating the match.
+                                </div>
+                                <button
+                                    onClick={handleCreateMatch}
+                                    disabled={isSaving}
+                                    className="create-match-btn"
+                                    style={{ width: '100%', maxWidth: '400px', fontSize: '18px', padding: '16px' }}>
+                                    {isSaving ? 'Creating...' : '✓ CREATE MATCH'}
+                                </button>
+                            </div>
+                        )}
                     </>
                 )}
 

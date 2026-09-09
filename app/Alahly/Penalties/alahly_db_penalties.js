@@ -15,6 +15,7 @@ import {
     aggregateByManager,
     aggregateByPlayer,
     sumPenaltyRows,
+    aggregateAhlyGkPenalties,
 } from "./alahly_db_penalties_utils";
 import AlAhlyPenaltiesDashboard from "./alahly_db_penalties_dashboard";
 import AlAhlyPenaltiesChampionships from "./alahly_db_penalties_championships";
@@ -22,12 +23,13 @@ import AlAhlyPenaltiesSeasons from "./alahly_db_penalties_seasons";
 import AlAhlyPenaltiesVsTeams from "./alahly_db_penalties_vs_teams";
 import AlAhlyPenaltiesPlayers from "./alahly_db_penalties_players";
 import AlAhlyPenaltiesManagers from "./alahly_db_penalties_managers";
+import AlAhlyPenaltiesGKs from "./alahly_db_penalties_gks";
 
-const SUB_TABS = ["Dashboard", "Championships", "Seasons", "Vs Teams", "Managers", "Players"];
+const SUB_TABS = ["Dashboard", "Championships", "Seasons", "Vs Teams", "Managers", "Players", "GKs"];
 const TEAM_FILTER_LABELS = { all: "All Players", ahly: "With Al Ahly", opponents: "Against Al Ahly" };
 const MANAGER_TYPE_LABELS = { ahly: "Ahly Managers", opponent: "Opponent Managers" };
 
-export default function AlAhlyPenalties({ playerDetails, filteredMatches }) {
+export default function AlAhlyPenalties({ playerDetails, filteredMatches, gkDetails }) {
     const [activeSubTab, setActiveSubTab] = useState(1);
     const [perspective, setPerspective] = useState("for"); // "for" or "against"
     const [managerType, setManagerType] = useState("ahly");
@@ -46,6 +48,9 @@ export default function AlAhlyPenalties({ playerDetails, filteredMatches }) {
     
     // Players team filter derived from perspective: "for" -> "ahly", "against" -> "opponents"
     const playerRows = useMemo(() => aggregateByPlayer(events, perspective === "for" ? "ahly" : "opponents"), [events, perspective]);
+
+    // Ahly GKs facing opponent penalties (or Opponent GKs facing Ahly penalties, based on perspective)
+    const gkRows = useMemo(() => aggregateAhlyGkPenalties({ playerDetails, gkDetails, filteredMatches, perspective }), [playerDetails, gkDetails, filteredMatches, perspective]);
 
     const handleExport = () => {
         if (activeSubTab === 1) {
@@ -174,8 +179,23 @@ export default function AlAhlyPenalties({ playerDetails, filteredMatches }) {
                     "MAKE(M)": r.makeMiss,
                     "CONV%": `${r.conversion}%`,
                 })),
-                "AlAhly_Penalties_Players"
+                `AlAhly_Penalties_Players_${perspective === "for" ? "Ahly" : "Opponents"}`
             );
+            return;
+        }
+
+        if (activeSubTab === 7) {
+            const exportData = gkRows.map((r, i) => ({
+                "#": i + 1,
+                GOALKEEPER: r.name,
+                "TOTAL FACED": r.total,
+                SAVED: r.saved,
+                MISSED: r.missed,
+                CONCEDED: r.goal,
+                "SAVE%": `${r.savePct}%`,
+            }));
+            AlAhlyExcelExport.exportToExcel(exportData, "AlAhly_Penalties_Goalkeepers");
+            return;
         }
     };
 
@@ -183,7 +203,7 @@ export default function AlAhlyPenalties({ playerDetails, filteredMatches }) {
         const handleGlobalExport = () => handleExport();
         window.addEventListener("alahly-export-excel", handleGlobalExport);
         return () => window.removeEventListener("alahly-export-excel", handleGlobalExport);
-    }, [activeSubTab, teamStats, championRows, seasonRowsName, opponentRows, playerRows, managerRows, managerType, perspective]);
+    }, [activeSubTab, teamStats, championRows, seasonRowsName, opponentRows, playerRows, managerRows, gkRows, managerType, perspective]);
 
     return (
         <div className="tab-content fade-in" id="tab-alahly-penalties">
@@ -232,6 +252,11 @@ export default function AlAhlyPenalties({ playerDetails, filteredMatches }) {
                 {activeSubTab === 6 && (
                     <AlAhlyPenaltiesPlayers
                         rows={playerRows}
+                    />
+                )}
+                {activeSubTab === 7 && (
+                    <AlAhlyPenaltiesGKs
+                        rows={gkRows}
                     />
                 )}
             </div>

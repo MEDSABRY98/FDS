@@ -160,11 +160,22 @@ export function getPenaltyMissOutcome(detail) {
 }
 
 function gkWasOnFieldForPenalty(gk, penMinute) {
-    const outRaw = gk?.["OUT MINUTE"];
-    if (!outRaw || String(outRaw).trim() === "") return true;
-    const outMin = parseInt(outRaw, 10);
     const penMin = parseInt(penMinute, 10) || 0;
-    return penMin <= (Number.isNaN(outMin) ? 90 : outMin);
+
+    const inMin = gk._inMin !== undefined ? gk._inMin : 0;
+    
+    let outMin = Infinity;
+    if (gk._outMin !== undefined) {
+        outMin = gk._outMin;
+    } else {
+        const outRaw = gk?.["OUT MINUTE"];
+        if (outRaw && String(outRaw).trim() !== "") {
+            outMin = parseInt(outRaw, 10);
+            if (Number.isNaN(outMin)) outMin = Infinity;
+        }
+    }
+
+    return penMin >= inMin && penMin <= outMin;
 }
 
 function gkMatchesHowMissedValue(gk, howValue, penMin) {
@@ -180,34 +191,56 @@ function resolveDefendingGk({ penEvent, gkDetails, detail }) {
     const mId = String(penEvent.MATCH_ID || "").trim();
     const takerTeam = String(penEvent.TEAM || "").trim();
     const penMin = penEvent.MINUTE;
-    const matchGks = (gkDetails || []).filter(
-        (g) => String(g.MATCH_ID || "").trim() === mId && String(g.TEAM || "").trim() !== takerTeam
-    );
-    const outcome = getPenaltyMissOutcome(detail || penEvent);
+    const takerIsAhly = isAhlyTeam(takerTeam);
 
-    if (outcome === "missed") {
-        const onField = matchGks.filter((gk) => gkWasOnFieldForPenalty(gk, penMin));
-        if (onField.length === 1) return onField[0];
-        return null;
-    }
+    let matchGks = (gkDetails || []).filter((g) => {
+        if (String(g.MATCH_ID || "").trim() !== mId) return false;
+        const gkIsAhly = isAhlyTeam(g.TEAM);
+        return takerIsAhly ? !gkIsAhly : gkIsAhly;
+    });
 
-    const howVal = String(detail?.["HOW MISSED"] || penEvent["HOW MISSED"] || "").trim();
-    if (howVal) {
-        const viaHowMissed = matchGks.filter((gk) => gkMatchesHowMissedValue(gk, howVal, penMin));
-        if (viaHowMissed.length === 1) return viaHowMissed[0];
-    }
+    if (matchGks.length === 0) return null;
+    if (matchGks.length === 1) return matchGks[0];
 
+    const starter = matchGks.find(g => String(g.STATU || "").trim() === "اساسي");
+    matchGks = matchGks.map(g => {
+        let inMin = 0;
+        let outMin = Infinity;
+        
+        if (String(g.STATU || "").trim() === "بديل" && starter && starter["OUT MINUTE"]) {
+            inMin = parseInt(starter["OUT MINUTE"], 10) || 0;
+        }
+        
+        if (g["OUT MINUTE"] && String(g["OUT MINUTE"]).trim() !== "") {
+            outMin = parseInt(g["OUT MINUTE"], 10);
+            if (Number.isNaN(outMin)) outMin = Infinity;
+        }
+        return { ...g, _inMin: inMin, _outMin: outMin };
+    });
+
+    // 1. Try to find via explicit link (Parent ID or Event ID)
     const linkIds = new Set(
         [...getHowPenMissedLinkIds(detail || penEvent), String(penEvent.EVENT_ID || "").trim()].filter(Boolean)
     );
 
     for (const linkId of linkIds) {
         const viaLink = matchGks.find((gk) => gkRowLinksEventId(gk, linkId));
-        if (viaLink && gkWasOnFieldForPenalty(viaLink, penMin)) return viaLink;
+        if (viaLink) return viaLink; // If linked, we trust the link explicitly
     }
 
+    // 2. Try to find via HOW MISSED text matching the GK's name (if it's a save)
+    const outcome = getPenaltyMissOutcome(detail || penEvent);
+    if (outcome === "saved") {
+        const howVal = String(detail?.["HOW MISSED"] || penEvent["HOW MISSED"] || "").trim();
+        if (howVal) {
+            const viaHowMissed = matchGks.filter((gk) => gkMatchesHowMissedValue(gk, howVal, penMin));
+            if (viaHowMissed.length > 0) return viaHowMissed[0];
+        }
+    }
+
+    // 3. Fallback to simply checking who was on the field at the given minute
     const onField = matchGks.filter((gk) => gkWasOnFieldForPenalty(gk, penMin));
-    if (onField.length === 1) return onField[0];
+    if (onField.length > 0) return onField[0];
 
     return null;
 }
@@ -651,20 +684,77 @@ export function aggregateByPlayer(events, teamFilter = "all") {
     const map = new Map();
 
     (events || []).forEach((ev) => {
+        const pName = String(ev.playerName || "").trim();
+        if (!pName || pName.toLowerCase() === "unknown") return;
+
         if (teamFilter === "ahly" && !ev.teamIsAhly) return;
         if (teamFilter === "opponents" && ev.teamIsAhly) return;
 
-        const name = ev.playerName;
-        if (!map.has(name)) map.set(name, createEmptyPlayerPenaltyStats(name));
-        applyEventToPlayerStats(map.get(name), ev);
+        if (!map.has(pName)) {
+            map.set(pName, { name: pName, total: 0, goal: 0, miss: 0, saved: 0, wonGoal: 0, wonMiss: 0, makeGoal: 0, makeMiss: 0 });
+        }
+        applyEventToPlayerStats(map.get(pName), ev);
     });
 
     return Array.from(map.values())
-        .map((row) => ({
-            ...row,
-            conversion: getConversionPct(row.goal, row.total),
-        }))
+        .map((row) => ({ ...row, conversion: getConversionPct(row.goal, row.total) }))
         .sort((a, b) => b.total - a.total || b.goal - a.goal);
+}
+
+export function aggregateAhlyGkPenalties({ playerDetails, gkDetails, filteredMatches, perspective = "against" }) {
+    const matchMap = buildMatchContextMap(filteredMatches);
+    const map = new Map();
+
+    const getGkRow = (name) => {
+        if (!map.has(name)) {
+            map.set(name, {
+                name,
+                total: 0,
+                saved: 0,
+                missed: 0,
+                goal: 0,
+            });
+        }
+        return map.get(name);
+    };
+
+    (playerDetails || []).forEach(event => {
+        const mId = String(event.MATCH_ID || "").trim();
+        if (!matchMap.has(mId)) return;
+        
+        const type = String(event.TYPE || "").trim().toUpperCase();
+        const sub = String(event.TYPE_SUB || "").trim().toUpperCase();
+        const isAhly = isAhlyTeam(event.TEAM);
+
+        // If perspective is against Ahly, we only want opponent taking (isAhly === false)
+        // If perspective is for Ahly, we only want Ahly taking (isAhly === true)
+        if (perspective === "against" && isAhly) return;
+        if (perspective === "for" && !isAhly) return;
+
+        let category = null;
+        if (sub === "PENGOAL" || sub === "هدف جزاء" || type === "PENGOAL") {
+            category = "goal";
+        } else if (type === "PENMISSED") {
+            const detail = findHowPenMissedForEvent(event);
+            category = getPenaltyMissOutcome(detail) === "saved" ? "saved" : "missed";
+        }
+
+        if (!category) return;
+
+        const gk = findDefendingGkForPenalty({ penEvent: event, gkDetails });
+        const gkName = String(gk?.["PLAYER NAME"] || "Unknown").trim();
+
+        const row = getGkRow(gkName);
+        row.total += 1;
+        row[category] += 1;
+    });
+
+    return Array.from(map.values())
+        .map(row => ({
+            ...row,
+            savePct: row.total ? ((row.saved / row.total) * 100).toFixed(1) : "0.0"
+        }))
+        .sort((a, b) => b.total - a.total || b.saved - a.saved);
 }
 
 export function getTopChampionshipsForChart(events, limit = 6, perspective = "for") {
