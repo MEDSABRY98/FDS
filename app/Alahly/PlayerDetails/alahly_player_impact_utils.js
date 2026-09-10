@@ -4,7 +4,7 @@ export function isAhlyTeam(teamValue) {
     return s.includes("الأهلي") || s.includes("ال الأهلي") || s.includes("Al Ahly") || s.includes("Al-Ahly");
 }
 
-export function computePlayerGoalImpact(matches, allEvents, playerName, eventsByMatch = null) {
+export function computePlayerGoalImpact(matches, allEvents, playerName, eventsByMatch = null, teamFilter = "all") {
     const searchName = String(playerName || "").trim();
     let winImpact = 0;
     let drawImpact = 0;
@@ -27,6 +27,9 @@ export function computePlayerGoalImpact(matches, allEvents, playerName, eventsBy
         if (!playerRecord) return;
 
         const isAhlySideInThisMatch = isAhlyTeam(playerRecord.TEAM);
+        if (teamFilter === "ahly" && !isAhlySideInThisMatch) return;
+        if (teamFilter === "opponents" && isAhlySideInThisMatch) return;
+
         const playerTeamWon = isAhlySideInThisMatch ? (res === 'W') : (res === 'L');
         const isDraw = (res === 'D' || res === 'D.');
         const playerSideG = isAhlySideInThisMatch ? gf : ga;
@@ -69,7 +72,7 @@ export function computePlayerGoalImpact(matches, allEvents, playerName, eventsBy
     return { winImpact, drawImpact, impactMatches };
 }
 
-export function computePlayerAssistImpact(matches, allEvents, playerName, eventsByMatch = null) {
+export function computePlayerAssistImpact(matches, allEvents, playerName, eventsByMatch = null, teamFilter = "all") {
     const searchName = String(playerName || "").trim();
     let winImpact = 0;
     let drawImpact = 0;
@@ -92,6 +95,9 @@ export function computePlayerAssistImpact(matches, allEvents, playerName, events
         if (!playerRecord) return;
 
         const isAhlySideInThisMatch = isAhlyTeam(playerRecord.TEAM);
+        if (teamFilter === "ahly" && !isAhlySideInThisMatch) return;
+        if (teamFilter === "opponents" && isAhlySideInThisMatch) return;
+
         const playerTeamWon = isAhlySideInThisMatch ? (res === 'W') : (res === 'L');
         const isDraw = (res === 'D' || res === 'D.');
         const playerSideG = isAhlySideInThisMatch ? gf : ga;

@@ -1,10 +1,11 @@
 import { useState, Fragment } from "react";
 import NoData_db from "../../lib/NoData_db";
 import SearchBar_db from "../../lib/SearchBar_db";
+import { Eye, X } from "lucide-react";
 
-export default function PlayerVsGksTable({ stats }) {
+export default function PlayerVsGksTable({ stats, playerName }) {
     const [search, setSearch] = useState("");
-    const [expandedGk, setExpandedGk] = useState(null); // ID or Name of expanded GK
+    const [selectedGk, setSelectedGk] = useState(null);
 
     const gkStore = stats.statsByGK || {};
     const gkNames = Object.keys(gkStore)
@@ -24,11 +25,6 @@ export default function PlayerVsGksTable({ stats }) {
         acc.penM += s.totalPenMissed || 0;
         return acc;
     }, { goals: 0, penG: 0, penS: 0, penM: 0 });
-
-    const toggleExpand = (name) => {
-        if (expandedGk === name) setExpandedGk(null);
-        else setExpandedGk(name);
-    };
 
     return (
         <div className="history-section fade-in">
@@ -60,44 +56,27 @@ export default function PlayerVsGksTable({ stats }) {
                         {gkNames.map(name => {
                                 const s = gkStore[name];
                                 const teamNames = Object.keys(s.teams);
-                                const isExpanded = expandedGk === name;
 
                                 return (
-                                    <Fragment key={name}>
-                                        <tr
-                                            onClick={() => toggleExpand(name)}
-                                            style={{ cursor: 'pointer', transition: 'background 0.2s' }}
-                                            className={isExpanded ? 'row-expanded' : ''}
-                                        >
-                                            <td style={{ width: '40px', textAlign: 'center', color: 'var(--player-gold)' }}>
-                                                {isExpanded ? '▼' : '▶'}
-                                            </td>
-                                            <td style={{ textAlign: 'left' }}>
-                                                <div style={{ fontWeight: '500', color: 'var(--player-dark)', fontSize: '20px', fontFamily: '"Outfit", sans-serif', letterSpacing: '0.5px' }}>{name}</div>
-                                                {!isExpanded && <div style={{ fontSize: '11px', opacity: 0.6, marginTop: '2px' }}>{teamNames.join(' • ')}</div>}
-                                            </td>
-                                            <td style={{ color: '#27ae60', fontWeight: '900', fontSize: '20px' }}>{s.totalGoals || "-"}</td>
-                                            <td style={{ fontWeight: '700' }}>{s.totalPenGoals || "-"}</td>
-                                            <td style={{ color: (s.totalPenSaved || 0) > 0 ? '#e67e22' : 'inherit', fontWeight: '700' }}>{(s.totalPenSaved || 0) || "-"}</td>
-                                            <td style={{ color: (s.totalPenMissed || 0) > 0 ? '#e74c3c' : 'inherit', fontWeight: '700' }}>{(s.totalPenMissed || 0) || "-"}</td>
-                                        </tr>
-                                        {isExpanded && teamNames.sort((a, b) => s.teams[b].goals - s.teams[a].goals).map(team => {
-                                            const ts = s.teams[team];
-                                            return (
-                                                <tr key={`${name}-${team}`} className="sub-row-gk">
-                                                    <td></td>
-                                                    <td style={{ textAlign: 'left', paddingLeft: '40px', background: 'rgba(0,0,0,0.02)', borderLeft: '3px solid var(--player-gold)' }}>
-                                                        <div style={{ fontWeight: '700', color: '#555', fontSize: '14px' }}>{team}</div>
-                                                    </td>
-                                                    <td style={{ fontSize: '16px', color: '#27ae60', opacity: 0.8 }}>{ts.goals || "-"}</td>
-                                                    <td style={{ fontSize: '14px', opacity: 0.8 }}>{ts.penGoals || "-"}</td>
-                                                    <td style={{ fontSize: '14px', color: (ts.penSaved || 0) > 0 ? '#e67e22' : 'inherit', opacity: 0.8 }}>{ts.penSaved || 0 || "-"}</td>
-                                                    <td style={{ fontSize: '14px', color: (ts.penMissed || 0) > 0 ? '#e74c3c' : 'inherit', opacity: 0.8 }}>{ts.penMissed || 0 || "-"}</td>
-                                                </tr>
-                                            );
-                                        })}
-                                    </Fragment>
-                            );
+                                    <tr key={name} style={{ transition: 'background 0.2s' }}>
+                                        <td style={{ width: '60px', textAlign: 'center' }}>
+                                            <button 
+                                                onClick={() => setSelectedGk(name)}
+                                                className="gk-view-btn"
+                                                title="View Teams"
+                                            >
+                                                <Eye size={18} />
+                                            </button>
+                                        </td>
+                                        <td style={{ textAlign: 'left' }}>
+                                            <div style={{ fontWeight: '500', color: 'var(--player-dark)', fontSize: '20px', fontFamily: '"Outfit", sans-serif', letterSpacing: '0.5px' }}>{name}</div>
+                                        </td>
+                                        <td style={{ color: '#27ae60', fontWeight: '900', fontSize: '20px' }}>{s.totalGoals || "-"}</td>
+                                        <td style={{ fontWeight: '700' }}>{s.totalPenGoals || "-"}</td>
+                                        <td style={{ color: (s.totalPenSaved || 0) > 0 ? '#e67e22' : 'inherit', fontWeight: '700' }}>{(s.totalPenSaved || 0) || "-"}</td>
+                                        <td style={{ color: (s.totalPenMissed || 0) > 0 ? '#e74c3c' : 'inherit', fontWeight: '700' }}>{(s.totalPenMissed || 0) || "-"}</td>
+                                    </tr>
+                                );
                         })}
                         <tr style={{ background: 'rgba(201, 168, 76, 0.05)', borderTop: '2px solid var(--player-gold)' }}>
                                 <td></td>
@@ -111,10 +90,129 @@ export default function PlayerVsGksTable({ stats }) {
                 </table>
                 )}
             </div>
+
+            {selectedGk && (
+                <div className="gk-modal-overlay" onClick={() => setSelectedGk(null)}>
+                    <div className="gk-modal-content fade-in" onClick={e => e.stopPropagation()}>
+                        <div className="gk-modal-header">
+                            <h3 style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                                {selectedGk} 
+                                {playerName && <span style={{ color: 'rgba(255,255,255,0.4)', fontSize: 'inherit', textTransform: 'uppercase', letterSpacing: '2px', fontWeight: '800' }}>VS {playerName}</span>}
+                            </h3>
+                            <button onClick={() => setSelectedGk(null)}><X size={20} /></button>
+                        </div>
+                        <div style={{ overflowX: 'auto', maxHeight: '75vh' }}>
+                            <table className="player-match-table">
+                                <thead>
+                                    <tr>
+                                        <th style={{ textAlign: 'center' }}>TEAM</th>
+                                        <th>GOALS</th>
+                                        <th>PEN GOAL</th>
+                                        <th>PEN SAVED</th>
+                                        <th>PEN MISSED</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {Object.keys(gkStore[selectedGk].teams)
+                                        .sort((a, b) => gkStore[selectedGk].teams[b].goals - gkStore[selectedGk].teams[a].goals)
+                                        .map(team => {
+                                            const ts = gkStore[selectedGk].teams[team];
+                                            return (
+                                                <tr key={team}>
+                                                    <td style={{ textAlign: 'center', fontWeight: '700', color: '#555', fontSize: '15px' }}>{team}</td>
+                                                    <td style={{ color: '#27ae60', fontWeight: '800', fontSize: '18px' }}>{ts.goals || "-"}</td>
+                                                    <td style={{ fontWeight: '600' }}>{ts.penGoals || "-"}</td>
+                                                    <td style={{ color: ts.penSaved > 0 ? '#e67e22' : 'inherit', fontWeight: '600' }}>{ts.penSaved || "-"}</td>
+                                                    <td style={{ color: ts.penMissed > 0 ? '#e74c3c' : 'inherit', fontWeight: '600' }}>{ts.penMissed || "-"}</td>
+                                                </tr>
+                                            );
+                                        })
+                                    }
+                                    <tr style={{ background: 'rgba(201, 168, 76, 0.05)', borderTop: '2px solid var(--player-gold)' }}>
+                                        <td style={{ textAlign: 'center', fontWeight: '900', color: 'var(--player-gold)' }}>TOTAL</td>
+                                        <td style={{ color: '#27ae60', fontWeight: '900', fontSize: '20px' }}>{gkStore[selectedGk].totalGoals || "-"}</td>
+                                        <td style={{ fontWeight: '800', fontSize: '18px' }}>{gkStore[selectedGk].totalPenGoals || "-"}</td>
+                                        <td style={{ color: gkStore[selectedGk].totalPenSaved > 0 ? '#e67e22' : 'inherit', fontWeight: '800', fontSize: '18px' }}>{gkStore[selectedGk].totalPenSaved || "-"}</td>
+                                        <td style={{ color: gkStore[selectedGk].totalPenMissed > 0 ? '#e74c3c' : 'inherit', fontWeight: '800', fontSize: '18px' }}>{gkStore[selectedGk].totalPenMissed || "-"}</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            )}
+
             <style jsx>{`
-                .row-expanded { background: rgba(201, 168, 76, 0.03); }
-                .sub-row-gk td { padding: 12px 18px !important; }
                 .player-match-table tr:hover { background: rgba(0,0,0,0.01); }
+                .gk-view-btn {
+                    background: rgba(201, 168, 76, 0.1);
+                    border: 1px solid rgba(201, 168, 76, 0.3);
+                    color: var(--player-gold);
+                    border-radius: 6px;
+                    width: 32px;
+                    height: 32px;
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    cursor: pointer;
+                    transition: 0.2s;
+                    margin: 0 auto;
+                }
+                .gk-view-btn:hover {
+                    background: var(--player-gold);
+                    color: #fff;
+                    transform: translateY(-2px);
+                    box-shadow: 0 4px 10px rgba(201, 168, 76, 0.3);
+                }
+                .gk-modal-overlay {
+                    position: fixed;
+                    top: 0; left: 0; width: 100%; height: 100%;
+                    background: rgba(0,0,0,0.6);
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    z-index: 10000;
+                    backdrop-filter: blur(5px);
+                }
+                .gk-modal-content {
+                    background: #fff;
+                    width: 95%;
+                    max-width: 850px;
+                    border-radius: 12px;
+                    box-shadow: 0 20px 40px rgba(0,0,0,0.2);
+                    overflow: hidden;
+                    display: flex;
+                    flex-direction: column;
+                }
+                .gk-modal-header {
+                    background: #0a0a0a;
+                    color: #fff;
+                    padding: 20px;
+                    display: flex;
+                    align-items: center;
+                    justify-content: space-between;
+                }
+                .gk-modal-header h3 {
+                    margin: 0;
+                    font-size: 20px;
+                    color: var(--player-gold);
+                    font-family: 'Outfit', sans-serif;
+                    letter-spacing: 1px;
+                }
+                .gk-modal-header button {
+                    background: transparent;
+                    border: none;
+                    color: #fff;
+                    cursor: pointer;
+                    transition: 0.2s;
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                }
+                .gk-modal-header button:hover {
+                    color: #e74c3c;
+                    transform: scale(1.1);
+                }
             `}</style>
         </div>
     );

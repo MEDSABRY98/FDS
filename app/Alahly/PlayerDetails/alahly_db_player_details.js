@@ -9,6 +9,7 @@ import PlayerEventsTable from "./alahly_db_player_details_events";
 import PlayerSeasonNameTable from "./alahly_db_player_details_season_name";
 import PlayerSeasonNumberTable from "./alahly_db_player_details_season_number";
 import PlayerVsTeamsTable from "./alahly_db_player_details_vs_teams";
+import PlayerVsCountriesTable from "./alahly_db_player_details_vs_countries";
 import PlayerVsGksTable from "./alahly_db_player_details_vs_gks";
 import PlayerChampionshipsTable from "./alahly_db_player_details_championships";
 import PlayerWithPlayerTable from "./alahly_db_player_details_player_with_player";
@@ -69,6 +70,7 @@ export default function PlayerDetails({ playerName, playerData, playerDetails, l
             statsByChampSeason: {}, // { Champion: { Season: { apps, mins, goals, assists, penGoals, penMissed } } }
             statsBySY: {}, // { SY: { apps, mins, goals, assists, penGoals, penMissed } }
             statsByOpponent: {}, // { Opponent: { apps, goals, assists, penGoals, penMissed, penSaved } },
+            statsByCountry: {}, // { Country: { apps, goals, assists, penGoals, penMissed, penSaved, teamsCount } },
             statsByGK: {}, // { GKName: { team, goals, penGoals, penMissed, penSaved } },
             playerWithPlayerStats: { assistsFrom: {}, assistsTo: {} },
             statsByMinute: {},
@@ -401,6 +403,26 @@ export default function PlayerDetails({ playerName, playerData, playerDetails, l
                 opp.assists += data.assists;
                 opp.penGoals += data.penGoals;
                 opp.penMissed += data.penMissed;
+
+                // Stats By Country
+                let country = "مصر";
+                let teamName = data.opponent;
+                if (data.opponent.includes('-')) {
+                    const parts = data.opponent.split('-');
+                    country = parts.pop().trim();
+                    teamName = parts.join('-').trim();
+                }
+
+                if (!summary.statsByCountry[country]) {
+                    summary.statsByCountry[country] = { apps: 0, goals: 0, assists: 0, penGoals: 0, penMissed: 0, penSaved: 0, teams: new Set() };
+                }
+                const ctry = summary.statsByCountry[country];
+                if (app) ctry.apps += 1;
+                ctry.goals += data.goals;
+                ctry.assists += data.assists;
+                ctry.penGoals += data.penGoals;
+                ctry.penMissed += data.penMissed;
+                ctry.teams.add(teamName);
                 opp.penSaved += data.penSaved;
             }
 
@@ -645,6 +667,12 @@ export default function PlayerDetails({ playerName, playerData, playerDetails, l
                 exportData = Object.keys(stats.statsByOpponent).sort((a, b) => stats.statsByOpponent[b].apps - stats.statsByOpponent[a].apps).map((opp, i) => {
                     const s = stats.statsByOpponent[opp];
                     return { "#": i + 1, "OPPONENT": opp, "APPS": s.apps, "G": s.goals, "A": s.assists, "P-G": s.penGoals, "P-M": s.penMissed, "P-S": s.penSaved };
+                });
+                break;
+            case 'vs_countries':
+                exportData = Object.keys(stats.statsByCountry).sort((a, b) => stats.statsByCountry[b].apps - stats.statsByCountry[a].apps).map((ctry, i) => {
+                    const s = stats.statsByCountry[ctry];
+                    return { "#": i + 1, "COUNTRY": ctry, "TEAMS COUNT": s.teams.size, "APPS": s.apps, "G": s.goals, "A": s.assists, "P-G": s.penGoals, "P-M": s.penMissed, "P-S": s.penSaved };
                 });
                 break;
             case 'vs_gks':
@@ -903,6 +931,9 @@ export default function PlayerDetails({ playerName, playerData, playerDetails, l
                 <div className={`player-tab-item ${activeTab === 'vs_teams' ? 'active' : ''}`} onClick={() => setActiveTab('vs_teams')}>
                     <span className="tab-title">VS TEAMS</span>
                 </div>
+                <div className={`player-tab-item ${activeTab === 'vs_countries' ? 'active' : ''}`} onClick={() => setActiveTab('vs_countries')}>
+                    <span className="tab-title">VS COUNTRIES</span>
+                </div>
                 <div className={`player-tab-item ${activeTab === 'vs_gks' ? 'active' : ''}`} onClick={() => setActiveTab('vs_gks')}>
                     <span className="tab-title">VS GKS</span>
                 </div>
@@ -968,9 +999,15 @@ export default function PlayerDetails({ playerName, playerData, playerDetails, l
                     stats={stats}
                 />
             )}
+            {activeTab === 'vs_countries' && (
+                <PlayerVsCountriesTable
+                    stats={stats}
+                />
+            )}
             {activeTab === 'vs_gks' && (
                 <PlayerVsGksTable
                     stats={stats}
+                    playerName={playerName}
                 />
             )}
             {activeTab === 'player_with_player' && (

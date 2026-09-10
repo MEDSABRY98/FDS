@@ -52,6 +52,11 @@ export default function AlAhlyPlayers({ playerDetails, lineupDetails, filteredMa
 
         const initTiming = () => ({ "1-15": 0, "16-30": 0, "31-45": 0, "45+": 0, "46-60": 0, "61-75": 0, "76-90": 0, "90+": 0, "?": 0 });
 
+        const matchOpponents = new Map();
+        (filteredMatches || []).forEach(m => {
+            matchOpponents.set(String(m.MATCH_ID).trim(), String(m["OPPONENT TEAM"] || "").trim());
+        });
+
         // Process appearances & team filter from lineupDetails
         (lineupDetails || []).forEach(l => {
             const mId = String(l.MATCH_ID || "").trim();
@@ -62,10 +67,11 @@ export default function AlAhlyPlayers({ playerDetails, lineupDetails, filteredMa
 
             const teamVal = String(l.TEAM || "").trim();
             const isAhly = isAhlyTeam(teamVal);
+            const matchOpponent = matchOpponents.get(mId);
 
             if (teamFilter === "ahly" && !isAhly) return;
             if (teamFilter === "opponents" && isAhly) return;
-            if (opponentFilter !== "all" && teamVal !== opponentFilter) return;
+            if (opponentFilter !== "all" && matchOpponent !== opponentFilter) return;
 
             if (!stats[name]) {
                 stats[name] = {
@@ -90,10 +96,11 @@ export default function AlAhlyPlayers({ playerDetails, lineupDetails, filteredMa
 
             const teamVal = String(p.TEAM || "").trim();
             const isAhly = isAhlyTeam(teamVal);
+            const matchOpponent = matchOpponents.get(mId);
 
             if (teamFilter === "ahly" && !isAhly) return;
             if (teamFilter === "opponents" && isAhly) return;
-            if (opponentFilter !== "all" && teamVal !== opponentFilter) return;
+            if (opponentFilter !== "all" && matchOpponent !== opponentFilter) return;
 
             if (!stats[name]) {
                 stats[name] = {
@@ -154,10 +161,15 @@ export default function AlAhlyPlayers({ playerDetails, lineupDetails, filteredMa
         });
 
         // Impact Calculation (using the identical logic to Player Details)
-        const matchesData = filteredMatches || [];
-        const scopedEvents = (playerDetails || []).filter(e => currentMatchIds.has(String(e.MATCH_ID || "").trim()));
+        const relevantMatchesData = (filteredMatches || []).filter(m => {
+            if (opponentFilter === "all") return true;
+            return String(m["OPPONENT TEAM"] || "").trim() === opponentFilter;
+        });
+        const relevantMatchIds = new Set(relevantMatchesData.map(m => String(m.MATCH_ID || "").trim()));
+        const relevantScopedEvents = (playerDetails || []).filter(e => relevantMatchIds.has(String(e.MATCH_ID || "").trim()));
+
         const eventsByMatchMap = new Map();
-        scopedEvents.forEach(e => {
+        relevantScopedEvents.forEach(e => {
             const mid = String(e.MATCH_ID || "").trim();
             if (!eventsByMatchMap.has(mid)) eventsByMatchMap.set(mid, []);
             eventsByMatchMap.get(mid).push(e);
@@ -165,8 +177,8 @@ export default function AlAhlyPlayers({ playerDetails, lineupDetails, filteredMa
 
         const list = Object.values(stats);
         list.forEach(playerStat => {
-            const gImpact = computePlayerGoalImpact(matchesData, null, playerStat.name, eventsByMatchMap);
-            const aImpact = computePlayerAssistImpact(matchesData, null, playerStat.name, eventsByMatchMap);
+            const gImpact = computePlayerGoalImpact(relevantMatchesData, null, playerStat.name, eventsByMatchMap, teamFilter);
+            const aImpact = computePlayerAssistImpact(relevantMatchesData, null, playerStat.name, eventsByMatchMap, teamFilter);
             playerStat.goalWinImpact = gImpact.winImpact;
             playerStat.goalDrawImpact = gImpact.drawImpact;
             playerStat.assistWinImpact = aImpact.winImpact;
@@ -176,9 +188,15 @@ export default function AlAhlyPlayers({ playerDetails, lineupDetails, filteredMa
         // Compute Braces / Hatricks using Map for O(E) complexity
         const playerMatchGoalsAssists = new Map(); // "playerName|matchId" -> { g: 0, a: 0 }
         
-        scopedEvents.forEach(m => {
+        relevantScopedEvents.forEach(m => {
             const name = String(m["PLAYER NAME"] || "").trim();
             if (!name || name.toLowerCase() === "unknown") return;
+
+            const teamVal = String(m.TEAM || "").trim();
+            const isAhly = isAhlyTeam(teamVal);
+            if (teamFilter === "ahly" && !isAhly) return;
+            if (teamFilter === "opponents" && isAhly) return;
+
             const mid = String(m.MATCH_ID || "").trim();
             
             const key = `${name}|${mid}`;
@@ -208,14 +226,27 @@ export default function AlAhlyPlayers({ playerDetails, lineupDetails, filteredMa
     }, [playerDetails, lineupDetails, filteredMatches, teamFilter, opponentFilter]);
 
     const uniqueOpponents = useMemo(() => {
-        const currentMatchIds = new Set((filteredMatches || []).map(m => String(m.MATCH_ID || "").trim()));
         const opps = new Set();
-        (lineupDetails || []).forEach(l => { if (currentMatchIds.has(String(l.MATCH_ID || "").trim())) opps.add(String(l.TEAM || "").trim()); });
-        return Array.from(opps).filter(t => t !== "الأهلي").sort((a, b) => a.localeCompare(b, 'ar'));
-    }, [lineupDetails, filteredMatches]);
+        (filteredMatches || []).forEach(m => {
+            const opp = String(m["OPPONENT TEAM"] || "").trim();
+            if (opp && opp !== "الأهلي") opps.add(opp);
+        });
+        return Array.from(opps).sort((a, b) => a.localeCompare(b, 'ar'));
+    }, [filteredMatches]);
 
     const filteredRows = useMemo(() => {
         let list = [...allStats];
+
+        // Filter out players with zero impact/total for the current sub-tab
+        list = list.filter(r => {
+            if (activeSubTab === 1) return r.caps > 0 || r.mins > 0 || r.ga > 0; // Stats
+            if (activeSubTab === 2) return (r.braceG + r.hatG + r.superG + r.braceA + r.hatA + r.superA) > 0; // Multiples
+            if (activeSubTab === 3) return (r.goalWinImpact + r.goalDrawImpact + r.assistWinImpact + r.assistDrawImpact) > 0; // Impact
+            if (activeSubTab === 4) return r.goals > 0; // Goals Timing
+            if (activeSubTab === 5) return r.assists > 0; // Assists Timing
+            return true;
+        });
+
         if (searchTerm) {
             const lower = searchTerm.toLowerCase();
             list = list.filter(r => r.name.toLowerCase().includes(lower));
@@ -305,60 +336,66 @@ export default function AlAhlyPlayers({ playerDetails, lineupDetails, filteredMa
                         <DropDownList_db options={[{ value: 'all', label: 'All Opponents' }, ...uniqueOpponents.map(opp => ({ value: opp, label: opp }))]} value={opponentFilter} onChange={setOpponentFilter} placeholder="Select Opponent" searchable={true} />
                     </div>
                     <div className="player-table-container">
-                        {activeSubTab === 1 && (
-                            <AlAhlyPlayersStats 
-                                paginatedRows={paginatedRows} 
-                                currentPage={currentPage} 
-                                pageSize={pageSize} 
-                                handleSort={handleSort} 
-                                renderSortIcon={renderSortIcon} 
-                                setSelectedPlayer={setSelectedPlayer} 
-                                sortConfig={sortConfig}
-                            />
-                        )}
-                        {activeSubTab === 2 && (
-                            <AlAhlyPlayersMultiples 
-                                paginatedRows={paginatedRows} 
-                                currentPage={currentPage} 
-                                pageSize={pageSize} 
-                                handleSort={handleSort} 
-                                renderSortIcon={renderSortIcon} 
-                                setSelectedPlayer={setSelectedPlayer} 
-                                sortConfig={sortConfig}
-                            />
-                        )}
-                        {activeSubTab === 3 && (
-                            <AlAhlyPlayersImpact 
-                                paginatedRows={paginatedRows} 
-                                currentPage={currentPage} 
-                                pageSize={pageSize} 
-                                handleSort={handleSort} 
-                                renderSortIcon={renderSortIcon} 
-                                setSelectedPlayer={setSelectedPlayer} 
-                                sortConfig={sortConfig}
-                            />
-                        )}
-                        {activeSubTab === 4 && (
-                            <AlAhlyPlayersGoalsTiming 
-                                paginatedRows={paginatedRows} 
-                                currentPage={currentPage} 
-                                pageSize={pageSize} 
-                                handleSort={handleSort} 
-                                renderSortIcon={renderSortIcon} 
-                                setSelectedPlayer={setSelectedPlayer} 
-                                sortConfig={sortConfig}
-                            />
-                        )}
-                        {activeSubTab === 5 && (
-                            <AlAhlyPlayersAssistsTiming 
-                                paginatedRows={paginatedRows} 
-                                currentPage={currentPage} 
-                                pageSize={pageSize} 
-                                handleSort={handleSort} 
-                                renderSortIcon={renderSortIcon} 
-                                setSelectedPlayer={setSelectedPlayer} 
-                                sortConfig={sortConfig}
-                            />
+                        {filteredRows.length === 0 ? (
+                            <NoData_db message="No players found matching your criteria." />
+                        ) : (
+                            <>
+                                {activeSubTab === 1 && (
+                                    <AlAhlyPlayersStats 
+                                        paginatedRows={paginatedRows} 
+                                        currentPage={currentPage} 
+                                        pageSize={pageSize} 
+                                        handleSort={handleSort} 
+                                        renderSortIcon={renderSortIcon} 
+                                        setSelectedPlayer={setSelectedPlayer} 
+                                        sortConfig={sortConfig}
+                                    />
+                                )}
+                                {activeSubTab === 2 && (
+                                    <AlAhlyPlayersMultiples 
+                                        paginatedRows={paginatedRows} 
+                                        currentPage={currentPage} 
+                                        pageSize={pageSize} 
+                                        handleSort={handleSort} 
+                                        renderSortIcon={renderSortIcon} 
+                                        setSelectedPlayer={setSelectedPlayer} 
+                                        sortConfig={sortConfig}
+                                    />
+                                )}
+                                {activeSubTab === 3 && (
+                                    <AlAhlyPlayersImpact 
+                                        paginatedRows={paginatedRows} 
+                                        currentPage={currentPage} 
+                                        pageSize={pageSize} 
+                                        handleSort={handleSort} 
+                                        renderSortIcon={renderSortIcon} 
+                                        setSelectedPlayer={setSelectedPlayer} 
+                                        sortConfig={sortConfig}
+                                    />
+                                )}
+                                {activeSubTab === 4 && (
+                                    <AlAhlyPlayersGoalsTiming 
+                                        paginatedRows={paginatedRows} 
+                                        currentPage={currentPage} 
+                                        pageSize={pageSize} 
+                                        handleSort={handleSort} 
+                                        renderSortIcon={renderSortIcon} 
+                                        setSelectedPlayer={setSelectedPlayer} 
+                                        sortConfig={sortConfig}
+                                    />
+                                )}
+                                {activeSubTab === 5 && (
+                                    <AlAhlyPlayersAssistsTiming 
+                                        paginatedRows={paginatedRows} 
+                                        currentPage={currentPage} 
+                                        pageSize={pageSize} 
+                                        handleSort={handleSort} 
+                                        renderSortIcon={renderSortIcon} 
+                                        setSelectedPlayer={setSelectedPlayer} 
+                                        sortConfig={sortConfig}
+                                    />
+                                )}
+                            </>
                         )}
                     </div>
 

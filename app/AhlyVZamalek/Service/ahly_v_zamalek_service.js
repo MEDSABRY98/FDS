@@ -1,6 +1,6 @@
-﻿import { supabase } from "../../Database";
+import { supabase } from "../../Database";
 
-const DERBY_OPPONENT = "Ø§Ù„Ø²Ù…Ø§Ù„Ùƒ - Ù…ØµØ±";
+const DERBY_OPPONENT = "الزمالك - مصر";
 const DERBY_OPPONENT_ID = "T-0346";
 const AHLY_TEAM_ID = "T-0169";
 
@@ -12,8 +12,8 @@ export function isAhlyDerbyTeam(teamValue) {
 
     if (upper === "T-0346" || upper === "T-0321" || upper === "ZAMALEK") return false;
     if (upper === "T-0169" || upper === "T-0622" || upper === "AHLY") return true;
-    if (value.includes("Ø²Ù…Ø§Ù„")) return false;
-    if (value.includes("Ø£Ù‡Ù„")) return true;
+    if (value.includes("زمال")) return false;
+    if (value.includes("أهل")) return true;
 
     return false;
 }
@@ -26,14 +26,14 @@ export function isZamalekDerbyTeam(teamValue) {
 
     if (upper === "T-0169" || upper === "T-0622" || upper === "AHLY") return false;
     if (upper === "T-0346" || upper === "T-0321" || upper === "ZAMALEK") return true;
-    if (value.includes("Ø²Ù…Ø§Ù„")) return true;
-    if (value.includes("Ø£Ù‡Ù„")) return false;
+    if (value.includes("زمال")) return true;
+    if (value.includes("أهل")) return false;
 
     return false;
 }
 
 export function derbyTeamDisplayName(teamValue) {
-    return isAhlyDerbyTeam(teamValue) ? "Ø§Ù„Ø£Ù‡Ù„ÙŠ" : isZamalekDerbyTeam(teamValue) ? "Ø§Ù„Ø²Ù…Ø§Ù„Ùƒ" : String(teamValue || "");
+    return isAhlyDerbyTeam(teamValue) ? "الأهلي" : isZamalekDerbyTeam(teamValue) ? "الزمالك" : String(teamValue || "");
 }
 
 function extractYear(dateStr) {
@@ -69,8 +69,8 @@ function enrichDerbyMatch(match) {
         REFEREE: match.REFREE ?? match.REFEREE,
         "ZAMALEK MANAGER": match["OPPONENT MANAGER"] ?? match["ZAMALEK MANAGER"],
         YEAR: extractYear(match.DATE),
-        AHLY: "Ø§Ù„Ø£Ù‡Ù„ÙŠ",
-        ZAMALEK: "Ø§Ù„Ø²Ù…Ø§Ù„Ùƒ",
+        AHLY: "الأهلي",
+        ZAMALEK: "الزمالك",
     };
 }
 
@@ -245,7 +245,7 @@ export const AhlyVZamalekService = {
                     .filter(
                         (e) =>
                             isAhlyTeam(e.TEAM) === isAhlySideInThisMatch &&
-                            (["GOAL", "Ù‡Ø¯Ù"].includes(String(e.TYPE || "").toUpperCase()) ||
+                            (["GOAL", "هدف"].includes(String(e.TYPE || "").toUpperCase()) ||
                                 String(e.TYPE_SUB || "").toUpperCase() === "PENGOAL")
                     )
                     .sort(
@@ -324,7 +324,7 @@ export const AhlyVZamalekService = {
                             .filter(
                                 (e) =>
                                     isAhlyTeam(e.TEAM) === isAhlySideInThisMatch &&
-                                    (["GOAL", "Ù‡Ø¯Ù"].includes(String(e.TYPE || "").toUpperCase()) ||
+                                    (["GOAL", "هدف"].includes(String(e.TYPE || "").toUpperCase()) ||
                                         String(e.TYPE_SUB || "").toUpperCase() === "PENGOAL")
                             )
                             .sort(
@@ -339,7 +339,7 @@ export const AhlyVZamalekService = {
 
                         const assistRow = matchEvents.find(
                             (e) =>
-                                ["ASSIST", "Ø§Ø³ÙŠØ³Øª", "ØµÙ†Ø¹"].includes(String(e.TYPE || "").toUpperCase()) &&
+                                ["ASSIST", "اسيست", "صنع"].includes(String(e.TYPE || "").toUpperCase()) &&
                                 (String(e.PARENT_EVENT_ID) === gId ||
                                     (parseInt(e.MINUTE) === parseInt(lg.MINUTE) && parseInt(e.MINUTE) > 0)) &&
                                 String(e["PLAYER NAME"] || "").trim() === searchName &&
@@ -360,7 +360,7 @@ export const AhlyVZamalekService = {
                         .filter(
                             (e) =>
                                 isAhlySideInThisMatch === isAhlyTeam(e.TEAM) &&
-                                (["GOAL", "Ù‡Ø¯Ù"].includes(String(e.TYPE || "").toUpperCase()) ||
+                                (["GOAL", "هدف"].includes(String(e.TYPE || "").toUpperCase()) ||
                                     String(e.TYPE_SUB || "").toUpperCase() === "PENGOAL")
                         )
                         .sort(
@@ -375,7 +375,7 @@ export const AhlyVZamalekService = {
 
                     const assistRow = matchEvents.find(
                         (e) =>
-                            ["ASSIST", "Ø§Ø³ÙŠØ³Øª", "ØµÙ†Ø¹"].includes(String(e.TYPE || "").toUpperCase()) &&
+                            ["ASSIST", "اسيست", "صنع"].includes(String(e.TYPE || "").toUpperCase()) &&
                             (String(e.PARENT_EVENT_ID) === gId ||
                                 (parseInt(e.MINUTE) === parseInt(lg.MINUTE) && parseInt(e.MINUTE) > 0)) &&
                             String(e["PLAYER NAME"] || "").trim() === searchName &&

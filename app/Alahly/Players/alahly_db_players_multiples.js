@@ -3,28 +3,24 @@ export default function AlAhlyPlayersMultiples({ paginatedRows, currentPage, pag
         <table className="modern-player-table fade-in" style={{ tableLayout: 'fixed' }}>
             <colgroup>
                 <col style={{ width: '60px' }} />
-                <col style={{ width: '300px' }} />
-                <col style={{ width: '120px' }} />
-                <col style={{ width: '120px' }} />
-                <col style={{ width: '120px' }} />
-                <col style={{ width: '120px' }} />
-                <col style={{ width: '120px' }} />
-                <col style={{ width: '120px' }} />
+                <col style={{ width: '280px' }} />
+                <col style={{ width: '130px' }} />
+                <col style={{ width: '130px' }} />
+                <col style={{ width: '130px' }} />
+                <col style={{ width: '130px' }} />
+                <col style={{ width: '130px' }} />
+                <col style={{ width: '130px' }} />
             </colgroup>
             <thead>
                 <tr>
-                    <th rowSpan="2">#</th>
-                    <th className="name-th" rowSpan="2" onClick={() => handleSort('name')} style={{ color: sortConfig?.key === 'name' ? 'var(--gold)' : '' }}>PLAYER NAME</th>
-                    <th colSpan="3" style={{ background: '#27ae60', color: '#fff' }}>GOALS MULTIPLES</th>
-                    <th colSpan="3" style={{ background: '#2980b9', color: '#fff' }}>ASSISTS MULTIPLES</th>
-                </tr>
-                <tr style={{ fontSize: '10px' }}>
-                    <th onClick={() => handleSort('braceG')} className="sortable" style={{ color: sortConfig?.key === 'braceG' ? 'var(--gold)' : '' }}>BRACE(2)</th>
-                    <th onClick={() => handleSort('hatG')} className="sortable" style={{ color: sortConfig?.key === 'hatG' ? 'var(--gold)' : '' }}>HAT-TRICK(3)</th>
-                    <th onClick={() => handleSort('superG')} className="sortable" style={{ color: sortConfig?.key === 'superG' ? 'var(--gold)' : '' }}>SUPER(4+)</th>
-                    <th onClick={() => handleSort('braceA')} className="sortable" style={{ color: sortConfig?.key === 'braceA' ? 'var(--gold)' : '' }}>BRACE(2)</th>
-                    <th onClick={() => handleSort('hatA')} className="sortable" style={{ color: sortConfig?.key === 'hatA' ? 'var(--gold)' : '' }}>HAT-TRICK(3)</th>
-                    <th onClick={() => handleSort('superA')} className="sortable" style={{ color: sortConfig?.key === 'superA' ? 'var(--gold)' : '' }}>SUPER(4+)</th>
+                    <th>#</th>
+                    <th className="name-th sortable" onClick={() => handleSort('name')} style={{ color: sortConfig?.key === 'name' ? 'var(--gold)' : '' }}>PLAYER NAME</th>
+                    <th onClick={() => handleSort('braceG')} className="sortable" style={{ background: '#27ae60', color: sortConfig?.key === 'braceG' ? 'var(--gold)' : '#fff', whiteSpace: 'nowrap', fontSize: '13px', padding: '25px 10px' }}>BRACE (2)</th>
+                    <th onClick={() => handleSort('hatG')} className="sortable" style={{ background: '#27ae60', color: sortConfig?.key === 'hatG' ? 'var(--gold)' : '#fff', whiteSpace: 'nowrap', fontSize: '13px', padding: '25px 10px' }}>HAT-TRICK (3)</th>
+                    <th onClick={() => handleSort('superG')} className="sortable" style={{ background: '#27ae60', color: sortConfig?.key === 'superG' ? 'var(--gold)' : '#fff', whiteSpace: 'nowrap', fontSize: '13px', padding: '25px 10px' }}>SUPER (4+)</th>
+                    <th onClick={() => handleSort('braceA')} className="sortable" style={{ background: '#2980b9', color: sortConfig?.key === 'braceA' ? 'var(--gold)' : '#fff', whiteSpace: 'nowrap', fontSize: '13px', padding: '25px 10px' }}>BRACE (2)</th>
+                    <th onClick={() => handleSort('hatA')} className="sortable" style={{ background: '#2980b9', color: sortConfig?.key === 'hatA' ? 'var(--gold)' : '#fff', whiteSpace: 'nowrap', fontSize: '13px', padding: '25px 10px' }}>HAT-TRICK (3)</th>
+                    <th onClick={() => handleSort('superA')} className="sortable" style={{ background: '#2980b9', color: sortConfig?.key === 'superA' ? 'var(--gold)' : '#fff', whiteSpace: 'nowrap', fontSize: '13px', padding: '25px 10px' }}>SUPER (4+)</th>
                 </tr>
             </thead>
             <tbody>
