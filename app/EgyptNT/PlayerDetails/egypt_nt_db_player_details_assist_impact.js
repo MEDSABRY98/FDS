@@ -213,7 +213,7 @@ export default function PlayerAssistImpactTable({ impactData = {}, opponentByMat
     );
 }
 
-export function computePlayerAssistImpact(matches, allEvents, playerName, eventsByMatch = null) {
+export function computePlayerAssistImpact(matches, allEvents, playerName, eventsByMatch = null, teamFilter = "all") {
     const searchName = String(playerName || "").trim();
     let winImpact = 0;
     let drawImpact = 0;
@@ -236,6 +236,9 @@ export function computePlayerAssistImpact(matches, allEvents, playerName, events
         if (!playerRecord) return;
 
         const isEgyptSideInThisMatch = getPlayerSideFlag(playerRecord, match);
+        if (teamFilter === "egypt" && !isEgyptSideInThisMatch) return;
+        if (teamFilter === "opponents" && isEgyptSideInThisMatch) return;
+
         const playerTeamWon = isEgyptSideInThisMatch ? res === "W" : res === "L";
         const isDraw = res === "D" || res === "D.";
         const playerSideG = isEgyptSideInThisMatch ? gf : ga;

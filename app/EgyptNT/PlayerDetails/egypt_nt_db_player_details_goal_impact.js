@@ -212,7 +212,7 @@ export default function PlayerGoalImpactTable({ impactData = {}, opponentByMatch
     );
 }
 
-export function computePlayerGoalImpact(matches, allEvents, playerName, eventsByMatch = null) {
+export function computePlayerGoalImpact(matches, allEvents, playerName, eventsByMatch = null, teamFilter = "all") {
     const searchName = String(playerName || "").trim();
     let winImpact = 0;
     let drawImpact = 0;
@@ -235,6 +235,9 @@ export function computePlayerGoalImpact(matches, allEvents, playerName, eventsBy
         if (!playerRecord) return;
 
         const isEgyptSideInThisMatch = getPlayerSideFlag(playerRecord, match);
+        if (teamFilter === "egypt" && !isEgyptSideInThisMatch) return;
+        if (teamFilter === "opponents" && isEgyptSideInThisMatch) return;
+
         const playerTeamWon = isEgyptSideInThisMatch ? res === "W" : res === "L";
         const isDraw = res === "D" || res === "D.";
         const playerSideG = isEgyptSideInThisMatch ? gf : ga;

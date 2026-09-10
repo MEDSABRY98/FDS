@@ -15,12 +15,12 @@ export default function EgyptNTPlayersMultiples({ paginatedRows, currentPage, pa
                 <tr>
                     <th>#</th>
                     <th onClick={() => handleSort('name')} className="sortable">PLAYER NAME {renderSortIcon('name')}</th>
-                    <th onClick={() => handleSort('braceG')} className="sortable">BRACE (G) {renderSortIcon('braceG')}</th>
-                    <th onClick={() => handleSort('hatG')} className="sortable">HATRICK (G) {renderSortIcon('hatG')}</th>
-                    <th onClick={() => handleSort('superG')} className="sortable">4+ (G) {renderSortIcon('superG')}</th>
-                    <th onClick={() => handleSort('braceA')} className="sortable">BRACE (A) {renderSortIcon('braceA')}</th>
-                    <th onClick={() => handleSort('hatA')} className="sortable">HATRICK (A) {renderSortIcon('hatA')}</th>
-                    <th onClick={() => handleSort('superA')} className="sortable">4+ (A) {renderSortIcon('superA')}</th>
+                    <th onClick={() => handleSort('braceG')} className="sortable" style={{ color: '#27ae60' }}>BRACE (G) {renderSortIcon('braceG')}</th>
+                    <th onClick={() => handleSort('hatG')} className="sortable" style={{ color: '#27ae60' }}>HATRICK (G) {renderSortIcon('hatG')}</th>
+                    <th onClick={() => handleSort('superG')} className="sortable" style={{ color: '#27ae60' }}>4+ (G) {renderSortIcon('superG')}</th>
+                    <th onClick={() => handleSort('braceA')} className="sortable" style={{ color: '#2980b9' }}>BRACE (A) {renderSortIcon('braceA')}</th>
+                    <th onClick={() => handleSort('hatA')} className="sortable" style={{ color: '#2980b9' }}>HATRICK (A) {renderSortIcon('hatA')}</th>
+                    <th onClick={() => handleSort('superA')} className="sortable" style={{ color: '#2980b9' }}>4+ (A) {renderSortIcon('superA')}</th>
                 </tr>
             </thead>
             <tbody>

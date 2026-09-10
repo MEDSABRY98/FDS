@@ -185,8 +185,8 @@ export default function EgyptNTPlayers({ playerDetails, lineupDetails, filteredM
         // Compute Impact using the exact same logic as Player Details inner tabs
         const statsArray = Object.values(stats);
         statsArray.forEach(playerStat => {
-            const gImpact = computePlayerGoalImpact(scopedMatches, null, playerStat.name, eventsByMatchMap);
-            const aImpact = computePlayerAssistImpact(scopedMatches, null, playerStat.name, eventsByMatchMap);
+            const gImpact = computePlayerGoalImpact(scopedMatches, null, playerStat.name, eventsByMatchMap, teamFilter);
+            const aImpact = computePlayerAssistImpact(scopedMatches, null, playerStat.name, eventsByMatchMap, teamFilter);
             playerStat.goalWinImpact = gImpact.winImpact;
             playerStat.goalDrawImpact = gImpact.drawImpact;
             playerStat.assistWinImpact = aImpact.winImpact;
@@ -199,6 +199,18 @@ export default function EgyptNTPlayers({ playerDetails, lineupDetails, filteredM
         scopedEvents.forEach(m => {
             const name = String(m["PLAYER NAME"] || "").trim();
             if (!name || name.toLowerCase() === "unknown") return;
+            
+            const teamVal = String(m.TEAM || "").trim();
+            const isEgypt = isEgyptTeam(teamVal);
+
+            if (teamFilter === "egypt" && !isEgypt) return;
+            if (teamFilter === "opponents" && isEgypt) return;
+            if (opponentFilter !== "all") {
+                const matchObj = filteredMatches.find(mat => String(mat.MATCH_ID) === String(m.MATCH_ID));
+                // Assuming we want to filter by the opponent of the match
+                if (matchObj && String(matchObj["OPPONENT TEAM"]).trim() !== opponentFilter) return;
+            }
+
             const mid = String(m.MATCH_ID || "").trim();
             
             const key = `${name}|${mid}`;
@@ -230,22 +242,13 @@ export default function EgyptNTPlayers({ playerDetails, lineupDetails, filteredM
     }, [playerDetails, lineupDetails, filteredMatches, teamFilter, opponentFilter]);
 
     const uniqueOpponents = useMemo(() => {
-        const currentMatchIds = new Set((filteredMatches || []).map(m => String(m.MATCH_ID || "").trim()));
         const opps = new Set();
-        const isEgyptTeam = (t) => {
-            const s = String(t || "").trim();
-            if (!s) return true;
-            const normalized = s.toLowerCase();
-            return normalized === "مصر" || normalized === "egypt" || normalized === "منتخب مصر" || normalized === "المنتخب المصري";
-        };
-        (lineupDetails || []).forEach(l => {
-            if (currentMatchIds.has(String(l.MATCH_ID || "").trim())) {
-                const tv = String(l.TEAM || "").trim();
-                if (tv && !isEgyptTeam(tv)) opps.add(tv);
-            }
+        (filteredMatches || []).forEach(m => {
+            const opp = String(m["OPPONENT TEAM"] || "").trim();
+            if (opp && opp !== "??????") opps.add(opp);
         });
         return Array.from(opps).sort((a, b) => a.localeCompare(b, 'ar'));
-    }, [lineupDetails, filteredMatches]);
+    }, [filteredMatches]);
 
     const filteredRows = useMemo(() => {
         let list = [...allStats];
@@ -253,6 +256,16 @@ export default function EgyptNTPlayers({ playerDetails, lineupDetails, filteredM
             const lower = searchTerm.toLowerCase();
             list = list.filter(r => r.name.toLowerCase().includes(lower));
         }
+
+        list = list.filter(r => {
+            if (activeSubTab === 1) return r.caps > 0 || r.mins > 0 || r.ga > 0 || r.goals > 0 || r.assists > 0 || r.penalties > 0;
+            if (activeSubTab === 2) return r.total > 0 || r.wonGoal > 0 || r.wonMiss > 0 || r.makeGoal > 0 || r.makeMiss > 0;
+            if (activeSubTab === 3) return r.braceG > 0 || r.hatG > 0 || r.superG > 0 || r.braceA > 0 || r.hatA > 0 || r.superA > 0;
+            if (activeSubTab === 4) return (r.goalWinImpact + r.goalDrawImpact + r.assistWinImpact + r.assistDrawImpact) > 0;
+            if (activeSubTab === 5) return r.goals > 0;
+            if (activeSubTab === 6) return r.assists > 0;
+            return true;
+        });
 
         const { key, direction } = sortConfig;
         return list.sort((a, b) => {
