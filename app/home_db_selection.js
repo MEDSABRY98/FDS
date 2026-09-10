@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { Database, Shield, Target, Trophy, Swords, Flag, Globe, Download } from "lucide-react";
+import { Database, Shield, Target, Trophy, Swords, Flag, Globe, Download, CheckCircle, ArrowLeft } from "lucide-react";
 import "./home_db_selection.css";
 
 const MODULES = [
@@ -10,12 +10,14 @@ const MODULES = [
         id: "backup",
         label: "BACKUP",
         tag: "EXPORT",
+        icon: Download,
         links: [{ href: "/Backup", label: "DATABASE BACKUP", icon: Download }],
     },
     {
         id: "db_management",
         label: "DB MANAGEMENT",
         tag: "GLOBAL",
+        icon: Database,
         links: [
             { href: "/DBManagement", label: "GLOBAL DB MANAGEMENT", icon: Database },
         ],
@@ -24,15 +26,16 @@ const MODULES = [
         id: "check_data",
         label: "CHECK DATA",
         tag: "INTEGRITY",
+        icon: CheckCircle,
         links: [
             { href: "/CheckData?module=egy_nt", label: "EGYPT NT VALIDATE", icon: Shield },
         ],
     },
-
     {
         id: "alahly",
         label: "AL AHLY",
         tag: "CLUB",
+        icon: Shield,
         links: [
             { href: "/AlahlydbManagement", label: "AL AHLY DB MANAGEMENT", icon: Database },
             { href: "/Alahly", label: "AL AHLY SC", icon: Shield },
@@ -44,6 +47,7 @@ const MODULES = [
         id: "derby",
         label: "DERBY",
         tag: "SPECIAL",
+        icon: Swords,
         links: [
             { href: "/AhlyVZamalek", label: "CAIRO DERBY", icon: Swords },
         ],
@@ -52,6 +56,7 @@ const MODULES = [
         id: "egypt_nt",
         label: "EGYPT NT",
         tag: "NATIONAL",
+        icon: Flag,
         links: [
             { href: "/EgyptNTdbManagement", label: "EGYPT NT DB MANAGEMENT", icon: Database },
             { href: "/EgyptNT", label: "EGYPT NT", icon: Flag },
@@ -62,6 +67,7 @@ const MODULES = [
         id: "egypt_clubs",
         label: "EGYPT CLUBS",
         tag: "DOMESTIC",
+        icon: Trophy,
         links: [
             { href: "/EgyptClubdbManagement", label: "EGYPT CLUB DB MANAGEMENT", icon: Database },
             { href: "/EgyptClub", label: "EGYPT CLUBS", icon: Trophy },
@@ -72,6 +78,7 @@ const MODULES = [
         id: "international_nt",
         label: "INTL NT",
         tag: "WORLD",
+        icon: Globe,
         links: [
             { href: "/InternationalNTdbManagement", label: "INTL NT DB MANAGEMENT", icon: Database },
             { href: "/InternationalNT", label: "INTERNATIONAL NT", icon: Flag },
@@ -81,6 +88,7 @@ const MODULES = [
         id: "international_clubs",
         label: "INTL CLUBS",
         tag: "WORLD",
+        icon: Globe,
         links: [
             { href: "/InternationalClubdbManagement", label: "INTL CLUB DB MANAGEMENT", icon: Database },
             { href: "/InternationalClub", label: "INTERNATIONAL CLUBS", icon: Globe },
@@ -90,6 +98,7 @@ const MODULES = [
         id: "international_trophy",
         label: "INTL TROPHY",
         tag: "WORLD",
+        icon: Trophy,
         links: [
             { href: "/InternationalTrophydbManagement", label: "INTL TROPHY DB MANAGEMENT", icon: Database },
             { href: "/InternationalTrophy", label: "INTERNATIONAL TROPHIES", icon: Trophy },
@@ -98,8 +107,7 @@ const MODULES = [
 ];
 
 export default function HomeDbSelection() {
-    const [activeModuleId, setActiveModuleId] = useState(MODULES[0].id);
-    const activeModule = MODULES.find((m) => m.id === activeModuleId) || MODULES[0];
+    const [activeModuleId, setActiveModuleId] = useState(null);
 
     return (
         <div id="home-screen">
@@ -108,56 +116,65 @@ export default function HomeDbSelection() {
 
             <header className="home-header">
                 <div className="home-sys-name">FOOTBALL <span>DATABASE</span></div>
-                <div className="home-sys-sub">SELECT A MODULE TO CONTINUE</div>
             </header>
 
-            <div className="home-layout">
-                <aside className="home-sidebar" aria-label="Modules">
-                    <div className="home-sidebar-label">MODULES</div>
-                    <nav className="home-module-nav">
-                        {MODULES.map((mod, index) => {
-                            const isActive = mod.id === activeModuleId;
-                            const isLast = index === MODULES.length - 1;
+            <main className="home-main-area">
+                {!activeModuleId ? (
+                    <div className="odoo-modules-grid">
+                        {MODULES.map((mod) => {
+                            const Icon = mod.icon;
                             return (
                                 <button
                                     key={mod.id}
                                     type="button"
-                                    className={`home-module-item ${isActive ? "active" : ""}`}
+                                    className="odoo-module-card fade-in"
                                     onClick={() => setActiveModuleId(mod.id)}
                                 >
-                                    <span className="home-module-track">
-                                        <span className="home-module-dot" />
-                                        {!isLast && <span className="home-module-line" />}
-                                    </span>
-                                    <span className="home-module-text">
-                                        <span className="home-module-tag">{mod.tag}</span>
-                                        <span className="home-module-name">{mod.label}</span>
-                                    </span>
+                                    <div className="odoo-module-icon">
+                                        <Icon size={42} strokeWidth={1.5} />
+                                    </div>
+                                    <div className="odoo-module-title">{mod.label}</div>
+                                    <div className="odoo-module-tag">{mod.tag}</div>
                                 </button>
                             );
                         })}
-                    </nav>
-                </aside>
-
-                <main className="home-content">
-                    <header className="home-content-head">
-                        <span className="home-content-tag">{activeModule.tag}</span>
-                        <h2 className="home-content-title">{activeModule.label}</h2>
-                    </header>
-
-                    <nav className="home-section-tabs" aria-label={`${activeModule.label} sections`}>
-                        {activeModule.links.map((item) => {
-                            const Icon = item.icon;
+                    </div>
+                ) : (
+                    <div className="odoo-links-view fade-in">
+                        <button className="odoo-back-btn" onClick={() => setActiveModuleId(null)}>
+                            <ArrowLeft size={18} strokeWidth={2} /> BACK TO APPS
+                        </button>
+                        
+                        {(() => {
+                            const activeModule = MODULES.find(m => m.id === activeModuleId);
+                            const MainIcon = activeModule.icon;
                             return (
-                                <Link key={item.href} href={item.href} className="home-section-tab">
-                                    <Icon size={18} strokeWidth={1.5} />
-                                    <span>{item.label}</span>
-                                </Link>
+                                <>
+                                    <div className="odoo-module-header">
+                                        <div className="odoo-module-header-icon">
+                                            <MainIcon size={32} strokeWidth={2} />
+                                        </div>
+                                        <h2>{activeModule.label}</h2>
+                                    </div>
+                                    <div className="odoo-links-grid">
+                                        {activeModule.links.map((link) => {
+                                            const LinkIcon = link.icon;
+                                            return (
+                                                <Link key={link.href} href={link.href} className="odoo-link-card">
+                                                    <div className="odoo-link-icon">
+                                                        <LinkIcon size={28} strokeWidth={1.5} />
+                                                    </div>
+                                                    <div className="odoo-link-title">{link.label}</div>
+                                                </Link>
+                                            );
+                                        })}
+                                    </div>
+                                </>
                             );
-                        })}
-                    </nav>
-                </main>
-            </div>
+                        })()}
+                    </div>
+                )}
+            </main>
         </div>
     );
 }
