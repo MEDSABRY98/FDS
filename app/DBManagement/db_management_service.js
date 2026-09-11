@@ -1,4 +1,4 @@
-﻿import { supabase } from "../Database";
+import { supabase } from "../Database";
 import { getScriptType } from "../Database/CatalogBilingual_db";
 
 const MERGE_BILINGUAL_CONFIG = {
@@ -118,7 +118,7 @@ function collectRowAliases(row, cfg) {
         .filter(Boolean);
 }
 
-async function buildMergePlan(table, targetName, namesToMerge) {
+async function buildMergePlan(table, targetName, namesToMerge, forcedSurvivorId = null) {
     const cfg = MERGE_BILINGUAL_CONFIG[table];
     if (!cfg) return null;
 
@@ -135,13 +135,19 @@ async function buildMergePlan(table, targetName, namesToMerge) {
     const rows = await fetchCatalogRowsForMerge(table, lookupTokens);
     if (!rows.length) return null;
 
-    const survivor =
-        rows.find(
+    let survivor;
+    if (forcedSurvivorId) {
+        survivor = rows.find((row) => row[cfg.idCol] === forcedSurvivorId);
+    }
+    
+    if (!survivor) {
+        survivor = rows.find(
             (row) =>
                 row[cfg.idCol] === trimmedTarget ||
                 row[cfg.nameCol] === trimmedTarget ||
                 row[cfg.nameColEn] === trimmedTarget
         ) || rows[0];
+    }
 
     const survivorId = survivor[cfg.idCol];
     const otherIds = rows.map((row) => row[cfg.idCol]).filter((id) => id && id !== survivorId);
@@ -228,13 +234,13 @@ export const DBManagementService = {
      * Merge duplicate catalog entities into one survivor ID.
      * Match/event tables are rewired by ID; the survivor row keeps the chosen display names.
      */
-    async mergeEntities(table, targetName, namesToMerge) {
+    async mergeEntities(table, targetName, namesToMerge, forcedSurvivorId = null) {
         try {
             const trimmedTarget = String(targetName || "").trim();
             console.log(`Merging ${namesToMerge.length} names in "${table}" into "${trimmedTarget}"...`);
 
             const mergePlan = MERGE_BILINGUAL_CONFIG[table]
-                ? await buildMergePlan(table, trimmedTarget, namesToMerge)
+                ? await buildMergePlan(table, trimmedTarget, namesToMerge, forcedSurvivorId)
                 : null;
 
             let updatePromises = [];

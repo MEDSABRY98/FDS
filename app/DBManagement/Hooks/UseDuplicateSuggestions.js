@@ -55,12 +55,21 @@ export function useDuplicateSuggestions(selectedTable, tableData, fetchTableData
         return allPairs.filter(pair => !ignoredKeys.has(pair.pairKey));
     }, [allPairs, ignoredKeys]);
 
-    const setKeepTarget = useCallback((pairKey, name) => {
-        setKeepTargets(prev => ({ ...prev, [pairKey]: name }));
+    const setKeepTarget = useCallback((pairKey, name, id) => {
+        setKeepTargets(prev => ({ ...prev, [pairKey]: { name, id } }));
     }, []);
 
     const getKeepTarget = useCallback((pair) => {
-        return keepTargets[pair.pairKey] || pair.suggestedTarget || pair.nameA;
+        const stored = keepTargets[pair.pairKey];
+        if (stored) return stored;
+        
+        if (pair.suggestedTarget) {
+            // Find which ID matches the suggested target
+            if (pair.suggestedTarget === pair.nameA) return { name: pair.nameA, id: pair.idA };
+            if (pair.suggestedTarget === pair.nameB) return { name: pair.nameB, id: pair.idB };
+        }
+        
+        return { name: pair.nameA, id: pair.idA };
     }, [keepTargets]);
 
     const handleIgnore = useCallback((pair) => {
@@ -70,10 +79,13 @@ export function useDuplicateSuggestions(selectedTable, tableData, fetchTableData
     }, [selectedTable, addNotification]);
 
     const handleMergePair = useCallback(async (pair) => {
-        const targetName = getKeepTarget(pair);
+        const target = getKeepTarget(pair);
+        const targetName = target.name;
+        const targetId = target.id;
+        
         const sourceName = targetName === pair.nameA ? pair.nameB : pair.nameA;
 
-        if (!targetName || targetName === sourceName) {
+        if (pair.nameA !== pair.nameB && (!targetName || targetName === sourceName)) {
             if (addNotification) addNotification('Select a different name to keep before merging.', 'warn');
             return;
         }
@@ -83,7 +95,8 @@ export function useDuplicateSuggestions(selectedTable, tableData, fetchTableData
             await DBManagementService.mergeEntities(
                 selectedTable,
                 targetName,
-                [pair.nameA, pair.nameB]
+                [pair.nameA, pair.nameB],
+                targetId
             );
             if (addNotification) {
                 addNotification(`Merged "${sourceName}" into "${targetName}".`, 'success');

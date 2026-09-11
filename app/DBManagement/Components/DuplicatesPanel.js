@@ -75,16 +75,16 @@ export default function DuplicatesPanel({
                                     <div className="dup-keep-picks">
                                         <button
                                             type="button"
-                                            className={`dup-keep-pick ${keepTarget === pair.nameA ? 'active' : ''}`}
-                                            onClick={() => setKeepTarget(pair.pairKey, pair.nameA)}
+                                            className={`dup-keep-pick ${keepTarget?.id === pair.idA ? 'active' : ''}`}
+                                            onClick={() => setKeepTarget(pair.pairKey, pair.nameA, pair.idA)}
                                             disabled={isMerging}
                                         >
                                             {pair.nameA}
                                         </button>
                                         <button
                                             type="button"
-                                            className={`dup-keep-pick ${keepTarget === pair.nameB ? 'active' : ''}`}
-                                            onClick={() => setKeepTarget(pair.pairKey, pair.nameB)}
+                                            className={`dup-keep-pick ${keepTarget?.id === pair.idB ? 'active' : ''}`}
+                                            onClick={() => setKeepTarget(pair.pairKey, pair.nameB, pair.idB)}
                                             disabled={isMerging}
                                         >
                                             {pair.nameB}
