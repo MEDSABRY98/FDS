@@ -1,4 +1,4 @@
-﻿import { useState, useEffect, useMemo, useCallback } from 'react';
+import { useState, useEffect, useMemo, useCallback } from 'react';
 import { supabase, sortGlobalDbManagementTableData } from "../../Database";
 import { FetchTableSortSetting, appendSettingsTab, SETTINGS_TAB_ID } from "../../Database";
 import { resolveTableColumnOrder } from "../../lib/Settings_db";
@@ -6,45 +6,19 @@ import { resolveTableColumnOrder } from "../../lib/Settings_db";
 export function useTableData(addNotification) {
     const [availableTables, setAvailableTables] = useState([]);
     const [selectedTable, setSelectedTable] = useState("");
-    const [tableData, setTableData] = useState([]);
-    const [columns, setColumns] = useState([]);
+    const [dataMap, setDataMap] = useState({});
+    const [columnsMap, setColumnsMap] = useState({});
     const [loading, setLoading] = useState(true);
+    const [initialLoadComplete, setInitialLoadComplete] = useState(false);
     
     // Search & Pagination
     const [searchTerm, setSearchTerm] = useState("");
     const [currentPage, setCurrentPage] = useState(1);
     const pageSize = 100;
 
-    useEffect(() => {
-        const loadTables = async () => {
-            try {
-                const { data, error } = await supabase.rpc('get_dbmanagement_tables');
-                if (error) throw error;
-                if (data && data.length > 0) {
-                    const sorted = data
-                        .filter(t => {
-                            const name = t.table_name.toUpperCase();
-                            return name !== "DB_SETTINGS";
-                        })
-                        .map(t => {
-                            const label = t.table_name.replace('db_', '').toUpperCase();
-                            return { name: t.table_name, label };
-                        }).sort((a, b) => a.label.localeCompare(b.label));
-                    
-                    setAvailableTables(appendSettingsTab(sorted));
-                    setSelectedTable(sorted[0].name);
-                }
-            } catch (err) {
-                console.error("Failed to fetch tables:", err);
-                if (addNotification) addNotification("Failed to fetch tables: " + err.message, "error");
-            }
-        };
-        loadTables();
-    }, [addNotification]);
-
-    const fetchTableData = useCallback(async () => {
-        if (!selectedTable || selectedTable === SETTINGS_TAB_ID) return;
-        setLoading(true);
+    const fetchSingleTable = useCallback(async (tableName, silent = false) => {
+        if (!tableName || tableName === SETTINGS_TAB_ID) return;
+        if (!silent) setLoading(true);
         try {
             let allData = [];
             let from = 0;
@@ -53,7 +27,7 @@ export function useTableData(addNotification) {
 
             while (!finished) {
                 const { data, error } = await supabase
-                    .from(selectedTable)
+                    .from(tableName)
                     .select("*")
                     .range(from, from + step - 1);
 
@@ -69,28 +43,61 @@ export function useTableData(addNotification) {
 
             if (allData.length > 0) {
                 let cols = Object.keys(allData[0]);
-                cols = await resolveTableColumnOrder(selectedTable, cols);
-
-                setColumns(cols);
-                const sortSetting = await FetchTableSortSetting(selectedTable);
-                setTableData(sortGlobalDbManagementTableData(allData, cols, sortSetting));
+                cols = await resolveTableColumnOrder(tableName, cols);
+                const sortSetting = await FetchTableSortSetting(tableName);
+                const sortedData = sortGlobalDbManagementTableData(allData, cols, sortSetting);
+                
+                setColumnsMap(prev => ({ ...prev, [tableName]: cols }));
+                setDataMap(prev => ({ ...prev, [tableName]: sortedData }));
             } else {
-                setTableData([]);
-                setColumns([]);
+                setColumnsMap(prev => ({ ...prev, [tableName]: [] }));
+                setDataMap(prev => ({ ...prev, [tableName]: [] }));
             }
         } catch (error) {
-            console.error("Error fetching table data:", error.message);
-            if (addNotification) addNotification("Error: " + error.message, "error");
+            console.error(`Error fetching table data for ${tableName}:`, error.message);
+            if (addNotification) addNotification(`Error loading ${tableName}: ` + error.message, "error");
         } finally {
-            setLoading(false);
+            if (!silent) setLoading(false);
         }
-    }, [selectedTable, addNotification]);
+    }, [addNotification]);
 
     useEffect(() => {
+        const loadTables = async () => {
+            try {
+                const { data, error } = await supabase.rpc('get_dbmanagement_tables');
+                if (error) throw error;
+                if (data && data.length > 0) {
+                    const sorted = data
+                        .filter(t => t.table_name.toUpperCase() !== "DB_SETTINGS")
+                        .map(t => {
+                            const label = t.table_name.replace('db_', '').toUpperCase();
+                            return { name: t.table_name, label };
+                        }).sort((a, b) => a.label.localeCompare(b.label));
+                    
+                    const tables = appendSettingsTab(sorted);
+                    setAvailableTables(tables);
+                    setSelectedTable(tables[0].name);
+
+                    // Fetch all actual tables in parallel
+                    const tablesToFetch = tables.filter(t => t.name !== SETTINGS_TAB_ID);
+                    await Promise.all(tablesToFetch.map(t => fetchSingleTable(t.name, true)));
+                    setInitialLoadComplete(true);
+                    setLoading(false);
+                }
+            } catch (err) {
+                console.error("Failed to fetch tables:", err);
+                if (addNotification) addNotification("Failed to fetch tables: " + err.message, "error");
+                setLoading(false);
+            }
+        };
+        loadTables();
+    }, [addNotification, fetchSingleTable]);
+
+    const fetchTableData = useCallback(async () => {
         if (selectedTable && selectedTable !== SETTINGS_TAB_ID) {
-            fetchTableData();
+            await fetchSingleTable(selectedTable);
         }
-    }, [selectedTable, fetchTableData]);
+    }, [selectedTable, fetchSingleTable]);
 
     useEffect(() => {
         const onSettingsSaved = (event) => {
@@ -105,11 +112,6 @@ export function useTableData(addNotification) {
 
     const changeSelectedTable = (newTable) => {
         if (newTable !== selectedTable) {
-            if (newTable !== SETTINGS_TAB_ID) {
-                setLoading(true);
-            }
-            setTableData([]);
-            setColumns([]);
             setSelectedTable(newTable);
         }
     };
@@ -117,6 +119,9 @@ export function useTableData(addNotification) {
     useEffect(() => {
         setCurrentPage(1);
     }, [selectedTable, searchTerm]);
+
+    const tableData = dataMap[selectedTable] || [];
+    const columns = columnsMap[selectedTable] || [];
 
     const filteredData = useMemo(() => {
         if (!searchTerm) return tableData;
@@ -135,7 +140,7 @@ export function useTableData(addNotification) {
         setSelectedTable: changeSelectedTable,
         tableData,
         columns,
-        loading,
+        loading: loading || !initialLoadComplete,
         searchTerm,
         setSearchTerm,
         currentPage,
