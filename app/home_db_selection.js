@@ -114,9 +114,11 @@ export default function HomeDbSelection() {
             <div className="home-topbar" />
             <div className="home-bg-grid" />
 
-            <header className="home-header">
-                <div className="home-sys-name">FOOTBALL <span>DATABASE</span></div>
-            </header>
+            {!activeModuleId && (
+                <header className="home-header">
+                    <div className="home-sys-name">FOOTBALL <span>DATABASE</span></div>
+                </header>
+            )}
 
             <main className="home-main-area">
                 {!activeModuleId ? (
