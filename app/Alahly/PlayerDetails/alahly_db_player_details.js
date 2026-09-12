@@ -47,6 +47,9 @@ export default function PlayerDetails({ playerName, playerData, playerDetails, l
     const { stats, playerTeams, playerComps, playerSYs, playerOpps } = useMemo(() => {
         const summary = {
             caps: 0,
+            starts: 0,
+            subIns: 0,
+            subOuts: 0,
             mins: 0,
             goals: 0,
             assists: 0,
@@ -221,6 +224,31 @@ export default function PlayerDetails({ playerName, playerData, playerDetails, l
 
         summary.caps = appearances.length;
         summary.mins = appearances.reduce((acc, curr) => acc + (parseInt(curr["TOTAL MINUTE"] || 0) || 0), 0);
+        summary.starts = appearances.filter(a => String(a.STATU || "").trim() === "اساسي").length;
+        summary.subIns = appearances.filter(a => {
+            const isSub = String(a.STATU || "").trim() !== "اساسي";
+            const hasPlayed = (parseInt(a["TOTAL MINUTE"]) > 0) || (String(a["IN MINUTE"] || "").trim() !== "") || (String(a["OUT MINUTE"] || "").trim() !== "");
+            return isSub && hasPlayed;
+        }).length;
+
+        summary.subOuts = (lineupDetails || []).filter(l => {
+            if (String(l["PLAYER NAME OUT"] || "").trim() !== playerName) return false;
+            const ctx = matchContextMap[String(l.MATCH_ID)];
+            if (!ctx) return false;
+
+            if (selectedComps.length > 0 && !selectedComps.includes(ctx.champion)) return false;
+            if (selectedSYs.length > 0 && !selectedSYs.includes(ctx.sy)) return false;
+
+            const tv = String(l.TEAM || l.CLUB || l["TEAM NAME"] || l.Team || "").trim();
+            if (selectedTeams.length > 0 && !selectedTeams.includes(tv)) return false;
+
+            if (selectedOpps.length > 0) {
+                const opp = isAhly(tv) ? ctx.oppT : ctx.ahlyT;
+                if (!selectedOpps.includes(opp)) return false;
+            }
+
+            return true;
+        }).length;
 
         // Map Match IDs for historical grouping
         const appearanceMatchIds = new Set(appearances.map(a => String(a.MATCH_ID)));

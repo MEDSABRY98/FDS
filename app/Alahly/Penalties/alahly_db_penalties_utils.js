@@ -163,7 +163,7 @@ function gkWasOnFieldForPenalty(gk, penMinute) {
     const penMin = parseInt(penMinute, 10) || 0;
 
     const inMin = gk._inMin !== undefined ? gk._inMin : 0;
-    
+
     let outMin = Infinity;
     if (gk._outMin !== undefined) {
         outMin = gk._outMin;
@@ -206,11 +206,11 @@ function resolveDefendingGk({ penEvent, gkDetails, detail }) {
     matchGks = matchGks.map(g => {
         let inMin = 0;
         let outMin = Infinity;
-        
+
         if (String(g.STATU || "").trim() === "بديل" && starter && starter["OUT MINUTE"]) {
             inMin = parseInt(starter["OUT MINUTE"], 10) || 0;
         }
-        
+
         if (g["OUT MINUTE"] && String(g["OUT MINUTE"]).trim() !== "") {
             outMin = parseInt(g["OUT MINUTE"], 10);
             if (Number.isNaN(outMin)) outMin = Infinity;
@@ -721,7 +721,7 @@ export function aggregateAhlyGkPenalties({ playerDetails, gkDetails, filteredMat
     (playerDetails || []).forEach(event => {
         const mId = String(event.MATCH_ID || "").trim();
         if (!matchMap.has(mId)) return;
-        
+
         const type = String(event.TYPE || "").trim().toUpperCase();
         const sub = String(event.TYPE_SUB || "").trim().toUpperCase();
         const isAhly = isAhlyTeam(event.TEAM);
